@@ -1,0 +1,75 @@
+* { box-sizing: border-box }
+
+*:not(.select) {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+@font-face {
+	font-family: Inter;
+	src: url('/fonts/Inter-VariableFont_slnt,wght.ttf');
+}
+
+html, body {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: #1a1a1a;
+}
+
+body {
+	margin: 0;
+	color: #fff;
+
+	font-family: Inter;
+	font-weight: 400;
+	word-wrap: break-word;
+	-webkit-font-kerning: normal;
+	font-kerning: normal;
+	-ms-font-feature-settings: "kern","liga","clig","calt";
+	font-feature-settings: "kern","liga","clig","calt";
+	text-rendering: optimizeLegibility;
+	font-size: .9em;
+}
+
+a {
+	color: inherit;
+	text-underline-offset: 5px;
+}
+
+body, .hide-scroll {
+    overflow-y: scroll;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+}
+body::-webkit-scrollbar, .hide-scroll::-webkit-scrollbar { /* WebKit */
+    width: 0;
+    height: 0;
+}
+
+.icon, .icon + *, .icon ~ * {
+	vertical-align: middle;
+}
+
+.tippy-box {
+	background-color: #0F0F0F !important;
+	border-top-left-radius: 5px !important;
+	border-top-right-radius: 5px !important;
+	font-size: .9em !important;
+}
+.tippy-box[data-placement^='top'] > .tippy-arrow::before {
+	border-top-color: #0F0F0F !important;
+}
+.tippy-box[data-placement^='bottom'] > .tippy-arrow::before {
+	border-bottom-color: #0F0F0F !important;
+}
+.tippy-box[data-placement^='left'] > .tippy-arrow::before {
+	border-left-color: #0F0F0F !important;
+}
+.tippy-box[data-placement^='right'] > .tippy-arrow::before {
+	border-right-color: #0F0F0F !important;
+}
