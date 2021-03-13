@@ -66,7 +66,7 @@ window.addEventListener('dragenter', e => {
 	e.preventDefault();
 	e.dataTransfer.dropEffect = 'copy';
 	if (dragClock === 1) {
-		document.body.classList.push('upload');
+		document.body.classList.add('upload');
 	}
     return false;
 });
