@@ -146,6 +146,22 @@ struct GMAMetadata {
     description: String,
     author: String
 }
+impl GMAMetadata {
+	fn get(id: PublishedFileId, path: &PathBuf) -> Result<Option<Self>, Error> {
+		let handle = match File::open(path) {
+			Ok(handle) => handle,
+			Err(_) => return Ok(None)
+		};
+
+		Ok(Some(GMAMetadata::from(match gma::read_gma(BufReader::new(handle), false) {
+			Ok(gma) => gma,
+			Err(_) => return Err(anyhow!(match path.file_name() {
+				Some(file_name) => file_name.to_string_lossy().to_string(),
+				None => id.0.to_string()
+			}))
+		})))
+	}
+}
 impl From<GMAFile> for GMAMetadata {
     fn from(gma: GMAFile) -> Self {
 		GMAMetadata {
@@ -166,18 +182,7 @@ pub(crate) fn get_gma_metadata(resolve: String, reject: String, webview: &mut We
 			None => return Ok(None)
 		};
 
-		let handle = match File::open(path) {
-			Ok(handle) => handle,
-			Err(_) => return Ok(None)
-		};
-
-		Ok(Some(GMAMetadata::from(match gma::read_gma(BufReader::new(handle), false) {
-			Ok(gma) => gma,
-			Err(_) => return Err(anyhow!(match path.file_name() {
-				Some(file_name) => file_name.to_string_lossy().to_string(),
-				None => id.0.to_string()
-			}))
-		})))
+		GMAMetadata::get(id, path)
 		
 	}, resolve, reject);
 	Ok(())
