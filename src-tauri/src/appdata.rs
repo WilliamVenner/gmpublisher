@@ -94,16 +94,14 @@ impl AppData {
 
 use tauri::plugin::Plugin;
 #[derive(Serialize)]
-pub(crate) struct AppDataPlugin {
-	app_data: AppData
-}
+pub(crate) struct AppDataPlugin;
 impl AppDataPlugin {
-	pub(crate) fn init(app_data: &AppData) -> AppDataPlugin {
-		AppDataPlugin { app_data: app_data.clone() }
+	pub(crate) fn init() -> AppDataPlugin {
+		AppDataPlugin {}
 	}
 }
 impl Plugin for AppDataPlugin {
 	fn init_script(&self) -> Option<String> {
-		Some(include_str!("../../app/plugins/AppData.js").replace("{$_SETTINGS_$}", &serde_json::ser::to_string(&self.app_data).unwrap()))
+		Some(include_str!("../../app/plugins/AppData.js").replace("{$_SETTINGS_$}", &serde_json::ser::to_string(&*crate::APP_DATA.read().unwrap()).unwrap()))
 	}
 }

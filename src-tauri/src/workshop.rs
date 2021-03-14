@@ -242,9 +242,9 @@ impl Workshop {
 	}
 }
 
-pub(crate) fn browse(resolve: String, reject: String, webview: &mut Webview<'_>, workshop: Arc<Workshop>, page: u32) -> Result<(), String> {
+pub(crate) fn browse(resolve: String, reject: String, webview: &mut Webview<'_>, page: u32) -> Result<(), String> {
 	tauri::execute_promise(webview, move || {
-		match workshop.query(page).unwrap() {
+		match crate::WORKSHOP.read().unwrap().query(page).unwrap() {
 			Ok(items) => Ok(items),
 			Err(error) => Err(anyhow!(error))
 		}

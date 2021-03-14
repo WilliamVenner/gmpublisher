@@ -1043,6 +1043,7 @@ dependencies = [
  "byteorder",
  "dirs 3.0.1",
  "image",
+ "lazy_static",
  "msgbox",
  "opener",
  "serde",

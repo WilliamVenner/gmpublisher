@@ -62,8 +62,8 @@ impl Settings {
 	}
 }
 
-pub(crate) fn invoke_handler(_webview: &mut Webview<'_>, app_data: Arc<Mutex<AppData>>, settings: String) -> Result<(), String> {
-	let mut app_data = app_data.lock().unwrap();
+pub(crate) fn invoke_handler(_webview: &mut Webview<'_>, settings: String) -> Result<(), String> {
+	let mut app_data = crate::APP_DATA.write().unwrap();
 	match Settings::save_json(&settings, Some(&app_data.settings.file)) {
 		Ok(mut deserialized) => {
 			deserialized.file = app_data.settings.file.clone();

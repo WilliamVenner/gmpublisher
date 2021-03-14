@@ -4,7 +4,7 @@ use serde::Deserialize;
 use steamworks::PublishedFileId;
 use tauri::Webview;
 
-use crate::{appdata::AppData, game_addons::GameAddons, show, workshop::Workshop};
+use crate::{appdata::AppData, game_addons::GameAddons, show, transactions::Transactions, workshop::Workshop};
 use crate::workshop;
 use crate::settings;
 use crate::game_addons;
@@ -12,6 +12,10 @@ use crate::game_addons;
 #[derive(Deserialize)]
 #[serde(tag="cmd", rename_all="camelCase")]
 enum Command {
+	CancelTransaction {
+		id: usize
+	},
+
 	UpdateSettings {
 		settings: String
 	},
@@ -34,16 +38,17 @@ enum Command {
 		callback: String,
 		error: String
 	},
+	OpenAddon {
+		path: String,
+		callback: String,
+		error: String
+	},
 
 	LoadAsset
 }
 
-pub(crate) fn invoke_handler<'a>(app_data: AppData, workshop: Workshop, game_addons: GameAddons) -> impl FnMut(&mut Webview<'_>, &str) -> Result<(), String> + 'static {
-	let app_data_ptr = Arc::new(Mutex::new(app_data));
-	let workshop_ptr = Arc::new(workshop);
-	let game_addons_ptr = Arc::new(Mutex::new(game_addons));
-
-	Box::new(move |webview: &mut Webview, arg: &str| {
+pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Result<(), String> + 'static {
+	move |webview: &mut Webview, arg: &str| {
 		#[cfg(debug_assertions)]
 		println!("{}", arg);
 		
@@ -55,31 +60,41 @@ pub(crate) fn invoke_handler<'a>(app_data: AppData, workshop: Workshop, game_add
 			Ok(cmd) => {
 				use Command::*;
 				match match cmd {
+					CancelTransaction { id } => {
+						// TODO
+						Ok(())
+					},
+
 					GameAddonsBrowser { page, callback, error } => {
-						let app_data = app_data_ptr.lock().unwrap();
-						match &app_data.gmod {
-							Some(gmod) => game_addons::browse(callback, error, webview, game_addons_ptr.clone(), workshop_ptr.clone(), gmod.clone(), page),
+						match &crate::APP_DATA.read().unwrap().gmod {
+							Some(gmod) => game_addons::browse(callback, error, webview, gmod.to_owned(), page),
 							None => { Ok(()) }
 						}
 					},
 
 					WorkshopBrowser { page, callback, error } => {
-						workshop::browse(callback, error, webview, workshop_ptr.clone(), page)
+						workshop::browse(callback, error, webview, page)
 					},
 
 					UpdateSettings { settings } => {
-						settings::invoke_handler(webview, app_data_ptr.clone(), settings)
+						settings::invoke_handler(webview, settings)
 					},
 
 					GmaMetadata { id, callback, error } => {
-						game_addons::get_gma_metadata(callback, error, webview, game_addons_ptr.clone(), id)
+						game_addons::get_gma_metadata(callback, error, webview, id)
 					},
 
 					GetGmaPaths { callback, error } => {
-						game_addons::get_gma_paths(callback, error, webview, game_addons_ptr.clone())
+						game_addons::get_gma_paths(callback, error, webview)
+					},
+
+					OpenAddon { callback, error, path } => {
+						game_addons::open_addon(callback, error, webview, path)
 					},
 
 					LoadAsset => { Ok(()) },
+
+					#[allow(unreachable_patterns)]
 					_ => Err("Unknown command".to_string())
 				} {
 					Ok(_) => Ok(()),
@@ -87,5 +102,5 @@ pub(crate) fn invoke_handler<'a>(app_data: AppData, workshop: Workshop, game_add
 				}
 			}
 		}
-	})
+	}
 }

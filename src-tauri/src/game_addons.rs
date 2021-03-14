@@ -5,7 +5,7 @@ use steamworks::PublishedFileId;
 use tauri::Webview;
 use serde::Serialize;
 
-use crate::{lib::gma::{self, GMAFile}, workshop::{Workshop, WorkshopItem}};
+use crate::{lib::gma::{self, GMAFile}, transactions::{Transaction, Transactions}, workshop::{Workshop, WorkshopItem}};
 use super::show;
 
 pub(crate) struct GameAddons {
@@ -30,10 +30,10 @@ fn get_modified_time(entry: &DirEntry) -> Result<u64, Error> {
 	Ok(entry.metadata()?.modified()?.elapsed()?.as_secs())
 }
 
-pub(crate) fn browse(resolve: String, reject: String, webview: &mut Webview<'_>, game_addons: Arc<Mutex<GameAddons>>, workshop: Arc<Workshop>, dir: PathBuf, page: u32) -> Result<(), String> {
+pub(crate) fn browse(resolve: String, reject: String, webview: &mut Webview<'_>, dir: PathBuf, page: u32) -> Result<(), String> {
 	tauri::execute_promise(webview, move || {
 
-		let mut game_addons = game_addons.lock().unwrap();
+		let mut game_addons = crate::GAME_ADDONS.write().unwrap();
 
 		let was_cached = game_addons.cached;
 		if !game_addons.cached {
@@ -118,7 +118,7 @@ pub(crate) fn browse(resolve: String, reject: String, webview: &mut Webview<'_>,
 		}
 		
 		let page_items: Vec<PublishedFileId> = game_addons.ws_addon_cache.iter().skip(((page - 1) * 50) as usize).take(50).cloned().collect();
-		Ok(match workshop.get_items(page_items.clone()).unwrap() {
+		Ok(match crate::WORKSHOP.read().unwrap().get_items(page_items.clone()).unwrap() {
 			Ok(data) => (
 				game_addons.total,
 				data.1,
@@ -135,8 +135,10 @@ pub(crate) fn browse(resolve: String, reject: String, webview: &mut Webview<'_>,
 	Ok(())
 }
 
-pub(crate) fn get_gma_paths(resolve: String, reject: String, webview: &mut Webview<'_>, game_addons: Arc<Mutex<GameAddons>>) -> Result<(), String> {
-	tauri::execute_promise(webview, move || { Ok(game_addons.lock().unwrap().paths.clone()) }, resolve, reject);
+pub(crate) fn get_gma_paths(resolve: String, reject: String, webview: &mut Webview<'_>) -> Result<(), String> {
+	tauri::execute_promise(webview, move || {
+		Ok(crate::GAME_ADDONS.read().unwrap().paths.clone())
+	}, resolve, reject);
 	Ok(())
 }
 
@@ -172,10 +174,10 @@ impl From<GMAFile> for GMAMetadata {
     }
 }
 
-pub(crate) fn get_gma_metadata(resolve: String, reject: String, webview: &mut Webview<'_>, game_addons: Arc<Mutex<GameAddons>>, id: PublishedFileId) -> Result<(), String> {
+pub(crate) fn get_gma_metadata(resolve: String, reject: String, webview: &mut Webview<'_>, id: PublishedFileId) -> Result<(), String> {
 	tauri::execute_promise(webview, move || {
 
-		let game_addons = game_addons.lock().unwrap();
+		let game_addons = crate::GAME_ADDONS.read().unwrap();
 
 		let path = match game_addons.paths.get(&id) {
 			Some(path) => path,
@@ -185,5 +187,23 @@ pub(crate) fn get_gma_metadata(resolve: String, reject: String, webview: &mut We
 		GMAMetadata::get(id, path)
 		
 	}, resolve, reject);
+	Ok(())
+}
+
+pub(crate) fn open_addon(resolve: String, reject: String, webview: &mut Webview<'_>, path: String) -> Result<(), String> {
+	let webview_mut = webview.as_mut();
+
+	tauri::execute_promise(webview, move || {
+		
+		//let transaction = transactions.new(webview_mut);
+
+		let path = PathBuf::from(path);
+		
+		//transaction.progress(50.);
+
+		Ok(())
+		
+	}, resolve, reject);
+
 	Ok(())
 }
