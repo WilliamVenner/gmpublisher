@@ -1,4 +1,5 @@
 import { promisified } from 'tauri/api/tauri'
+import Transaction from './transactions.js'
 
 class Addons {
 	constructor() {
@@ -118,6 +119,10 @@ class Addons {
 			return this.gmaMetadataQueue.waiting[id];
 
 		}
+	}
+
+	openGMA(path) {
+		return promisified({ cmd: 'openAddon', path }).then(transactionId => new Transaction(transactionId));
 	}
 }
 

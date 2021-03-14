@@ -155,7 +155,7 @@ impl GMAMetadata {
 			Err(_) => return Ok(None)
 		};
 
-		Ok(Some(GMAMetadata::from(match gma::read_gma(BufReader::new(handle), false) {
+		Ok(Some(GMAMetadata::from(match gma::read_gma(BufReader::new(handle), false, None) {
 			Ok(gma) => gma,
 			Err(_) => return Err(anyhow!(match path.file_name() {
 				Some(file_name) => file_name.to_string_lossy().to_string(),
@@ -195,13 +195,34 @@ pub(crate) fn open_addon(resolve: String, reject: String, webview: &mut Webview<
 
 	tauri::execute_promise(webview, move || {
 		
-		//let transaction = transactions.new(webview_mut);
-
 		let path = PathBuf::from(path);
-		
-		//transaction.progress(50.);
+		let handle = match File::open(path) {
+			Ok(handle) => handle,
+			Err(_) => return Err(anyhow!("Failed to open GMA file! {:#?}")) // TODO
+		};
 
-		Ok(())
+		let mut transactions = crate::TRANSACTIONS.write().unwrap();
+		let transaction = transactions.new(webview_mut);
+		let id = transaction.id;
+
+		std::thread::spawn(move || {
+			let progress_transaction = transaction.clone();
+			match gma::read_gma(
+				BufReader::new(handle),
+				true,
+				Some(Box::new(move |progress: f32| {
+					progress_transaction.progress(progress);
+				}))
+			) {
+				Ok(gma) => gma,
+				Err(_) => {
+					// TODO transaction errors
+					panic!();
+				}
+			}
+		});
+		
+		Ok(id)
 		
 	}, resolve, reject);
 

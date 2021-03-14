@@ -53,7 +53,7 @@ class Transaction {
 	}
 }
 
-listen("transactionProgress", ([ id, progress ]) => {
+listen("transactionProgress", ({ payload: [ id, progress ] }) => {
 	const transaction = Transaction.get(id);
 	if (transaction) transaction.setProgress(progress);
 });

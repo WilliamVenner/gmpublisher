@@ -19,10 +19,21 @@
 
 	const dead = tags == false && !previewUrl && !subscriptions && title == id;
 	const getMetadata = dead ? Addons.getGMAMetadata(id) : undefined;
+
+	function click() {
+		const path = Addons.getAddonPath(id);
+		if (path) {
+			Addons.openGMA(path).then(transaction => {
+				transaction.listen(event => {
+					console.log(event);
+				});
+			});
+		}
+	}
 </script>
 
 <div id="workshop-addon" class="ws-{id}" data-ws={id}>
-	<div id="card">
+	<div id="card" on:click={ click }>
 		<div id="stats">
 			<span id="subscriptions">
 				<img src="/img/download.png" alt="Subscriptions"/>

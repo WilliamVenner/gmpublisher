@@ -1,6 +1,6 @@
 use super::{GMAFile, GMAEntry, SUPPORTED_GMA_VERSION, GMA_HEADER};
 use byteorder::{LittleEndian, ReadBytesExt};
-use std::io;
+use std::{convert::TryInto, io::{self, Seek, SeekFrom}};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use serde::Serialize;
@@ -21,7 +21,7 @@ fn read_nt_string<R: Read + BufRead>(handle: &mut R) -> String {
 		.to_owned();
 }
 
-pub fn read_gma(mut handle: BufReader<File>, read_entry: bool) -> Result<GMAFile, GMAReadError> {
+pub fn read_gma(mut handle: BufReader<File>, read_entry: bool, progress_callback: Option<Box<dyn Fn(f32) -> ()>>) -> Result<GMAFile, GMAReadError> {
 	let mut magic_buf = [0; 4];
 	handle.read_exact(&mut magic_buf).unwrap();
 
@@ -65,15 +65,24 @@ pub fn read_gma(mut handle: BufReader<File>, read_entry: bool) -> Result<GMAFile
 	}
 
 	// Read file contents
-	for mut e in &mut entries {
-		if read_entry {
+	if read_entry {
+		let total_entries = entries.len();
+		let mut i: usize = 0;
+		for mut e in &mut entries {
 			let mut buf = vec![0; e.size as usize];
 			handle.read_exact(&mut buf).unwrap();
 			e.contents = Some(buf);
-		} else {
-			// Pipe to sink
-			let mut_handle = &mut handle;
-			io::copy(&mut mut_handle.take(e.size), &mut io::sink()).unwrap();
+
+			match progress_callback {
+				Some(ref progress_callback) => (progress_callback)(((i as f32) / (total_entries as f32)) * 100.),
+				None => {}
+			}
+
+			i = i + 1;
+		}
+	} else {
+		for e in &entries {
+			handle.seek(SeekFrom::Current(e.size.try_into().unwrap())).unwrap();
 		}
 	}
 
@@ -86,10 +95,15 @@ pub fn read_gma(mut handle: BufReader<File>, read_entry: bool) -> Result<GMAFile
 		eprintln!("Warning: GMA file had {} bytes of extra _after_ the entries", remaining);
 	}
 
+	match progress_callback {
+		Some(ref progress_callback) => (progress_callback)(100.),
+		None => {}
+	}
+
 	Ok(GMAFile {
 		name: name,
 		description: desc,
 		author: author,
-		entries: entries
+		entries
 	})
 }
