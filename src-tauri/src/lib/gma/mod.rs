@@ -6,17 +6,19 @@ mod write;
 pub use write::write_gma;
 
 use serde::{Serialize, Deserialize};
-use std::fs::File;
+use std::{fs::File, path::PathBuf};
 use std::path::Path;
 
 pub const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 pub const SUPPORTED_GMA_VERSION: u8 = 3;
 
 pub struct GMAFile {
+	pub path: PathBuf,
 	pub name: String,
 	pub description: String,
 	pub author: String,
-	pub entries: Vec<GMAEntry>
+	pub entries: Vec<GMAEntry>,
+	pub size: usize
 }
 pub struct GMAEntry {
 	pub name: String,

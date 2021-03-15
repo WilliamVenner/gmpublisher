@@ -26,7 +26,8 @@ pub fn write_gma<W: Write>(file: &GMAFile, w: &mut W) -> Result<(), io::Error> {
 
 	w.write_cstr(&file.name)?;
 	w.write_cstr(&file.description)?;
-	w.write_cstr(&file.author)?;
+	//w.write_cstr(&file.author)?;
+	w.write_cstr("Author Name")?;
 	w.write_i32::<LittleEndian>(1)?; // addon version (unused)
 
 	// write metadata
