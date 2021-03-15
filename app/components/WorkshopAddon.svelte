@@ -13,6 +13,7 @@
 	export let subscriptions;
 	export let localFile;
 	export let searchTitle;
+	export let fileSize;
 
 	let stars = Math.round((score * 10) / 2);
 	let starsPct = Math.round(((score * 100) + Number.EPSILON) * 100) / 100;
@@ -33,7 +34,7 @@
 </script>
 
 <div id="workshop-addon" class="ws-{id}" data-ws={id}>
-	<div id="card" on:click={ click }>
+	<div id="card" on:click={ !localFile ? click : null }>
 		<div id="stats">
 			<span id="subscriptions">
 				<img src="/img/download.png" alt="Subscriptions"/>

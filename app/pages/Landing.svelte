@@ -1,9 +1,10 @@
 <script>
 	import { tippy } from '../tippy.js';
 	import { _ } from 'svelte-i18n';
-	import WorkshopBrowser from '../components/WorkshopBrowser.svelte';
-	import GameAddonsBrowser from '../components/GameAddonsBrowser.svelte';
-	import FileSystemAddonsBrowser from '../components/FileSystemAddonsBrowser.svelte';
+	import WorkshopBrowser from '../pages/WorkshopBrowser.svelte';
+	import GameAddonsBrowser from '../pages/GameAddonsBrowser.svelte';
+	import FileSystemAddonsBrowser from '../pages/FileSystemAddonsBrowser.svelte';
+	import AddonSizeAnalyzer from '../pages/AddonSizeAnalyzer.svelte';
 
 	const hours = new Date().getHours();
 
@@ -35,7 +36,12 @@
 			name: 'filesystem',
 			component: FileSystemAddonsBrowser,
 			props: {}
-		}
+		},
+		{
+			name: 'size_analyzer',
+			component: AddonSizeAnalyzer,
+			props: {}
+		},
 	];
 
 	let source = sources[0];
