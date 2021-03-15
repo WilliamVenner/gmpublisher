@@ -19,20 +19,18 @@ class Transaction {
 
 	listen(callback) {
 		this.callbacks.push(callback);
+		return this;
 	}
 
 	emit(event) {
 		for (let i = 0; i < this.callbacks.length; i++)
 			this.callbacks[i](event);
+		return this;
 	}
 
 	cancel(fromBackend) {
 		this.cancelled = true;
-		this.emit({
-			progress: this.progress,
-			cancelled: true,
-			finished: this.progress >= 100
-		});
+		this.emit({ cancelled: true });
 		delete transactions[this.id];
 
 		if (!fromBackend) {
@@ -41,26 +39,39 @@ class Transaction {
 				id: this.id
 			});
 		}
+
+		return this;
+	}
+
+	finish(data) {
+		this.emit({ finished: true, data });
+		delete transactions[this.id];
+
+		return this;
 	}
 
 	setProgress(progress) {
 		this.progress = progress;
-		this.emit({
-			progress,
-			cancelled: this.cancelled,
-			finished: progress >= 100
-		});
+		this.emit({ progress });
+
+		return this;
 	}
 }
 
 listen("transactionProgress", ({ payload: [ id, progress ] }) => {
 	const transaction = Transaction.get(id);
-	if (transaction) transaction.setProgress(progress);
+	var progress = Math.floor((progress + Number.EPSILON) * 100) / 100;
+	if (transaction && progress !== transaction.progress) transaction.setProgress(progress);
 });
 
-listen("transactionCancelled", id => {
+listen("transactionCancelled", ({ payload: id }) => {
 	const transaction = Transaction.get(id);
 	if (transaction) transaction.cancel(true);
+});
+
+listen("transactionFinished", ({ payload: [ id, data ] }) => {
+	const transaction = Transaction.get(id);
+	if (transaction) transaction.finish(data);
 });
 
 export default Transaction;

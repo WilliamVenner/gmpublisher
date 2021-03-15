@@ -1,12 +1,14 @@
-use std::{cell::Cell, collections::{HashMap, hash_map::RandomState}, sync::{Arc, Mutex, Weak, atomic::{AtomicBool, AtomicU16, AtomicUsize, Ordering}, mpsc::{self, Receiver, Sender}}};
-use tauri::{Webview, WebviewMut};
+use std::{collections::{HashMap, hash_map::RandomState}, sync::{Arc, atomic::{AtomicU16, AtomicUsize, Ordering}, mpsc::{self, Sender}}};
+use tauri::{WebviewMut};
+use serde::Serialize;
 
 static TRANSACTION_ID: AtomicUsize = AtomicUsize::new(0);
 
 pub(crate) enum TransactionMessage {
 	Progress(f32),
 	IncrementProgress(f32),
-	Cancel(Vec<Box<dyn FnOnce() + Send + Sync + 'static>>)
+	Cancel(Vec<Box<dyn FnOnce() + Send + Sync + 'static>>),
+	Finish(Box<dyn erased_serde::Serialize + Send + Sync>)
 }
 
 pub(crate) struct Transaction {
@@ -40,7 +42,6 @@ impl Transaction {
 				match msg {
 					Progress(new_progress) => {
 						progress.store(((new_progress * 100.).round() as u16).min(10000).max(0), Ordering::SeqCst);
-						println!("{} = {}", new_progress, progress.load(Ordering::SeqCst));
 						tauri::event::emit(&mut webview, "transactionProgress", Some((id, (progress.load(Ordering::SeqCst) as f32) / 100.))).ok();
 					},
 					IncrementProgress(incr) => {
@@ -51,6 +52,10 @@ impl Transaction {
 						for callback in callbacks { (callback)(); }
 						break;
 					},
+					Finish(data) => {
+						tauri::event::emit(&mut webview, "transactionFinished", Some((id, data))).ok();
+						break;
+					}
 				}
 			}
 		});
@@ -73,8 +78,13 @@ impl Transaction {
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
 	}
 
-	pub(crate) fn progress_incr(&mut self, incr: f32) {
+	pub(crate) fn progress_incr(&self, incr: f32) {
 		let res = self.tx.send(TransactionMessage::IncrementProgress(incr));
+		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
+	}
+
+	pub(crate) fn finish<T: erased_serde::Serialize + Send + Sync + 'static>(&self, data: T) {
+		let res = self.tx.send(TransactionMessage::Finish(Box::new(data)));
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
 	}
 }
