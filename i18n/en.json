@@ -23,5 +23,6 @@
 	"extract": "Extract",
 	"pack": "Pack",
 	"publish": "Publish",
-	"update": "Update"
+	"update": "Update",
+	"size_analyzer": "Addon Size Analyzer"
 }

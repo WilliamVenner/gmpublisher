@@ -43,6 +43,10 @@ enum Command {
 		callback: String,
 		error: String
 	},
+	AnalyzeAddonSizes {
+		callback: String,
+		error: String
+	},
 
 	LoadAsset
 }
@@ -66,9 +70,10 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 					},
 
 					GameAddonsBrowser { page, callback, error } => {
-						match &crate::APP_DATA.read().unwrap().gmod {
-							Some(gmod) => game_addons::browse(callback, error, webview, gmod.to_owned(), page),
-							None => { Ok(()) }
+						if crate::APP_DATA.read().unwrap().gmod.is_some() {
+							game_addons::browse(callback, error, webview, page)
+						} else {
+							Err("Garry's Mod not found".to_string()) // TODO
 						}
 					},
 
@@ -90,6 +95,10 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 
 					OpenAddon { callback, error, path } => {
 						game_addons::open_addon(callback, error, webview, path)
+					},
+
+					AnalyzeAddonSizes { callback, error } => {
+						game_addons::analyze_addon_sizes(callback, error, webview)
 					},
 
 					LoadAsset => { Ok(()) },

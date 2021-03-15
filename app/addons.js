@@ -122,7 +122,12 @@ class Addons {
 	}
 
 	openGMA(path) {
+		// TODO show file sizes
 		return promisified({ cmd: 'openAddon', path }).then(transactionId => new Transaction(transactionId));
+	}
+
+	analyzeAddonSizes() {
+		return promisified({ cmd: 'analyzeAddonSizes' }).then(transactionId => new Transaction(transactionId));
 	}
 }
 
