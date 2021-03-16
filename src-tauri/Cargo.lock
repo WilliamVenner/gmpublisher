@@ -615,6 +615,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "88d7ed2934d741c6b37e33e3832298e8850b53fd2d2bea03873375596c7cea4e"
 
 [[package]]
+name = "dunce"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2641c4a7c0c4101df53ea572bffdc561c146f6c2eb09e4df02bc4811e3feeb4"
+
+[[package]]
 name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1072,6 +1078,7 @@ dependencies = [
  "byteorder",
  "chardetng",
  "dirs 3.0.1",
+ "dunce",
  "erased-serde",
  "image",
  "lazy_static",
@@ -1082,6 +1089,7 @@ dependencies = [
  "serde_json",
  "steamlocate",
  "steamworks",
+ "sysinfo 0.16.4",
  "tauri",
  "webview_official",
  "winres",
@@ -2322,6 +2330,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "sysinfo"
+version = "0.16.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c280c91abd1aed2e36be1bc8f56fbc7a2acbb2b58fbcac9641510179cc72dd9"
+dependencies = [
+ "cfg-if 1.0.0",
+ "core-foundation-sys",
+ "doc-comment",
+ "libc",
+ "ntapi",
+ "once_cell",
+ "rayon",
+ "winapi",
+]
+
+[[package]]
 name = "system-deps"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2429,7 +2453,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d8a4b0daeec9b0493cf894a918ba30e6768d6cca1cab757f802a9e78bc0bbfd"
 dependencies = [
  "anyhow",
- "sysinfo",
+ "sysinfo 0.10.5",
  "thiserror",
 ]
 

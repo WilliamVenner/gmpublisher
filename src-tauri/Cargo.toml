@@ -30,6 +30,8 @@ lazy_static = "1.4.0"
 num_cpus = "1.13.0"
 erased-serde = "0.3.13"
 chardetng = "0.1.10"
+sysinfo = "0.16.4"
+dunce = "1.0.1"
 
 [target."cfg(windows)".build-dependencies]
 winres = "0.1"
