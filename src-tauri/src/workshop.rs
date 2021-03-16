@@ -168,7 +168,13 @@ impl Workshop {
 							cache.insert(id, None);
 							*lock = Some(Ok(None));
 						} else {
-							let mut item: WorkshopItem = data.get(0).unwrap().into(); // FIXME thread '<unnamed>' panicked at 'called `Option::unwrap()` on a `None` value', src\workshop.rs:171:70
+							let mut item: WorkshopItem = match data.get(0) {
+								Some(item) => item.into(),
+								None => {
+									*lock = Some(Err(SteamError::BadResponse));
+									return;
+								}
+							};
 							item.preview_url = data.preview_url(0);
 							item.subscriptions = data.statistic(0, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
 							cache.insert(item.id, Some(item.clone()));
