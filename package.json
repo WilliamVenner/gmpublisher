@@ -5,8 +5,10 @@
 	"main": "index.js",
 	"dependencies": {
 		"akar-icons-svelte": "^1.1.1",
+		"filesize": "^6.1.0",
 		"rollup-plugin-svelte-svg": "^0.2.3",
 		"sirv-cli": "^1.0.0",
+		"steamid": "^1.1.3",
 		"svelte-i18n": "^3.3.6",
 		"tauri": "^0.14.1",
 		"tippy.js": "^6.3.1"
