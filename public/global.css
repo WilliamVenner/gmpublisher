@@ -6,6 +6,12 @@
 	-ms-user-select: none;
 	user-select: none;
 }
+.select {
+	-webkit-user-select: text;
+	-moz-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
+}
 
 @font-face {
 	font-family: Inter;
