@@ -60,8 +60,6 @@ pub fn read_gma(path: &PathBuf, read_entry: bool, progress_callback: Option<Box<
 		dumb_string = read_nt_string(&mut handle);
 	}
 
-	println!("{}", dumb_string);
-
 	let name = read_nt_string(&mut handle);
 	let desc = read_nt_string(&mut handle);
 	let _author = read_nt_string(&mut handle);
