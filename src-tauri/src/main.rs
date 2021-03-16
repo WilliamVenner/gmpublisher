@@ -51,7 +51,7 @@ lazy_static! {
 	});
 
 	pub(crate) static ref GAME_ADDONS: RwLock<GameAddons> = RwLock::new(GameAddons::init());
-	
+
 	pub(crate) static ref TRANSACTIONS: RwLock<Transactions> = RwLock::new(Transactions::init());
 }
 

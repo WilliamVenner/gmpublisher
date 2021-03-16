@@ -1,5 +1,6 @@
-use std::{collections::HashMap, path::PathBuf, sync::{Arc, Mutex}};
+use std::{collections::HashMap, ops::BitAnd, path::PathBuf, sync::{Arc, Mutex, atomic::AtomicBool}};
 use anyhow::{anyhow, Error};
+use lazy_static::lazy_static;
 use steamworks::{PublishedFileId, AccountId, AppId, Client, CreateQueryError, QueryResult, QueryResults, SingleClient, SteamError, SteamId};
 use serde::Serialize;
 use tauri::Webview;
@@ -7,6 +8,10 @@ use tauri::Webview;
 static APP_GMOD: AppId = AppId(4000);
 
 use super::Base64Image;
+
+lazy_static! {
+	static ref PERSONACHANGE_USER_INFO: steamworks::PersonaChange = steamworks::PersonaChange::NAME | steamworks::PersonaChange::AVATAR;
+}
 
 #[derive(Serialize, Debug, Clone)]
 pub(crate) struct SteamUser {
@@ -27,24 +32,34 @@ pub(crate) struct Workshop {
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all="camelCase")]
 pub(crate) struct WorkshopItem {
-	id: PublishedFileId,
-	title: String,
-	time_created: u32,
-	time_updated: u32,
-	score: f32,
-	tags: Vec<String>,
-	preview_url: Option<String>,
-	subscriptions: u64,
-	local_file: Option<PathBuf>,
-	search_title: String
+	pub(crate) id: PublishedFileId,
+	pub(crate) title: String,
+	pub(crate) owner: Option<SteamUser>,
+	pub(crate) time_created: u32,
+	pub(crate) time_updated: u32,
+	pub(crate) description: Option<String>,
+	pub(crate) score: f32,
+	pub(crate) tags: Vec<String>,
+	pub(crate) preview_url: Option<String>,
+	pub(crate) subscriptions: u64,
+	pub(crate) local_file: Option<PathBuf>,
+	pub(crate) search_title: String,
+	
+	#[serde(skip)]
+	pub(crate) steamid: Option<SteamId>,
+	pub(crate) steamid64: Option<String>,
 }
 impl From<QueryResult> for WorkshopItem {
     fn from(result: QueryResult) -> Self {
 		WorkshopItem {
 			id: result.published_file_id,
 			title: result.title.clone(),
+			steamid: Some(result.owner),
+			steamid64: Some(result.owner.raw().to_string()),
+			owner: None,
 			time_created: result.time_created,
 			time_updated: result.time_updated,
+			description: Some(result.description), // TODO parse or strip bbcode?
 			score: result.score,
 			tags: result.tags,
 			preview_url: None,
@@ -59,8 +74,12 @@ impl From<PublishedFileId> for WorkshopItem {
 		WorkshopItem {
 			id,
 			title: id.0.to_string(),
+			steamid: None,
+			steamid64: None,
+			owner: None,
 			time_created: 0,
 			time_updated: 0,
+			description: None,
 			score: 0.,
 			tags: Vec::with_capacity(0),
 			preview_url: None,
@@ -101,6 +120,38 @@ impl Workshop {
 		}
 	}
 
+	pub(crate) fn query_user(&self, steamid: SteamId) -> SteamUser {
+		use std::sync::atomic::Ordering::Relaxed;
+
+		let friends = self.client.friends();
+
+		if friends.request_user_information(steamid, false) {
+			let sync = Arc::new(AtomicBool::new(false));
+			let _cb = {
+				let c_sync = sync.clone();
+				self.client.register_callback(move |p: steamworks::PersonaStateChange| {
+					if p.flags & *PERSONACHANGE_USER_INFO == *PERSONACHANGE_USER_INFO && p.steam_id == steamid {
+						c_sync.store(true, Relaxed);
+					}
+				})
+			};
+
+			let single = self.single.lock().unwrap();
+			while !sync.load(Relaxed) {
+				single.run_callbacks();
+				std::thread::sleep(std::time::Duration::from_millis(50));
+			}
+		}
+
+		let user = friends.get_friend(steamid);
+		SteamUser {
+			steamid,
+			steamid64: steamid.raw().to_string(),
+			name: user.name(),
+			avatar: user.medium_avatar().map(|buf| Base64Image::new(buf, 64, 64))
+		}
+	}
+
 	pub(crate) fn get_item(&self, id: PublishedFileId) -> Result<Result<Option<WorkshopItem>, SteamError>, CreateQueryError> {
 		let sync = Arc::new(Mutex::new(None));
 
@@ -117,7 +168,7 @@ impl Workshop {
 							cache.insert(id, None);
 							*lock = Some(Ok(None));
 						} else {
-							let mut item: WorkshopItem = data.get(0).unwrap().into();
+							let mut item: WorkshopItem = data.get(0).unwrap().into(); // FIXME thread '<unnamed>' panicked at 'called `Option::unwrap()` on a `None` value', src\workshop.rs:171:70
 							item.preview_url = data.preview_url(0);
 							item.subscriptions = data.statistic(0, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
 							cache.insert(item.id, Some(item.clone()));

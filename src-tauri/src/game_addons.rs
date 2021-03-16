@@ -1,10 +1,10 @@
-use std::{collections::HashMap, fs::DirEntry, path::PathBuf, sync::mpsc};
+use std::{collections::HashMap, fmt::Debug, fs::DirEntry, path::PathBuf, sync::mpsc};
 use anyhow::{anyhow, Error};
 
 use steamworks::PublishedFileId;
 use tauri::Webview;
 
-use crate::{gma::{self, GMAFile, metadata}, workshop::{WorkshopItem}};
+use crate::{gma::{self, ExtractDestination, GMAFile, metadata}, workshop::{WorkshopItem}};
 use super::show;
 
 pub(crate) struct GameAddons {
@@ -147,32 +147,81 @@ pub(crate) fn browse(resolve: String, reject: String, webview: &mut Webview<'_>,
 
 pub(crate) fn get_gma_paths(resolve: String, reject: String, webview: &mut Webview<'_>) -> Result<(), String> {
 	tauri::execute_promise(webview, move || {
+
+		cache_addon_paths();
 		Ok(crate::GAME_ADDONS.read().unwrap().paths.clone())
+
 	}, resolve, reject);
 	Ok(())
 }
 
-pub(crate) fn get_gma_metadata(resolve: String, reject: String, webview: &mut Webview<'_>, id: PublishedFileId) -> Result<(), String> {
+pub(crate) fn get_addon_metadata(resolve: String, reject: String, webview: &mut Webview<'_>, id: PublishedFileId) -> Result<(), String> {
 	tauri::execute_promise(webview, move || {
 
 		let game_addons = crate::GAME_ADDONS.read().unwrap();
 
-		match gma::metadata(match game_addons.paths.get(&id) {
+		let path = match game_addons.paths.get(&id) {
 			Some(path) => path,
 			None => return Ok(None)
-		}) {
-			Ok(mut gma) => {
+		};
+
+		match gma::metadata(path) {
+			Ok((mut gma, _)) => {
 				gma.id = Some(id);
-				gma
+				Ok(Some(gma))
 			},
-			Err(err) => Err(anyhow!(format!("{:?}", err)))
+			Err(_) => Err(anyhow!(
+				path.file_name()
+					.and_then(|s| Some(s.to_string_lossy().to_string()))
+					.unwrap_or(id.0.to_string())
+			))
 		}
 		
 	}, resolve, reject);
 	Ok(())
 }
 
-pub(crate) fn open_addon(resolve: String, reject: String, webview: &mut Webview<'_>, path: String) -> Result<(), String> {
+pub(crate) fn preview_gma(resolve: String, reject: String, webview: &mut Webview<'_>, path: String, id: Option<PublishedFileId>) -> Result<(), String> {
+	tauri::execute_promise(webview, move || {
+
+		let get_metadata = ||
+			gma::metadata(&PathBuf::from(path))
+				.map_err(|err| anyhow!(format!("{}", err)))
+				.and_then(|(mut gma, mut handle)| {
+					match gma::entries(&mut gma, &mut handle) {
+						Ok(_) => Ok(gma),
+						Err(err) => Err(anyhow!(format!("{}", err)))
+					}
+				});
+
+		match id {
+			Some(id) => {
+				let metadata = std::thread::spawn(get_metadata);
+				let ws_addon = std::thread::spawn(move || crate::WORKSHOP.write().unwrap().get_item(id).unwrap());
+		
+				let metadata = metadata.join().unwrap();
+				let ws_addon = ws_addon.join().unwrap().and_then(|ws_addon| {
+					Ok(ws_addon.and_then(|mut ws_addon| {
+						if let Some(steamid) = ws_addon.steamid {
+							ws_addon.owner = Some(crate::WORKSHOP.write().unwrap().query_user(steamid));
+						}
+						Some(ws_addon)
+					}))
+				});
+
+				metadata.and_then(|metadata| Ok((metadata, ws_addon.unwrap_or_default())))
+			},
+			None => {
+				get_metadata().and_then(|metadata| Ok((metadata, None)))
+			}
+		}
+		
+	}, resolve, reject);
+
+	Ok(())
+}
+
+pub(crate) fn open_gma(resolve: String, reject: String, webview: &mut Webview<'_>, path: String) -> Result<(), String> {
 	let webview_mut = webview.as_mut();
 
 	tauri::execute_promise(webview, move || {
@@ -183,9 +232,45 @@ pub(crate) fn open_addon(resolve: String, reject: String, webview: &mut Webview<
 
 		std::thread::spawn(move || {
 			let progress_transaction = transaction.clone();
-			match gma::read_gma(
-				&PathBuf::from(path),
-				true,
+			match gma::extract(
+				PathBuf::from(path),
+				ExtractDestination::Temp,
+				Some(Box::new(move |progress: f32| {
+					progress_transaction.progress(progress);
+				}))
+			) {
+				Ok(gma) => gma,
+				Err(_) => {
+					// TODO transaction errors
+					panic!();
+				}
+			}
+		});
+		
+		Ok(id)
+		
+	}, resolve, reject);
+
+	Ok(())
+}
+
+pub(crate) fn extract_gma(resolve: String, reject: String, webview: &mut Webview<'_>, gma_path: String, path: String, to_named_dir: bool) -> Result<(), String> {
+	let webview_mut = webview.as_mut();
+
+	tauri::execute_promise(webview, move || {
+
+		let mut transactions = crate::TRANSACTIONS.write().unwrap();
+		let transaction = transactions.new(webview_mut);
+		let id = transaction.id;
+
+		std::thread::spawn(move || {
+			let progress_transaction = transaction.clone();
+			match gma::extract(
+				PathBuf::from(gma_path),
+				match to_named_dir {
+					true => ExtractDestination::NamedDirectory(PathBuf::from(path)),
+					false => ExtractDestination::Directory(PathBuf::from(path)),
+				},
 				Some(Box::new(move |progress: f32| {
 					progress_transaction.progress(progress);
 				}))
@@ -226,6 +311,7 @@ pub(crate) fn analyze_addon_sizes(resolve: String, reject: String, webview: &mut
 			let chunk_len = ((total_paths as f32) / (thread_count as f32).floor()) as usize;
 			let paths = game_addons.paths.values().cloned().collect::<Vec<PathBuf>>().chunks(chunk_len).map(|c| c.to_owned()).collect::<Vec<Vec<PathBuf>>>();
 
+			/*
 			let (tx, rx) = mpsc::channel();
 
 			// Sorting thread
@@ -266,6 +352,7 @@ pub(crate) fn analyze_addon_sizes(resolve: String, reject: String, webview: &mut
 					}
 				});
 			}
+			*/
 
 			Ok(id)
 		}

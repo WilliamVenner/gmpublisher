@@ -1,5 +1,7 @@
 <script>
 	import { tippyFollow } from '../tippy.js';
+	import { modals } from '../modals.js';
+	import PreviewGMA from '../modals/PreviewGMA.svelte';
 	import Dead from '../../public/img/dead.svg';
 	import Addons from '../addons.js';
 
@@ -13,7 +15,9 @@
 	export let subscriptions;
 	export let localFile;
 	export let searchTitle;
-	export let fileSize;
+	export let size = undefined;
+
+	export let isPreviewing = false;
 
 	let stars = Math.round((score * 10) / 2);
 	let starsPct = Math.round(((score * 100) + Number.EPSILON) * 100) / 100;
@@ -24,17 +28,19 @@
 	function click() {
 		const path = Addons.getAddonPath(id);
 		if (path) {
-			Addons.openGMA(path).then(transaction => {
-				transaction.listen(event => {
-					console.log(event);
-				});
-			});
+			$modals = [...$modals, {
+				component: PreviewGMA,
+				props: {
+					path,
+					addon: $$props
+				}
+			}];
 		}
 	}
 </script>
 
-<div id="workshop-addon" class="ws-{id}" data-ws={id}>
-	<div id="card" on:click={ !localFile ? click : null }>
+<div id="workshop-addon" class="ws-{id}" class:previewing={isPreviewing} data-ws={id}>
+	<div id="card" on:click={ !localFile && !isPreviewing ? click : null }>
 		<div id="stats">
 			<span id="subscriptions">
 				<img src="/img/download.png" alt="Subscriptions"/>
@@ -66,13 +72,15 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		cursor: pointer;
 	}
 	#workshop-addon #card {
 		padding: .8rem;
 		transition: background-color .1s, box-shadow .1s;
 	}
-	#workshop-addon:hover #card {
+	#workshop-addon:not(.previewing) {
+		cursor: pointer;
+	}
+	#workshop-addon:not(.previewing):hover #card {
 		background-color: rgba(45, 45, 45, 1);
 		box-shadow: 0px 0px 4px rgb(0 0 0 / 40%);
 	}

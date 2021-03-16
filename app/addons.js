@@ -14,6 +14,8 @@ class Addons {
 			queue: [],
 			waiting: {}
 		};
+
+		this.gmaPreviewCache = {};
 	}
 
 	clearCache(cacheName) {
@@ -121,13 +123,15 @@ class Addons {
 		}
 	}
 
-	openGMA(path) {
-		// TODO show file sizes
-		return promisified({ cmd: 'openAddon', path }).then(transactionId => new Transaction(transactionId));
-	}
-
 	analyzeAddonSizes() {
 		return promisified({ cmd: 'analyzeAddonSizes' }).then(transactionId => new Transaction(transactionId));
+	}
+
+	previewGMA(path, id) {
+		if (!(path in this.gmaPreviewCache))
+			this.gmaPreviewCache[path] = promisified({ cmd: 'previewGma', path, id });
+		
+		return this.gmaPreviewCache[path];
 	}
 }
 

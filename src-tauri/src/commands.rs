@@ -19,11 +19,13 @@ enum Command {
 	UpdateSettings {
 		settings: String
 	},
+
 	WorkshopBrowser {
 		page: u32,
 		callback: String,
 		error: String
 	},
+
 	GameAddonsBrowser {
 		page: u32,
 		callback: String,
@@ -38,11 +40,26 @@ enum Command {
 		callback: String,
 		error: String
 	},
-	OpenAddon {
+
+	PreviewGma {
+		path: String,
+		id: Option<PublishedFileId>,
+		callback: String,
+		error: String
+	},
+	OpenGma {
 		path: String,
 		callback: String,
 		error: String
 	},
+	ExtractGma {
+		gma_path: String,
+		to_named_dir: bool,
+		path: String,
+		callback: String,
+		error: String
+	},
+	
 	AnalyzeAddonSizes {
 		callback: String,
 		error: String
@@ -69,14 +86,6 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 						Ok(())
 					},
 
-					GameAddonsBrowser { page, callback, error } => {
-						if crate::APP_DATA.read().unwrap().gmod.is_some() {
-							game_addons::browse(callback, error, webview, page)
-						} else {
-							Err("Garry's Mod not found".to_string()) // TODO
-						}
-					},
-
 					WorkshopBrowser { page, callback, error } => {
 						workshop::browse(callback, error, webview, page)
 					},
@@ -85,16 +94,28 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 						settings::invoke_handler(webview, settings)
 					},
 
-					GmaMetadata { id, callback, error } => {
-						game_addons::get_gma_metadata(callback, error, webview, id)
+					GameAddonsBrowser { page, callback, error } => {
+						if crate::APP_DATA.read().unwrap().gmod.is_some() {
+							game_addons::browse(callback, error, webview, page)
+						} else {
+							Err("Garry's Mod not found".to_string()) // TODO
+						}
 					},
-
+					GmaMetadata { id, callback, error } => {
+						game_addons::get_addon_metadata(callback, error, webview, id)
+					},
 					GetGmaPaths { callback, error } => {
 						game_addons::get_gma_paths(callback, error, webview)
 					},
-
-					OpenAddon { callback, error, path } => {
-						game_addons::open_addon(callback, error, webview, path)
+					
+					PreviewGma { callback, error, path, id } => {
+						game_addons::preview_gma(callback, error, webview, path, id)
+					},
+					OpenGma { callback, error, path } => {
+						game_addons::open_gma(callback, error, webview, path)
+					},
+					ExtractGma { callback, error, gma_path, path, to_named_dir } => {
+						game_addons::extract_gma(callback, error, webview, gma_path, path, to_named_dir)
 					},
 
 					AnalyzeAddonSizes { callback, error } => {

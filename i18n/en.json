@@ -24,5 +24,32 @@
 	"pack": "Pack",
 	"publish": "Publish",
 	"update": "Update",
-	"size_analyzer": "Addon Size Analyzer"
+	"size_analyzer": "Addon Size Analyzer",
+	"name": "Name",
+	"size": "Size",
+	"file_types": {
+		"folder": "Folder",
+
+		"vtf": "Valve Texture Format",
+		"vmt": "Valve Material Format",
+		"map": "Map",
+		"ain": "Map AI Nodegraph",
+		"nav": "Map AI Navigation Mesh",
+		"ttf": "TrueType Font",
+		"vcd": "Valve Choreography Data",
+		"fgd": "Forge Game Data",
+		"pcf": "Particles File",
+		"lua": "Lua Code",
+		"mdl": "Model",
+		"vtx": "Model LOD Data",
+		"phy": "Model Physics Mesh",
+		"ani": "Model Animation Data",
+		"vvd": "Model Vertex Data",
+		"txt": "Text",
+		"properties": "Properties",
+
+		"audio": "Audio",
+		"image": "Image",
+		"unknown": "Unknown ({extension})"
+	}
 }
