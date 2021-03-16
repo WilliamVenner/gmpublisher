@@ -1,6 +1,7 @@
 <script>
 	import { tippy } from '../tippy.js';
 	import { _ } from 'svelte-i18n';
+	import { modals, clearModals } from '../modals.js';
 	import WorkshopBrowser from '../pages/WorkshopBrowser.svelte';
 	import GameAddonsBrowser from '../pages/GameAddonsBrowser.svelte';
 	import FileSystemAddonsBrowser from '../pages/FileSystemAddonsBrowser.svelte';
@@ -48,6 +49,12 @@
 </script>
 
 <main>
+
+	<div id="modals" class:active={$modals.length > 0} on:click={clearModals}>
+		{#each $modals as modal}
+			<svelte:component this={modal.component} {...modal.props}/>
+		{/each}
+	</div>
 
 	<div id="ribbon">
 		<a href="https://steamcommunity.com/profiles/{AppData.user.steamid64}" target="_blank">
@@ -106,7 +113,7 @@
 		display: flex;
 		align-items: center;
 		font-size: 1.1rem;
-		z-index: 9999;
+		z-index: 998;
 	}
 	#ribbon a {
 		height: 100%;
@@ -186,6 +193,39 @@
 	#logo {
 		margin-bottom: .5rem;
 		width: min(calc(100% - 1rem), 50px);
+	}
+
+	#modals {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 999;
+		pointer-events: none;
+
+		display: flex;
+		justify-content: center;
+		align-items: center;
+
+		transition: background-color .25s, backdrop-filter .25s;
+	}
+	#modals.active {
+		pointer-events: initial;
+		background-color: rgba(0,0,0,.5);
+		backdrop-filter: blur(2px);
+	}
+	#modals > :global(*) {
+		animation: modal .25s;
+	}
+
+	@keyframes modal {
+		from {
+			transform: scale(0, 0);
+		}
+		to {
+			transform: scale(1, 1);
+		}
 	}
 
 	/*
