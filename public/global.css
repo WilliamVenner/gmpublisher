@@ -46,9 +46,12 @@ a {
 	color: inherit;
 	text-underline-offset: 5px;
 }
+a.color {
+	color: #46b0ff;
+}
 
 body, .hide-scroll {
-    overflow-y: scroll;
+    overflow: scroll;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none;  /* Internet Explorer 10+ */
 }
@@ -78,4 +81,13 @@ body::-webkit-scrollbar, .hide-scroll::-webkit-scrollbar { /* WebKit */
 }
 .tippy-box[data-placement^='right'] > .tippy-arrow::before {
 	border-right-color: #0F0F0F !important;
+}
+
+@keyframes modal {
+	from {
+		transform: scale(0, 0);
+	}
+	to {
+		transform: scale(1, 1);
+	}
 }

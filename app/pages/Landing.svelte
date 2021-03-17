@@ -219,15 +219,6 @@
 		animation: modal .25s;
 	}
 
-	@keyframes modal {
-		from {
-			transform: scale(0, 0);
-		}
-		to {
-			transform: scale(1, 1);
-		}
-	}
-
 	/*
 	#landing-btns {
 		display: inline-flex;
