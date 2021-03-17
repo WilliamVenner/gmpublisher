@@ -1,56 +1,207 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, fs::File, io::{BufRead, BufReader, Read, Seek, SeekFrom}, marker::PhantomData, path::PathBuf, sync::{Arc, Mutex, MutexGuard}};
+use byteorder::{LittleEndian, ReadBytesExt};
 use serde::{Serialize, Deserialize};
+use steamworks::PublishedFileId;
 
 pub const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 pub const SUPPORTED_GMA_VERSION: u8 = 3;
 
+#[macro_use]
 pub mod read;
 pub use read::*;
 
 pub mod write;
-use steamworks::PublishedFileId;
 pub use write::*;
 
-pub type ProgressCallback = Box<dyn Fn(f32) -> ()>;
+pub mod extract;
+pub use extract::*;
 
-#[derive(Serialize, Deserialize, Clone)]
+use crate::util::path::NormalizedPathBuf;
+
+pub type ProgressCallback = Box<dyn Fn(f32) -> () + Sync + Send>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GMAFile {
-	pub id: Option<PublishedFileId>,
-	
-	pub path: Option<PathBuf>,
+	#[serde(skip)]
+	pub(crate) handle: GMAFileHandle,
+	pub path: NormalizedPathBuf,
 	pub size: u64,
+
+	pub id: Option<PublishedFileId>,
+
+	pub(crate) metadata_start: u64,
+	pub(crate) metadata: Option<GMAMetadata>,
 	
+	pub(crate) entries: Option<Arc<Vec<GMAEntry>>>,
+	pub(crate) entries_map: Option<Arc<HashMap<String, usize>>>,
+	#[serde(skip)]
+	pub(crate) entries_list_start: Option<u64>,
+	#[serde(skip)]
+	pub(crate) entries_start: Option<u64>,
+}
+impl GMAFile {
+	pub fn new(path: &PathBuf, id: Option<PublishedFileId>) -> Result<Self, GMAReadError> {
+		let mut handle: GMAFileHandle = BufReader::new(match File::open(path) {
+			Ok(handle) => handle,
+			Err(_) => return Err(GMAReadError::IOError)
+		}).into();
+	
+		let size = match path.metadata() {
+			Ok(metadata) => metadata.len(),
+			Err(_) => 0
+		};
+	
+		let mut magic_buf = [0; 4];
+		match handle.read_exact(&mut magic_buf) {
+			Ok(_) => {
+				if &magic_buf != GMA_HEADER {
+					return Err(GMAReadError::InvalidHeader);
+				}
+			},
+			Err(_) => return Err(GMAReadError::InvalidHeader)
+		};
+	
+		let fmt_version = safe_read!(handle.read_u8())?;
+		if fmt_version != SUPPORTED_GMA_VERSION { return Err(GMAReadError::UnsupportedVersion); }
+
+		Ok(GMAFile {
+			path: path.into(),
+			size,
+			id,
+
+			metadata_start: handle.seek(SeekFrom::Current(0)).unwrap(),
+			metadata: None,
+
+			entries: None,
+			entries_map: None,
+			entries_start: None,
+			entries_list_start: None,
+
+			handle,
+		})
+	}
+
+	pub fn open(&mut self) -> Result<bool, GMAReadError> {
+		if !self.handle.is_open() {
+			self.handle = BufReader::new(match File::open(&*self.path) {
+				Ok(handle) => handle,
+				Err(_) => return Err(GMAReadError::IOError)
+			}).into();
+			Ok(false)
+		} else {
+			Ok(true)
+		}
+	}
+
+	pub fn close(&mut self) -> bool {
+		if self.handle.is_open() {
+			self.handle = GMAFileHandle::default();
+			true
+		} else {
+			false
+		}
+	}
+
+	pub fn spawn_handle(&self) -> Result<BufReader<File>, std::io::Error> {
+		Ok(BufReader::new(File::open(&*self.path)?))
+	}
+}
+
+pub struct GMAFileHandle{
+	inner: Option<BufReader<File>>,
+}
+impl Clone for GMAFileHandle {
+	/// # This doesn't actually clone it and is merely a hack to derive Clone in GMAFile
+    fn clone(&self) -> Self {
+        GMAFileHandle::default()
+    }
+}
+impl From<BufReader<File>> for GMAFileHandle {
+    fn from(handle: BufReader<File>) -> Self {
+		GMAFileHandle { inner: Some(handle)  }
+    }
+}
+impl Default for GMAFileHandle {
+    fn default() -> Self {
+		GMAFileHandle { inner: None }
+    }
+}
+impl std::ops::Deref for GMAFileHandle {
+    type Target = BufReader<File>;
+    fn deref(&self) -> &Self::Target {
+		debug_assert!(self.inner.is_some(), "Tried to use an invalid GMA file handle!");
+		self.inner.as_ref().unwrap()
+	}
+}
+impl std::ops::DerefMut for GMAFileHandle {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+		debug_assert!(self.inner.is_some(), "Tried to use an invalid GMA file handle!");
+		self.inner.as_mut().unwrap()
+	}
+}
+impl GMAFileHandle {
+	pub(crate) fn is_open(&self) -> bool {
+		self.inner.is_some()
+	}
+
+	pub(crate) fn read_nt_string(&mut self) -> Result<String, GMAReadError> {
+		let mut buf = Vec::new();
+		safe_read!(self.read_until(0, &mut buf))?;
+
+		let nt_string = &buf[0..buf.len() - 1];
+
+		Ok(match std::str::from_utf8(nt_string) {
+			Ok(str) => str.to_owned(),
+			Err(_) => {
+				// Some file paths aren't UTF-8 encoded, usually due to Windows NTFS
+				// This will simply guess the text encoding and decode it with that instead
+				let mut decoder = chardetng::EncodingDetector::new();
+				decoder.feed(nt_string, true);
+				let encoding = decoder.guess(None, false);
+				let (str, _, _) = encoding.decode(nt_string);
+				str.to_string()
+			}
+		})
+	}
+
+	pub(crate) fn skip_nt_string(&mut self) -> Result<usize, GMAReadError> {
+		let mut buf = Vec::new();
+		safe_read!(self.read_until(0, &mut buf))
+	}
+}
+impl std::fmt::Debug for GMAFileHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self.is_open() {
+			true => "Open",
+			false => "Closed"
+		})
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct GMAMetadata {
+	pub name: String,
 	#[serde(rename = "type")]
 	pub addon_type: Option<String>,
-	pub name: String,
 	pub tags: Option<Vec<String>>,
 	pub ignore: Option<Vec<String>>,
-	
-	pub entries: Option<Vec<GMAEntry>>,
-
-	#[serde(skip)]
-	pub entries_read: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct GMAEntry {
 	#[serde(skip)]
-	pub data: Option<Vec<u8>>,
-	pub path: PathBuf,
+	pub(crate) index: u64,
+	pub path: String,
 	pub size: u64,
 	pub crc: u32,
 }
 impl std::fmt::Debug for GMAEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("GMAEntry")
-         .field("path", &self.path)
-         .field("size", &self.size)
-         .field("crc", &self.crc)
-         .field("data", &match &self.data {
-			 Some(data) => data.len(),
-			 None => 0
-		 })
-         .finish()
+			.field("path", &self.path)
+			.field("size", &self.size)
+			.field("crc", &self.crc)
+			.finish()
     }
 }
 
