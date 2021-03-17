@@ -8,6 +8,8 @@ use std::sync::RwLock;
 use tauri::{AppBuilder, Webview};
 extern crate webview_official;
 
+mod util;
+
 mod show;
 mod settings;
 

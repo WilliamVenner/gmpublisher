@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::BitAnd, path::PathBuf, sync::{Arc, Mutex, atomic::AtomicBool}};
+use std::{collections::HashMap, path::PathBuf, sync::{Arc, Mutex, atomic::AtomicBool}};
 use anyhow::{anyhow, Error};
 use lazy_static::lazy_static;
 use steamworks::{PublishedFileId, AccountId, AppId, Client, CreateQueryError, QueryResult, QueryResults, SingleClient, SteamError, SteamId};
@@ -26,7 +26,8 @@ pub(crate) struct Workshop {
 	client: Client,
 	single: Arc<Mutex<SingleClient>>,
 	account_id: AccountId,
-	cache: Arc<Mutex<HashMap<PublishedFileId, Option<WorkshopItem>>>>
+	cache: Arc<Mutex<HashMap<PublishedFileId, Option<WorkshopItem>>>>,
+	users: Arc<Mutex<HashMap<SteamId, SteamUser>>>
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -98,7 +99,8 @@ impl Workshop {
 			single: Arc::new(Mutex::new(single)),
 			account_id: client.user().steam_id().account_id(),
 			client,
-			cache: Arc::new(Mutex::new(HashMap::new()))
+			cache: Arc::new(Mutex::new(HashMap::new())),
+			users: Arc::new(Mutex::new(HashMap::new())),
 		})
 	}
 	
@@ -123,32 +125,42 @@ impl Workshop {
 	pub(crate) fn query_user(&self, steamid: SteamId) -> SteamUser {
 		use std::sync::atomic::Ordering::Relaxed;
 
-		let friends = self.client.friends();
+		let mut users = self.users.lock().unwrap();
+		match users.get(&steamid) {
+			None => {
+				let friends = self.client.friends();
 
-		if friends.request_user_information(steamid, false) {
-			let sync = Arc::new(AtomicBool::new(false));
-			let _cb = {
-				let c_sync = sync.clone();
-				self.client.register_callback(move |p: steamworks::PersonaStateChange| {
-					if p.flags & *PERSONACHANGE_USER_INFO == *PERSONACHANGE_USER_INFO && p.steam_id == steamid {
-						c_sync.store(true, Relaxed);
+				if friends.request_user_information(steamid, false) {
+					let sync = Arc::new(AtomicBool::new(false));
+					let _cb = {
+						let c_sync = sync.clone();
+						self.client.register_callback(move |p: steamworks::PersonaStateChange| {
+							if p.flags & *PERSONACHANGE_USER_INFO == *PERSONACHANGE_USER_INFO && p.steam_id == steamid {
+								c_sync.store(true, Relaxed);
+							}
+						})
+					};
+
+					let single = self.single.lock().unwrap();
+					while !sync.load(Relaxed) {
+						single.run_callbacks();
+						std::thread::sleep(std::time::Duration::from_millis(50));
 					}
-				})
-			};
+				}
 
-			let single = self.single.lock().unwrap();
-			while !sync.load(Relaxed) {
-				single.run_callbacks();
-				std::thread::sleep(std::time::Duration::from_millis(50));
-			}
-		}
+				let user = friends.get_friend(steamid);
+				let steam_user = SteamUser {
+					steamid,
+					steamid64: steamid.raw().to_string(),
+					name: user.name(),
+					avatar: user.medium_avatar().map(|buf| Base64Image::new(buf, 64, 64))
+				};
 
-		let user = friends.get_friend(steamid);
-		SteamUser {
-			steamid,
-			steamid64: steamid.raw().to_string(),
-			name: user.name(),
-			avatar: user.medium_avatar().map(|buf| Base64Image::new(buf, 64, 64))
+				users.insert(steamid, steam_user.clone());
+				steam_user
+			},
+
+			Some(user) => user.clone()
 		}
 	}
 

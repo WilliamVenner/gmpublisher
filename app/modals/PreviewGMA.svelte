@@ -7,6 +7,11 @@
 	import Dead from '../../public/img/dead.svg';
 	import WorkshopAddon from '../components/WorkshopAddon.svelte';
 	import SteamID from 'steamid';
+	import { ChevronUp, Folder, LinkOut } from 'akar-icons-svelte';
+	import { invoke, promisified } from 'tauri/api/tauri';
+	import Timestamp from '../components/Timestamp.svelte';
+	import { afterUpdate, onDestroy } from 'svelte';
+	import Transaction from '../transactions.js';
 
 	export let path;
 	export let addon;
@@ -61,6 +66,7 @@
 			default:
 				return 'page_white.png';
 		}
+		// TODO remove unused
 	}
 
 	function getFileType(extension) {
@@ -99,7 +105,7 @@
 		}
 	}
 
-	const RE_FILE_EXTENSION = /^.*?(?:\.(.*?))?$/;
+	const RE_FILE_EXTENSION = /^.*(?:\.(.*?))$/;
 	function getFileTypeInfo(path) {
 		const extension = path.match(RE_FILE_EXTENSION)?.[1].toLowerCase();
 		return [getFileIcon(extension), getFileType(extension), extension];
@@ -107,25 +113,50 @@
 
 	let entries;
 	let browsing = writable({});
+	let total_files = 0;
+
+	function createDirShortcuts(entries, path) {
+		let i = 0; let _dir;
+		for (let dir in entries.dirs) {
+			if (dir === '../') continue;
+			i++; _dir = dir;
+			entries.dirs[dir] = createDirShortcuts(entries.dirs[dir], path + (path.length > 0 ? '/' : '') + dir);
+			entries.dirs[dir].dirs['../'] = entries;
+		}
+		if (entries.files.length === 0 && i === 1 && path !== '') {
+			let dir = entries.dirs[_dir];
+			if (!("shortcut" in dir)) {
+				dir.shortcut = path;
+				dir.shortcut_dest = _dir;
+			}
+			return dir;
+		}
+		return entries;
+	}
 
 	let metadata = Addons.previewGMA(path, addon.id).then(data => {
 		let [metadata, ws_metadata] = data;
-
+		
 		entries = {
 			dirs: {},
-			files: []
+			files: [],
+			path: '',
 		};
 
 		for (let i = 0; i < metadata.entries.length; i++) {
 			const entry = metadata.entries[i];
 			const components = entry.path.split('/');
 			let path = entries;
+			let path_str = '';
 			for (let k = 0; k < components.length-1; k++) {
 				const component = components[k];
+				path_str += (k > 0 ? '/' : '') + component;
+
 				if (!(component in path.dirs))
 					path.dirs[component] = {
 						dirs: { '../': path },
-						files: []
+						files: [],
+						path: path_str
 					};
 				
 				path = path.dirs[component];
@@ -142,20 +173,63 @@
 				extension,
 				size: entry.size,
 			});
+
+			total_files++;
 		}
 
-		$browsing = entries;
+		$browsing = createDirShortcuts(entries, '');
 
 		return data;
 	});
+
+	let pathContainer;
+	function scrollPath() {
+		if (!pathContainer) return;
+		pathContainer.scrollTo({
+			left: pathContainer.scrollWidth,
+			behavior: 'smooth'
+		});
+	}
+	afterUpdate(scrollPath);
 
 	function browseDirectory() {
 		const path = this.dataset.path;
 		$browsing = $browsing.dirs[path];
 	}
 
-	function previewFile() {
-		console.log(this);
+	function goUp() {
+		if ("../" in $browsing.dirs) {
+			$browsing = $browsing.dirs['../'];
+		}
+	}
+
+	function open() {
+		invoke({
+			cmd: 'openFolder',
+			path
+		});
+	}
+
+	let openGMAEntryRequest = writable(false);
+	let extractGMARequest = writable(null);
+	function openGMAEntry() {
+		this.classList.add('extracting');
+
+		promisified({
+			cmd: 'openGmaPreviewEntry',
+			entry_path: this.dataset.path,
+		})
+			.then(transactionId => new Transaction(transactionId))
+			.then(transaction => {
+				$openGMAEntryRequest = true;
+				transaction.listen(event => {
+					if (event.finished || event.cancelled) {
+						$openGMAEntryRequest = false;
+						this.classList.remove('extracting');
+					}
+				});
+				onDestroy(() => transaction.cancel()); // TODO check cancel doesn't fire twice
+			}); // TODO handle error
 	}
 
 	// TODO use Loading component for loading svg
@@ -176,73 +250,103 @@
 				<table id="addon-info">
 					<tbody>
 						<tr>
-							<th>Size</th>
+							<th>{$_('size')}</th>
 							<td>{filesize(metadata.size)}</td>
 						</tr>
 						{#if metadata.type}
 							<tr>
-								<th>Type</th>
+								<th>{$_('addon_type')}</th>
 								<td>{metadata.type}</td>
 							</tr>
 						{/if}
 						{#if ws_metadata}
 							<tr>
-								<th>Author</th>
+								<th>{$_('author')}</th>
 								<td>
-									<a target="_blank" href="https://steamcommunity.com/profiles/{ws_metadata.steamid64}" style="text-decoration:none">
-										{#if ws_metadata.owner}
+									{#if ws_metadata.owner}
+										<a target="_blank" href="https://steamcommunity.com/profiles/{ws_metadata.steamid64}" style="text-decoration:none">
 											<img id="avatar" src="data:image/png;base64,{ws_metadata.owner.avatar}"/>
 											<span>{ws_metadata.owner.name}</span>
-										{:else}
-											{new SteamID(String(ws_metadata.steamid64)).getSteam2RenderedID(true)}
-										{/if}
-									</a>
+										</a>
+									{:else}
+										<a target="_blank" class="color" href="https://steamcommunity.com/profiles/{ws_metadata.steamid64}">
+											{new SteamID(ws_metadata.steamid64).getSteam2RenderedID(true)}
+										</a>
+									{/if}
 								</td>
 							</tr>
 							<tr>
-								<th>Created</th>
-								<td></td>
+								<th>{$_('created')}</th>
+								<td><Timestamp unix={ws_metadata.timeCreated}/></td>
 							</tr>
-							<tr>
-								<th>Updated</th>
-								<td></td>
-							</tr>
+							{#if ws_metadata.timeUpdated && ws_metadata.timeUpdated != ws_metadata.timeCreated}
+								<tr>
+									<th>{$_('updated')}</th>
+									<td><Timestamp unix={ws_metadata.timeUpdated}/></td>
+								</tr>
+							{/if}
 						{/if}
 					</tbody>
 				</table>
 				{#if ws_metadata}
+					<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={ws_metadata.id}" target="_blank">Steam Workshop<LinkOut size=".8rem"/></a></div>
 					{#if ws_metadata.description}
 						<p id="description" class="select">{ws_metadata.description}</p>
 					{/if}
 				{/if}
 			</div>
 
-			<table id="entries">
-				<thead>
-					<tr>
-						<th></th>
-						<th>{$_('name')}</th>
-						{#if $browsing.files.length > 0}
-							<th>{$_('size')}</th>
-						{/if}
-					</tr>
-				</thead>
-				<tbody>
-					{#each Object.keys($browsing.dirs) as dir}
-						<tr on:click={browseDirectory} data-path={dir}>
-							<td><img use:tippyFollow={$_('file_types.folder')} src="/img/silkicons/folder.png" alt=""/></td>
-							<td colspan="2"><span>{dir}</span></td>
-						</tr>
-					{/each}
-					{#each $browsing.files as entry}
-						<tr on:click={previewFile} data-path={entry.path}>
-							<td><img use:tippyFollow={$_('file_types.' + entry.type, { values: { extension: entry.extension } })} src="/img/silkicons/{entry.icon}" alt=""/></td>
-							<td><span>{entry.name}</span></td>
-							<td><span>{filesize(entry.size)}</span></td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+			<div id="browser">
+				<div id="nav">
+					<div id="up" class="control" on:click={goUp}><ChevronUp size="1rem"/></div>
+					<div id="path" class="select hide-scroll" bind:this={pathContainer}>
+						{metadata.path}{$browsing.path.length > 0 ? '/' : ''}{$browsing.path}
+					</div>
+					<div id="open" class="control" on:click={open} use:tippyFollow={$_('open_addon_location')}><Folder size="1rem"/></div>
+				</div>
+
+				<div id="entries" class="hide-scroll">
+					<table>
+						<tbody>
+							{#each Object.entries($browsing.dirs) as [dir, entries]}
+								{#if dir !== "../"}
+									<tr on:click={browseDirectory} data-path={dir}>
+										<td><img use:tippyFollow={$_('file_types.folder')} src="/img/silkicons/folder.png" alt=""/></td>
+										<td colspan="3">
+											{#if entries.shortcut}
+												<span class="shortcut">{entries.shortcut}/</span><span>{entries.shortcut_dest}</span>
+											{:else}
+												<span>{dir}</span>
+											{/if}
+										</td>
+									</tr>
+								{/if}
+							{/each}
+							{#each $browsing.files as entry}
+								<tr on:click={openGMAEntry} data-path={entry.path}>
+									<td>
+										<img class="loading" width="16px" height="16px" src="/img/loading.svg"/>
+										<img class="icon" use:tippyFollow={$_('file_types.' + entry.type, { values: { extension: entry.extension } })} src="/img/silkicons/{entry.icon}" alt=""/>
+									</td>
+									<td><span>{entry.name}</span></td>
+									<td><span>{$_('file_types.' + entry.type, { values: { extension: entry.extension } })}</span></td>
+									<td><span>{filesize(entry.size)}</span></td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+
+				<div id="ribbon" class:extracting={$openGMAEntryRequest || $extractGMARequest}>
+					{#if $openGMAEntryRequest}
+						<img width="1rem" src="/img/loading.svg" alt="Loading"/><span>&nbsp;Extracting...</span>
+					{:else if $extractGMARequest}
+						<!-- TODO show extraction progress -->
+					{:else}
+						{total_files === 1 ? $_('items_one') : $_('items_num', { values: { n: total_files } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{$_('items_shown', { values: { n: $browsing.files.length + Object.keys($browsing.dirs).length } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{filesize(metadata.size)}
+					{/if}
+				</div>
+			</div>
 		</div>
 	{:catch error}
 		<div id="error"><Dead/><br>{error}</div>
@@ -277,14 +381,18 @@
 	}
 	#gma-preview > #content {
 		display: flex;
-		padding: 1rem;
-		background-color: #1a1a1a;
+		background-color: #131313;
 		height: 100%;
+		box-shadow: rgba(0, 0, 0, .24) 0px 3px 8px;
+		animation: modal .25s;
 	}
 
 	#addon {
-		width: 15rem;
-		margin-right: 1rem;
+		width: 17rem;
+		padding: 1.5rem;
+		box-shadow: 0 0 10px 5px rgba(0, 0, 0, .25);
+		background-color: #212121;
+		z-index: 2;
 	}
 	#addon :global(#workshop-addon) {
 		margin-bottom: 1.2rem;
@@ -340,18 +448,48 @@
 	#addon #tags .tag:not(:last-child) {
 		margin-right: .4rem;
 	}
-	#entries th, #entries td, #entries td > span, #entries td > img {
+	#entries > table th, #entries > table td, #entries > table td > span, #entries > table td > img {
 		vertical-align: middle;
 	}
-	#entries tr {
+	#entries > table tr {
 		cursor: pointer;
 	}
-
-	#entries {
-		border-collapse: collapse;
+	#entries > table :global(tr:not(.extracting) .loading),
+	#entries > table :global(tr.extracting .icon) {
+		display: none;
 	}
-	#entries td, #entries th {
-		padding: .4rem;
+
+	#entries > table {
+		border-collapse: collapse;
+		width: 100%;
+	}
+	#entries > table td {
+		padding: .6rem;
+		vertical-align: top !important;
+	}
+	#entries > table td:nth-child(3) {
+		text-align: right;
+	}
+	#entries > table td:nth-child(4) {
+		text-align: center;
+	}
+	#entries > table td:nth-child(1), #entries > table td:nth-child(4) {
+		width: 1px;
+		white-space: nowrap;
+	}
+	#entries > table td:nth-child(2) {
+		padding-left: 0 !important;
+		word-break: break-all;
+	}
+	#entries > table tr {
+		transition: background-color .1s;
+	}
+	#entries > table tr:hover {
+		background-color: #212121;
+	}
+	#entries td:first-child img {
+		width: 16px;
+		height: 16px;
 	}
 	#addon-info {
 		border-spacing: .5rem;
@@ -369,9 +507,84 @@
 		width: 1.5rem;
 		border-radius: 50%;
 	}
+	#addon #avatar {
+		margin-right: .2rem;
+	}
 
 	#gma-preview > #error {
 		line-height: 1.8rem;
     	text-align: center;
+		width: max-content;
+		height: max-content;
+	}
+
+	#browser {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+	}
+	#entries {
+		flex: 1;
+		height: 0;
+	}
+	#entries .shortcut {
+		opacity: .5;
+	}
+	#nav {
+		background-color: #0a0a0a;
+		font-size: .8em;
+		display: flex;
+	}
+	#nav .control {
+		padding: .6rem;
+		cursor: pointer;
+		position: relative;
+		box-sizing: content-box;
+		width: 1rem;
+	}
+	#nav .control :global(.icon) {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		margin: auto;
+	}
+	#path {
+		padding: .6rem;
+		padding-left: 0;
+		padding-right: 0;
+		flex: 1;
+		white-space: nowrap;
+		width: 0;
+		-ms-scroll-translation: vertical-to-horizontal;
+		-webkit-scroll-translation: vertical-to-horizontal;
+		-moz-scroll-translation: vertical-to-horizontal;
+		scroll-translation: vertical-to-horizontal;
+	}
+	#ribbon {
+		padding: .6rem;
+		background-color: #0a0a0a;
+		font-size: .8em;
+		text-align: center;
+		transition: background-color .25s;
+	}
+	#ribbon.extracting {
+		background-color: #0058a2;
+	}
+	#ribbon.extracting > img {
+		width: .8rem;
+	}
+	#ribbon > * {
+    	vertical-align: middle;
+	}
+
+	#ws-link {
+		margin-top: 1rem;
+		margin-bottom: 1rem;
+		text-align: center;
+	}
+	#ws-link :global(.icon) {
+		margin-left: .2rem;
 	}
 </style>

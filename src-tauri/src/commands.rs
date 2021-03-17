@@ -1,4 +1,4 @@
-use std::sync::{Mutex, Arc};
+use std::{path::PathBuf, sync::{Mutex, Arc}};
 
 use serde::Deserialize;
 use steamworks::PublishedFileId;
@@ -14,6 +14,13 @@ use crate::game_addons;
 enum Command {
 	CancelTransaction {
 		id: usize
+	},
+	
+	OpenFile { // TODO rename to OpenURL
+		path: String
+	},
+	OpenFolder {
+		path: PathBuf
 	},
 
 	UpdateSettings {
@@ -42,23 +49,28 @@ enum Command {
 	},
 
 	PreviewGma {
-		path: String,
+		path: PathBuf,
 		id: Option<PublishedFileId>,
 		callback: String,
 		error: String
 	},
+	OpenGmaPreviewEntry {
+		entry_path: String,
+		callback: String,
+		error: String
+	},
 	OpenGma {
-		path: String,
+		path: PathBuf,
 		callback: String,
 		error: String
 	},
-	ExtractGma {
-		gma_path: String,
+	/*ExtractGma {
+		gma_path: PathBuf,
 		to_named_dir: bool,
-		path: String,
+		path: PathBuf,
 		callback: String,
 		error: String
-	},
+	},*/
 	
 	AnalyzeAddonSizes {
 		callback: String,
@@ -82,8 +94,22 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 				use Command::*;
 				match match cmd {
 					CancelTransaction { id } => {
-						// TODO
+						if let Some(transaction) = crate::TRANSACTIONS.write().unwrap().take(id) {
+							transaction.cancel();
+						}
 						Ok(())
+					},
+
+					OpenFile { path } => {
+						show::open(&path);
+						Ok(())
+					},
+
+					OpenFolder { path } => {
+						match show::open_file_location(path.as_os_str().to_string_lossy().to_string()) {
+							Ok(_) => Ok(()),
+							Err(error) => Err(format!("{:?}", error))
+						}
 					},
 
 					WorkshopBrowser { page, callback, error } => {
@@ -111,12 +137,15 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 					PreviewGma { callback, error, path, id } => {
 						game_addons::preview_gma(callback, error, webview, path, id)
 					},
+					OpenGmaPreviewEntry { callback, error, entry_path } => {
+						game_addons::open_gma_preview_entry(callback, error, webview, entry_path)
+					},
 					OpenGma { callback, error, path } => {
 						game_addons::open_gma(callback, error, webview, path)
 					},
-					ExtractGma { callback, error, gma_path, path, to_named_dir } => {
+					/*ExtractGma { callback, error, gma_path, path, to_named_dir } => {
 						game_addons::extract_gma(callback, error, webview, gma_path, path, to_named_dir)
-					},
+					},*/
 
 					AnalyzeAddonSizes { callback, error } => {
 						game_addons::analyze_addon_sizes(callback, error, webview)
