@@ -13,7 +13,7 @@ build = "src/build.rs"
 bindgen = "0.57.0"
 
 [dependencies]
-steamworks = { path = "../../steamworks-rs", features = [ "serde" ] }
+steamworks = { git = "https://github.com/WilliamVenner/steamworks-rs.git", branch = "master", features = [ "serde" ] }
 byteorder = "1.4.2"
 image = "0.23.13"
 base64 = "0.13.0"

@@ -2218,6 +2218,7 @@ dependencies = [
 [[package]]
 name = "steamworks"
 version = "0.7.0"
+source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#2f4ca4048d44e70f2e4e8d2973787cc9fbc5d7c6"
 dependencies = [
  "bitflags 1.2.1",
  "lazy_static",
@@ -2230,6 +2231,7 @@ dependencies = [
 [[package]]
 name = "steamworks-sys"
 version = "0.7.0"
+source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#2f4ca4048d44e70f2e4e8d2973787cc9fbc5d7c6"
 dependencies = [
  "bindgen",
  "libc",
