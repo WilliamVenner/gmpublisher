@@ -6,6 +6,7 @@
 	"dependencies": {
 		"akar-icons-svelte": "^1.1.1",
 		"filesize": "^6.1.0",
+		"luxon": "^1.26.0",
 		"rollup-plugin-svelte-svg": "^0.2.3",
 		"sirv-cli": "^1.0.0",
 		"steamid": "^1.1.3",

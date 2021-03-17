@@ -1091,6 +1091,7 @@ dependencies = [
  "steamworks",
  "sysinfo 0.16.4",
  "tauri",
+ "thiserror",
  "webview_official",
  "winres",
 ]

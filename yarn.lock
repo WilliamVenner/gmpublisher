@@ -2552,6 +2552,7 @@ fsevents@~2.3.1:
     "@rollup/plugin-replace": ^2.4.1
     akar-icons-svelte: ^1.1.1
     filesize: ^6.1.0
+    luxon: ^1.26.0
     rollup: ^2.3.4
     rollup-plugin-css-only: ^3.1.0
     rollup-plugin-livereload: ^2.0.0
@@ -3845,6 +3846,13 @@ fsevents@~2.3.1:
   dependencies:
     yallist: ^4.0.0
   checksum: b8b78353d2391c0f135cdc245c4744ad41c2efb1a6d98f31bc57a2cf48ebf02de96e4876657c3026673576bf1f1f61fc3fdd77ab00ad1ead737537bf17d8019d
+  languageName: node
+  linkType: hard
+
+"luxon@npm:^1.26.0":
+  version: 1.26.0
+  resolution: "luxon@npm:1.26.0"
+  checksum: e12bb8bfdd69707f0f3e57b1b2ff39042c67904bdc437602064519f3eb87d3267497bc56cc0b7611faa40e22019991440a8e8e179d4c6a0440e9f226571fce46
   languageName: node
   linkType: hard
 

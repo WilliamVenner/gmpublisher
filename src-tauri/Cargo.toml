@@ -24,7 +24,7 @@ dirs = "3.0.1"
 msgbox = "0.6.0"
 opener = "0.4.1"
 serde_json = "1.0"
-serde = { version = "1.0", features = [ "derive" ] }
+serde = { version = "1.0", features = [ "derive", "rc" ] }
 tauri = { version = "0.11.1", features = [ "all-api" ] }
 lazy_static = "1.4.0"
 num_cpus = "1.13.0"
@@ -32,6 +32,7 @@ erased-serde = "0.3.13"
 chardetng = "0.1.10"
 sysinfo = "0.16.4"
 dunce = "1.0.1"
+thiserror = "1.0"
 
 [target."cfg(windows)".build-dependencies]
 winres = "0.1"
