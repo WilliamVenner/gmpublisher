@@ -1,21 +1,26 @@
-use std::{collections::{HashMap, hash_map::RandomState}, sync::{Arc, atomic::{AtomicU16, AtomicUsize, Ordering}, mpsc::{self, Sender}}};
+use std::{collections::HashMap, sync::{Arc, atomic::{AtomicU16, AtomicUsize, Ordering}, mpsc::{self, Sender}}};
 use tauri::{WebviewMut};
-use serde::Serialize;
 
 static TRANSACTION_ID: AtomicUsize = AtomicUsize::new(0);
 
 pub(crate) enum TransactionMessage {
 	Progress(f32),
 	IncrementProgress(f32),
-	Cancel(Vec<Box<dyn FnOnce() + Send + Sync + 'static>>),
+	Cancel(Arc<Vec<Box<dyn Fn() + Send + Sync + 'static>>>),
 	Finish(Box<dyn erased_serde::Serialize + Send + Sync>)
 }
 
 pub(crate) struct Transaction {
 	pub(crate) id: usize,
 	progress: Arc<AtomicU16>,
-	cancel_callbacks: Vec<Box<dyn FnOnce() + Send + Sync + 'static>>,
+	cancel_callbacks: Arc<Vec<Box<dyn Fn() + Send + Sync + 'static>>>,
 	tx: Sender<TransactionMessage>
+}
+
+impl Drop for Transaction {
+    fn drop(&mut self) {
+        self.cancel();
+    }
 }
 
 unsafe impl Sync for Transaction {}
@@ -31,7 +36,7 @@ impl Transaction {
 		let transaction = Transaction {
 			id,
 			progress: progress.clone(),
-			cancel_callbacks: Vec::new(),
+			cancel_callbacks: Arc::new(Vec::new()),
 			tx
 		};
 
@@ -49,7 +54,7 @@ impl Transaction {
 						tauri::event::emit(&mut webview, "transactionProgress", Some((id, (progress.load(Ordering::SeqCst) as f32) / 100.))).ok();
 					},
 					Cancel(callbacks) => {
-						for callback in callbacks { (callback)(); }
+						for callback in &*callbacks { (callback)(); }
 						break;
 					},
 					Finish(data) => {
@@ -63,13 +68,15 @@ impl Transaction {
 		transaction
 	}
 
-	pub(crate) fn connect_cancel(&mut self, f: Box<dyn FnOnce() + Send + Sync + 'static>) {
-		self.cancel_callbacks.push(f);
+	pub(crate) fn connect_cancel(&mut self, f: Box<dyn Fn() + Send + Sync + 'static>) {
+		match Arc::get_mut(&mut self.cancel_callbacks) {
+			Some(cancel_callbacks) => cancel_callbacks.push(f),
+			None => {}
+		}
 	}
 
-	pub(crate) fn cancel(self) {
-		crate::TRANSACTIONS.write().unwrap().map.remove(&self.id);
-		let res = self.tx.send(TransactionMessage::Cancel(self.cancel_callbacks));
+	pub(crate) fn cancel(&self) {
+		let res = self.tx.send(TransactionMessage::Cancel(self.cancel_callbacks.clone()));
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
 	}
 
@@ -94,11 +101,15 @@ pub(crate) struct Transactions {
 }
 impl Transactions {
 	pub(crate) fn init() -> Transactions {
-		Transactions { map: HashMap::with_hasher(RandomState::new()) }
+		Transactions { map: HashMap::new() }
 	}
 
-	pub(crate) fn get(&mut self, id: usize) -> Option<Arc<Transaction>> {
+	pub(crate) fn get(&self, id: usize) -> Option<Arc<Transaction>> {
 		self.map.get(&id).map(|x| x.clone())
+	}
+
+	pub(crate) fn take(&mut self, id: usize) -> Option<Arc<Transaction>> {
+		self.map.remove(&id)
 	}
 
 	pub(crate) fn new(&mut self, webview: WebviewMut) -> Arc<Transaction> {
