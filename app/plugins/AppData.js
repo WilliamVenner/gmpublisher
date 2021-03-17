@@ -55,6 +55,8 @@ window.__GMPUBLISHER__ = () => {
 
 		delete AppData.settings;
 		AppDataPtr._ = Object.freeze(AppData);
+
+		window.PATH_SEPARATOR = AppData.path_separator;
 	}
 
 	updateAppData({$_SETTINGS_$});

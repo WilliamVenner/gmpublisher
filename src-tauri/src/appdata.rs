@@ -14,7 +14,8 @@ pub(crate) struct AppData {
 	pub(crate) gmad: Option<PathBuf>,
 	pub(crate) gmpublish: Option<PathBuf>,
 	pub(crate) gmod: Option<PathBuf>,
-	pub(crate) user: SteamUser
+	pub(crate) user: SteamUser,
+	pub(crate) path_separator: char
 }
 
 impl AppData {
@@ -29,6 +30,11 @@ impl AppData {
 			gmad: None,
 			gmpublish: None,
 			user,
+
+			#[cfg(target_os = "windows")]
+			path_separator: '\\',
+			#[cfg(not(target_os = "windows"))]
+			path_separator: '/',
 		};
 
 		app_data.find_gmod();
