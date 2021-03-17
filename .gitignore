@@ -3,4 +3,6 @@
 dist/
 .DS_Store
 index.tauri.html
-.yarn
+.yarn/cache
+.yarn/build-state.yml
+.yarn/install-state.gz

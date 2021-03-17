@@ -4,7 +4,7 @@
 	import { modals, clearModals } from '../modals.js';
 	import WorkshopBrowser from '../pages/WorkshopBrowser.svelte';
 	import GameAddonsBrowser from '../pages/GameAddonsBrowser.svelte';
-	import FileSystemAddonsBrowser from '../pages/FileSystemAddonsBrowser.svelte';
+	//import FileSystemAddonsBrowser from '../pages/FileSystemAddonsBrowser.svelte';
 	import AddonSizeAnalyzer from '../pages/AddonSizeAnalyzer.svelte';
 
 	const hours = new Date().getHours();
@@ -35,7 +35,7 @@
 		},
 		{
 			name: 'filesystem',
-			component: FileSystemAddonsBrowser,
+			component: null,//FileSystemAddonsBrowser,
 			props: {}
 		},
 		{
