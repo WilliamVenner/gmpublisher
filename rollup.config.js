@@ -34,7 +34,7 @@ function serve() {
 export default {
 	input: 'app/main.js',
 	output: {
-		sourcemap: true,
+		sourcemap: false,
 		format: 'iife',
 		name: 'app',
 		file: 'public/build/bundle.js',
@@ -83,7 +83,7 @@ export default {
 
 		// If we're building for production (npm run build
 		// instead of npm run dev), minify
-		production && terser()
+		production && terser({ format: { comments: false } })
 	],
 	watch: {
 		clearScreen: false

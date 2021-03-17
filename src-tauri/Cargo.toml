@@ -44,3 +44,7 @@ no-server = [ "tauri/no-server" ]
 [[bin]]
 name = "gmpublisher"
 path = "src/main.rs"
+
+[profile.release]
+lto = true
+codegen-units = 1
