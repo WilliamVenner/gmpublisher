@@ -1,5 +1,5 @@
 import { promisified } from 'tauri/api/tauri'
-import Transaction from './transactions.js'
+import { Transaction } from './transactions.js'
 
 class Addons {
 	constructor() {
@@ -15,7 +15,7 @@ class Addons {
 			waiting: {}
 		};
 
-		this.gmaPreviewCache = {};
+		this.gmaPreviewCache = {}; // TODO clean up?
 	}
 
 	clearCache(cacheName) {
