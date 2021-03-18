@@ -1,22 +1,54 @@
-use std::{fs, path::Path, path::PathBuf, sync::{Arc, Mutex}};
+use std::{fs, path::Path, path::PathBuf};
 use serde::{Serialize, Deserialize};
 use anyhow::Error;
 use tauri::Webview;
 
-use crate::{appdata::AppData, show, workshop::Workshop};
+use crate::show;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(default)]
 pub(crate) struct Settings {
 	pub(crate) window_size: (i32, i32),
+	pub(crate) window_maximized: bool,
+
 	pub(crate) gmod: Option<PathBuf>,
+	pub(crate) destinations: Vec<PathBuf>,
+	pub(crate) create_folder_on_extract: bool,
 
 	#[serde(skip)]
 	pub(crate) file: PathBuf
+}
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+			file: PathBuf::from(""),
+
+			window_size: (1280, 720), // TODO make this a pct of the primary monitors
+			window_maximized: true,
+			gmod: None,
+			destinations: Vec::new(),
+			create_folder_on_extract: true,
+		}
+    }
 }
 
 impl Settings {
 	pub(crate) fn from_json(json: &str) -> Result<Settings, Error> {
 		Ok(Settings::from(serde_json::from_str(json)?))
+	}
+
+	pub(crate) fn sanitize(&mut self) {
+		// TODO replace with drain_filter when it's stable
+		let mut i = 0;
+		while i != self.destinations.len() {
+			if !self.destinations[i].exists() {
+				self.destinations.remove(i);
+			} else {
+				i += 1;
+			}
+		}
+
+		self.destinations.truncate(20);
 	}
 
 	pub(crate) fn load(data_dir: &PathBuf) -> Settings {
@@ -28,6 +60,7 @@ impl Settings {
 					match serde_json::de::from_str::<Settings>(&settings_str) {
 						Ok(mut data) => {
 							data.file = settings_file;
+							data.sanitize();
 							return data;
 						},
 						Err(_) => {}
@@ -37,11 +70,9 @@ impl Settings {
 			}
 		}
 
-		let data = Settings {
-			window_size: (1300, 750),
-			gmod: None,
-			file: settings_file.clone()
-		};
+		let mut data = Settings::default();
+		data.file = settings_file.clone();
+		data.sanitize();
 		
 		match data.save(None) {
 			Ok(_) => {},
