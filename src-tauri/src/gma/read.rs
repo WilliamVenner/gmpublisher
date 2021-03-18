@@ -36,6 +36,12 @@ impl Display for GMAReadError {
 }
 
 impl GMAFile {
+	fn update_extractable_name(&mut self) {
+		if self.extracted_name.1.is_none() || self.extracted_name.0 != self.id.is_some() {
+			self.extracted_name = (self.id.is_some(), Some(self.extracted_name()));
+		}
+	}
+
 	pub fn metadata(&mut self) -> Result<&GMAMetadata, GMAReadError> {
 		if let None = self.metadata {
 
@@ -43,7 +49,7 @@ impl GMAFile {
 
 			let handle = &mut self.handle;
 
-			handle.seek(SeekFrom::Start(self.metadata_start));
+			handle.seek(SeekFrom::Start(self.metadata_start)).unwrap();
 
 			safe_read!(handle.read_u64::<LittleEndian>())?; // steamid [unused]
 			safe_read!(handle.read_u64::<LittleEndian>())?; // timestamp
@@ -77,6 +83,8 @@ impl GMAFile {
 			});
 
 			self.entries_list_start = Some(handle.seek(SeekFrom::Current(0)).unwrap());
+
+			self.update_extractable_name();
 
 			if should_close { self.close(); }
 

@@ -1,6 +1,6 @@
-use std::{collections::HashMap, fs::File, io::{BufRead, BufReader, Read, Seek, SeekFrom}, marker::PhantomData, path::PathBuf, sync::{Arc, Mutex, MutexGuard}};
-use byteorder::{LittleEndian, ReadBytesExt};
-use serde::{Serialize, Deserialize};
+use std::{collections::HashMap, fs::File, io::{BufRead, BufReader, Read, Seek, SeekFrom}, path::PathBuf, sync::Arc};
+use byteorder::ReadBytesExt;
+use serde::{Deserialize, Serialize};
 use steamworks::PublishedFileId;
 
 pub const GMA_HEADER: &'static [u8; 4] = b"GMAD";
@@ -16,21 +16,32 @@ pub use write::*;
 pub mod extract;
 pub use extract::*;
 
-use crate::util::path::NormalizedPathBuf;
+use crate::{util::path::NormalizedPathBuf, workshop::WorkshopItem};
 
 pub type ProgressCallback = Box<dyn Fn(f32) -> () + Sync + Send>;
+pub type FinishedCallback = Box<dyn Fn(PathBuf) -> () + Sync + Send>;
+
+fn serialize_extracted_name<S>(data: &(bool, Option<String>), s: S) -> Result<S::Ok, S::Error>
+where
+	S: serde::Serializer
+{
+	s.serialize_str(&data.1.as_ref().expect("Missing extracted name! Make sure to call metadata()"))
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GMAFile {
 	#[serde(skip)]
 	pub(crate) handle: GMAFileHandle,
-	pub path: NormalizedPathBuf,
-	pub size: u64,
 
 	pub id: Option<PublishedFileId>,
 
-	pub(crate) metadata_start: u64,
+	pub path: NormalizedPathBuf,
+	pub size: u64,
+
+	#[serde(flatten)]
 	pub(crate) metadata: Option<GMAMetadata>,
+	#[serde(skip)]
+	pub(crate) metadata_start: u64,
 	
 	pub(crate) entries: Option<Arc<Vec<GMAEntry>>>,
 	pub(crate) entries_map: Option<Arc<HashMap<String, usize>>>,
@@ -38,9 +49,13 @@ pub struct GMAFile {
 	pub(crate) entries_list_start: Option<u64>,
 	#[serde(skip)]
 	pub(crate) entries_start: Option<u64>,
+
+	#[serde(serialize_with = "serialize_extracted_name")]
+	#[serde(skip_deserializing)]
+	pub(crate) extracted_name: (bool, Option<String>)
 }
 impl GMAFile {
-	pub fn new(path: &PathBuf, id: Option<PublishedFileId>) -> Result<Self, GMAReadError> {
+	pub fn new(path: &PathBuf, id: Option<PublishedFileId>) -> Result<GMAFile, GMAReadError> {
 		let mut handle: GMAFileHandle = BufReader::new(match File::open(path) {
 			Ok(handle) => handle,
 			Err(_) => return Err(GMAReadError::IOError)
@@ -67,6 +82,7 @@ impl GMAFile {
 		Ok(GMAFile {
 			path: path.into(),
 			size,
+
 			id,
 
 			metadata_start: handle.seek(SeekFrom::Current(0)).unwrap(),
@@ -76,6 +92,8 @@ impl GMAFile {
 			entries_map: None,
 			entries_start: None,
 			entries_list_start: None,
+
+			extracted_name: (id.is_some(), None),
 
 			handle,
 		})

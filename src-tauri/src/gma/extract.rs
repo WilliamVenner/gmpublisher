@@ -14,24 +14,22 @@ pub enum ExtractDestination {
 	NamedDirectory(PathBuf),
 }
 impl ExtractDestination {
-    fn resolve(self, gma: &GMAFile) -> PathBuf {
+    fn resolve(self, gma: &mut GMAFile) -> PathBuf {
 		use ExtractDestination::*;
 
         match self {
 			Directory(ref extract_to) => extract_to.clone(),
 			_ => {
-				let dir_name = gma.metadata.as_ref().unwrap().name.clone().replace(|char: char| !char.is_alphanumeric(), "_");
-
 				match self {
 					NamedDirectory(ref extract_to) => {
 						let mut extract_to = extract_to.clone();
-						extract_to.push(dir_name);
+						extract_to.push(gma.extracted_name());
 						extract_to
 					},
 					Temp => {
 						let mut dir = std::env::temp_dir();
 						dir.push("gmpublisher");
-						dir.push(dir_name);
+						dir.push(gma.extracted_name());
 						dir
 					}
 					_ => { unreachable!() }
@@ -42,30 +40,30 @@ impl ExtractDestination {
 }
 
 impl GMAFile {
-	pub fn extract(&mut self, to: ExtractDestination, progress_callback: Option<ProgressCallback>) -> Result<(), GMAReadError> {
+	pub fn extract(&mut self, to: ExtractDestination, progress_callback: Option<ProgressCallback>) -> Result<PathBuf, GMAReadError> {
 		use ExtractDestination::*;
 
 		let extract_to = match to {
 			Directory(ref extract_to) => extract_to.clone(),
 			_ => {
-				let dir_name = self.metadata.as_ref().unwrap().name.clone().replace(|char: char| !char.is_alphanumeric(), "_");
-
 				match to {
 					NamedDirectory(ref extract_to) => {
 						let mut extract_to = extract_to.clone();
-						extract_to.push(dir_name);
+						extract_to.push(self.extracted_name());
 						extract_to
 					},
 					Temp => {
 						let mut dir = std::env::temp_dir();
 						dir.push("gmpublisher");
-						dir.push(dir_name);
+						dir.push(self.extracted_name());
 						dir
 					}
 					_ => { unreachable!() }
 				}
 			}
 		};
+
+		fs::create_dir_all(&extract_to).unwrap();
 
 		let available_memory = ({
 			let mut sys = sysinfo::System::new();
@@ -97,6 +95,8 @@ impl GMAFile {
 				let progress_callback = progress_callback.clone();
 				
 				threads.push(std::thread::spawn(move || {
+					fs::create_dir_all(fs_path.with_file_name("")).unwrap();
+
 					let mut handle_w = File::create(fs_path).unwrap();
 
 					let mut buf = vec![0; size as usize];
@@ -157,7 +157,7 @@ impl GMAFile {
 			}
 		}
 
-		Ok(())
+		Ok(extract_to)
 	}
 
 	pub fn extract_entry(&mut self, entry_path: String, to: ExtractDestination) -> Result<PathBuf, GMAReadError> {
@@ -182,6 +182,27 @@ impl GMAFile {
 		handle_w.flush().map_err(|_| GMAReadError::IOError)?;
 
 		Ok(extract_to)
+	}
+
+	pub fn extracted_name(&self) -> String {
+		let mut dir_name = String::new();
+		let mut underscored = false;
+		for char in self.metadata.as_ref().expect("Expected GMA metadata to be read at this point").name.chars() {
+			if char.is_alphanumeric() {
+				underscored = false;
+				dir_name.push_str(&char.to_lowercase().to_string());
+			} else {
+				if !underscored {
+					underscored = true;
+					dir_name.push('_');
+				}
+			}
+		}
+		if let Some(id) = self.id {
+			dir_name.push('_');
+			dir_name.push_str(&id.0.to_string());
+		}
+		dir_name
 	}
 }
 
