@@ -16,7 +16,7 @@ pub(crate) struct GameAddons {
 
 #[derive(Default)]
 struct GMACache {
-	my_ws: Vec<PublishedFileId>,
+	installed_ws_ids: Vec<PublishedFileId>,
 	paths: HashMap<PublishedFileId, PathBuf>,
 	gma_metadata: Arc<Mutex<HashMap<PathBuf, GMAFile>>>,
 	gma_ws_metadata: Arc<Mutex<HashMap<PublishedFileId, Option<WorkshopItem>>>>,
@@ -122,8 +122,8 @@ fn cache_addon_paths() -> bool {
 		}
 
 		local_files.sort_unstable_by_key(|k| k.0);
-		gma_cache.my_ws = local_files.into_iter().map(|k| k.1).collect();
-		game_addons.total = gma_cache.my_ws.len() as u32;
+		gma_cache.installed_ws_ids = local_files.into_iter().map(|k| k.1).collect();
+		game_addons.total = gma_cache.installed_ws_ids.len() as u32;
 
 		game_addons.gma_cache = Some(gma_cache);
 
@@ -141,7 +141,7 @@ pub(crate) fn browse(resolve: String, reject: String, webview: &mut Webview<'_>,
 		let game_addons = crate::GAME_ADDONS.read().unwrap();
 		let gma_cache = game_addons.gma_cache.as_ref().unwrap();
 		
-		let page_items: Vec<PublishedFileId> = gma_cache.my_ws.iter().skip(((page - 1) * 50) as usize).take(50).cloned().collect();
+		let page_items: Vec<PublishedFileId> = gma_cache.installed_ws_ids.iter().skip(((page - 1) * 50) as usize).take(50).cloned().collect();
 		Ok(match crate::WORKSHOP.read().unwrap().get_items(page_items.clone()).unwrap() {
 			Ok(data) => (
 				game_addons.total,
@@ -181,41 +181,28 @@ pub(crate) fn get_addon_metadata(resolve: String, reject: String, webview: &mut 
 			None => return Ok(None)
 		};
 
-		let generate_error = |path: &PathBuf| {
-			Err(anyhow!(
+		let generate_error = |_| {
+			anyhow!(
 				path.file_name()
 					.and_then(|s| Some(s.to_string_lossy().to_string()))
 					.unwrap_or(id.0.to_string())
-			))
+			)
 		};
 
 		let mut gma_metadata_cache = gma_cache.gma_metadata.lock().unwrap();
 		match gma_metadata_cache.entry(path.clone()) {
 			Entry::Occupied(mut o) => {
-				match (|| -> Result<GMAMetadata, anyhow::Error> { // TODO clean up
-					let gma = o.get_mut();
-					gma.metadata()?;
-					gma.close();
-					match gma.metadata.as_ref() {
-						Some(m) => Ok(m.clone()),
-						None => Err(anyhow!(""))
-					}
-				})() {
-					Ok(metadata) => Ok(Some(metadata)),
-					Err(_) => generate_error(path)
-				}
+				let gma = o.get_mut();
+				gma.metadata().map_err(generate_error)?;
+				gma.close();
+				Ok(Some(gma.clone()))
 			},
 			Entry::Vacant(v) => {
-				match (|| -> Result<GMAMetadata, anyhow::Error> {
-					let mut gma = GMAFile::new(path, Some(id))?;
-					gma.metadata()?;
-					gma.close();
-					v.insert(gma.clone());
-					gma.metadata.ok_or(anyhow!(""))
-				})() {
-					Ok(metadata) => Ok(Some(metadata)),
-					Err(_) => generate_error(path)
-				}
+				let mut gma = GMAFile::new(path, Some(id)).map_err(generate_error)?;
+				gma.metadata().map_err(generate_error)?;
+				gma.close();
+				v.insert(gma.clone());
+				Ok(Some(gma))
 			}
 		}
 		
@@ -264,14 +251,12 @@ pub(crate) fn preview_gma(resolve: String, reject: String, webview: &mut Webview
 							let workshop = crate::WORKSHOP.write().unwrap();
 							workshop.get_item(id.unwrap()).unwrap().and_then(|ws_addon| {
 								v.insert(ws_addon.clone());
-								Ok(
-									ws_addon.and_then(|mut ws_addon| {
-										if let Some(steamid) = ws_addon.steamid {
-											ws_addon.owner = Some(workshop.query_user(steamid));
-										}
-										Some(ws_addon)
-									})
-								)
+								Ok(ws_addon.and_then(|mut ws_addon| {
+									if let Some(steamid) = ws_addon.steamid {
+										ws_addon.owner = Some(workshop.query_user(steamid));
+									}
+									Some(ws_addon)
+								}))
 							})
 						}
 					}
@@ -306,7 +291,7 @@ pub(crate) fn open_gma_preview_entry(resolve: String, reject: String, webview: &
 		let id = transaction.id;
 
 		std::thread::spawn(move || {
-			let progress_transaction = transaction.clone();
+			let progress_transaction = transaction.build();
 
 			let mut game_addons = crate::GAME_ADDONS.write().unwrap();
 			let preview_gma = game_addons.previewing.as_mut().unwrap();
@@ -328,35 +313,61 @@ pub(crate) fn open_gma_preview_entry(resolve: String, reject: String, webview: &
 	Ok(())
 }
 
-pub(crate) fn open_gma(resolve: String, reject: String, webview: &mut Webview<'_>, path: PathBuf) -> Result<(), String> {
+// TODO change all args to resolve, reject, webview, ...
+
+pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut Webview<'_>, path: Option<PathBuf>, named_dir: bool, tmp: bool, downloads: bool, addons: bool) -> Result<(), String> {
 	let webview_mut = webview.as_mut();
 
 	tauri::execute_promise(webview, move || {
-
-		/*let mut transactions = crate::TRANSACTIONS.write().unwrap();
+		
+		let mut transactions = crate::TRANSACTIONS.write().unwrap();
 		let transaction = transactions.new(webview_mut);
 		let id = transaction.id;
 
 		std::thread::spawn(move || {
-			let progress_transaction = transaction.clone();
-			match gma::extract(
-				PathBuf::from(path),
-				ExtractDestination::Temp,
-				Some(Box::new(move |progress: f32| {
-					progress_transaction.progress(progress);
-				}))
-			) {
-				Ok(gma) => gma,
-				Err(_) => {
-					// TODO transaction errors
-					panic!();
+			let transaction = transaction.build();
+
+			let dest = match tmp {
+				true => ExtractDestination::Temp,
+				false => {
+					let mut discriminated_path = MaybeUninit::<PathBuf>::uninit();
+					unsafe {
+						if addons {
+							*discriminated_path.as_mut_ptr() = crate::APP_DATA.read().unwrap().gmod.as_ref().unwrap().join("garrysmod/addons");
+						} else if downloads {
+							*discriminated_path.as_mut_ptr() = dirs::download_dir().unwrap();
+						} else {
+							*discriminated_path.as_mut_ptr() = path.unwrap();
+						}
+					}
+	
+					let discriminated_path = unsafe { discriminated_path.assume_init() };
+					if discriminated_path.is_absolute() && discriminated_path.exists() {
+						match named_dir {
+							true => ExtractDestination::NamedDirectory(discriminated_path),
+							false => ExtractDestination::Directory(discriminated_path)
+						}
+					} else {
+						transaction.error("ERR_EXTRACT_INVALID_DEST", ());
+						return;
+					}
 				}
+			};
+
+			let progress_transaction = transaction.clone();
+			match (move || {
+				let mut gma = crate::GAME_ADDONS.read().unwrap().previewing.as_ref().unwrap().to_owned();
+				gma.open()?;
+				gma.extract(dest, Some(Box::new(move |progress| progress_transaction.progress(progress))))
+			})() {
+				Ok(path) => show::open(&path.to_string_lossy().to_string()),
+				Err(err) => transaction.error("ERR_EXTRACT_IO_ERROR", format!("{}", err))
 			}
 		});
-		
-		Ok(id)*/
-		Ok(())
-		
+
+
+		Ok(id)
+
 	}, resolve, reject);
 
 	Ok(())

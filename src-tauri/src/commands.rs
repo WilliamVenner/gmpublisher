@@ -59,18 +59,15 @@ enum Command {
 		callback: String,
 		error: String
 	},
-	OpenGma {
-		path: PathBuf,
+	ExtractGma {
+		path: Option<PathBuf>,
+		named_dir: bool,
+		tmp: bool,
+		downloads: bool,
+		addons: bool,
 		callback: String,
 		error: String
 	},
-	/*ExtractGma {
-		gma_path: PathBuf,
-		to_named_dir: bool,
-		path: PathBuf,
-		callback: String,
-		error: String
-	},*/
 	
 	AnalyzeAddonSizes {
 		callback: String,
@@ -140,12 +137,9 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 					OpenGmaPreviewEntry { callback, error, entry_path } => {
 						game_addons::open_gma_preview_entry(callback, error, webview, entry_path)
 					},
-					OpenGma { callback, error, path } => {
-						game_addons::open_gma(callback, error, webview, path)
+					ExtractGma { callback, error, path, named_dir, tmp, downloads, addons } => {
+						game_addons::extract_gma_preview(callback, error, webview, path, named_dir, tmp, downloads, addons)
 					},
-					/*ExtractGma { callback, error, gma_path, path, to_named_dir } => {
-						game_addons::extract_gma(callback, error, webview, gma_path, path, to_named_dir)
-					},*/
 
 					AnalyzeAddonSizes { callback, error } => {
 						game_addons::analyze_addon_sizes(callback, error, webview)
