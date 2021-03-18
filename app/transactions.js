@@ -1,16 +1,21 @@
 import { invoke } from 'tauri/api/tauri'
 import { listen } from 'tauri/api/event'
+import { writable } from 'svelte/store';
 
 let transactions = [];
 
+const tasks = writable([]);
+
 class Transaction {
-	constructor(id) {
+	constructor(id, asTask) {
 		this.id = id;
 		this.callbacks = [];
 		this.progress = 0;
+		this.finished = false;
 		this.cancelled = false;
 
 		transactions[id] = this;
+		$tasks = [this, ...$tasks];
 	}
 
 	static get(id) {
@@ -29,6 +34,8 @@ class Transaction {
 	}
 
 	cancel(fromBackend) {
+		if (this.cancelled) return;
+
 		this.cancelled = true;
 		this.emit({ cancelled: true });
 		delete transactions[this.id];
@@ -44,7 +51,16 @@ class Transaction {
 	}
 
 	finish(data) {
+		this.finished = true;
 		this.emit({ finished: true, data });
+		delete transactions[this.id];
+
+		return this;
+	}
+
+	error(msg, data) {
+		this.error = [msg, data];
+		this.emit({ error: msg, data });
 		delete transactions[this.id];
 
 		return this;
@@ -74,4 +90,9 @@ listen("transactionFinished", ({ payload: [ id, data ] }) => {
 	if (transaction) transaction.finish(data);
 });
 
-export default Transaction;
+listen("transactionError", ({ payload: [ id, [ msg, data ] ] }) => {
+	const transaction = Transaction.get(id);
+	if (transaction) transaction.error(msg, data);
+});
+
+export { Transaction, tasks }
