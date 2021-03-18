@@ -15,7 +15,9 @@ pub(crate) struct AppData {
 	pub(crate) gmpublish: Option<PathBuf>,
 	pub(crate) gmod: Option<PathBuf>,
 	pub(crate) user: SteamUser,
-	pub(crate) path_separator: char
+	pub(crate) path_separator: char,
+	pub(crate) downloads_dir: Option<PathBuf>,
+	pub(crate) tmp_dir: PathBuf,
 }
 
 impl AppData {
@@ -30,6 +32,8 @@ impl AppData {
 			gmad: None,
 			gmpublish: None,
 			user,
+			downloads_dir: dirs::download_dir(),
+			tmp_dir: env::temp_dir(),
 
 			#[cfg(target_os = "windows")]
 			path_separator: '\\',
