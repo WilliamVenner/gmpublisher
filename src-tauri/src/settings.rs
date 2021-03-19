@@ -1,7 +1,7 @@
 use std::{fs, path::Path, path::PathBuf};
 use serde::{Serialize, Deserialize};
 use anyhow::Error;
-use tauri::Webview;
+use tauri::{Webview, WebviewMut};
 
 use crate::show;
 
@@ -90,6 +90,12 @@ impl Settings {
 		let settings = Settings::from_json(json)?;
 		settings.save(location)?;
 		Ok(settings)
+	}
+
+	pub(crate) fn send(&mut self, mut webview: WebviewMut) {
+		self.sanitize();
+		let success = tauri::event::emit(&mut webview, "updateAppData", Some(&*crate::APP_DATA.read().unwrap()));
+		debug_assert!(success.is_ok(), "Failed to update app data");
 	}
 }
 
