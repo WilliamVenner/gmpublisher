@@ -59,6 +59,6 @@ window.__GMPUBLISHER__ = () => {
 		window.PATH_SEPARATOR = AppData.path_separator;
 	}
 
-	updateAppData({$_SETTINGS_$});
-	__TAURI__.event.listen('appData', updateAppData);
+	updateAppData(JSON.parse(String.raw`{$_SETTINGS_$}`));
+	__TAURI__.event.listen('updateAppData', ({ payload }) => updateAppData(payload)); // FIXME - why doesn't it work?
 };
