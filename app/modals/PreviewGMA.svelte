@@ -10,7 +10,7 @@
 	import { ChevronUp, Folder, LinkOut, Download, FolderAdd } from 'akar-icons-svelte';
 	import { invoke, promisified } from 'tauri/api/tauri';
 	import Timestamp from '../components/Timestamp.svelte';
-	import { afterUpdate, onDestroy } from 'svelte';
+	import { afterUpdate } from 'svelte';
 	import { Transaction } from '../transactions.js';
 
 	function trimPath(path) {
@@ -387,7 +387,7 @@
 					<div><WorkshopAddon {...addon} isPreviewing={true}/></div>
 					<div id="tags">
 						{#each addon.tags as tag}
-							<div class="tag">{tag}</div>
+							<div class="tag {tag.toLowerCase()}">{tag}</div>
 						{/each}
 					</div>
 					<table id="addon-info">
@@ -940,4 +940,80 @@
 	#destination .extract-btn {
 		margin-top: 1rem;
 	}
+
+	:global(.tag.addon) { color: #fff !important }
+	:global(.tag.addon)::before { background-color: #006cc7 !important }
+	:global(.tag.addon)::after { border-left-color: #006cc7 !important }
+
+	:global(.tag.weapon) { color: #fff !important }
+	:global(.tag.weapon)::before { background-color: #8c0101 !important }
+	:global(.tag.weapon)::after { border-left-color: #8c0101 !important }
+
+	:global(.tag.ServerContent) { color: #fff !important }
+	:global(.tag.ServerContent)::before { background-color: #000 !important }
+	:global(.tag.ServerContent)::after { border-left-color: #000 !important }
+
+	:global(.tag.fun) { color: #fff !important }
+	:global(.tag.fun)::before { background-color: #368c01 !important }
+	:global(.tag.fun)::after { border-left-color: #368c01 !important }
+
+	:global(.tag.roleplay) { color: #fff !important }
+	:global(.tag.roleplay)::before { background-color: #00d4d4 !important }
+	:global(.tag.roleplay)::after { border-left-color: #00d4d4 !important }
+
+	:global(.tag.realism) { color: #fff !important }
+	:global(.tag.realism)::before { background-color: #8400d6 !important }
+	:global(.tag.realism)::after { border-left-color: #8400d6 !important }
+
+	:global(.tag.vehicle) { color: #fff !important }
+	:global(.tag.vehicle)::before { background-color: #5d3131 !important }
+	:global(.tag.vehicle)::after { border-left-color: #5d3131 !important }
+
+	:global(.tag.movie) { color: #fff !important }
+	:global(.tag.movie)::before { background-color: #47ab94 !important }
+	:global(.tag.movie)::after { border-left-color: #47ab94 !important }
+
+	:global(.tag.cartoon) { color: #fff !important }
+	:global(.tag.cartoon)::before { background-color: #642865 !important }
+	:global(.tag.cartoon)::after { border-left-color: #642865 !important }
+
+	:global(.tag.scenic) { color: #fff !important }
+	:global(.tag.scenic)::before { background-color: #fb9e9e !important }
+	:global(.tag.scenic)::after { border-left-color: #fb9e9e !important }
+
+	:global(.tag.water) { color: #fff !important }
+	:global(.tag.water)::before { background-color: #4754ab !important }
+	:global(.tag.water)::after { border-left-color: #4754ab !important }
+
+	:global(.tag.comic) { color: #fff !important }
+	:global(.tag.comic)::before { background-color: #642865 !important }
+	:global(.tag.comic)::after { border-left-color: #642865 !important }
+
+	:global(.tag.build) { color: #fff !important }
+	:global(.tag.build)::before { background-color: #3e6e79 !important }
+	:global(.tag.build)::after { border-left-color: #3e6e79 !important }
+
+	:global(.tag.tool) { color: #fff !important }
+	:global(.tag.tool)::before { background-color: #b98528 !important }
+	:global(.tag.tool)::after { border-left-color: #b98528 !important }
+
+	:global(.tag.gamemode) { color: #fff !important }
+	:global(.tag.gamemode)::before { background-color: #88cc86 !important }
+	:global(.tag.gamemode)::after { border-left-color: #88cc86 !important }
+
+	:global(.tag.map) { color: #fff !important }
+	:global(.tag.map)::before { background-color: #804100 !important }
+	:global(.tag.map)::after { border-left-color: #804100 !important }
+
+	:global(.tag.npc) { color: #fff !important }
+	:global(.tag.npc)::before { background-color: #fdfa8e !important }
+	:global(.tag.npc)::after { border-left-color: #fdfa8e !important }
+
+	:global(.tag.effects) { color: #fff !important }
+	:global(.tag.effects)::before { background-color: #27c500 !important }
+	:global(.tag.effects)::after { border-left-color: #27c500 !important }
+
+	:global(.tag.model) { color: #fff !important }
+	:global(.tag.model)::before { background-color: #80007c !important }
+	:global(.tag.model)::after { border-left-color: #80007c !important }
 </style>

@@ -84,6 +84,9 @@
 			statusText.textContent = statusTextFn(transaction);
 		}
 	});
+
+	// FIXME errors that are long overflow and cause bad things!
+	// TODO internationalize error strings
 </script>
 
 <div bind:this={taskElem} class="task" class:error={$error || $cancelled} class:pending={!$finished} style="transform: translateY({$y}px)" class:expired={$expired}>

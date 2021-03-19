@@ -1,4 +1,4 @@
-use std::{cell::UnsafeCell, collections::HashMap, fmt::Debug, rc::Rc, sync::{Arc, Mutex, RwLock, RwLockReadGuard, atomic::{AtomicBool, AtomicU16, AtomicUsize, Ordering}, mpsc::{self, Sender}}};
+use std::{cell::UnsafeCell, collections::HashMap, fmt::Debug, panic::{self, AssertUnwindSafe}, rc::Rc, sync::{Arc, Mutex, RwLock, RwLockReadGuard, atomic::{AtomicBool, AtomicU16, AtomicUsize, Ordering}, mpsc::{self, Sender}}};
 use tauri::{WebviewMut};
 
 static TRANSACTION_ID: AtomicUsize = AtomicUsize::new(0);
@@ -178,12 +178,14 @@ impl Transaction {
 
 	pub(crate) fn progress(&self, progress: f32) {
 		if self.aborted.load(Ordering::Acquire) { return }
-		self.tx.send(TransactionMessage::Progress(progress)).ok();
+		let res = panic::catch_unwind(AssertUnwindSafe(|| self.tx.send(TransactionMessage::Progress(progress)).ok()));
+		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
 	}
 
 	pub(crate) fn progress_incr(&self, incr: f32) {
 		if self.aborted.load(Ordering::Acquire) { return }
-		self.tx.send(TransactionMessage::IncrementProgress(incr)).ok();
+		let res = panic::catch_unwind(AssertUnwindSafe(|| self.tx.send(TransactionMessage::IncrementProgress(incr)).ok()));
+		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
 	}
 }
 
