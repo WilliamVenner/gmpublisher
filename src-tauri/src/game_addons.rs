@@ -292,6 +292,7 @@ pub(crate) fn open_gma_preview_entry(resolve: String, reject: String, webview: &
 
 		std::thread::spawn(move || {
 			let progress_transaction = transaction.build();
+			let channel = progress_transaction.channel();
 
 			let mut game_addons = crate::GAME_ADDONS.write().unwrap();
 			let preview_gma = game_addons.previewing.as_mut().unwrap();
@@ -301,7 +302,7 @@ pub(crate) fn open_gma_preview_entry(resolve: String, reject: String, webview: &
 				ExtractDestination::Temp
 			).unwrap();
 
-			progress_transaction.finish(());
+			channel.finish(());
 
 			show::open(extract_dest.to_str().unwrap());
 		});
@@ -327,6 +328,7 @@ pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut
 
 		std::thread::spawn(move || {
 			let transaction = transaction.build();
+			let channel = transaction.channel();
 
 			let mut use_named_dir = named_dir;
 
@@ -355,22 +357,25 @@ pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut
 							false => ExtractDestination::Directory(discriminated_path)
 						}
 					} else {
-						transaction.error("ERR_EXTRACT_INVALID_DEST", ()); // TODO internationalize
+						channel.error("ERR_EXTRACT_INVALID_DEST", ()); // TODO internationalize
 						return;
 					}
 				}
 			};
 
-			let progress_transaction = transaction.clone();
-			match (move || {
-				let mut gma = crate::GAME_ADDONS.read().unwrap().previewing.as_ref().unwrap().to_owned();
-				gma.open()?;
-				gma.extract(dest, Some(Box::new(move |progress| progress_transaction.progress(progress))))
-			})() {
+			match 
+				{
+					let channel = transaction.channel();
+					let mut gma = crate::GAME_ADDONS.read().unwrap().previewing.as_ref().unwrap().to_owned();
+					gma.open().and_then(|_| {
+						gma.extract(dest, Some(Box::new(move |progress| channel.progress(progress))))
+					})
+				}
+			{
 				Ok(mut path) => {
 					show::open(&path.to_string_lossy().to_string());
 
-					transaction.finish(());
+					channel.finish(());
 					
 					if save_destination_path {
 						if use_named_dir { path.pop(); }
@@ -386,7 +391,7 @@ pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut
 						}
 					}
 				},
-				Err(err) => transaction.error("ERR_EXTRACT_IO_ERROR", format!("{}", err))
+				Err(err) => channel.error("ERR_EXTRACT_IO_ERROR", format!("{}", err))
 			}
 		});
 

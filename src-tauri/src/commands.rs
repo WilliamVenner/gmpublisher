@@ -101,9 +101,7 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 				use Command::*;
 				match match cmd {
 					CancelTransaction { id } => {
-						if let Some(transaction) = crate::TRANSACTIONS.write().unwrap().take(id) {
-							transaction.cancel();
-						}
+						crate::TRANSACTIONS.write().unwrap().cancel(id);
 						Ok(())
 					},
 

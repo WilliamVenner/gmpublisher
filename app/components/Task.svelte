@@ -169,7 +169,7 @@
 	.task #progress {
 		position: absolute;
 		height: 100%;
-		transition: width .5s cubic-bezier(0, 0.55, 0.45, 1);
+		/*transition: width .25s cubic-bezier(0.16, 1, 0.3, 1);*/
 		background-color: #30A560;
 		z-index: -1;
 	}

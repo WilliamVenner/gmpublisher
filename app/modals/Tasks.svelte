@@ -1,9 +1,10 @@
 <script>
 	import { taskHeight, tasksMax, tasks as tasksStore, tasksNum } from '../transactions.js';
 	import Task from '../components/Task.svelte';
-	import { get } from 'svelte/store';
+	import { get, writable } from 'svelte/store';
 
 	let tasksContainer;
+
 	tasksStore.subscribe(tasks => {
 		let update = false;
 
@@ -37,9 +38,15 @@
 		$tasksNum = pos;
 		if (update) tasksStore.set(tasks);
 	});
+
+	const height = writable(0);
+	tasksMax.subscribe(tasksMax => {
+		$height = (taskHeight * tasksMax) + ((taskHeight / 2) * Math.max(tasksMax - 1, 0));
+	});
+
 </script>
 
-<div bind:this={tasksContainer} id="tasks" style="height: {(taskHeight * $tasksMax) + ((taskHeight / 2) * Math.max($tasksMax - 1, 0))}px"></div>
+<div bind:this={tasksContainer} id="tasks" style="height: {$height}px"></div>
 
 <style>
 	#tasks {
