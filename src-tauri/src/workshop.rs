@@ -123,8 +123,6 @@ impl Workshop {
 	}
 
 	pub(crate) fn query_user(&self, steamid: SteamId) -> SteamUser {
-		use std::sync::atomic::Ordering::Relaxed;
-
 		let mut users = self.users.lock().unwrap();
 		match users.get(&steamid) {
 			None => {
@@ -136,13 +134,13 @@ impl Workshop {
 						let c_sync = sync.clone();
 						self.client.register_callback(move |p: steamworks::PersonaStateChange| {
 							if p.flags & *PERSONACHANGE_USER_INFO == *PERSONACHANGE_USER_INFO && p.steam_id == steamid {
-								c_sync.store(true, Relaxed);
+								c_sync.store(true, std::sync::atomic::Ordering::Release);
 							}
 						})
 					};
 
 					let single = self.single.lock().unwrap();
-					while !sync.load(Relaxed) {
+					while !sync.load(std::sync::atomic::Ordering::Acquire) {
 						single.run_callbacks();
 						std::thread::sleep(std::time::Duration::from_millis(50));
 					}

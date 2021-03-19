@@ -1,3 +1,6 @@
+use tauri::Webview;
+use anyhow::anyhow;
+
 pub mod path {
     use std::{fmt::Debug, path::PathBuf};
 	use serde::{Deserialize, Serialize, de::Visitor};
@@ -97,4 +100,36 @@ pub mod path {
 			))
 		}
 	}
+}
+
+pub(crate) fn prompt_path_dialog(callback: String, error: String, webview: &mut Webview, multiple: bool, directory: bool, save: bool, default_path: Option<String>, filter: Option<String>) -> Result<(), String> {
+	/*use nfd::{Response, DialogType};
+
+	tauri::execute_promise(webview, move || {
+
+		match nfd::open_dialog(
+			filter.as_deref(),
+			default_path.as_deref(),
+			if directory {
+				DialogType::PickFolder
+			} else if save {
+				DialogType::SaveFile
+			} else if multiple {
+				DialogType::MultipleFiles
+			} else {
+				DialogType::SingleFile
+			}
+		) {
+			Ok(response) => match response {
+				Response::Okay(path) => Ok(vec![path]),
+				Response::OkayMultiple(paths) => Ok(paths),
+				Response::Cancel => Ok(Vec::with_capacity(0))
+			},
+
+			Err(_) => { crate::show::error("Failed to open file picking dialog!".to_string()); return Err(anyhow!("FAILED")) }
+		}
+		
+	}, callback, error);*/
+
+	Ok(())
 }

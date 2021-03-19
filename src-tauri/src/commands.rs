@@ -1,13 +1,13 @@
-use std::{path::PathBuf, sync::{Mutex, Arc}};
-
+use std::path::PathBuf;
 use serde::Deserialize;
 use steamworks::PublishedFileId;
 use tauri::Webview;
 
-use crate::{appdata::AppData, game_addons::GameAddons, show, transactions::Transactions, workshop::Workshop};
+use crate::show;
 use crate::workshop;
 use crate::settings;
 use crate::game_addons;
+use crate::util;
 
 #[derive(Deserialize)]
 #[serde(tag="cmd", rename_all="camelCase")]
@@ -68,6 +68,16 @@ enum Command {
 		callback: String,
 		error: String
 	},
+
+	PromptPathDialog {
+		multiple: bool,
+		directory: bool,
+		save: bool,
+		default_path: Option<String>,
+		filter: Option<String>,
+		callback: String,
+		error: String
+	},
 	
 	AnalyzeAddonSizes {
 		callback: String,
@@ -107,6 +117,10 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 							Ok(_) => Ok(()),
 							Err(error) => Err(format!("{:?}", error))
 						}
+					},
+
+					PromptPathDialog { callback, error, multiple, directory, save, default_path, filter } => {
+						util::prompt_path_dialog(callback, error, webview, multiple, directory, save, default_path, filter)
 					},
 
 					WorkshopBrowser { page, callback, error } => {

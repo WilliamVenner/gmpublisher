@@ -1,4 +1,4 @@
-use std::{fs::{self, File, create_dir_all}, io::{self, Read, Seek, SeekFrom, Write}, path::PathBuf, sync::{Arc, atomic::AtomicU16}};
+use std::{fs::{self, File, create_dir_all}, io::{self, Read, Seek, SeekFrom, Write}, path::PathBuf, sync::{Arc, atomic::{AtomicBool, AtomicU16}}};
 
 use byteorder::{LittleEndian, ReadBytesExt};
 use sysinfo::SystemExt;
@@ -75,6 +75,7 @@ impl GMAFile {
 		let total_entries = entries.len();
 
 		// We should only multithread file i/o if we have enough available memory to actually store the GMA entry data
+		// TODO use some kind of reserved memory pool instead so even memory-strapped systems can multithread this
 		let mut threads: Option<Vec<std::thread::JoinHandle<()>>> = if available_memory > self.size {
 			Some(Vec::with_capacity(total_entries))
 		} else { None };
@@ -84,36 +85,49 @@ impl GMAFile {
 		let entries_start = self.entries_start.unwrap();
 
 		if let Some(threads) = &mut threads {
+			let failed = Arc::new(AtomicBool::new(false));
 			let i = Arc::new(AtomicU16::new(0));
 			for entry in entries.iter() {
 
 				let fs_path = extract_to.join(&entry.path);
+				fs::create_dir_all(fs_path.with_file_name("")).map_err(|_| GMAReadError::IOError)?;
+
 				let mut handle_r = self.spawn_handle().unwrap();
 				let size = entry.size;
 				let index = entry.index;
+
 				let i = i.clone();
 				let progress_callback = progress_callback.clone();
+				let failed = failed.clone();
 				
 				threads.push(std::thread::spawn(move || {
-					fs::create_dir_all(fs_path.with_file_name("")).unwrap();
+					if let Err(_) = (|| -> Result<(), std::io::Error> {
 
-					let mut handle_w = File::create(fs_path).unwrap();
+						let mut handle_w = File::create(fs_path)?;
 
-					let mut buf = vec![0; size as usize];
-					handle_r.seek(SeekFrom::Start(entries_start + index)).unwrap();
-					handle_r.read_exact(&mut buf).unwrap();
-					handle_w.write(&buf).unwrap();
-					handle_w.flush().unwrap();
+						let mut buf = vec![0; size as usize];
+						handle_r.seek(SeekFrom::Start(entries_start + index))?;
+						handle_r.read_exact(&mut buf)?;
+						drop(handle_r);
 
-					drop(handle_r);
-					drop(handle_w);
-	
-					match *progress_callback {
-						Some(ref progress_callback) => {
-							let progress = i.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
-							(progress_callback)(((progress as f32) / (total_entries as f32)) * 100.);
-						},
-						None => {}
+						handle_w.write(&buf)?;
+						handle_w.flush()?;
+						drop(handle_w);
+						
+						if !failed.load(std::sync::atomic::Ordering::Acquire) {
+							match *progress_callback {
+								Some(ref progress_callback) => {
+									let progress = i.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+									(progress_callback)(((progress as f32) / (total_entries as f32)) * 100.);
+								},
+								None => {}
+							}
+						}
+
+						Ok(())
+
+					})() {
+						failed.store(true, std::sync::atomic::Ordering::Release);
 					}
 				}));
 
@@ -143,11 +157,6 @@ impl GMAFile {
 		// Hence, we shouldn't unwrap the following since it may fail
 		self.handle.read_u32::<LittleEndian>().ok(); // crc [unused]
 
-		match *progress_callback {
-			Some(ref progress_callback) => (progress_callback)(100.),
-			None => {}
-		}
-
 		if let Some(threads) = threads {
 			for thread in threads {
 				match thread.join() {
@@ -155,6 +164,11 @@ impl GMAFile {
 					Err(_) => return Err(GMAReadError::IOError)
 				}
 			}
+		}
+
+		match *progress_callback {
+			Some(ref progress_callback) => (progress_callback)(100.),
+			None => {}
 		}
 
 		Ok(extract_to)

@@ -316,39 +316,46 @@ pub(crate) fn open_gma_preview_entry(resolve: String, reject: String, webview: &
 // TODO change all args to resolve, reject, webview, ...
 
 pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut Webview<'_>, path: Option<PathBuf>, named_dir: bool, tmp: bool, downloads: bool, addons: bool) -> Result<(), String> {
+	let save_destination_path = path.is_some();
 	let webview_mut = webview.as_mut();
 
 	tauri::execute_promise(webview, move || {
 		
 		let mut transactions = crate::TRANSACTIONS.write().unwrap();
-		let transaction = transactions.new(webview_mut);
+		let transaction = transactions.new(webview_mut.clone());
 		let id = transaction.id;
 
 		std::thread::spawn(move || {
 			let transaction = transaction.build();
 
+			let mut use_named_dir = named_dir;
+
 			let dest = match tmp {
 				true => ExtractDestination::Temp,
 				false => {
+					let mut check_exists = true;
 					let mut discriminated_path = MaybeUninit::<PathBuf>::uninit();
 					unsafe {
 						if addons {
+							use_named_dir = true;
 							*discriminated_path.as_mut_ptr() = crate::APP_DATA.read().unwrap().gmod.as_ref().unwrap().join("garrysmod/addons");
 						} else if downloads {
+							use_named_dir = true;
 							*discriminated_path.as_mut_ptr() = dirs::download_dir().unwrap();
 						} else {
+							check_exists = false;
 							*discriminated_path.as_mut_ptr() = path.unwrap();
 						}
 					}
 	
 					let discriminated_path = unsafe { discriminated_path.assume_init() };
-					if discriminated_path.is_absolute() && discriminated_path.exists() {
-						match named_dir {
+					if discriminated_path.is_absolute() && (!check_exists || discriminated_path.exists()) {
+						match use_named_dir {
 							true => ExtractDestination::NamedDirectory(discriminated_path),
 							false => ExtractDestination::Directory(discriminated_path)
 						}
 					} else {
-						transaction.error("ERR_EXTRACT_INVALID_DEST", ());
+						transaction.error("ERR_EXTRACT_INVALID_DEST", ()); // TODO internationalize
 						return;
 					}
 				}
@@ -360,7 +367,25 @@ pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut
 				gma.open()?;
 				gma.extract(dest, Some(Box::new(move |progress| progress_transaction.progress(progress))))
 			})() {
-				Ok(path) => show::open(&path.to_string_lossy().to_string()),
+				Ok(mut path) => {
+					show::open(&path.to_string_lossy().to_string());
+
+					transaction.finish(());
+					
+					if save_destination_path {
+						if use_named_dir { path.pop(); }
+						let mut app_data = crate::APP_DATA.write().unwrap();
+						let settings = &mut app_data.settings;
+						if let Err(_) = settings.destinations.binary_search(&path) {
+							settings.destinations.push(path);
+							if let Ok(_) = settings.save(None) {
+								settings.send(webview_mut);
+							} else {
+								settings.destinations.pop();
+							}
+						}
+					}
+				},
 				Err(err) => transaction.error("ERR_EXTRACT_IO_ERROR", format!("{}", err))
 			}
 		});

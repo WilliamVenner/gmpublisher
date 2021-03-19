@@ -10,7 +10,6 @@
 
 	Addons.analyzeAddonSizes().then(transaction => {
 		_transaction = transaction.listen(event => {
-			console.log(event);
 			if (event.finished) {
 
 			} else if ("progress" in event) {
