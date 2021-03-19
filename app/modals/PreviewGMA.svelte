@@ -386,6 +386,9 @@
 				<div id="addon" class="hide-scroll">
 					<div><WorkshopAddon {...addon} isPreviewing={true}/></div>
 					<div id="tags">
+						{#if metadata.type && addon.tags.indexOf(metadata.type.toLowerCase()) !== -1}
+							<div class="tag {metadata.type.toLowerCase()}">{metadata.type}</div>
+						{/if}
 						{#each addon.tags as tag}
 							<div class="tag {tag.toLowerCase()}">{tag}</div>
 						{/each}
@@ -396,12 +399,6 @@
 								<th>{$_('size')}</th>
 								<td>{filesize(metadata.size)}</td>
 							</tr>
-							{#if metadata.type}
-								<tr>
-									<th>{$_('addon_type')}</th>
-									<td>{metadata.type}</td>
-								</tr>
-							{/if}
 							{#if ws_metadata}
 								<tr>
 									<th>{$_('author')}</th>
@@ -949,9 +946,9 @@
 	:global(.tag.weapon)::before { background-color: #8c0101 !important }
 	:global(.tag.weapon)::after { border-left-color: #8c0101 !important }
 
-	:global(.tag.ServerContent) { color: #fff !important }
-	:global(.tag.ServerContent)::before { background-color: #000 !important }
-	:global(.tag.ServerContent)::after { border-left-color: #000 !important }
+	:global(.tag.servercontent) { color: #fff !important }
+	:global(.tag.servercontent)::before { background-color: #000 !important }
+	:global(.tag.servercontent)::after { border-left-color: #000 !important }
 
 	:global(.tag.fun) { color: #fff !important }
 	:global(.tag.fun)::before { background-color: #368c01 !important }
