@@ -6,6 +6,7 @@
 	import GameAddonsBrowser from '../pages/GameAddonsBrowser.svelte';
 	//import FileSystemAddonsBrowser from '../pages/FileSystemAddonsBrowser.svelte';
 	import AddonSizeAnalyzer from '../pages/AddonSizeAnalyzer.svelte';
+	import Tasks from '../modals/Tasks.svelte';
 
 	const hours = new Date().getHours();
 
@@ -49,6 +50,8 @@
 </script>
 
 <main>
+
+	<Tasks/>
 
 	<div id="modals" class:active={$modals.length > 0} on:click={clearModals}>
 		{#each $modals as modal}
@@ -218,27 +221,4 @@
 	#modals > :global(*) {
 		animation: modal .25s;
 	}
-
-	/*
-	#landing-btns {
-		display: inline-flex;
-		flex-direction: column;
-	}
-	#landing-btns > .btn {
-		flex: 1;
-		padding: .6rem;
-		cursor: pointer;
-		font-size: .9rem;
-		font-weight: 500;
-
-		background: linear-gradient(#2c2c2c, #1E1E1E);
-		box-shadow: 0px 0px 2px 1px #0c0c0c;
-		border-radius: 4px;
-		text-align: center;
-		cursor: pointer;
-	}
-	#landing-btns > .btn:not(:last-child) {
-		margin-bottom: 1rem;
-	}
-	*/
 </style>

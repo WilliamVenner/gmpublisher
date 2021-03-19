@@ -12,7 +12,6 @@
 	import Timestamp from '../components/Timestamp.svelte';
 	import { afterUpdate, onDestroy } from 'svelte';
 	import { Transaction } from '../transactions.js';
-	import * as dialog from 'tauri/api/dialog';
 
 	function trimPath(path) {
 		let n = 0;
@@ -36,8 +35,6 @@
 	export let addon;
 
 	const gma = writable({});
-
-	console.log(addon);
 
 	function getFileIcon(extension) {
 		switch(extension) {
@@ -161,8 +158,6 @@
 		let [metadata, ws_metadata] = data;
 
 		$gma = metadata;
-
-		console.log($gma);
 		
 		entries = {
 			dirs: {},
@@ -237,26 +232,18 @@
 		});
 	}
 
-	const openGMAEntryRequest = writable(false);
-	const extractGMARequest = writable(null);
 	function openGMAEntry() {
-		this.classList.add('extracting');
-
 		promisified({
 			cmd: 'openGmaPreviewEntry',
 			entry_path: this.dataset.path,
 		})
-			.then(transactionId => new Transaction(transactionId))
-			.then(transaction => {
-				$openGMAEntryRequest = true;
-				transaction.listen(event => {
-					if (event.finished || event.cancelled || event.error) {
-						$openGMAEntryRequest = false;
-						this.classList.remove('extracting');
-					}
-				});
-				onDestroy(() => transaction.cancel());
-			}); // TODO handle error
+			.then(transactionId => new Transaction(transactionId, transaction => {
+				return $_('extracting_progress', { values: {
+					pct: transaction.progress,
+					data: filesize((transaction.progress / 100) * $gma.size),
+					dataTotal: filesize($gma.size)
+				}});
+			}));
 	}
 
 	const chooseDestination = writable(false);
@@ -310,7 +297,6 @@
 		}
 	}
 	function extractDestInputted() {
-		console.log('changed');
 		if (this.value === "" || ($extractPath[0] !== null && $extractPath[0] !== 'browse')) return;
 		$extractPath = ['browse', trimPath(this.value), AppSettings.create_folder_on_extract];
 		this.value = '';
@@ -342,27 +328,18 @@
 		if ('browse' === $extractPath[0]) {
 			$extractPath = [null, null, AppSettings.create_folder_on_extract];
 		} else {
-			new Promise((resolve, reject) => {
+			promisified({
 
-				dialog.open({
-					directory: true,
-					multiple: false,
-					defaultPath: AppSettings.destinations.length > 0 ? AppSettings.destinations[0] : null,
-				}).then(resolve, err => {
-					if (err.toLowerCase().indexOf('cancel') === -1) { // ffs
-						dialog.open({
-							directory: true,
-							multiple: false
-						}).then(resolve, err => {
-							if (err.toLowerCase().indexOf('cancel') === -1) { // FFS
-								reject(err);
-							}
-						});
-					}
-				});
+				cmd: 'promptPathDialog',
+				directory: true,
+				multiple: false,
+				save: false,
+				filter: '',
+				defaultPath: AppSettings.destinations[0],
 
 			}).then(path => {
-				$extractPath = ['browse', trimPath(path), AppSettings.create_folder_on_extract];
+				if (!!path)
+					$extractPath = ['browse', trimPath(path[0]), AppSettings.create_folder_on_extract]
 			});
 		}
 	}
@@ -385,7 +362,13 @@
 			addons: dest === 'addons',
 			downloads: dest === 'downloads',
 
-		}).then(id => new Transaction(id));
+		}).then(id => new Transaction(id, transaction => {
+			return $_('extracting_progress', { values: {
+				pct: transaction.progress,
+				data: filesize((transaction.progress / 100) * $gma.size),
+				dataTotal: filesize($gma.size)
+			}});
+		}));
 
 		$chooseDestination = false;
 	}
@@ -498,16 +481,8 @@
 					</table>
 				</div>
 
-				<div id="ribbon" class:extracting-entry={!!$openGMAEntryRequest} class:extracting={!!$extractGMARequest}>
-					<div id="extraction-info">
-						{#if $extractGMARequest}
-							<div id="progress" style={'width: ' + $extractGMARequest.progress + '%'}></div>
-							<img src="/img/loading.svg" alt="Loading"/><span>&nbsp;{$_('extracting')} {$extractGMARequest.progress}% ({filesize(metadata.size * ($extractGMARequest.progress / 100))} / {filesize(metadata.size)})</span>
-						{:else if $openGMAEntryRequest}
-							<img src="/img/loading.svg" alt="Loading"/><span>&nbsp;{$_('extracting')}</span>
-						{/if}
-					</div>
-					<div id="info">{total_files === 1 ? $_('items_one') : $_('items_num', { values: { n: total_files } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{$_('items_shown', { values: { n: $browsing.files.length + Object.keys($browsing.dirs).length } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{filesize(metadata.size)}</div>
+				<div id="ribbon">
+					{total_files === 1 ? $_('items_one') : $_('items_num', { values: { n: total_files } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{$_('items_shown', { values: { n: $browsing.files.length + Object.keys($browsing.dirs).length } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{filesize(metadata.size)}
 				</div>
 			</div>
 		</div>
@@ -521,19 +496,24 @@
 
 		<input type="text" name="path" on:input={extractDestHover} on:focus={extractDestFocused} on:blur={extractDestLostFocus} on:change={extractDestInputted} bind:this={extractPathInput} placeholder={$extractPath[0] ? ($extractPath[1] + ($extractPath[2] ? (PATH_SEPARATOR + $gma.extracted_name) : '')) : $gma.extracted_name}/>
 
-		<div id="checkbox">
-			<input type="checkbox" id="named" name="named" on:change={createFolderUpdated} checked={AppSettings.create_folder_on_extract}><label for="named">&nbsp;&nbsp;{$_('create_folder')}</label>
-		</div>
+		{#if $extractPath[0] === 'browse'}
+			<div id="checkbox">
+				<label>
+					<input type="checkbox" id="named" name="named" on:change={createFolderUpdated} checked={AppSettings.create_folder_on_extract}>
+					<span>{$_('create_folder')}</span>
+				</label>
+			</div>
+		{/if}
 
 		<div id="destinations">
 			<div class="destination" class:active={$extractPath[0] === 'browse'} on:hover={extractDestHover} on:click={extractDestBrowse} data-dest="browse">
-				<Folder size=""/>
+				<Folder/>
 				<div>{$_('browse')}</div>
 			</div>
 
 			{#if !!AppData.tmp_dir}
 				<div class="destination" class:active={$extractPath[0] === 'tmp'} use:tippy={$_('extract_open_tip')} on:mouseover={extractDestHover} on:click={updateExtractDest} on:mouseleave={extractDestHoverLeave} data-dest="tmp">
-					<FolderAdd size=""/>
+					<FolderAdd/>
 					<div>{$_('open')}</div>
 				</div>
 			{/if}
@@ -547,7 +527,7 @@
 
 			{#if !!AppData.downloads_dir}
 				<div class="destination" class:active={$extractPath[0] === 'downloads'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="downloads">
-					<Download size=""/>
+					<Download/>
 					<div>{$_('downloads_folder')}</div>
 				</div>
 			{/if}
@@ -713,6 +693,7 @@
 		margin: 0;
 		margin-top: .8rem;
 		white-space: pre-line;
+		color: #888;
 	}
 
 	#addon #avatar, #addon #avatar + span {
@@ -785,39 +766,6 @@
 		display: grid;
 		grid-template-rows: 1fr;
 		grid-template-columns: 1fr;
-	}
-	#ribbon > #info, #ribbon > #extraction-info {
-		transition: opacity .25s;
-	}
-	#ribbon:not(:not(.extracting):not(.extracting-entry)) > #info {
-		opacity: 0;
-	}
-	#ribbon:not(.extracting):not(.extracting-entry) > #extraction-info {
-		opacity: 0;
-	}
-	#ribbon.extracting-entry {
-		background-color: #006cc7;
-	}
-	#ribbon.extracting img {
-		width: .8rem;
-	}
-	#ribbon #progress {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background-color: #006cc7;
-		transition: width .1s;
-	}
-	#ribbon * {
-		vertical-align: middle;
-	}
-	#ribbon > * {
-		grid-area: 1 / 1 / 2 / 2;
-	}
-	#ribbon img {
-		width: .7rem;
 	}
 
 	#ws-link {
@@ -983,13 +931,13 @@
 		justify-content: center;
 		align-items: center;
 	}
-	#destination #checkbox > * {
+	#destination #checkbox label {
 		cursor: pointer;
 	}
-	#destination #checkbox input {
-		margin: 0;
+	#destination #checkbox label > * {
+		vertical-align: middle;
 	}
 	#destination .extract-btn {
-		margin-top: 1.5rem;
+		margin-top: 1rem;
 	}
 </style>

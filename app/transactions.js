@@ -5,9 +5,24 @@ import { writable } from 'svelte/store';
 let transactions = [];
 
 const tasks = writable([]);
+const tasksNum = writable(0);
+const taskHeight = 49;
+const tasks1080p = 4;
+const ratio = (taskHeight * tasks1080p) / 1027;
+const tasksMax = writable(4);
+function resize() {
+	tasksMax.set(Math.max(
+		Math.round(
+			(window.outerHeight * ratio) / taskHeight
+		),
+		2
+	));
+}
+window.addEventListener('resize', resize);
+resize();
 
 class Transaction {
-	constructor(id, asTask) {
+	constructor(id, TASK_statusTextFn) {
 		this.id = id;
 		this.callbacks = [];
 		this.progress = 0;
@@ -15,7 +30,9 @@ class Transaction {
 		this.cancelled = false;
 
 		transactions[id] = this;
-		$tasks = [this, ...$tasks];
+
+		if (TASK_statusTextFn)
+			tasks.update(tasks => { tasks.push([this, TASK_statusTextFn, null]); return tasks });
 	}
 
 	static get(id) {
@@ -34,7 +51,7 @@ class Transaction {
 	}
 
 	cancel(fromBackend) {
-		if (this.cancelled) return;
+		if (this.cancelled || this.finished || this.error) return;
 
 		this.cancelled = true;
 		this.emit({ cancelled: true });
@@ -82,17 +99,20 @@ listen("transactionProgress", ({ payload: [ id, progress ] }) => {
 
 listen("transactionCancelled", ({ payload: id }) => {
 	const transaction = Transaction.get(id);
+	console.log('transactionCancelled', transaction);
 	if (transaction) transaction.cancel(true);
 });
 
 listen("transactionFinished", ({ payload: [ id, data ] }) => {
 	const transaction = Transaction.get(id);
+	console.log('transactionFinished', transaction, data);
 	if (transaction) transaction.finish(data);
 });
 
 listen("transactionError", ({ payload: [ id, [ msg, data ] ] }) => {
 	const transaction = Transaction.get(id);
+	console.log('transactionError', transaction, data);
 	if (transaction) transaction.error(msg, data);
 });
 
-export { Transaction, tasks }
+export { Transaction, tasks, taskHeight, tasksMax, tasksNum }
