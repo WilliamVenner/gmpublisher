@@ -1,5 +1,5 @@
 <script>
-	import Addons from '../addons.js';
+	import { Addons, trimPath, getFileTypeInfo } from '../addons.js';
 	import { _ } from 'svelte-i18n';
 	import filesize from 'filesize';
 	import { tippyFollow, tippy } from '../tippy.js';
@@ -10,129 +10,19 @@
 	import { ChevronUp, Folder, LinkOut, Download, FolderAdd } from 'akar-icons-svelte';
 	import { invoke, promisified } from 'tauri/api/tauri';
 	import Timestamp from '../components/Timestamp.svelte';
-	import { afterUpdate } from 'svelte';
+	import { afterUpdate, onDestroy } from 'svelte';
 	import { Transaction } from '../transactions.js';
-
-	function trimPath(path) {
-		let n = 0;
-		for (let i = path.length-1; i >= 0; i--) {
-			if (path[i] === '/' || path[i] === '\\') {
-				n++;
-			} else {
-				break;
-			}
-		}
-		if (n > 0) {
-			return path.substr(0, path.length - n);
-		} else {
-			return path;
-		}
-	}
-
-	let tempExtracted = false;
+	import Loading from '../components/Loading.svelte';
 
 	export let path;
-	export let addon;
+	export let workshop;
+	export let dead;
 
-	const gma = writable({});
-
-	function getFileIcon(extension) {
-		switch(extension) {
-			case 'lua':
-				return 'script_code.png';
-
-			case 'mp3':
-			case 'ogg':
-			case 'wav':
-				return 'sound.png';
-
-			case 'png':
-			case 'jpg':
-			case 'jpeg':
-				return 'photo.png';
-
-			case 'bsp':
-			case 'nav':
-			case 'ain':
-			case 'fgd':
-				return 'map.png';
-
-			case 'pcf':
-				return 'wand.png';
-			
-			case 'vcd':
-				return 'comments.png';
-
-			case 'ttf':
-				return 'font.png';
-
-			case 'txt':
-				return 'page_white_text.png';
-
-			case 'properties':
-				return 'page_white_wrench.png';
-
-			case 'vmt':
-			case 'vtf':
-				return 'picture_link.png';
-
-			case 'mdl':
-			case 'vtx':
-			case 'phy':
-			case 'ani':
-			case 'vvd':
-				return 'bricks.png';
-
-			default:
-				return 'page_white.png';
-		}
-		// TODO remove unused
-	}
-
-	function getFileType(extension) {
-		switch(extension) {
-			case 'mp3':
-			case 'ogg':
-			case 'wav':
-				return 'audio';
-
-			case 'png':
-			case 'jpg':
-			case 'jpeg':
-				return 'image';
-
-			case 'vtf':
-			case 'vmt':
-			case 'map':
-			case 'ain':
-			case 'nav':
-			case 'ttf':
-			case 'vcd':
-			case 'fgd':
-			case 'pcf':
-			case 'lua':
-			case 'mdl':
-			case 'vtx':
-			case 'phy':
-			case 'ani':
-			case 'vvd':
-			case 'txt':
-			case 'properties':
-				return extension;
-
-			default:
-				return 'unknown';
-		}
-	}
-
-	const RE_FILE_EXTENSION = /^.*(?:\.(.*?))$/;
-	function getFileTypeInfo(path) {
-		const extension = path.match(RE_FILE_EXTENSION)?.[1].toLowerCase();
-		return [getFileIcon(extension), getFileType(extension), extension];
-	}
+	let metadata;
+	let size = workshop.size != null ? filesize(workshop.size) : null;
 
 	let entries;
-	const browsing = writable({});
+	let browsing;
 	let total_files = 0;
 
 	function createDirShortcuts(entries, path) {
@@ -154,19 +44,19 @@
 		return entries;
 	}
 
-	let metadata = Addons.previewGMA(path, addon.id).then(data => {
-		let [metadata, ws_metadata] = data;
+	let owner = new Promise(() => {});
 
-		$gma = metadata;
-		
+	const loading = Addons.previewGMA(path, workshop.id).then(gma => {
+		owner = Addons.getWorkshopUploader(workshop.id);
+
 		entries = {
 			dirs: {},
 			files: [],
 			path: '',
 		};
 
-		for (let i = 0; i < metadata.entries.length; i++) {
-			const entry = metadata.entries[i];
+		for (let i = 0; i < gma.entries.length; i++) {
+			const entry = gma.entries[i];
 			const components = entry.path.split('/');
 			let path = entries;
 			let path_str = '';
@@ -199,9 +89,10 @@
 			total_files++;
 		}
 
-		$browsing = createDirShortcuts(entries, '');
+		size = filesize(gma.size);
 
-		return data;
+		browsing = createDirShortcuts(entries, '');
+		metadata = gma;
 	});
 
 	let pathContainer;
@@ -216,12 +107,12 @@
 
 	function browseDirectory() {
 		const path = this.dataset.path;
-		$browsing = $browsing.dirs[path];
+		browsing = browsing.dirs[path];
 	}
 
 	function goUp() {
-		if ("../" in $browsing.dirs) {
-			$browsing = $browsing.dirs['../'];
+		if ("../" in browsing.dirs) {
+			browsing = browsing.dirs['../'];
 		}
 	}
 
@@ -240,8 +131,8 @@
 			.then(transactionId => new Transaction(transactionId, transaction => {
 				return $_('extracting_progress', { values: {
 					pct: transaction.progress,
-					data: filesize((transaction.progress / 100) * $gma.size),
-					dataTotal: filesize($gma.size)
+					data: filesize((transaction.progress / 100) * metadata.size),
+					dataTotal: size
 				}});
 			}));
 	}
@@ -365,8 +256,8 @@
 		}).then(id => new Transaction(id, transaction => {
 			return $_('extracting_progress', { values: {
 				pct: transaction.progress,
-				data: filesize((transaction.progress / 100) * $gma.size),
-				dataTotal: filesize($gma.size)
+				data: filesize((transaction.progress / 100) * metadata.size),
+				dataTotal: size
 			}});
 		}));
 
@@ -377,79 +268,89 @@
 </script>
 
 <div id="gma-preview" class="modal" class:loaded={!!entries}>
-	{#await metadata}
-		<img src="/img/loading.svg" alt="Loading"/>
-	{:then [metadata, ws_metadata]}
-		<div id="content">
-			<div id="sidebar">
-				<div class="extract-btn" on:click={extract}>{$_('extract')}</div>
-				<div id="addon" class="hide-scroll">
-					<div><WorkshopAddon {...addon} isPreviewing={true}/></div>
-					<div id="tags">
-						{#if metadata.type && addon.tags.indexOf(metadata.type.toLowerCase()) !== -1}
-							<div class="tag {metadata.type.toLowerCase()}">{metadata.type}</div>
-						{/if}
-						{#each addon.tags as tag}
-							<div class="tag {tag.toLowerCase()}">{tag}</div>
-						{/each}
-					</div>
-					<table id="addon-info">
-						<tbody>
+	<div id="content">
+		<div id="sidebar">
+			<div class="extract-btn" on:click={extract}>{$_('extract')}</div>
+			<div id="addon" class="hide-scroll">
+				<div><WorkshopAddon {...workshop} isPreviewing={true}/></div>
+				<div id="tags">
+					{#if metadata && metadata.type && workshop.tags.indexOf(metadata.type.toLowerCase()) !== -1}
+						<div class="tag {metadata.type.toLowerCase()}">{metadata.type}</div>
+					{/if}
+					{#each workshop.tags as tag}
+						<div class="tag {tag.toLowerCase()}">{tag}</div>
+					{/each}
+				</div>
+				<table id="addon-info">
+					<tbody>
+						{#if size}
 							<tr>
 								<th>{$_('size')}</th>
-								<td>{filesize(metadata.size)}</td>
+								<td>{size}</td>
 							</tr>
-							{#if ws_metadata}
-								<tr>
-									<th>{$_('author')}</th>
-									<td>
-										{#if ws_metadata.owner}
-											<a target="_blank" href="https://steamcommunity.com/profiles/{ws_metadata.steamid64}" style="text-decoration:none">
-												<img id="avatar" src="data:image/png;base64,{ws_metadata.owner.avatar}"/>
-												<span>{ws_metadata.owner.name}</span>
-											</a>
-										{:else}
-											<a target="_blank" class="color" href="https://steamcommunity.com/profiles/{ws_metadata.steamid64}">
-												{new SteamID(ws_metadata.steamid64).getSteam2RenderedID(true)}
-											</a>
-										{/if}
-									</td>
-								</tr>
-								<tr>
-									<th>{$_('created')}</th>
-									<td><Timestamp unix={ws_metadata.timeCreated}/></td>
-								</tr>
-								{#if ws_metadata.timeUpdated && ws_metadata.timeUpdated != ws_metadata.timeCreated}
-									<tr>
-										<th>{$_('updated')}</th>
-										<td><Timestamp unix={ws_metadata.timeUpdated}/></td>
-									</tr>
-								{/if}
-							{/if}
-						</tbody>
-					</table>
-					{#if ws_metadata}
-						<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={ws_metadata.id}" target="_blank">Steam Workshop<LinkOut size=".8rem"/></a></div>
-						{#if ws_metadata.description}
-							<p id="description" class="select">{ws_metadata.description}</p>
 						{/if}
+						{#if !dead}
+							<tr>
+								<th>{$_('author')}</th>
+								<td>
+									{#await owner}
+										<Loading/>
+									{:then owner}
+										<a target="_blank" href="https://steamcommunity.com/profiles/{owner.steamid64}" style="text-decoration:none">
+											<img id="avatar" src="data:image/png;base64,{owner.owner.avatar}"/>
+											<span>{owner.owner.name}</span>
+										</a>
+									{:catch}
+										<a target="_blank" class="color" href="https://steamcommunity.com/profiles/{workshop.steamid64}">
+											{new SteamID(workshop.steamid64).getSteam2RenderedID(true)}
+										</a>
+									{/await}
+								</td>
+							</tr>
+						{/if}
+						{#if workshop.timeCreated}
+							<tr>
+								<th>{$_('created')}</th>
+								<td><Timestamp unix={workshop.timeCreated}/></td>
+							</tr>
+						{/if}
+						{#if workshop.timeUpdated && workshop.timeUpdated != workshop.timeCreated}
+							<tr>
+								<th>{$_('updated')}</th>
+								<td><Timestamp unix={workshop.timeUpdated}/></td>
+							</tr>
+						{/if}
+					</tbody>
+				</table>
+				{#if workshop}
+					<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={workshop.id}" target="_blank">Steam Workshop<LinkOut size=".8rem"/></a></div>
+					{#if workshop.description}
+						<p id="description" class="select">{workshop.description}</p>
+					{/if}
+				{/if}
+			</div>
+		</div>
+
+		<div id="browser">
+			<div id="nav">
+				<div id="up" class="control" on:click={goUp}><ChevronUp size="1rem"/></div>
+				<div id="path" class="select hide-scroll" bind:this={pathContainer}>
+					{#if metadata}
+						{metadata.path}{browsing.path.length > 0 ? '/' : ''}{browsing.path}
+					{:else if !!workshop.localFile}
+						{workshop.localFile}
 					{/if}
 				</div>
+				<div id="open" class="control" on:click={open} use:tippyFollow={$_('open_addon_location')}><Folder size="1rem"/></div>
 			</div>
 
-			<div id="browser">
-				<div id="nav">
-					<div id="up" class="control" on:click={goUp}><ChevronUp size="1rem"/></div>
-					<div id="path" class="select hide-scroll" bind:this={pathContainer}>
-						{metadata.path}{$browsing.path.length > 0 ? '/' : ''}{$browsing.path}
-					</div>
-					<div id="open" class="control" on:click={open} use:tippyFollow={$_('open_addon_location')}><Folder size="1rem"/></div>
-				</div>
-
-				<div id="entries" class="hide-scroll">
+			<div id="entries" class="hide-scroll">
+				{#await loading}
+					<Loading/>
+				{:then}
 					<table>
 						<tbody>
-							{#each Object.entries($browsing.dirs) as [dir, entries]}
+							{#each Object.entries(browsing.dirs) as [dir, entries]}
 								{#if dir !== "../"}
 									<tr on:click={browseDirectory} data-path={dir}>
 										<td><img use:tippyFollow={$_('file_types.folder')} src="/img/silkicons/folder.png" alt=""/></td>
@@ -463,12 +364,9 @@
 									</tr>
 								{/if}
 							{/each}
-							{#each $browsing.files as entry}
+							{#each browsing.files as entry}
 								<tr on:click={openGMAEntry} data-path={entry.path}>
-									<td>
-										<img class="loading" width="16px" height="16px" src="/img/loading.svg"/>
-										<img class="icon" use:tippyFollow={$_('file_types.' + entry.type, { values: { extension: entry.extension } })} src="/img/silkicons/{entry.icon}" alt=""/>
-									</td>
+									<td><img class="icon" use:tippyFollow={$_('file_types.' + entry.type, { values: { extension: entry.extension } })} src="/img/silkicons/{entry.icon}" alt=""/></td>
 									<td><span>{entry.name}</span></td>
 									<td><span>{$_('file_types.' + entry.type, { values: { extension: entry.extension } })}</span></td>
 									<td><span>{filesize(entry.size)}</span></td>
@@ -476,70 +374,78 @@
 							{/each}
 						</tbody>
 					</table>
-				</div>
+				{:catch error}
+					<div id="error"><Dead/><br>{error}</div>
+				{/await}
+			</div>
 
-				<div id="ribbon">
-					{total_files === 1 ? $_('items_one') : $_('items_num', { values: { n: total_files } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{$_('items_shown', { values: { n: $browsing.files.length + Object.keys($browsing.dirs).length } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{filesize(metadata.size)}
-				</div>
+			<div id="ribbon">
+				{#await loading}
+					<Loading/>
+				{:then}
+					{total_files === 1 ? $_('items_one') : $_('items_num', { values: { n: total_files } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{$_('items_shown', { values: { n: browsing.files.length + Object.keys(browsing.dirs).length } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{size}
+				{:catch}
+					{$_('items_num', { values: { n: 0 } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{$_('items_shown', { values: { n: 0 } })}{#if size}&nbsp;&nbsp;∣&nbsp;&nbsp;{size}{/if}
+				{/await}
 			</div>
 		</div>
-	{:catch error}
-		<div id="error"><Dead/><br>{error}</div>
-	{/await}
+	</div>
 
-	<div id="destination" class:active={$chooseDestination} on:click={cancelExtract} bind:this={extractModal}><div>
-		<h1>{$_('extract_where_to')}</h1>
-		<h4>{$_('extract_overwrite_warning')}</h4>
+	{#if metadata}
+		<div id="destination" class:active={$chooseDestination} on:click={cancelExtract} bind:this={extractModal}><div>
+			<h1>{$_('extract_where_to')}</h1>
+			<h4>{$_('extract_overwrite_warning')}</h4>
 
-		<input type="text" name="path" on:input={extractDestHover} on:focus={extractDestFocused} on:blur={extractDestLostFocus} on:change={extractDestInputted} bind:this={extractPathInput} placeholder={$extractPath[0] ? ($extractPath[1] + ($extractPath[2] ? (PATH_SEPARATOR + $gma.extracted_name) : '')) : $gma.extracted_name}/>
+			<input type="text" name="path" on:input={extractDestHover} on:focus={extractDestFocused} on:blur={extractDestLostFocus} on:change={extractDestInputted} bind:this={extractPathInput} placeholder={$extractPath[0] ? ($extractPath[1] + ($extractPath[2] ? (PATH_SEPARATOR + metadata.extracted_name) : '')) : metadata.extracted_name}/>
 
-		{#if $extractPath[0] === 'browse'}
-			<div id="checkbox">
-				<label>
-					<input type="checkbox" id="named" name="named" on:change={createFolderUpdated} checked={AppSettings.create_folder_on_extract}>
-					<span>{$_('create_folder')}</span>
-				</label>
-			</div>
-		{/if}
-
-		<div id="destinations">
-			<div class="destination" class:active={$extractPath[0] === 'browse'} on:hover={extractDestHover} on:click={extractDestBrowse} data-dest="browse">
-				<Folder/>
-				<div>{$_('browse')}</div>
-			</div>
-
-			{#if !!AppData.tmp_dir}
-				<div class="destination" class:active={$extractPath[0] === 'tmp'} use:tippy={$_('extract_open_tip')} on:mouseover={extractDestHover} on:click={updateExtractDest} on:mouseleave={extractDestHoverLeave} data-dest="tmp">
-					<FolderAdd/>
-					<div>{$_('open')}</div>
+			{#if $extractPath[0] === 'browse'}
+				<div id="checkbox">
+					<label>
+						<input type="checkbox" id="named" name="named" on:change={createFolderUpdated} checked={AppSettings.create_folder_on_extract}>
+						<span>{$_('create_folder')}</span>
+					</label>
 				</div>
 			{/if}
 
-			{#if !!AppData.gmod}
-				<div class="destination" class:active={$extractPath[0] === 'addons'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="addons">
-					<img src="/img/gmod.svg"/>
-					<div>{$_('addons_folder')}</div>
+			<div id="destinations">
+				<div class="destination" class:active={$extractPath[0] === 'browse'} on:hover={extractDestHover} on:click={extractDestBrowse} data-dest="browse">
+					<Folder/>
+					<div>{$_('browse')}</div>
 				</div>
-			{/if}
 
-			{#if !!AppData.downloads_dir}
-				<div class="destination" class:active={$extractPath[0] === 'downloads'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="downloads">
-					<Download/>
-					<div>{$_('downloads_folder')}</div>
-				</div>
-			{/if}
-		</div>
+				{#if !!AppData.tmp_dir}
+					<div class="destination" class:active={$extractPath[0] === 'tmp'} use:tippy={$_('extract_open_tip')} on:mouseover={extractDestHover} on:click={updateExtractDest} on:mouseleave={extractDestHoverLeave} data-dest="tmp">
+						<FolderAdd/>
+						<div>{$_('open')}</div>
+					</div>
+				{/if}
 
-		{#if AppSettings.destinations.length > 0}
-			<div id="history" class="hide-scroll">
-				{#each AppSettings.destinations as path}
-					<div on:click={extractableHistoryPath} class:active={$extractPath[0] === 'browse' && $extractPath[1] === path}>{path}</div>
-				{/each}
+				{#if !!AppData.gmod}
+					<div class="destination" class:active={$extractPath[0] === 'addons'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="addons">
+						<img src="/img/gmod.svg"/>
+						<div>{$_('addons_folder')}</div>
+					</div>
+				{/if}
+
+				{#if !!AppData.downloads_dir}
+					<div class="destination" class:active={$extractPath[0] === 'downloads'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="downloads">
+						<Download/>
+						<div>{$_('downloads_folder')}</div>
+					</div>
+				{/if}
 			</div>
-		{/if}
 
-		<div class="extract-btn" on:click={doExtract} class:disabled={!$extractPath[0]}>{$_('extract')}</div>
-	</div></div>
+			{#if AppSettings.destinations.length > 0}
+				<div id="history" class="hide-scroll">
+					{#each AppSettings.destinations as path}
+						<div on:click={extractableHistoryPath} class:active={$extractPath[0] === 'browse' && $extractPath[1] === path}>{path}</div>
+					{/each}
+				</div>
+			{/if}
+
+			<div class="extract-btn" on:click={doExtract} class:disabled={!$extractPath[0]}>{$_('extract')}</div>
+		</div></div>
+	{/if}
 </div>
 
 <style>
@@ -643,10 +549,6 @@
 	}
 	#entries > table tr {
 		cursor: pointer;
-	}
-	#entries > table :global(tr:not(.extracting) .loading),
-	#entries > table :global(tr.extracting .icon) {
-		display: none;
 	}
 
 	#entries > table {

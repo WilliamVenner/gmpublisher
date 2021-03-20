@@ -30,9 +30,6 @@ where
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GMAFile {
-	#[serde(skip)]
-	pub(crate) handle: GMAFileHandle,
-
 	pub id: Option<PublishedFileId>,
 
 	pub path: NormalizedPathBuf,
@@ -56,10 +53,10 @@ pub struct GMAFile {
 }
 impl GMAFile {
 	pub fn new(path: &PathBuf, id: Option<PublishedFileId>) -> Result<GMAFile, GMAReadError> {
-		let mut handle: GMAFileHandle = BufReader::new(match File::open(path) {
+		let mut handle = BufReader::new(match File::open(path) {
 			Ok(handle) => handle,
 			Err(_) => return Err(GMAReadError::IOError)
-		}).into();
+		});
 	
 		let size = match path.metadata() {
 			Ok(metadata) => metadata.len(),
@@ -94,34 +91,11 @@ impl GMAFile {
 			entries_list_start: None,
 
 			extracted_name: (id.is_some(), None),
-
-			handle,
 		})
 	}
 
-	pub fn open(&mut self) -> Result<bool, GMAReadError> {
-		if !self.handle.is_open() {
-			self.handle = BufReader::new(match File::open(&*self.path) {
-				Ok(handle) => handle,
-				Err(_) => return Err(GMAReadError::IOError)
-			}).into();
-			Ok(false)
-		} else {
-			Ok(true)
-		}
-	}
-
-	pub fn close(&mut self) -> bool {
-		if self.handle.is_open() {
-			self.handle = GMAFileHandle::default();
-			true
-		} else {
-			false
-		}
-	}
-
-	pub fn spawn_handle(&self) -> Result<BufReader<File>, std::io::Error> {
-		Ok(BufReader::new(File::open(&*self.path)?))
+	pub fn handle(&self) -> Result<GMAFileHandle, std::io::Error> {
+		Ok(BufReader::new(File::open(&*self.path)?).into())
 	}
 }
 

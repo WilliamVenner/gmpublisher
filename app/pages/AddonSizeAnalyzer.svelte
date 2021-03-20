@@ -2,7 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { _ } from 'svelte-i18n';
 	import { ArrowCycle } from 'akar-icons-svelte';
-	import Addons from '../addons.js';
+	import { Addons } from '../addons.js';
 	import WorkshopAddon from '../components/WorkshopAddon.svelte';
 
 	let _transaction;

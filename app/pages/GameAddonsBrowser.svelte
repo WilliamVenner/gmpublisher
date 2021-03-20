@@ -1,6 +1,6 @@
 <script>
 	import AddonsBrowser from '../components/AddonsBrowser.svelte';
-	import Addons from '../addons.js';
+	import { Addons } from '../addons.js';
 
 	let page = 1;
 	let loadingPage = null;
@@ -22,4 +22,4 @@
 	}
 </script>
 
-<AddonsBrowser firstPage={firstPage} advancePage={advancePage} cacheName="gameAddons"/>
+<AddonsBrowser firstPage={firstPage} advancePage={advancePage} cacheName="gameAddons" hasPaths={true}/>

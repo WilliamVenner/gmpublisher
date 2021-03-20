@@ -3,7 +3,7 @@
 	import { modals } from '../modals.js';
 	import PreviewGMA from '../modals/PreviewGMA.svelte';
 	import Dead from '../../public/img/dead.svg';
-	import Addons from '../addons.js';
+	import { Addons } from '../addons.js';
 
 	export let id;
 	export let title;
@@ -14,8 +14,9 @@
 	export let previewUrl;
 	export let subscriptions;
 	export let localFile;
+	export let steamid64;
+	export let name = null;
 	export let searchTitle;
-	export let size = undefined;
 
 	export let isPreviewing = false;
 
@@ -23,24 +24,23 @@
 	let starsPct = Math.round(((score * 100) + Number.EPSILON) * 100) / 100;
 
 	const dead = tags == false && !previewUrl && !subscriptions && title == id;
-	const getMetadata = dead ? Addons.getGMAMetadata(id) : undefined;
+	const getMetadata = dead && !!localFile ? Addons.getGMAMetadata(localFile, id) : undefined;
 
 	function click() {
-		const path = Addons.getAddonPath(id);
-		if (path) {
-			$modals = [...$modals, {
-				component: PreviewGMA,
-				props: {
-					path,
-					addon: $$props
-				}
-			}];
-		}
+		if (!localFile) return;
+		$modals = [...$modals, {
+			component: PreviewGMA,
+			props: {
+				path: localFile,
+				dead,
+				workshop: $$props
+			}
+		}];
 	}
 </script>
 
 <div id="workshop-addon" class="ws-{id}" class:previewing={isPreviewing} data-ws={id}>
-	<div id="card" on:click={ !localFile && !isPreviewing ? click : null }>
+	<div id="card" on:click={ !isPreviewing ? click : null }>
 		<div id="stats">
 			<span id="subscriptions">
 				<img src="/img/download.png" alt="Subscriptions"/>

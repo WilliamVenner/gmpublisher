@@ -32,6 +32,11 @@ enum Command {
 		callback: String,
 		error: String
 	},
+	GetWorkshopUploader {
+		id: PublishedFileId,
+		callback: String,
+		error: String
+	},
 
 	GameAddonsBrowser {
 		page: u32,
@@ -39,11 +44,8 @@ enum Command {
 		error: String
 	},
 	GmaMetadata {
-		id: PublishedFileId,
-		callback: String,
-		error: String
-	},
-	GetGmaPaths {
+		path: PathBuf,
+		id: Option<PublishedFileId>,
 		callback: String,
 		error: String
 	},
@@ -124,6 +126,9 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 					WorkshopBrowser { page, callback, error } => {
 						workshop::browse(callback, error, webview, page)
 					},
+					GetWorkshopUploader { callback, error, id } => {
+						game_addons::get_gma_ws_owner(callback, error, webview, id)
+					},
 
 					UpdateSettings { settings } => {
 						settings::invoke_handler(webview, settings)
@@ -136,11 +141,8 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 							Err("Garry's Mod not found".to_string()) // TODO
 						}
 					},
-					GmaMetadata { id, callback, error } => {
-						game_addons::get_addon_metadata(callback, error, webview, id)
-					},
-					GetGmaPaths { callback, error } => {
-						game_addons::get_gma_paths(callback, error, webview)
+					GmaMetadata { callback, error, path, id } => {
+						game_addons::get_gma_metadata(callback, error, webview, path, id)
 					},
 					
 					PreviewGma { callback, error, path, id } => {

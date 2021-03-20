@@ -3,11 +3,12 @@
 	import { onDestroy } from 'svelte';
 	import { _ } from 'svelte-i18n';
 	import { ArrowCycle, Search, Cross, TriangleAlert } from 'akar-icons-svelte';
-	import Addons from '../addons.js';
+	import { Addons } from '../addons.js';
 	import WorkshopAddon from './WorkshopAddon.svelte';
 	import Dead from '../../public/img/dead.svg';
 
 	export let cacheName;
+	export let hasPaths = false;
 
 	let refreshing = false;
 
@@ -200,7 +201,11 @@
 		{#if addons != false}
 			<div id="addons" class:unpadded={searchActive && searchFailed}>
 				{#each addons as addon}
-					<WorkshopAddon {...addon}/>
+					{#if hasPaths}
+						<WorkshopAddon {...addon[1]} localFile={addon[0]}/>
+					{:else}
+						<WorkshopAddon {...addon}/>
+					{/if}
 				{/each}
 			</div>
 		{/if}

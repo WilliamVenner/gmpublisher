@@ -14,7 +14,7 @@ pub enum ExtractDestination {
 	NamedDirectory(PathBuf),
 }
 impl ExtractDestination {
-    fn resolve(self, gma: &mut GMAFile) -> PathBuf {
+    fn resolve(self, gma: &GMAFile) -> PathBuf {
 		use ExtractDestination::*;
 
         match self {
@@ -40,7 +40,7 @@ impl ExtractDestination {
 }
 
 impl GMAFile {
-	pub fn extract(&mut self, to: ExtractDestination, progress_callback: Option<ProgressCallback>) -> Result<PathBuf, GMAReadError> {
+	pub fn extract(&self, to: ExtractDestination, progress_callback: Option<ProgressCallback>) -> Result<PathBuf, GMAReadError> {
 		use ExtractDestination::*;
 
 		let extract_to = match to {
@@ -71,7 +71,7 @@ impl GMAFile {
 			sys.get_available_memory()
 		} * 1000) - 1000000000;
 
-		let (entries, _) = self.entries().unwrap();
+		let entries = self.entries.as_ref().expect("Expected entries to be read this point"); // TODO go through and add .expect() instead of .unwrap()
 		let total_entries = entries.len();
 
 		// We should only multithread file i/o if we have enough available memory to actually store the GMA entry data
@@ -92,7 +92,7 @@ impl GMAFile {
 				let fs_path = extract_to.join(&entry.path);
 				fs::create_dir_all(fs_path.with_file_name("")).map_err(|_| GMAReadError::IOError)?;
 
-				let mut handle_r = self.spawn_handle().unwrap();
+				let mut handle_r = self.handle().unwrap();
 				let size = entry.size;
 				let index = entry.index;
 
@@ -133,10 +133,12 @@ impl GMAFile {
 
 			}
 		} else {
+			let mut handle = self.handle().map_err(|_| GMAReadError::IOError)?;
+
 			let mut i: usize = 0;
 			for entry in entries.iter() {
 				let mut buf = vec![0; entry.size as usize];
-				self.handle.read_exact(&mut buf).unwrap();
+				handle.read_exact(&mut buf).unwrap();
 
 				let fs_path = extract_to.join(&entry.path);
 				match fs::write(fs_path, buf) {
@@ -152,10 +154,6 @@ impl GMAFile {
 				i = i + 1;
 			}
 		}
-
-		// Apparently some gma just completely omit the addon CRC from the end
-		// Hence, we shouldn't unwrap the following since it may fail
-		self.handle.read_u32::<LittleEndian>().ok(); // crc [unused]
 
 		if let Some(threads) = threads {
 			for thread in threads {
@@ -174,18 +172,19 @@ impl GMAFile {
 		Ok(extract_to)
 	}
 
-	pub fn extract_entry(&mut self, entry_path: String, to: ExtractDestination) -> Result<PathBuf, GMAReadError> {
+	pub fn extract_entry(&self, entry_path: String, to: ExtractDestination) -> Result<PathBuf, GMAReadError> {
 		let extract_to = to.resolve(self).join(PathBuf::from(entry_path.clone()));
 		
 		fs::create_dir_all(extract_to.with_file_name("")).map_err(|_| GMAReadError::IOError)?;
 		let mut handle_w = File::create(&extract_to).map_err(|_| GMAReadError::IOError)?;
 
-		self.open()?;
-		self.entries()?;
+		let entry = self.entries.as_ref().expect("Expected entries to be read at this point")
+			.get(
+				*self.entries_map.as_ref().unwrap()
+				.get(&entry_path).ok_or(GMAReadError::EntryNotFound)?
+			).ok_or(GMAReadError::EntryNotFound)?;
 
-		let entry = self.entries.as_ref().unwrap().get(*self.entries_map.as_ref().unwrap().get(&entry_path).ok_or(GMAReadError::EntryNotFound)?).ok_or(GMAReadError::EntryNotFound)?;
-
-		let handle = &mut self.handle;
+		let mut handle = self.handle().map_err(|_| GMAReadError::IOError)?;
 		handle.seek(SeekFrom::Start(self.entries_start.unwrap() + entry.index)).unwrap();
 
 		let mut buf = vec![0; entry.size as usize];

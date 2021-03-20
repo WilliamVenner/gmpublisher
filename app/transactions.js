@@ -23,6 +23,8 @@ resize();
 
 class Transaction {
 	constructor(id, TASK_statusTextFn) {
+		if (id === null || id == undefined) return;
+
 		this.id = id;
 		this.callbacks = [];
 		this.progress = 0;

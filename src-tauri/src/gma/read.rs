@@ -45,9 +45,7 @@ impl GMAFile {
 	pub fn metadata(&mut self) -> Result<&GMAMetadata, GMAReadError> {
 		if let None = self.metadata {
 
-			let should_close = self.open().unwrap();
-
-			let handle = &mut self.handle;
+			let mut handle = self.handle().map_err(|_| GMAReadError::IOError)?;
 
 			handle.seek(SeekFrom::Start(self.metadata_start)).unwrap();
 
@@ -86,8 +84,6 @@ impl GMAFile {
 
 			self.update_extractable_name();
 
-			if should_close { self.close(); }
-
 		}
 
 		Ok(&self.metadata.as_ref().unwrap())
@@ -96,11 +92,9 @@ impl GMAFile {
 	pub fn entries(&mut self) -> Result<(Arc<Vec<GMAEntry>>, Arc<HashMap<String, usize>>), GMAReadError> {
 		if let None = self.entries {
 
-			let should_close = self.open().unwrap();
-
 			if let None = self.entries_list_start { self.metadata().unwrap(); }
 
-			let handle = &mut self.handle;
+			let mut handle = self.handle().map_err(|_| GMAReadError::IOError)?;
 			handle.seek(SeekFrom::Start(self.entries_list_start.unwrap())).unwrap();
 
 			let mut entries = Vec::new();
@@ -129,19 +123,15 @@ impl GMAFile {
 			self.entries_map = Some(Arc::new(entries_map)); // TODO does this need to be Arc?
 			self.entries_start = Some(handle.seek(SeekFrom::Current(0)).unwrap());
 
-			if should_close { self.close(); }
-
 		}
 
 		Ok((self.entries.as_ref().unwrap().clone(), self.entries_map.as_ref().unwrap().clone()))
 	}
 
-	pub fn read_entry(&mut self, path: String) -> Option<Vec<u8>> {
-		self.open().ok()?;
-
+	pub fn read_entry(&self, path: String) -> Option<Vec<u8>> {
 		let entry = self.entries.as_ref().unwrap().get(*self.entries_map.as_ref().unwrap().get(&path)?)?;
 
-		let handle = &mut self.handle;
+		let mut handle = self.handle().ok()?;
 
 		handle.seek(SeekFrom::Start(entry.index)).unwrap();
 
@@ -153,7 +143,7 @@ impl GMAFile {
 }
 
 impl GMAEntry {
-	pub fn read(&mut self, mut handle: GMAFileHandle) -> Option<Vec<u8>> {
+	pub fn read(&self, mut handle: GMAFileHandle) -> Option<Vec<u8>> {
 		handle.seek(SeekFrom::Start(self.index)).unwrap();
 
 		let mut buf = vec![0; self.size as usize];
