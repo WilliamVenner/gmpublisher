@@ -5,6 +5,7 @@
 
 use std::sync::RwLock;
 
+use addon_size_analyzer::AddonSizeAnalyzer;
 use tauri::{AppBuilder, Webview};
 extern crate webview_official;
 
@@ -28,6 +29,8 @@ pub(crate) use base64_image::Base64Image;
 
 mod game_addons;
 use game_addons::GameAddons;
+
+mod addon_size_analyzer;
 
 mod transactions;
 
@@ -55,6 +58,8 @@ lazy_static! {
 	pub(crate) static ref GAME_ADDONS: RwLock<GameAddons> = RwLock::new(GameAddons::init());
 
 	pub(crate) static ref TRANSACTIONS: RwLock<Transactions> = RwLock::new(Transactions::init());
+
+	pub(crate) static ref ADDON_SIZE_ANALYZER: AddonSizeAnalyzer = AddonSizeAnalyzer::init();
 }
 
 fn main() {

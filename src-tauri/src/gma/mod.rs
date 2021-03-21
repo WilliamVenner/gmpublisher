@@ -18,8 +18,7 @@ pub use extract::*;
 
 use crate::{util::path::NormalizedPathBuf, workshop::WorkshopItem};
 
-pub type ProgressCallback = Box<dyn Fn(f32) -> () + Sync + Send>;
-pub type FinishedCallback = Box<dyn Fn(PathBuf) -> () + Sync + Send>;
+pub type ProgressCallback = Box<dyn Fn(f64) -> () + Sync + Send>;
 
 fn serialize_extracted_name<S>(data: &(bool, Option<String>), s: S) -> Result<S::Ok, S::Error>
 where

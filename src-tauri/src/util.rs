@@ -1,3 +1,5 @@
+use std::fs::DirEntry;
+
 use tauri::Webview;
 use anyhow::anyhow;
 
@@ -132,4 +134,8 @@ pub(crate) fn prompt_path_dialog(callback: String, error: String, webview: &mut 
 	}, callback, error);*/
 
 	Ok(())
+}
+
+pub(crate) fn get_modified_time(entry: &DirEntry) -> Result<u64, anyhow::Error> {
+	Ok(entry.metadata()?.modified()?.elapsed()?.as_secs())
 }

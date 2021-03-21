@@ -8,6 +8,7 @@ use crate::workshop;
 use crate::settings;
 use crate::game_addons;
 use crate::util;
+use crate::addon_size_analyzer;
 
 #[derive(Deserialize)]
 #[serde(tag="cmd", rename_all="camelCase")]
@@ -83,8 +84,11 @@ enum Command {
 	
 	AnalyzeAddonSizes {
 		callback: String,
-		error: String
+		error: String,
+		w: f64,
+		h: f64
 	},
+	FreeAddonSizeAnalyzer,
 
 	LoadAsset
 }
@@ -155,8 +159,12 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 						game_addons::extract_gma_preview(callback, error, webview, path, named_dir, tmp, downloads, addons)
 					},
 
-					AnalyzeAddonSizes { callback, error } => {
-						game_addons::analyze_addon_sizes(callback, error, webview)
+					AnalyzeAddonSizes { callback, error, w, h } => {
+						crate::ADDON_SIZE_ANALYZER.compute(callback, error, webview, w, h)
+					},
+					FreeAddonSizeAnalyzer => {
+						crate::ADDON_SIZE_ANALYZER.free();
+						Ok(())
 					},
 
 					LoadAsset => { Ok(()) },

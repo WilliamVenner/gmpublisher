@@ -107,10 +107,6 @@ class Addons {
 		return this.workshopUploaderCache[id];
 	}
 
-	analyzeAddonSizes() {
-		return promisified({ cmd: 'analyzeAddonSizes' }).then(transactionId => new Transaction(transactionId));
-	}
-
 	previewGMA(path, id) {
 		if (!(path in this.gmaPreviewCache))
 			this.gmaPreviewCache[path] = promisified({ cmd: 'previewGma', path, id });

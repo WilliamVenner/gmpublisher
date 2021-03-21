@@ -118,7 +118,7 @@ impl GMAFile {
 							match *progress_callback {
 								Some(ref progress_callback) => {
 									let progress = i.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
-									(progress_callback)(((progress as f32) / (total_entries as f32)) * 100.);
+									(progress_callback)(((progress as f64) / (total_entries as f64)) * 100.);
 								},
 								None => {}
 							}
@@ -147,7 +147,7 @@ impl GMAFile {
 				}
 
 				match *progress_callback {
-					Some(ref progress_callback) => (progress_callback)(((i as f32) / (total_entries as f32)) * 100.),
+					Some(ref progress_callback) => (progress_callback)(((i as f64) / (total_entries as f64)) * 100.),
 					None => {}
 				}
 

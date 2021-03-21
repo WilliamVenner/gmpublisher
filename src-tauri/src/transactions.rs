@@ -9,8 +9,8 @@ pub(crate) type FinishedData = GenericJSON;
 pub(crate) type AbortCallback = Box<dyn Fn(&TransactionStatus) + Send + Sync + 'static>;
 
 pub(crate) enum TransactionMessage {
-	Progress(f32),
-	IncrementProgress(f32),
+	Progress(f64),
+	ProgressMessage(String),
 
 	Cancel,
 	Error(ErrorData),
@@ -20,7 +20,7 @@ impl Debug for TransactionMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.write_str(&match self {
 		    TransactionMessage::Progress(progress) => format!("Progress({})", progress),
-		    TransactionMessage::IncrementProgress(progress) => format!("Progress({})", progress),
+			TransactionMessage::ProgressMessage(msg) => format!("ProgressMessage({})", msg),
 		    TransactionMessage::Cancel => "Cancel".to_string(),
 		    TransactionMessage::Error(_) => "Error".to_string(),
 		    TransactionMessage::Finish(_) => "Finish".to_string(),
@@ -128,10 +128,8 @@ impl Transaction {
 						transaction.progress.store(((new_progress * 100.).round() as u16).min(10000).max(0), Ordering::SeqCst);
 						tauri::event::emit(&mut webview, "transactionProgress", Some((transaction.id, new_progress))).ok();
 					},
-					IncrementProgress(incr) => {
-						let incr = ((incr * 100.).round() as u16).min(10000).max(0);
-						let progress = transaction.progress.fetch_add(incr, Ordering::SeqCst) + incr;
-						tauri::event::emit(&mut webview, "transactionProgress", Some((transaction.id, (progress as f32) / 100.))).ok();
+					ProgressMessage(msg) => {
+						tauri::event::emit(&mut webview, "transactionProgressMsg", Some((transaction.id, msg))).ok();
 					},
 				}
 			}
@@ -170,6 +168,7 @@ impl Transaction {
 	}
 }
 
+#[derive(Clone)]
 pub(crate) struct TransactionChannel {
 	inner: SyncSender<TransactionMessage>,
 	aborted: Arc<AtomicBool>,
@@ -181,8 +180,17 @@ impl std::ops::Deref for TransactionChannel {
     }
 }
 impl TransactionChannel {
+	pub(crate) fn aborted(&self) -> bool {
+		self.aborted.load(Ordering::Acquire)
+	}
+
 	pub(crate) fn cancel(&self) {
 		if self.aborted.fetch_or(true, Ordering::AcqRel) { debug_assert!(false, "Tried to cancel an already aborted transaction."); return; }
+
+		#[cfg(debug_assertions)]
+		{
+			println!("Transaction cancelled!");
+		}
 
 		let res = self.send(TransactionMessage::Cancel);
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
@@ -213,17 +221,17 @@ impl TransactionChannel {
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
 	}
 
-	pub(crate) fn progress(&self, progress: f32) {
+	pub(crate) fn progress(&self, progress: f64) {
 		if self.aborted.load(Ordering::Acquire) { debug_assert!(false, "Tried to progress an aborted transaction."); return; }
 
 		let res = self.send(TransactionMessage::Progress(progress));
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
 	}
 
-	pub(crate) fn progress_incr(&self, incr: f32) {
+	pub(crate) fn progress_msg(&self, msg: &str) {
 		if self.aborted.load(Ordering::Acquire) { debug_assert!(false, "Tried to progress an aborted transaction."); return; }
 
-		let res = self.send(TransactionMessage::IncrementProgress(incr));
+		let res = self.send(TransactionMessage::ProgressMessage(msg.to_string()));
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
 	}
 }
@@ -270,11 +278,12 @@ impl Transactions {
 		}
 	}
 
-	pub(crate) fn new(&mut self, webview: WebviewMut) -> TransactionBuilder {
-		self.id = self.id + 1;
+	pub(crate) fn new(webview: WebviewMut) -> TransactionBuilder {
+		let mut transactions = crate::TRANSACTIONS.write().unwrap();
+		transactions.id = transactions.id + 1;
 		TransactionBuilder {
-			id: self.id,
-			inner: Transaction::new(self.id),
+			id: transactions.id,
+			inner: Transaction::new(transactions.id),
 			webview
 		}
 	}

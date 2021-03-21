@@ -1,24 +1,25 @@
-use std::{borrow::Borrow, collections::{HashMap, hash_map::Entry}, fs::{DirEntry, File}, io::BufReader, mem::MaybeUninit, path::PathBuf, sync::{Arc, Mutex, MutexGuard, RwLock, mpsc}};
+use std::{borrow::Borrow, collections::{HashMap, hash_map::Entry}, fs::{DirEntry, File}, io::BufReader, mem::MaybeUninit, path::PathBuf, sync::{Arc, Mutex, MutexGuard, RwLock, mpsc::{self, Receiver, Sender}}};
 use anyhow::{anyhow, Error};
+use serde::Serialize;
 
 use gma::GMAMetadata;
 use steamworks::PublishedFileId;
 use tauri::Webview;
 
-use crate::{gma::{self, ExtractDestination, GMAFile, GMAReadError}, workshop::{WorkshopItem}};
+use crate::{util, gma::{self, ExtractDestination, GMAFile, GMAReadError}, transactions::Transactions, workshop::{WorkshopItem}};
 use super::show;
 
 pub(crate) struct GameAddons {
-	total: u32,
-	previewing: Option<PathBuf>,
-	gma_cache: Option<GMACache>,
+	pub(crate) total: u32,
+	pub(crate) previewing: Option<PathBuf>,
+	pub(crate) gma_cache: Option<GMACache>,
 }
 
 #[derive(Default)]
-struct GMACache {
-	installed_gmas: Vec<(PathBuf, Option<PublishedFileId>)>,
-	metadata: RwLock<HashMap<PathBuf, GMAFile>>,
-	ws_metadata: RwLock<HashMap<PublishedFileId, Option<WorkshopItem>>>,
+pub(crate) struct GMACache {
+	pub(crate) installed_gmas: Vec<(PathBuf, Option<PublishedFileId>)>,
+	pub(crate) metadata: RwLock<HashMap<PathBuf, GMAFile>>,
+	pub(crate) ws_metadata: RwLock<HashMap<PublishedFileId, Option<WorkshopItem>>>,
 }
 impl GMACache {
 	pub(crate) fn gma_metadata(&self, path: &PathBuf, id: Option<PublishedFileId>) -> Result<GMAFile, GMAReadError> {
@@ -98,11 +99,7 @@ impl GameAddons {
 	}
 }
 
-fn get_modified_time(entry: &DirEntry) -> Result<u64, Error> {
-	Ok(entry.metadata()?.modified()?.elapsed()?.as_secs())
-}
-
-fn cache_addon_paths() -> bool {
+pub(crate) fn cache_addon_paths() -> bool {
 	let app_data = crate::APP_DATA.read().unwrap();
 	let dir = app_data.gmod.as_ref().unwrap();
 
@@ -124,7 +121,7 @@ fn cache_addon_paths() -> bool {
 					canonicalized = dunce::canonicalize(canonicalized.clone()).unwrap_or(canonicalized);
 
 					Some(
-						(get_modified_time(&r).unwrap_or(0), file_name, canonicalized)
+						(util::get_modified_time(&r).unwrap_or(0), file_name, canonicalized)
 					)
 				} else {
 					None
@@ -175,7 +172,7 @@ fn cache_addon_paths() -> bool {
 						let id = Some(PublishedFileId(id));
 						match local_files.binary_search_by_key(&id, |t| t.2) {
 							Ok(_) => {},
-							Err(_) => local_files.push((get_modified_time(&entry).unwrap_or(0), path, id))
+							Err(_) => local_files.push((util::get_modified_time(&entry).unwrap_or(0), path, id))
 						}
 					},
 					Err(_) => {}
@@ -299,8 +296,7 @@ pub(crate) fn open_gma_preview_entry(resolve: String, reject: String, webview: &
 
 	tauri::execute_promise(webview, move || {
 
-		let mut transactions = crate::TRANSACTIONS.write().unwrap();
-		let transaction = transactions.new(webview_mut);
+		let transaction = Transactions::new(webview_mut);
 		let id = transaction.id;
 
 		std::thread::spawn(move || {
@@ -343,8 +339,7 @@ pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut
 
 	tauri::execute_promise(webview, move || {
 		
-		let mut transactions = crate::TRANSACTIONS.write().unwrap();
-		let transaction = transactions.new(webview_mut.clone());
+		let transaction = Transactions::new(webview_mut.clone());
 		let id = transaction.id;
 
 		std::thread::spawn(move || {
@@ -419,88 +414,6 @@ pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut
 			}
 		});
 
-
-		Ok(id)
-
-	}, resolve, reject);
-
-	Ok(())
-}
-
-pub(crate) fn analyze_addon_sizes(resolve: String, reject: String, webview: &mut Webview<'_>) -> Result<(), String> {
-	let webview_mut = webview.as_mut();
-
-	tauri::execute_promise(webview, move || {
-
-		cache_addon_paths();
-		
-		let mut transactions = crate::TRANSACTIONS.write().unwrap();
-		let transaction = transactions.new(webview_mut);
-		let id = transaction.id;
-
-			/*
-		let game_addons = crate::GAME_ADDONS.read().unwrap();
-		let paths = &game_addons.gma_cache.as_ref().unwrap().paths;
-		let total_paths = paths.len();
-
-		if total_paths == 0 {
-			Err(anyhow!("No addons found on filesystem."))
-		} else {
-			let thread_count = (num_cpus::get() * 2).min(total_paths);
-			let chunk_len = ((total_paths as f32) / (thread_count as f32).floor()) as usize;
-			let paths = paths.values().cloned().collect::<Vec<PathBuf>>().chunks(chunk_len).map(|c| c.to_owned()).collect::<Vec<Vec<PathBuf>>>();
-
-			let (sorting, s_rx) = mpsc::channel();
-			let (metadata, m_rx) = mpsc::channel();
-
-			// Sorting thread
-			std::thread::spawn(move || {
-				let mut total_size: usize = 0;
-				let mut sorted_gmas: Vec<(PathBuf, Option<GMAFile>)> = Vec::with_capacity(total_paths);
-				let mut i = 0;
-				while i < total_paths {
-					i = i + 1;
-
-					let gma: GMAMetadata = match s_rx.recv() {
-						Ok(gma) => gma,
-						Err(_) => break
-					};
-
-					total_size = total_size + gma.size;
-
-					let pos = match sorted_gmas.binary_search_by_key(&gma.file_size, |gma| gma.file_size) {
-						Ok(pos) => pos,
-						Err(pos) => pos
-					};
-					sorted_gmas.insert(pos, gma);
-
-					transaction.progress((i as f32) / (total_paths as f32));
-				}
-				transaction.finish((total_size, sorted_gmas));
-			});
-
-			// Metadata thread
-			std::thread::spawn(move || {
-				loop {
-					if let Ok(path) = m_rx.recv() {
-						
-					}
-				}
-			});
-
-			// Discovery thread
-			for chunk in paths {
-				let tx = tx.clone();
-				std::thread::spawn(move || {
-					for path in chunk {
-						
-					}
-				});
-			}
-		
-			Ok(id)
-		}*/
-		
 		Ok(id)
 
 	}, resolve, reject);

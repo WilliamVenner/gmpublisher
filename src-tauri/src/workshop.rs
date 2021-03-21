@@ -13,6 +13,8 @@ lazy_static! {
 	static ref PERSONACHANGE_USER_INFO: steamworks::PersonaChange = steamworks::PersonaChange::NAME | steamworks::PersonaChange::AVATAR;
 }
 
+pub(crate) const kNumUGCResultsPerPage: u32 = 50;
+
 #[derive(Serialize, Debug, Clone)]
 pub(crate) struct SteamUser {
 	#[serde(skip)]
@@ -49,6 +51,8 @@ pub(crate) struct WorkshopItem {
 	#[serde(skip)]
 	pub(crate) steamid: Option<SteamId>,
 	pub(crate) steamid64: Option<String>,
+
+	pub(crate) dead: bool,
 }
 impl From<QueryResult> for WorkshopItem {
     fn from(result: QueryResult) -> Self {
@@ -66,7 +70,9 @@ impl From<QueryResult> for WorkshopItem {
 			preview_url: None,
 			subscriptions: 0,
 			local_file: None,
-			search_title: result.title.to_lowercase()
+			search_title: result.title.to_lowercase(),
+
+			dead: false
 		}
     }
 }
@@ -86,7 +92,9 @@ impl From<PublishedFileId> for WorkshopItem {
 			preview_url: None,
 			subscriptions: 0,
 			local_file: None,
-			search_title: id.0.to_string()
+			search_title: id.0.to_string(),
+
+			dead: true
 		}
     }
 }
@@ -222,25 +230,24 @@ impl Workshop {
 
 					Ok(data) => {
 						let mut cache = c_cache.lock().unwrap();
-						*lock = Some(Ok(
-							(
-								data.total_results(),
-								data.iter_maybe().enumerate().map(|(i, x)| {
-									match x {
-										Some(x) => {
-											ids_ref.nth(0);
-											
-											let mut item: WorkshopItem = x.into();
-											item.preview_url = data.preview_url(i as u32);
-											item.subscriptions = data.statistic(i as u32, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
-											cache.insert(item.id, Some(item.clone()));
-											item
-										}
-										None => ids_ref.nth(0).unwrap().into()
-									}
-								}).collect::<Vec<WorkshopItem>>(),
-							)
-						));
+						*lock = Some(Ok((
+							data.total_results(),
+							data.iter_maybe().enumerate().map(|(i, item)| {
+
+								let id = ids_ref.nth(0).unwrap();
+								let item = if let Some(item) = item {
+									let mut item: WorkshopItem = item.into();
+									item.preview_url = data.preview_url(i as u32);
+									item.subscriptions = data.statistic(i as u32, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+									item
+								} else {
+									id.into()
+								};
+								cache.insert(id, Some(item.clone()));
+								item
+
+							}).collect::<Vec<WorkshopItem>>(),
+						)));
 					},
 
 					Err(error) => *lock = Some(Err(error))
@@ -278,18 +285,16 @@ impl Workshop {
 
 					Ok(data) => {
 						let mut cache = c_cache.lock().unwrap();
-						*lock = Some(Ok(
-							(
-								data.total_results(),
-								data.iter().enumerate().map(|(i, x)| {
-									let mut item: WorkshopItem = x.into();
-									item.preview_url = data.preview_url(i as u32);
-									item.subscriptions = data.statistic(i as u32, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
-									cache.insert(item.id, Some(item.clone()));
-									item
-								}).collect::<Vec<WorkshopItem>>()
-							)
-						));
+						*lock = Some(Ok((
+							data.total_results(),
+							data.iter().enumerate().map(|(i, x)| {
+								let mut item: WorkshopItem = x.into();
+								item.preview_url = data.preview_url(i as u32);
+								item.subscriptions = data.statistic(i as u32, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+								cache.insert(item.id, Some(item.clone()));
+								item
+							}).collect::<Vec<WorkshopItem>>()
+						)));
 					},
 
 					Err(error) => *lock = Some(Err(error))

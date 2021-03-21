@@ -17,7 +17,7 @@
 
 	const progress = writable(0);
 	const error = writable(null);
-	const finished = writable(false);
+	const finished = writable(false); // TODO remove all these pointless stores
 	const cancelled = writable(false);
 
 	let taskElem;
