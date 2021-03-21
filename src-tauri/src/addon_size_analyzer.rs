@@ -273,6 +273,7 @@ impl AddonSizeAnalyzer {
 
 		master_treemap.process(tag_total_sizes.values().cloned().collect(), total_size as f64);
 
+		/*
 		let mut treemap_threads: Vec<JoinHandle<()>> = Vec::new();
 		let total_squares = master_treemap.squares.len() as f64; // TODO is this = to something?
 		for (i, square) in master_treemap.squares.iter_mut().enumerate() {
@@ -296,6 +297,7 @@ impl AddonSizeAnalyzer {
 		}
 
 		for thread in treemap_threads { thread.join().unwrap(); }
+		*/
 
 		master_treemap
 	}
