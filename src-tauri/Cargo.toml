@@ -50,4 +50,4 @@ path = "src/main.rs"
 
 [profile.release]
 lto = true
-codegen-units = 1 # does this work with lto = true?
+codegen-units = 1

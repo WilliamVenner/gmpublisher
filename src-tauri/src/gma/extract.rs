@@ -147,7 +147,7 @@ impl GMAFile {
 				}
 
 				match *progress_callback {
-					Some(ref progress_callback) => (progress_callback)(((i as f64) / (total_entries as f64)) * 100.),
+					Some(ref progress_callback) => (progress_callback)(((i as f64) / (total_entries as f64))),
 					None => {}
 				}
 
@@ -165,7 +165,7 @@ impl GMAFile {
 		}
 
 		match *progress_callback {
-			Some(ref progress_callback) => (progress_callback)(100.),
+			Some(ref progress_callback) => (progress_callback)(1.),
 			None => {}
 		}
 

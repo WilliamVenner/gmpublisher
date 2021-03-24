@@ -97,8 +97,10 @@ class Transaction {
 	}
 
 	setProgress(progress) {
-		this.progress = progress;
-		this.emit({ progress });
+		if (progress !== this.progress) {
+			this.emit({ progress });
+			this.progress = progress;
+		}
 
 		return this;
 	}
