@@ -14,6 +14,7 @@ class Addons {
 
 		this.gmaPreviewCache = {};
 
+		this.workshopMetadataCache = {};
 		this.workshopUploaderCache = {};
 	}
 
@@ -95,6 +96,16 @@ class Addons {
 			return this.gmaMetadataQueue.waiting[path];
 
 		}
+	}
+
+	getWorkshopMetadata(id) {
+		if (!(id in this.workshopMetadataCache)) {
+			this.workshopMetadataCache[id] = promisified({
+				cmd: 'getWorkshopMetadata',
+				id
+			});
+		}
+		return this.workshopMetadataCache[id];
 	}
 
 	getWorkshopUploader(id) {

@@ -1,10 +1,11 @@
 use std::{env, fs, path::PathBuf};
 use anyhow::{Error, anyhow};
 use serde::Serialize;
+use steamworks::PublishedFileId;
 
 extern crate steamlocate;
 
-use crate::{settings::Settings, workshop::SteamUser};
+use crate::{settings::Settings, workshop::{WorkshopItem, SteamUser}};
 
 #[derive(Debug, Serialize, Clone)]
 pub(crate) struct AppData {
@@ -112,6 +113,9 @@ impl AppDataPlugin {
 }
 impl Plugin for AppDataPlugin {
 	fn init_script(&self) -> Option<String> {
-		Some(include_str!("../../app/plugins/AppData.js").replace("{$_SETTINGS_$}", &serde_json::ser::to_string(&*crate::APP_DATA.read().unwrap()).unwrap()))
+		Some(include_str!("../../app/plugins/AppData.js")
+			.replace("{$_SETTINGS_$}", &serde_json::ser::to_string(&*crate::APP_DATA.read().unwrap()).unwrap())
+			.replace("{$_WS_DEAD_$}", &serde_json::ser::to_string(&WorkshopItem::from(PublishedFileId(0))).unwrap())
+		)
 	}
 }

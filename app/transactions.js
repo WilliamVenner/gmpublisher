@@ -71,6 +71,10 @@ class Transaction {
 
 	finish(data) {
 		this.finished = true;
+		if (this.progress < 100) {
+			this.progress = 100;
+			this.emit({ progress: 100 });
+		}
 		this.emit({ finished: true, data });
 		delete transactions[this.id];
 
@@ -85,6 +89,13 @@ class Transaction {
 		return this;
 	}
 
+	setStatus(msg) {
+		this.status = msg;
+		this.emit({ msg });
+
+		return this;
+	}
+
 	setProgress(progress) {
 		this.progress = progress;
 		this.emit({ progress });
@@ -95,7 +106,7 @@ class Transaction {
 
 listen("transactionProgress", ({ payload: [ id, progress ] }) => {
 	const transaction = Transaction.get(id);
-	var progress = Math.floor((progress + Number.EPSILON) * 100) / 100;
+	var progress = Math.floor((progress + Number.EPSILON) * 100000) / 1000;
 	if (transaction && progress !== transaction.progress) transaction.setProgress(progress);
 });
 
@@ -115,6 +126,12 @@ listen("transactionError", ({ payload: [ id, [ msg, data ] ] }) => {
 	const transaction = Transaction.get(id);
 	console.log('transactionError', transaction, data);
 	if (transaction) transaction.error(msg, data);
+});
+
+listen("transactionProgressMsg", ({ payload: [ id, msg ] }) => {
+	const transaction = Transaction.get(id);
+	console.log('transactionProgressMsg', transaction, msg);
+	if (transaction) transaction.setStatus(msg);
 });
 
 export { Transaction, tasks, taskHeight, tasksMax, tasksNum }

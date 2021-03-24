@@ -62,3 +62,10 @@ window.__GMPUBLISHER__ = () => {
 	updateAppData(JSON.parse(String.raw`{$_SETTINGS_$}`));
 	__TAURI__.event.listen('updateAppData', ({ payload }) => updateAppData(payload)); // FIXME - why doesn't it work?
 };
+
+window.__WS_DEAD__ = JSON.parse(String.raw`{$_WS_DEAD_$}`);
+window.__WS_DEAD__.dead = true;
+delete window.__WS_DEAD__.id;
+delete window.__WS_DEAD__.title;
+delete window.__WS_DEAD__.searchTitle;
+delete window.__WS_DEAD__.localFile;

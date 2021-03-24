@@ -33,6 +33,11 @@ enum Command {
 		callback: String,
 		error: String
 	},
+	GetWorkshopMetadata {
+		id: PublishedFileId,
+		callback: String,
+		error: String
+	},
 	GetWorkshopUploader {
 		id: PublishedFileId,
 		callback: String,
@@ -130,8 +135,11 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 					WorkshopBrowser { page, callback, error } => {
 						workshop::browse(callback, error, webview, page)
 					},
+					GetWorkshopMetadata { callback, error, id } => {
+						game_addons::get_gma_ws_metadata(callback, error, webview, id)
+					},
 					GetWorkshopUploader { callback, error, id } => {
-						game_addons::get_gma_ws_owner(callback, error, webview, id)
+						game_addons::get_gma_ws_uploader(callback, error, webview, id)
 					},
 
 					UpdateSettings { settings } => {

@@ -1,12 +1,10 @@
 use std::{cell::UnsafeCell, collections::HashMap, fmt::Debug, panic::{self, AssertUnwindSafe}, rc::Rc, sync::{Arc, Mutex, RwLock, RwLockReadGuard, atomic::{AtomicBool, AtomicU16, AtomicUsize, Ordering}, mpsc::{self, Sender, SyncSender}}, thread::{JoinHandle, Thread, ThreadId}};
 use tauri::{WebviewMut};
 
-pub(crate) type GenericJSON = Box<dyn erased_serde::Serialize + Send + Sync>;
-
-pub(crate) type ErrorData = Option<(String, GenericJSON)>;
-pub(crate) type FinishedData = GenericJSON;
-
 pub(crate) type AbortCallback = Box<dyn Fn(&TransactionStatus) + Send + Sync + 'static>;
+
+type ErrorData = Option<(String, TransactionDataBoxed)>;
+type FinishedData = TransactionDataBoxed;
 
 pub(crate) enum TransactionMessage {
 	Progress(f64),
@@ -17,27 +15,28 @@ pub(crate) enum TransactionMessage {
 	Finish(FinishedData),
 }
 impl Debug for TransactionMessage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.write_str(&match self {
-		    TransactionMessage::Progress(progress) => format!("Progress({})", progress),
+			TransactionMessage::Progress(progress) => format!("Progress({})", progress),
 			TransactionMessage::ProgressMessage(msg) => format!("ProgressMessage({})", msg),
-		    TransactionMessage::Cancel => "Cancel".to_string(),
-		    TransactionMessage::Error(_) => "Error".to_string(),
-		    TransactionMessage::Finish(_) => "Finish".to_string(),
+			TransactionMessage::Cancel => "Cancel".to_string(),
+			TransactionMessage::Error(_) => "Error".to_string(),
+			TransactionMessage::Finish(_) => "Finish".to_string(),
 		})
-    }
+	}
 }
 
 pub(crate) enum TransactionStatus {
 	Pending,
+
 	Cancelled,
+	Error(ErrorData),
 	Finished(FinishedData),
-	Error(ErrorData)
 }
 impl Default for TransactionStatus {
-    fn default() -> Self {
-        Self::Pending
-    }
+	fn default() -> Self {
+		Self::Pending
+	}
 }
 
 pub(crate) struct Transaction {
@@ -55,12 +54,12 @@ pub(crate) struct Transaction {
 }
 
 impl Drop for Transaction {
-    fn drop(&mut self) {
-        match &*self.status.read().unwrap() {
+	fn drop(&mut self) {
+		match &*self.status.read().unwrap() {
 			TransactionStatus::Pending => panic!("Transaction dropped while still in progress!"),
 			_ => {}
 		}
-    }
+	}
 }
 
 impl Transaction {
@@ -125,7 +124,7 @@ impl Transaction {
 						break;
 					},
 					Progress(new_progress) => {
-						transaction.progress.store(((new_progress * 100.).round() as u16).min(10000).max(0), Ordering::SeqCst);
+						transaction.progress.store(((new_progress * 10000.).round() as u16).min(10000).max(0), Ordering::SeqCst);
 						tauri::event::emit(&mut webview, "transactionProgress", Some((transaction.id, new_progress))).ok();
 					},
 					ProgressMessage(msg) => {
@@ -151,8 +150,8 @@ impl Transaction {
 		}
 	}
 
-	pub(crate) fn progress(&self) -> u16 {
-		self.progress.load(Ordering::Acquire)
+	pub(crate) fn progress(&self) -> f64 {
+		(self.progress.load(Ordering::Acquire) as f64) / 10000.
 	}
 
 	pub(crate) fn aborted(&self) -> bool {
@@ -168,16 +167,61 @@ impl Transaction {
 	}
 }
 
+pub(crate) type TransactionDataBoxed = Box<dyn erased_serde::Serialize + Sync + Send + 'static>;
+pub(crate) trait TransactionDataToBox {
+	fn into_box(self) -> TransactionDataBoxed;
+}
+
+pub(crate) struct TransactionData(pub(crate) TransactionDataBoxed);
+impl TransactionDataToBox for TransactionData {
+	fn into_box(self) -> TransactionDataBoxed {
+		Box::new(self.0)
+	}
+}
+#[macro_export]
+macro_rules! transaction_data {
+	( $x:expr ) => {
+		crate::transactions::TransactionData(Box::new($x))
+	};
+}
+
+pub(crate) type TransactionDataFutureFn = dyn FnOnce() -> TransactionDataBoxed + Sync + Send + 'static;
+pub(crate) struct TransactionDataFuture(pub(crate) Box<TransactionDataFutureFn>);
+impl TransactionDataToBox for TransactionDataFuture {
+	fn into_box(self) -> TransactionDataBoxed {
+		(self.0)()
+	}
+}
+#[macro_export]
+macro_rules! transaction_data_fn {
+	( $x:expr ) => {
+		crate::transactions::TransactionDataFuture(Box::new(move || {$x}))
+	};
+}
+
+pub(crate) struct TransactionDataRaw(pub(crate) serde_json::Value);
+impl TransactionDataToBox for TransactionDataRaw {
+	fn into_box(self) -> TransactionDataBoxed {
+		Box::new(self.0)
+	}
+}
+#[macro_export]
+macro_rules! transaction_data_raw {
+	( $x:expr ) => {
+		crate::transactions::TransactionDataRaw(serde_json::to_value($x).unwrap())
+	};
+}
+
 #[derive(Clone)]
 pub(crate) struct TransactionChannel {
 	inner: SyncSender<TransactionMessage>,
 	aborted: Arc<AtomicBool>,
 }
 impl std::ops::Deref for TransactionChannel {
-    type Target = SyncSender<TransactionMessage>;
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
+	type Target = SyncSender<TransactionMessage>;
+	fn deref(&self) -> &Self::Target {
+		&self.inner
+	}
 }
 impl TransactionChannel {
 	pub(crate) fn aborted(&self) -> bool {
@@ -196,26 +240,26 @@ impl TransactionChannel {
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
 	}
 
-	pub(crate) fn error<T: erased_serde::Serialize + Send + Sync + 'static>(&self, msg: &str, data: T) {
+	pub(crate) fn error<T: TransactionDataToBox>(&self, msg: &str, data: T) {
 		if self.aborted.fetch_or(true, Ordering::AcqRel) { debug_assert!(false, "Tried to error an already aborted transaction."); return; }
 
 		let res = self.send(
 			TransactionMessage::Error(
 				Some((
 					msg.to_string(),
-					Box::new(data)
+					data.into_box()
 				))
 			)
 		);
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
 	}
 
-	pub(crate) fn finish<T: erased_serde::Serialize + Send + Sync + 'static>(&self, data: T) {
+	pub(crate) fn finish<T: TransactionDataToBox>(&self, data: T) {
 		if self.aborted.fetch_or(true, Ordering::AcqRel) { debug_assert!(false, "Tried to finish an already aborted transaction."); return; }
 
 		let res = self.send(
 			TransactionMessage::Finish(
-				Box::new(data)
+				data.into_box()
 			)
 		);
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");

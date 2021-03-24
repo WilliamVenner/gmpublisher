@@ -40,6 +40,7 @@
 	"done": "Done",
 	"cancelled": "Cancelled",
 	"size": "Size",
+	"addon_type": "Type",
 	"file_types": {
 		"folder": "Folder",
 
@@ -71,5 +72,12 @@
 	"created": "Created",
 	"updated": "Updated",
 	"author": "Author",
-	"open_addon_location": "Open Addon Location"
+	"open_addon_location": "Open Addon Location",
+
+	"FS_ANALYZER_RENDERING": "Rendering...",
+	"FS_ANALYZER_CACHING": "Caching...",
+	"FS_ANALYZER_SERIALIZING": "Serializing...",
+	"FS_ANALYZER_STEAM": "Downloading Steam Data...",
+	"FS_ANALYZER_COMPUTING": "Computing...",
+	"FS_ANALYZER_TAGGIFYING": "Taggifying..."
 }

@@ -1,9 +1,10 @@
 <!-- TODO remove svg img from assets -->
 <script>
-	export let size = null;
+	export let size = '1rem';
+	export let inline = false;
 </script>
 
-<svg class="loading" width={size} height={size} xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="margin: auto; display: block;" fill="none" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
+<svg class="loading" class:inline={inline} style="width: {size}; height: {size}" width={size} height={size} xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="none" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
 	<g transform="translate(20 20)">
 		<rect x="-15" y="-15" width="30" height="30" fill="#ffffff">
 			<animateTransform attributeName="transform" type="scale" repeatCount="indefinite" calcMode="spline" dur="1s" values="1;1;0.2;1;1" keyTimes="0;0.2;0.5;0.8;1" keySplines="0.5 0.5 0.5 0.5;0 0.1 0.9 1;0.1 0 1 0.9;0.5 0.5 0.5 0.5" begin="-0.4s"></animateTransform>
@@ -51,10 +52,9 @@
 	</g>
 </svg>
 
-{#if size == null}
-	<style>
-		.loading {
-			width: 1rem;
-		}
-	</style>
-{/if}
+<style>
+	.loading:not(.inline) {
+		display: block;
+		margin: auto;
+	}
+</style>

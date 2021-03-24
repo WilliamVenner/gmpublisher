@@ -53,39 +53,43 @@
 		const term = document.querySelector('#search').value.trim().toLowerCase();
 		let found = false;
 		for (let i = 0; i < addons.length; i++) {
-			const addon = addons[i];
-			const elem = document.querySelector('.ws-' + addon.id);
-			if (!elem) continue;
+			const addon = hasPaths ? addons[i][1] : addons[i];
+			const elems = document.querySelectorAll('.ws-' + addon.id);
+			if (!!!elems) continue;
 
-			const foundIndex = addon.searchTitle.indexOf(term);
-			if (foundIndex !== -1) {
+			for (let k = 0; k < elems.length; k++) {
+				const elem = elems[k];
 
-				elem.classList.remove('searching');
-				found = true;
+				const foundIndex = addon.searchTitle.indexOf(term);
+				if (foundIndex !== -1) {
 
-				const title = elem.querySelector('#title');
-				title.textContent = addon.title.substr(0, foundIndex);
+					elem.classList.remove('searching');
+					found = true;
 
-				const highlight = document.createElement('span');
-				highlight.classList.add('highlight');
-				highlight.textContent = addon.title.substr(foundIndex, term.length);
-				title.appendChild(highlight);
+					const title = elem.querySelector('#title');
+					title.textContent = addon.title.substr(0, foundIndex);
 
-				const text = document.createTextNode(addon.title.substr(foundIndex + term.length));
-				title.appendChild(text);
+					const highlight = document.createElement('span');
+					highlight.classList.add('highlight');
+					highlight.textContent = addon.title.substr(foundIndex, term.length);
+					title.appendChild(highlight);
 
-				searchAmount++;
+					const text = document.createTextNode(addon.title.substr(foundIndex + term.length));
+					title.appendChild(text);
 
-			} else {
+					searchAmount++;
 
-				elem.classList.add('searching');
+				} else {
 
-				const highlight = elem.querySelector('.highlight');
-				if (highlight) {
-					highlight.remove();
-					elem.querySelector('#title').textContent = addon.title;
+					elem.classList.add('searching');
+
+					const highlight = elem.querySelector('.highlight');
+					if (highlight) {
+						highlight.remove();
+						elem.querySelector('#title').textContent = addon.title;
+					}
+
 				}
-
 			}
 		}
 		searchFailed = !found;

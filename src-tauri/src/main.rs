@@ -3,13 +3,12 @@
 	windows_subsystem = "windows"
 )]
 
-use std::sync::RwLock;
-
 use addon_size_analyzer::AddonSizeAnalyzer;
 use tauri::{AppBuilder, Webview};
 extern crate webview_official;
 
 mod util;
+pub(crate) use util::*;
 
 mod show;
 mod settings;
@@ -32,6 +31,7 @@ use game_addons::GameAddons;
 
 mod addon_size_analyzer;
 
+#[macro_use]
 mod transactions;
 
 //pub(crate) mod lib;
@@ -39,7 +39,7 @@ pub(crate) mod gma;
 
 use lazy_static::lazy_static;
 lazy_static! {
-	pub(crate) static ref WORKSHOP: RwLock<Workshop> = RwLock::new(match Workshop::init() {
+	pub(crate) static ref WORKSHOP: RwLockDebug<Workshop> = RwLockDebug::new(match Workshop::init() {
 		Ok(workshop) => workshop,
 		Err(error) => {
 			show::panic(format!("Couldn't initialize the Steam API! Is Steam running?\nError: {:#?}", error));
@@ -47,7 +47,7 @@ lazy_static! {
 		},
 	});
 
-	pub(crate) static ref APP_DATA: RwLock<AppData> = RwLock::new(match AppData::init(WORKSHOP.read().unwrap().get_user()) {
+	pub(crate) static ref APP_DATA: RwLockDebug<AppData> = RwLockDebug::new(match AppData::init(WORKSHOP.read().unwrap().get_user()) {
 		Ok(app_data) => app_data,
 		Err(error) => {
 			show::panic(format!("{:#?}", error));
@@ -55,9 +55,9 @@ lazy_static! {
 		}
 	});
 
-	pub(crate) static ref GAME_ADDONS: RwLock<GameAddons> = RwLock::new(GameAddons::init());
+	pub(crate) static ref GAME_ADDONS: RwLockDebug<GameAddons> = RwLockDebug::new(GameAddons::init());
 
-	pub(crate) static ref TRANSACTIONS: RwLock<Transactions> = RwLock::new(Transactions::init());
+	pub(crate) static ref TRANSACTIONS: RwLockDebug<Transactions> = RwLockDebug::new(Transactions::init());
 
 	pub(crate) static ref ADDON_SIZE_ANALYZER: AddonSizeAnalyzer = AddonSizeAnalyzer::init();
 }

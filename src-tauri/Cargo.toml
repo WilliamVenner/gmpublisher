@@ -33,6 +33,9 @@ chardetng = "0.1.10"
 sysinfo = "0.16.4"
 dunce = "1.0.1"
 thiserror = "1.0"
+crossbeam = "0.8.0"
+indexmap = "1.6.2"
+backtrace = "0.3"
 
 [target."cfg(windows)".build-dependencies]
 winres = "0.1"
@@ -47,4 +50,4 @@ path = "src/main.rs"
 
 [profile.release]
 lto = true
-codegen-units = 1
+codegen-units = 1 # does this work with lto = true?

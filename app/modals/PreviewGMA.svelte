@@ -1,25 +1,57 @@
 <script>
 	import { Addons, trimPath, getFileTypeInfo } from '../addons.js';
 	import { _ } from 'svelte-i18n';
-	import filesize from 'filesize';
+	import fileSize from 'fileSize';
 	import { tippyFollow, tippy } from '../tippy.js';
 	import { writable } from 'svelte/store';
 	import Dead from '../../public/img/dead.svg';
 	import WorkshopAddon from '../components/WorkshopAddon.svelte';
 	import SteamID from 'steamid';
-	import { ChevronUp, Folder, LinkOut, Download, FolderAdd } from 'akar-icons-svelte';
+	import { ChevronUp, Folder, LinkOut, Download, FolderAdd, Tag } from 'akar-icons-svelte';
 	import { invoke, promisified } from 'tauri/api/tauri';
 	import Timestamp from '../components/Timestamp.svelte';
 	import { afterUpdate, onDestroy } from 'svelte';
 	import { Transaction } from '../transactions.js';
 	import Loading from '../components/Loading.svelte';
 
-	export let path;
-	export let workshop;
-	export let dead;
+	export let id = null;
+	export let gmaData = null;
+	export let workshopData = null;
 
-	let metadata;
-	let size = workshop.size != null ? filesize(workshop.size) : null;
+	let gma = gmaData;
+
+	let workshop = workshopData;
+	let ws_id = id;
+	if (!ws_id) {
+		if (workshop && workshop.id)
+			ws_id = workshop.id;
+		else
+			ws_id = gma.id;
+	}
+
+	let path;
+	if (gma && gma.path) {
+		path = gma.path;
+	} else if (workshop && workshop.localFile) {
+		path = workshop.localFile;
+	} else {
+		console.error('Tried to preview a GMA with no resolvable path!');
+		console.error(gma, workshop);
+	}
+
+	let size = gma?.size ?? workshop?.size ?? null;
+	if (size) size = fileSize(size);
+
+	let dead = workshop?.dead ?? false;
+
+	let gmaLoading = gma ? Promise.resolve(gma) : new Promise(() => {});
+	let workshopLoading = workshop ? Promise.resolve(workshop) : new Promise(() => {});
+	let workshopUploaderLoading = workshop?.owner ? Promise.resolve(workshop.owner) : new Promise(() => {});
+
+	const deadWorkshopAddon = Object.assign({ id: ws_id, title: gma ? (gma.name ?? gma.extracted_name) : ws_id }, window.__WS_DEAD__);
+	
+	let subscriptions = [];
+	onDestroy(() => subscriptions.forEach(subscription => subscription()));
 
 	let entries;
 	let browsing;
@@ -44,11 +76,7 @@
 		return entries;
 	}
 
-	let owner = new Promise(() => {});
-
-	const loading = Addons.previewGMA(path, workshop.id).then(gma => {
-		owner = Addons.getWorkshopUploader(workshop.id);
-
+	function initBrowser() {
 		entries = {
 			dirs: {},
 			files: [],
@@ -89,11 +117,39 @@
 			total_files++;
 		}
 
-		size = filesize(gma.size);
-
 		browsing = createDirShortcuts(entries, '');
-		metadata = gma;
-	});
+	}
+
+	function getWorkshopMetadata() {
+		workshopLoading = Addons.getWorkshopMetadata(ws_id).then(_workshop => {
+			workshop = _workshop;
+			dead = workshop.dead;
+
+			workshopUploaderLoading = dead ? Promise.reject() : new Promise((resolve, reject) => Addons.getWorkshopUploader(ws_id).then(owner => {
+				if (workshop.dead) return reject();
+				workshop.owner = owner;
+				resolve(owner);
+			}));
+		});
+	}
+
+	if (!gma || !gma.entries) {
+
+		gmaLoading = Addons.previewGMA(path, ws_id).then(_gma => {
+			gma = _gma;
+			
+			workshopLoading = (!workshop || !workshop.owner) && ws_id ? getWorkshopMetadata() : Promise.reject();
+
+			size = fileSize(gma.size);
+			initBrowser();
+		});
+
+	} else {
+
+		initBrowser();
+		workshopLoading = (!workshop || !workshop.owner) && ws_id ? getWorkshopMetadata() : Promise.reject();
+
+	}
 
 	let pathContainer;
 	function scrollPath() {
@@ -131,7 +187,7 @@
 			.then(transactionId => new Transaction(transactionId, transaction => {
 				return $_('extracting_progress', { values: {
 					pct: transaction.progress,
-					data: filesize((transaction.progress / 100) * metadata.size),
+					data: fileSize((transaction.progress / 100) * gma.size),
 					dataTotal: size
 				}});
 			}));
@@ -256,195 +312,245 @@
 		}).then(id => new Transaction(id, transaction => {
 			return $_('extracting_progress', { values: {
 				pct: transaction.progress,
-				data: filesize((transaction.progress / 100) * metadata.size),
+				data: fileSize((transaction.progress / 100) * gma.size),
 				dataTotal: size
 			}});
 		}));
 
 		$chooseDestination = false;
 	}
-
-	// TODO use Loading component for loading svg
 </script>
 
-<div id="gma-preview" class="modal" class:loaded={!!entries}>
-	<div id="content">
-		<div id="sidebar">
-			<div class="extract-btn" on:click={extract}>{$_('extract')}</div>
-			<div id="addon" class="hide-scroll">
-				<div><WorkshopAddon {...workshop} isPreviewing={true}/></div>
-				<div id="tags">
-					{#if metadata && metadata.type && workshop.tags.indexOf(metadata.type.toLowerCase()) !== -1}
-						<div class="tag {metadata.type.toLowerCase()}">{metadata.type}</div>
-					{/if}
-					{#each workshop.tags as tag}
-						<div class="tag {tag.toLowerCase()}">{tag}</div>
-					{/each}
-				</div>
-				<table id="addon-info">
-					<tbody>
-						{#if size}
-							<tr>
-								<th>{$_('size')}</th>
-								<td>{size}</td>
-							</tr>
+<div id="gma-preview" class="modal" class:loaded={!!(workshop || gma)}>
+	{#if workshop || gma}
+		<div id="content">
+			<div id="sidebar">
+				<div class="extract-btn" on:click={extract}>{$_('extract')}</div>
+				<div id="addon" class="hide-scroll">
+					{#if workshop && !dead}
+						<div><WorkshopAddon {...workshop} dead={dead} isPreviewing={true}/></div>
+						<div id="tags">
+							{#if workshop.tags}
+								{#if gma && gma.type && workshop.tags.indexOf(gma.type.toLowerCase()) !== -1}
+									<div class="tag {gma.type.toLowerCase()}">{gma.type}</div>
+								{/if}
+								{#each workshop.tags as tag}
+									<div class="tag {tag.toLowerCase()}">{tag}</div>
+								{/each}
+							{/if}
+							{#if gma && gma.tags}
+								{#each gma.tags as tag}
+									{#if !workshop.tags || workshop.tags.indexOf(tag) !== -1}
+										<div class="tag {tag.toLowerCase()}">{tag}</div>
+									{/if}
+								{/each}
+							{/if}
+						</div>
+					{:else if gma}
+						{#if !workshop || dead}
+							<div><WorkshopAddon {...deadWorkshopAddon} loading={!dead} isPreviewing={true}/></div>
 						{/if}
-						{#if !dead}
-							<tr>
-								<th>{$_('author')}</th>
-								<td>
-									{#await owner}
-										<Loading/>
-									{:then owner}
-										<a target="_blank" href="https://steamcommunity.com/profiles/{owner.steamid64}" style="text-decoration:none">
-											<img id="avatar" src="data:image/png;base64,{owner.owner.avatar}"/>
-											<span>{owner.owner.name}</span>
-										</a>
-									{:catch}
-										<a target="_blank" class="color" href="https://steamcommunity.com/profiles/{workshop.steamid64}">
-											{new SteamID(workshop.steamid64).getSteam2RenderedID(true)}
-										</a>
-									{/await}
-								</td>
-							</tr>
-						{/if}
-						{#if workshop.timeCreated}
-							<tr>
-								<th>{$_('created')}</th>
-								<td><Timestamp unix={workshop.timeCreated}/></td>
-							</tr>
-						{/if}
-						{#if workshop.timeUpdated && workshop.timeUpdated != workshop.timeCreated}
-							<tr>
-								<th>{$_('updated')}</th>
-								<td><Timestamp unix={workshop.timeUpdated}/></td>
-							</tr>
-						{/if}
-					</tbody>
-				</table>
-				{#if workshop}
-					<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={workshop.id}" target="_blank">Steam Workshop<LinkOut size=".8rem"/></a></div>
-					{#if workshop.description}
-						<p id="description" class="select">{workshop.description}</p>
-					{/if}
-				{/if}
-			</div>
-		</div>
 
-		<div id="browser">
-			<div id="nav">
-				<div id="up" class="control" on:click={goUp}><ChevronUp size="1rem"/></div>
-				<div id="path" class="select hide-scroll" bind:this={pathContainer}>
-					{#if metadata}
-						{metadata.path}{browsing.path.length > 0 ? '/' : ''}{browsing.path}
-					{:else if !!workshop.localFile}
-						{workshop.localFile}
+						{#if gma.name}
+							<div id="workshop-addon">{gma.name}</div>
+						{:else if gma.extracted_name}
+							<div id="workshop-addon">{gma.extracted_name}</div>
+						{/if}
+						{#if gma.tags}
+							<div id="tags">
+								{#if gma.type && gma.tags.indexOf(gma.type.toLowerCase()) !== -1}
+									<div class="tag {gma.type.toLowerCase()}">{gma.type}</div>
+								{/if}
+								{#each gma.tags as tag}
+									<div class="tag {tag.toLowerCase()}">{tag}</div>
+								{/each}
+							</div>
+						{/if}
 					{/if}
-				</div>
-				<div id="open" class="control" on:click={open} use:tippyFollow={$_('open_addon_location')}><Folder size="1rem"/></div>
-			</div>
-
-			<div id="entries" class="hide-scroll">
-				{#await loading}
-					<Loading/>
-				{:then}
-					<table>
+					<table id="addon-info">
 						<tbody>
-							{#each Object.entries(browsing.dirs) as [dir, entries]}
-								{#if dir !== "../"}
-									<tr on:click={browseDirectory} data-path={dir}>
-										<td><img use:tippyFollow={$_('file_types.folder')} src="/img/silkicons/folder.png" alt=""/></td>
-										<td colspan="3">
-											{#if entries.shortcut}
-												<span class="shortcut">{entries.shortcut}/</span><span>{entries.shortcut_dest}</span>
-											{:else}
-												<span>{dir}</span>
-											{/if}
+							{#if size}
+								<tr>
+									<th>{$_('size')}</th>
+									<td>{size}</td>
+								</tr>
+							{/if}
+							{#if workshop}
+								{#if workshop.owner}
+									<tr>
+										<th>{$_('author')}</th>
+										<td>
+											<a target="_blank" href="https://steamcommunity.com/profiles/{workshop.owner.steamid64}" style="text-decoration:none">
+												<img id="avatar" src="data:image/png;base64,{workshop.owner.avatar}"/>
+												<span>{workshop.owner.name}</span>
+											</a>
+										</td>
+									</tr>
+								{:else if workshop.steamid64}
+									<tr>
+										<th>{$_('author')}</th>
+										<td>
+											<div id="author-loading">
+												<a target="_blank" class="color" href="https://steamcommunity.com/profiles/{workshop.steamid64}">
+													{new SteamID(workshop.steamid64).getSteam2RenderedID(true)}
+												</a>{#await workshopUploaderLoading}&nbsp;<Loading inline="true"/>{:catch} {/await}
+											</div>
 										</td>
 									</tr>
 								{/if}
-							{/each}
-							{#each browsing.files as entry}
-								<tr on:click={openGMAEntry} data-path={entry.path}>
-									<td><img class="icon" use:tippyFollow={$_('file_types.' + entry.type, { values: { extension: entry.extension } })} src="/img/silkicons/{entry.icon}" alt=""/></td>
-									<td><span>{entry.name}</span></td>
-									<td><span>{$_('file_types.' + entry.type, { values: { extension: entry.extension } })}</span></td>
-									<td><span>{filesize(entry.size)}</span></td>
-								</tr>
-							{/each}
+								{#if workshop.timeCreated}
+									<tr>
+										<th>{$_('created')}</th>
+										<td><Timestamp unix={workshop.timeCreated}/></td>
+									</tr>
+								{/if}
+								{#if workshop.timeUpdated && workshop.timeUpdated != workshop.timeCreated}
+									<tr>
+										<th>{$_('updated')}</th>
+										<td><Timestamp unix={workshop.timeUpdated}/></td>
+									</tr>
+								{/if}
+							{/if}
 						</tbody>
 					</table>
-				{:catch error}
-					<div id="error"><Dead/><br>{error}</div>
-				{/await}
+					{#if ws_id}
+						<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={ws_id}" target="_blank">Steam Workshop<LinkOut size=".8rem"/></a></div>
+					{/if}
+					{#if workshop && workshop.description}
+						<p id="description" class="select">{workshop.description}</p>
+					{/if}
+				</div>
 			</div>
 
-			<div id="ribbon">
-				{#await loading}
-					<Loading/>
-				{:then}
-					{total_files === 1 ? $_('items_one') : $_('items_num', { values: { n: total_files } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{$_('items_shown', { values: { n: browsing.files.length + Object.keys(browsing.dirs).length } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{size}
-				{:catch}
-					{$_('items_num', { values: { n: 0 } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{$_('items_shown', { values: { n: 0 } })}{#if size}&nbsp;&nbsp;∣&nbsp;&nbsp;{size}{/if}
-				{/await}
+			<div id="browser">
+				<div id="nav">
+					<div id="up" class="control" on:click={goUp}><ChevronUp size="1rem"/></div>
+					<div id="path" class="select hide-scroll" bind:this={pathContainer}>
+						{#if browsing}
+							{#if gma}
+								{gma.path}{browsing.path.length > 0 ? '/' : ''}{browsing.path}
+							{:else if workshop && !!workshop.localFile}
+								{workshop.localFile}{browsing.path.length > 0 ? '/' : ''}{browsing.path}
+							{:else}
+								{browsing.path.length > 0 ? '/' : ''}{browsing.path}
+							{/if}
+						{:else}
+							{#if gma}
+								{gma.path}
+							{:else if workshop && !!workshop.localFile}
+								{workshop.localFile}
+							{:else}
+								<Loading/>
+							{/if}
+						{/if}
+					</div>
+					<div id="open" class="control" on:click={open} use:tippyFollow={$_('open_addon_location')}><Folder size="1rem"/></div>
+				</div>
+
+				<div id="entries" class="hide-scroll">
+					{#await gmaLoading}
+						<Loading size="1.5rem"/>
+					{:then}
+						<table>
+							<tbody>
+								{#each Object.entries(browsing.dirs) as [dir, entries]}
+									{#if dir !== "../"}
+										<tr on:click={browseDirectory} data-path={dir}>
+											<td><img use:tippyFollow={$_('file_types.folder')} src="/img/silkicons/folder.png" alt=""/></td>
+											<td colspan="3">
+												{#if entries.shortcut}
+													<span class="shortcut">{entries.shortcut}/</span><span>{entries.shortcut_dest}</span>
+												{:else}
+													<span>{dir}</span>
+												{/if}
+											</td>
+										</tr>
+									{/if}
+								{/each}
+								{#each browsing.files as entry}
+									<tr on:click={openGMAEntry} data-path={entry.path}>
+										<td><img class="icon" use:tippyFollow={$_('file_types.' + entry.type, { values: { extension: entry.extension } })} src="/img/silkicons/{entry.icon}" alt=""/></td>
+										<td><span>{entry.name}</span></td>
+										<td><span>{$_('file_types.' + entry.type, { values: { extension: entry.extension } })}</span></td>
+										<td><span>{fileSize(entry.size)}</span></td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					{:catch error}
+						<div id="error"><Dead/><br>{error}</div>
+					{/await}
+				</div>
+
+				<div id="ribbon">
+					{#await gmaLoading}
+						<Loading/>
+					{:then}
+						{total_files === 1 ? $_('items_one') : $_('items_num', { values: { n: total_files } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{$_('items_shown', { values: { n: browsing.files.length + Object.keys(browsing.dirs).length } })}&nbsp;&nbsp;∣&nbsp;&nbsp;{size}
+					{:catch}
+						<Dead size="1rem"/>
+					{/await}
+				</div>
 			</div>
 		</div>
-	</div>
 
-	{#if metadata}
-		<div id="destination" class:active={$chooseDestination} on:click={cancelExtract} bind:this={extractModal}><div>
-			<h1>{$_('extract_where_to')}</h1>
-			<h4>{$_('extract_overwrite_warning')}</h4>
+		{#if gma}
+			<div id="destination" class:active={$chooseDestination} on:click={cancelExtract} bind:this={extractModal}><div>
+				<h1>{$_('extract_where_to')}</h1>
+				<h4>{$_('extract_overwrite_warning')}</h4>
 
-			<input type="text" name="path" on:input={extractDestHover} on:focus={extractDestFocused} on:blur={extractDestLostFocus} on:change={extractDestInputted} bind:this={extractPathInput} placeholder={$extractPath[0] ? ($extractPath[1] + ($extractPath[2] ? (PATH_SEPARATOR + metadata.extracted_name) : '')) : metadata.extracted_name}/>
+				<input type="text" name="path" on:input={extractDestHover} on:focus={extractDestFocused} on:blur={extractDestLostFocus} on:change={extractDestInputted} bind:this={extractPathInput} placeholder={$extractPath[0] ? ($extractPath[1] + ($extractPath[2] ? (PATH_SEPARATOR + gma.extracted_name) : '')) : gma.extracted_name}/>
 
-			{#if $extractPath[0] === 'browse'}
-				<div id="checkbox">
-					<label>
-						<input type="checkbox" id="named" name="named" on:change={createFolderUpdated} checked={AppSettings.create_folder_on_extract}>
-						<span>{$_('create_folder')}</span>
-					</label>
-				</div>
-			{/if}
-
-			<div id="destinations">
-				<div class="destination" class:active={$extractPath[0] === 'browse'} on:hover={extractDestHover} on:click={extractDestBrowse} data-dest="browse">
-					<Folder/>
-					<div>{$_('browse')}</div>
-				</div>
-
-				{#if !!AppData.tmp_dir}
-					<div class="destination" class:active={$extractPath[0] === 'tmp'} use:tippy={$_('extract_open_tip')} on:mouseover={extractDestHover} on:click={updateExtractDest} on:mouseleave={extractDestHoverLeave} data-dest="tmp">
-						<FolderAdd/>
-						<div>{$_('open')}</div>
+				{#if $extractPath[0] === 'browse'}
+					<div id="checkbox">
+						<label>
+							<input type="checkbox" id="named" name="named" on:change={createFolderUpdated} checked={AppSettings.create_folder_on_extract}>
+							<span>{$_('create_folder')}</span>
+						</label>
 					</div>
 				{/if}
 
-				{#if !!AppData.gmod}
-					<div class="destination" class:active={$extractPath[0] === 'addons'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="addons">
-						<img src="/img/gmod.svg"/>
-						<div>{$_('addons_folder')}</div>
+				<div id="destinations">
+					<div class="destination" class:active={$extractPath[0] === 'browse'} on:hover={extractDestHover} on:click={extractDestBrowse} data-dest="browse">
+						<Folder/>
+						<div>{$_('browse')}</div>
 					</div>
-				{/if}
 
-				{#if !!AppData.downloads_dir}
-					<div class="destination" class:active={$extractPath[0] === 'downloads'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="downloads">
-						<Download/>
-						<div>{$_('downloads_folder')}</div>
-					</div>
-				{/if}
-			</div>
+					{#if !!AppData.tmp_dir}
+						<div class="destination" class:active={$extractPath[0] === 'tmp'} use:tippy={$_('extract_open_tip')} on:mouseover={extractDestHover} on:click={updateExtractDest} on:mouseleave={extractDestHoverLeave} data-dest="tmp">
+							<FolderAdd/>
+							<div>{$_('open')}</div>
+						</div>
+					{/if}
 
-			{#if AppSettings.destinations.length > 0}
-				<div id="history" class="hide-scroll">
-					{#each AppSettings.destinations as path}
-						<div on:click={extractableHistoryPath} class:active={$extractPath[0] === 'browse' && $extractPath[1] === path}>{path}</div>
-					{/each}
+					{#if !!AppData.gmod}
+						<div class="destination" class:active={$extractPath[0] === 'addons'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="addons">
+							<img src="/img/gmod.svg"/>
+							<div>{$_('addons_folder')}</div>
+						</div>
+					{/if}
+
+					{#if !!AppData.downloads_dir}
+						<div class="destination" class:active={$extractPath[0] === 'downloads'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="downloads">
+							<Download/>
+							<div>{$_('downloads_folder')}</div>
+						</div>
+					{/if}
 				</div>
-			{/if}
 
-			<div class="extract-btn" on:click={doExtract} class:disabled={!$extractPath[0]}>{$_('extract')}</div>
-		</div></div>
+				{#if AppSettings.destinations.length > 0}
+					<div id="history" class="hide-scroll">
+						{#each AppSettings.destinations as path}
+							<div on:click={extractableHistoryPath} class:active={$extractPath[0] === 'browse' && $extractPath[1] === path}>{path}</div>
+						{/each}
+					</div>
+				{/if}
+
+				<div class="extract-btn" on:click={doExtract} class:disabled={!$extractPath[0]}>{$_('extract')}</div>
+			</div></div>
+		{/if}
+	{:else}
+		<Loading size="2rem"/>
 	{/if}
 </div>
 
@@ -506,43 +612,6 @@
 		margin-bottom: .6rem;
 		line-height: 1.7rem;
 		margin-top: -.51rem;
-	}
-	#addon #tags .tag {
-		position: relative;
-		color: black;
-		padding: 2px;
-		padding-right: 13px;
-		padding-left: 5px;
-		font-size: 11px;
-		z-index: 1;
-		display: inline-block;
-		line-height: initial;
-		text-transform: lowercase;
-	}
-	#addon #tags .tag::after {
-		content: '';
-		position: absolute;
-		top: 0;
-		right: 0;
-		width: 0;
-		height: 0;
-		border-style: solid;
-		border-width: 9px 0 9px 9px;
-		border-color: transparent transparent transparent #fff;
-		-webkit-transform: rotate(360deg);
-	}
-	#addon #tags .tag::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		right: 9px;
-		width: calc(100% - 9px);
-		height: 100%;
-		background-color: #fff;
-		z-index: -1;
-	}
-	#addon #tags .tag:not(:last-child) {
-		margin-right: .4rem;
 	}
 	#entries > table th, #entries > table td, #entries > table td > span, #entries > table td > img {
 		vertical-align: middle;
@@ -840,79 +909,20 @@
 		margin-top: 1rem;
 	}
 
-	:global(.tag.addon) { color: #fff !important }
-	:global(.tag.addon)::before { background-color: #006cc7 !important }
-	:global(.tag.addon)::after { border-left-color: #006cc7 !important }
+	:global(#addon > .loading:first-child) {
+		margin-bottom: .8rem !important;
+	}
+	#workshop-addon {
+		text-align: center;
+	}
 
-	:global(.tag.weapon) { color: #fff !important }
-	:global(.tag.weapon)::before { background-color: #8c0101 !important }
-	:global(.tag.weapon)::after { border-left-color: #8c0101 !important }
-
-	:global(.tag.servercontent) { color: #fff !important }
-	:global(.tag.servercontent)::before { background-color: #000 !important }
-	:global(.tag.servercontent)::after { border-left-color: #000 !important }
-
-	:global(.tag.fun) { color: #fff !important }
-	:global(.tag.fun)::before { background-color: #368c01 !important }
-	:global(.tag.fun)::after { border-left-color: #368c01 !important }
-
-	:global(.tag.roleplay) { color: #fff !important }
-	:global(.tag.roleplay)::before { background-color: #00d4d4 !important }
-	:global(.tag.roleplay)::after { border-left-color: #00d4d4 !important }
-
-	:global(.tag.realism) { color: #fff !important }
-	:global(.tag.realism)::before { background-color: #8400d6 !important }
-	:global(.tag.realism)::after { border-left-color: #8400d6 !important }
-
-	:global(.tag.vehicle) { color: #fff !important }
-	:global(.tag.vehicle)::before { background-color: #5d3131 !important }
-	:global(.tag.vehicle)::after { border-left-color: #5d3131 !important }
-
-	:global(.tag.movie) { color: #fff !important }
-	:global(.tag.movie)::before { background-color: #47ab94 !important }
-	:global(.tag.movie)::after { border-left-color: #47ab94 !important }
-
-	:global(.tag.cartoon) { color: #fff !important }
-	:global(.tag.cartoon)::before { background-color: #642865 !important }
-	:global(.tag.cartoon)::after { border-left-color: #642865 !important }
-
-	:global(.tag.scenic) { color: #fff !important }
-	:global(.tag.scenic)::before { background-color: #fb9e9e !important }
-	:global(.tag.scenic)::after { border-left-color: #fb9e9e !important }
-
-	:global(.tag.water) { color: #fff !important }
-	:global(.tag.water)::before { background-color: #4754ab !important }
-	:global(.tag.water)::after { border-left-color: #4754ab !important }
-
-	:global(.tag.comic) { color: #fff !important }
-	:global(.tag.comic)::before { background-color: #642865 !important }
-	:global(.tag.comic)::after { border-left-color: #642865 !important }
-
-	:global(.tag.build) { color: #fff !important }
-	:global(.tag.build)::before { background-color: #3e6e79 !important }
-	:global(.tag.build)::after { border-left-color: #3e6e79 !important }
-
-	:global(.tag.tool) { color: #fff !important }
-	:global(.tag.tool)::before { background-color: #b98528 !important }
-	:global(.tag.tool)::after { border-left-color: #b98528 !important }
-
-	:global(.tag.gamemode) { color: #fff !important }
-	:global(.tag.gamemode)::before { background-color: #88cc86 !important }
-	:global(.tag.gamemode)::after { border-left-color: #88cc86 !important }
-
-	:global(.tag.map) { color: #fff !important }
-	:global(.tag.map)::before { background-color: #804100 !important }
-	:global(.tag.map)::after { border-left-color: #804100 !important }
-
-	:global(.tag.npc) { color: #fff !important }
-	:global(.tag.npc)::before { background-color: #fdfa8e !important }
-	:global(.tag.npc)::after { border-left-color: #fdfa8e !important }
-
-	:global(.tag.effects) { color: #fff !important }
-	:global(.tag.effects)::before { background-color: #27c500 !important }
-	:global(.tag.effects)::after { border-left-color: #27c500 !important }
-
-	:global(.tag.model) { color: #fff !important }
-	:global(.tag.model)::before { background-color: #80007c !important }
-	:global(.tag.model)::after { border-left-color: #80007c !important }
+	#author-loading {
+		display: flex;
+	}
+	#author-loading > a {
+		flex: 1;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 </style>

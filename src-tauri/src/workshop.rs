@@ -137,6 +137,8 @@ impl Workshop {
 				let friends = self.client.friends();
 
 				if friends.request_user_information(steamid, false) {
+					let started = std::time::Instant::now();
+					
 					let sync = Arc::new(AtomicBool::new(false));
 					let _cb = {
 						let c_sync = sync.clone();
@@ -151,6 +153,7 @@ impl Workshop {
 					while !sync.load(std::sync::atomic::Ordering::Acquire) {
 						single.run_callbacks();
 						std::thread::sleep(std::time::Duration::from_millis(50));
+						if (started.elapsed().as_secs() >= 5) { break; }
 					}
 				}
 

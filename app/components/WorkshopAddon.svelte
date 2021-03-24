@@ -4,6 +4,7 @@
 	import PreviewGMA from '../modals/PreviewGMA.svelte';
 	import Dead from '../../public/img/dead.svg';
 	import { Addons } from '../addons.js';
+	import Loading from '../components/Loading.svelte';
 
 	export let id;
 	export let title;
@@ -15,15 +16,16 @@
 	export let subscriptions;
 	export let localFile;
 	export let steamid64;
-	export let name = null;
 	export let searchTitle;
+
+	export let dead;
+	export let loading = false;
 
 	export let isPreviewing = false;
 
 	let stars = Math.round((score * 10) / 2);
 	let starsPct = Math.round(((score * 100) + Number.EPSILON) * 100) / 100;
 
-	const dead = tags == false && !previewUrl && !subscriptions && title == id;
 	const getMetadata = dead && !!localFile ? Addons.getGMAMetadata(localFile, id) : undefined;
 
 	function click() {
@@ -31,9 +33,7 @@
 		$modals = [...$modals, {
 			component: PreviewGMA,
 			props: {
-				path: localFile,
-				dead,
-				workshop: $$props
+				workshopData: $$props
 			}
 		}];
 	}
@@ -49,14 +49,20 @@
 			</span>
 			<img use:tippyFollow={starsPct + '%'} id="score" src="/img/{stars}-star.png" alt="{stars} Stars"/>
 		</div>
-		{#if dead}
+		{#if dead || loading}
 			<div id="preview" class="dead">
-				<Dead/>
+				{#if loading}
+					<Loading size="2rem"/>
+				{:else}
+					<Dead/>
+				{/if}
 			</div>
 			{#await getMetadata}
 				<div id="title">{title}</div>
 			{:then metadata}
-				<div id="title">{metadata.name}</div>
+				{#if metadata}
+					<div id="title">{metadata.name}</div>
+				{/if}
 			{:catch fileName}
 				<div id="title">{fileName}</div>
 			{/await}

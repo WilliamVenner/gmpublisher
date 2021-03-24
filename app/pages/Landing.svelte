@@ -47,6 +47,8 @@
 	];
 
 	let source = sources[0];
+
+	// TODO merge this into App.svelte
 </script>
 
 <main>
