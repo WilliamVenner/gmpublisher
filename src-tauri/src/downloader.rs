@@ -42,6 +42,7 @@ impl WorkshopDownloader {
 
 		self.thread = Some(std::thread::spawn(move || {
 			// TODO calculate download speed
+			// FIXME deadlock when switching to addon size analyzer whilst this thread is active
 
 			let mut killed = false;
 			loop {
@@ -61,7 +62,7 @@ impl WorkshopDownloader {
 
 						match ugc.item_download_info(download.id) {
 							Some((downloaded, total)) => {
-								if total == 0 { continue; }
+								if total == 0 { finished = false; continue; }
 								if downloaded != total {
 									if !download.sent_data {
 										download.sent_data = true;
