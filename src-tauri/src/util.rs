@@ -11,11 +11,13 @@ pub mod path {
 		dunce::canonicalize(path.clone()).unwrap_or(path)
 	}
 
+	#[cfg(not(target_os = "windows"))]
 	pub fn normalize(path: PathBuf) -> PathBuf {
-		#[cfg(not(target_os = "windows"))]
-		canonicalize(path);
-		
-		#[cfg(target_os = "windows")]
+		canonicalize(path)
+	}
+
+	#[cfg(target_os = "windows")]
+	pub fn normalize(path: PathBuf) -> PathBuf {
 		match dunce::canonicalize(&path) {
 			Ok(canonicalized) => PathBuf::from(canonicalized.to_string_lossy().to_string().replace('\\', "/")),
 			Err(_) => path

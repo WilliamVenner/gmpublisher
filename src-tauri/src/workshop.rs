@@ -153,7 +153,11 @@ impl Workshop {
 					while !sync.load(std::sync::atomic::Ordering::Acquire) {
 						single.run_callbacks();
 						std::thread::sleep(std::time::Duration::from_millis(50));
-						if (started.elapsed().as_secs() >= 5) { break; }
+						if started.elapsed().as_secs() >= 5 {
+							#[cfg(debug_assertions)]
+							println!("Failed to query user {:?} via ISteamFriends", &steamid);
+							break;
+						}
 					}
 				}
 
