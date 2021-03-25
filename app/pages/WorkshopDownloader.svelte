@@ -135,7 +135,7 @@
 	}
 
 	const RE_DELIMETERS = /(?:, *|\n+|\t+)/g;
-	const RE_WORKSHOP_ID = /^(\d+)|(?:https?:\/\/(?:www\.)?steamcommunity\.com\/sharedfiles\/filedetails\/\?id=(\d+)\/?)$/gmi;
+	const RE_WORKSHOP_ID = /^(\d+)|(?:https?:\/\/(?:www\.)?steamcommunity\.com\/sharedfiles\/filedetails\/\?id=(\d+).*)$/gmi;
 	function parseInput(e) {
 		const input = this.value.trim().replace(RE_DELIMETERS, '\n');
 
