@@ -311,7 +311,7 @@
 
 		transition: opacity .25s, filter .25s;
 	}
-	:global(#addons .unpadded) {
+	:global(#addons.unpadded) {
 		padding-top: 0 !important;
 		padding-bottom: 0 !important;
 	}

@@ -44,10 +44,14 @@ body {
 
 a {
 	color: inherit;
+	text-decoration: underline;
 	text-underline-offset: 5px;
 }
 a.color {
 	color: #46b0ff;
+}
+a.nostyle {
+	text-decoration: none !important;
 }
 
 body, .hide-scroll {

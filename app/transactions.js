@@ -89,6 +89,11 @@ class Transaction {
 		return this;
 	}
 
+	data(data) {
+		this.emit({ data });
+		return this;
+	};
+
 	setStatus(msg) {
 		this.status = msg;
 		this.emit({ msg });
@@ -108,7 +113,7 @@ class Transaction {
 
 listen("transactionProgress", ({ payload: [ id, progress ] }) => {
 	const transaction = Transaction.get(id);
-	var progress = Math.floor((progress + Number.EPSILON) * 100000) / 1000;
+	var progress = Math.floor((progress + Number.EPSILON) * 10000) / 100;
 	if (transaction && progress !== transaction.progress) transaction.setProgress(progress);
 });
 
@@ -134,6 +139,12 @@ listen("transactionProgressMsg", ({ payload: [ id, msg ] }) => {
 	const transaction = Transaction.get(id);
 	console.log('transactionProgressMsg', transaction, msg);
 	if (transaction) transaction.setStatus(msg);
+});
+
+listen("transactionData", ({ payload: [ id, data ] }) => {
+	const transaction = Transaction.get(id);
+	console.log('transactionData', data);
+	if (transaction) transaction.data(data);
 });
 
 export { Transaction, tasks, taskHeight, tasksMax, tasksNum }

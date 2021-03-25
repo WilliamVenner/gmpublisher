@@ -25,8 +25,8 @@ pub(crate) struct SteamUser {
 }
 
 pub(crate) struct Workshop {
-	client: Client,
-	single: Arc<Mutex<SingleClient>>,
+	pub(crate) client: Client,
+	pub(crate) single: Arc<Mutex<SingleClient>>,
 	account_id: AccountId,
 	cache: Arc<Mutex<HashMap<PublishedFileId, Option<WorkshopItem>>>>,
 	users: Arc<Mutex<HashMap<SteamId, SteamUser>>>

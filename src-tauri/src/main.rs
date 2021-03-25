@@ -4,6 +4,7 @@
 )]
 
 use addon_size_analyzer::AddonSizeAnalyzer;
+use downloader::WorkshopDownloader;
 use tauri::{AppBuilder, Webview};
 extern crate webview_official;
 
@@ -31,6 +32,8 @@ use game_addons::GameAddons;
 
 mod addon_size_analyzer;
 
+mod downloader;
+
 #[macro_use]
 mod transactions;
 
@@ -46,6 +49,8 @@ lazy_static! {
 			panic!();
 		},
 	});
+
+	pub(crate) static ref WORKSHOP_DOWNLOADER: RwLockDebug<WorkshopDownloader> = RwLockDebug::new(WorkshopDownloader::init());
 
 	pub(crate) static ref APP_DATA: RwLockDebug<AppData> = RwLockDebug::new(match AppData::init(WORKSHOP.read().unwrap().get_user()) {
 		Ok(app_data) => app_data,

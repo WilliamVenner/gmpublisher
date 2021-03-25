@@ -1,12 +1,10 @@
-use std::{borrow::Borrow, collections::{HashMap, hash_map::Entry}, fs::{DirEntry, File}, io::BufReader, mem::MaybeUninit, path::PathBuf, sync::{Arc, Mutex, MutexGuard, RwLock, mpsc::{self, Receiver, Sender}}};
-use anyhow::{anyhow, Error};
-use serde::Serialize;
+use std::{collections::{HashMap}, fs::{DirEntry}, mem::MaybeUninit, path::PathBuf, sync::{RwLock, mpsc::{self, Receiver, Sender}}};
+use anyhow::anyhow;
 
-use gma::GMAMetadata;
 use steamworks::PublishedFileId;
 use tauri::Webview;
 
-use crate::{util, gma::{self, ExtractDestination, GMAFile, GMAReadError}, transactions::Transactions, workshop::{WorkshopItem}};
+use crate::{util, gma::{ExtractDestination, GMAFile, GMAReadError}, transactions::Transactions, workshop::{WorkshopItem}};
 use super::show;
 
 use crate::transaction_data;
@@ -275,6 +273,8 @@ pub(crate) fn browse(resolve: String, reject: String, webview: &mut Webview<'_>,
 }
 
 pub(crate) fn get_gma_metadata(resolve: String, reject: String, webview: &mut Webview<'_>, path: PathBuf, id: Option<PublishedFileId>) -> Result<(), String> {
+	cache_addon_paths();
+	
 	tauri::execute_promise(webview, move || {
 		
 		crate::GAME_ADDONS.read().unwrap()
@@ -298,6 +298,8 @@ pub(crate) fn get_gma_metadata(resolve: String, reject: String, webview: &mut We
 }
 
 pub(crate) fn get_gma_ws_uploader(resolve: String, reject: String, webview: &mut Webview<'_>, id: PublishedFileId) -> Result<(), String> {
+	cache_addon_paths();
+
 	tauri::execute_promise(webview, move || {
 
 		Ok(
@@ -314,6 +316,8 @@ pub(crate) fn get_gma_ws_uploader(resolve: String, reject: String, webview: &mut
 }
 
 pub(crate) fn get_gma_ws_metadata(resolve: String, reject: String, webview: &mut Webview<'_>, id: PublishedFileId) -> Result<(), String> {
+	cache_addon_paths();
+
 	tauri::execute_promise(webview, move || {
 
 		Ok(
@@ -329,6 +333,8 @@ pub(crate) fn get_gma_ws_metadata(resolve: String, reject: String, webview: &mut
 }
 
 pub(crate) fn preview_gma(resolve: String, reject: String, webview: &mut Webview<'_>, path: PathBuf, id: Option<PublishedFileId>) -> Result<(), String> {
+	cache_addon_paths();
+
 	tauri::execute_promise(webview, move || {
 
 		let result = {

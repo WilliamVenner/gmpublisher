@@ -14,6 +14,7 @@ fn main() {
 		}
 	}
 
+	let src = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 	let out = PathBuf::from(format!("{}/../../../", env::var("OUT_DIR").unwrap()));
 
 	#[cfg(all(target_os = "windows", target_arch = "x86_64"))]
@@ -29,7 +30,7 @@ fn main() {
 
 	fs::write(out.join("steam_appid.txt"), "4000").unwrap();
 
-	let steam_api_src = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("lib/steam_api").join(&steam_api_lib);
+	let steam_api_src = src.join("lib/steam_api").join(&steam_api_lib);
 	if !steam_api_src.is_file() {
 		panic!(format!("\n\nCouldn't find Steam API libraries at {:?}\nSee src-tauri/lib/steam_api/README\n\n", steam_api_src));
 	}

@@ -7,6 +7,7 @@
 	//import FileSystemAddonsBrowser from '../pages/FileSystemAddonsBrowser.svelte';
 	import AddonSizeAnalyzer from '../pages/AddonSizeAnalyzer.svelte';
 	import Tasks from '../modals/Tasks.svelte';
+	import WorkshopDownloader from '../pages/WorkshopDownloader.svelte';
 
 	const hours = new Date().getHours();
 
@@ -42,6 +43,11 @@
 		{
 			name: 'size_analyzer',
 			component: AddonSizeAnalyzer,
+			props: {}
+		},
+		{
+			name: 'downloader',
+			component: WorkshopDownloader,
 			props: {}
 		},
 	];

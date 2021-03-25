@@ -74,6 +74,27 @@
 	"author": "Author",
 	"open_addon_location": "Open Addon Location",
 
+	"downloader": "Downloader",
+	"download-input": "Paste Workshop IDs, links, collections in here...",
+	"download-input-tip": "TIP: You can paste comma delimeted or newline delimited stuff in here!",
+	"downloading": "Downloading",
+	"log": "Log",
+	"waiting": "Waiting",
+	"extraction_tip": "TIP: You can drag and drop GMA files onto this screen to directly extract them.",
+	"set_destination": "Set Destination",
+
+	"addon": "Addon",
+	"speed": "Speed",
+	"total_filesize": "Total",
+	"progress": "Progress",
+
+	"LOG_DOWNLOAD_STARTED": "Download started for {addon}",
+	"LOG_DOWNLOAD_FINISHED": "Download finished for {addon} in {time}",
+	"LOG_DOWNLOAD_FAILED": "Download FAILED for {addon} (\"{reason}\")",
+	"LOG_EXTRACT_STARTED": "Extraction started for {addon}",
+	"LOG_EXTRACT_FINISHED": "Extraction finished for {addon} in {time}",
+	"LOG_EXTRACT_FAILED": "Extraction failed for {addon} (\"{reason}\")",
+
 	"FS_ANALYZER_RENDERING": "Rendering...",
 	"FS_ANALYZER_CACHING": "Caching...",
 	"FS_ANALYZER_SERIALIZING": "Serializing...",

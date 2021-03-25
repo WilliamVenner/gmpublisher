@@ -5,10 +5,12 @@ pub(crate) type AbortCallback = Box<dyn Fn(&TransactionStatus) + Send + Sync + '
 
 type ErrorData = Option<(String, TransactionDataBoxed)>;
 type FinishedData = TransactionDataBoxed;
+type GenericData = TransactionDataBoxed;
 
 pub(crate) enum TransactionMessage {
 	Progress(f64),
 	ProgressMessage(String),
+	Data(GenericData),
 
 	Cancel,
 	Error(ErrorData),
@@ -22,6 +24,7 @@ impl Debug for TransactionMessage {
 			TransactionMessage::Cancel => "Cancel".to_string(),
 			TransactionMessage::Error(_) => "Error".to_string(),
 			TransactionMessage::Finish(_) => "Finish".to_string(),
+			TransactionMessage::Data(_) => "Data".to_string(),
 		})
 	}
 }
@@ -129,6 +132,9 @@ impl Transaction {
 					},
 					ProgressMessage(msg) => {
 						tauri::event::emit(&mut webview, "transactionProgressMsg", Some((transaction.id, msg))).ok();
+					},
+					Data(data) => {
+						tauri::event::emit(&mut webview, "transactionData", Some((transaction.id, data))).ok();
 					},
 				}
 			}
@@ -276,6 +282,13 @@ impl TransactionChannel {
 		if self.aborted.load(Ordering::Acquire) { debug_assert!(false, "Tried to progress an aborted transaction."); return; }
 
 		let res = self.send(TransactionMessage::ProgressMessage(msg.to_string()));
+		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
+	}
+
+	pub(crate) fn data<T: TransactionDataToBox>(&self, data: T) {
+		if self.aborted.load(Ordering::Acquire) { debug_assert!(false, "Tried to send data to an aborted transaction."); return; }
+
+		let res = self.send(TransactionMessage::Data(data.into_box()));
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
 	}
 }

@@ -8,7 +8,7 @@ use crate::workshop;
 use crate::settings;
 use crate::game_addons;
 use crate::util;
-use crate::addon_size_analyzer;
+use crate::downloader;
 
 #[derive(Deserialize)]
 #[serde(tag="cmd", rename_all="camelCase")]
@@ -95,6 +95,19 @@ enum Command {
 	},
 	FreeAddonSizeAnalyzer,
 
+	DownloadWorkshop {
+		callback: String,
+		error: String,
+
+		ids: Vec<String>,
+		
+		path: Option<PathBuf>,
+		named_dir: bool,
+		tmp: bool,
+		downloads: bool,
+		addons: bool,
+	},
+
 	LoadAsset
 }
 
@@ -173,6 +186,10 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 					FreeAddonSizeAnalyzer => {
 						crate::ADDON_SIZE_ANALYZER.free();
 						Ok(())
+					},
+
+					DownloadWorkshop { callback, error, ids, path, named_dir, tmp, downloads, addons } => {
+						downloader::download(callback, error, webview, ids, path, named_dir, tmp, downloads, addons)
 					},
 
 					LoadAsset => { Ok(()) },

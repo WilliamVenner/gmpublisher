@@ -485,6 +485,8 @@
 		width: 0;
 		height: 0;
 		pointer-events: none;
+
+		transition: width .1s, height .1s, top .1s, left .1s, right .1s, bottom .1s;
 	}
 	#popper-content {
 		display: none;
