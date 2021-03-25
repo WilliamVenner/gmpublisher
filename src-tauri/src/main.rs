@@ -37,7 +37,6 @@ mod downloader;
 #[macro_use]
 mod transactions;
 
-//pub(crate) mod lib;
 pub(crate) mod gma;
 
 use lazy_static::lazy_static;
