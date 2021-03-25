@@ -5,7 +5,7 @@
 	"loading": "Laden...",
 	"gmod_dir": {
 		"name": "Garry's Mod Ordner",
-    "fail": "Der angegebene Ordner konnte nicht gefunden werden.\nStelle sicher, dass der von dir angegebene Ordner einen bin/ Ordner enthält."
+		"fail": "Der angegebene Ordner konnte nicht gefunden werden.\nStelle sicher, dass der von dir angegebene Ordner einen bin/ Ordner enthält."
 	},
 	"greetings": {
 		"morning": "Guten Morgen, {name}!",
