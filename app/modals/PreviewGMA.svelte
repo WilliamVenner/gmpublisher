@@ -1,7 +1,7 @@
 <script>
 	import { Addons, trimPath, getFileTypeInfo } from '../addons.js';
 	import { _ } from 'svelte-i18n';
-	import fileSize from 'fileSize';
+	import filesize from 'filesize';
 	import { tippyFollow, tippy } from '../tippy.js';
 	import { writable } from 'svelte/store';
 	import Dead from '../../public/img/dead.svg';
@@ -40,7 +40,7 @@
 	}
 
 	let size = gma?.size ?? workshop?.size ?? null;
-	if (size) size = fileSize(size);
+	if (size) size = filesize(size);
 
 	let dead = workshop?.dead ?? false;
 
@@ -140,7 +140,7 @@
 			
 			workshopLoading = (!workshop || !workshop.owner) && ws_id ? getWorkshopMetadata() : Promise.reject();
 
-			size = fileSize(gma.size);
+			size = filesize(gma.size);
 			initBrowser();
 		});
 
@@ -187,7 +187,7 @@
 			.then(transactionId => new Transaction(transactionId, transaction => {
 				return $_('extracting_progress', { values: {
 					pct: transaction.progress,
-					data: fileSize((transaction.progress / 100) * gma.size),
+					data: filesize((transaction.progress / 100) * gma.size),
 					dataTotal: size
 				}});
 			}));
@@ -312,7 +312,7 @@
 		}).then(id => new Transaction(id, transaction => {
 			return $_('extracting_progress', { values: {
 				pct: transaction.progress,
-				data: fileSize((transaction.progress / 100) * gma.size),
+				data: filesize((transaction.progress / 100) * gma.size),
 				dataTotal: size
 			}});
 		}));
@@ -472,7 +472,7 @@
 										<td><img class="icon" use:tippyFollow={$_('file_types.' + entry.type, { values: { extension: entry.extension } })} src="/img/silkicons/{entry.icon}" alt=""/></td>
 										<td><span>{entry.name}</span></td>
 										<td><span>{$_('file_types.' + entry.type, { values: { extension: entry.extension } })}</span></td>
-										<td><span>{fileSize(entry.size)}</span></td>
+										<td><span>{filesize(entry.size)}</span></td>
 									</tr>
 								{/each}
 							</tbody>

@@ -5,7 +5,7 @@
 	import Loading from '../components/Loading.svelte';
 	import Dead from '../../public/img/dead.svg';
 	import { Transaction } from '../transactions.js';
-	import fileSize from 'filesize';
+	import filesize from 'filesize';
 	import tippy from 'tippy.js';
 	import { modals } from '../modals.js';
 	import PreviewGMA from '../modals/PreviewGMA.svelte';
@@ -346,7 +346,7 @@
 		} else {
 
 			popperName.textContent = addon.gma.name ?? addon.gma.extracted_name;
-			popperSize.textContent = fileSize(Number(addon.gma.size));
+			popperSize.textContent = filesize(Number(addon.gma.size));
 			
 			const tagName = lookupTagName(addon.tagId);
 			updateTagCanvas(tagName);

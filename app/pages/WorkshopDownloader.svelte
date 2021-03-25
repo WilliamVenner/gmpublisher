@@ -8,7 +8,7 @@
 	import { Transaction } from '../transactions';
 	import Dead from '../components/Dead.svelte';
 	import Loading from '../components/Loading.svelte';
-	import fileSize from 'filesize';
+	import filesize from 'filesize';
 
 	const RE_FILE_NAME = /(?:\\|\/|^)([^\/\\]+?)$/m;
 
@@ -265,7 +265,7 @@
 									{/await}
 								</td>
 								<td>{#if job.speed} {job.speed} {/if}</td>
-								<td>{#if job.total} {fileSize(job.total)} {/if}</td>
+								<td>{#if job.total} {filesize(job.total)} {/if}</td>
 								<td class="progress">
 									<div class="progress" style="width: calc({job.transaction.progress}% - .6rem)"></div>
 									<div class="pct">{job.transaction.progress}%</div>
