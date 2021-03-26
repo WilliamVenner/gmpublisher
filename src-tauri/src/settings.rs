@@ -1,6 +1,6 @@
-use std::{fs, path::Path, path::PathBuf};
-use serde::{Serialize, Deserialize};
 use anyhow::Error;
+use serde::{Deserialize, Serialize};
+use std::{fs, path::Path, path::PathBuf};
 use tauri::{Webview, WebviewMut};
 
 use crate::show;
@@ -16,11 +16,11 @@ pub(crate) struct Settings {
 	pub(crate) create_folder_on_extract: bool,
 
 	#[serde(skip)]
-	pub(crate) file: PathBuf
+	pub(crate) file: PathBuf,
 }
 impl Default for Settings {
-    fn default() -> Self {
-        Self {
+	fn default() -> Self {
+		Self {
 			file: PathBuf::from(""),
 
 			window_size: (1280, 720), // TODO make this a pct of the primary monitors
@@ -29,7 +29,7 @@ impl Default for Settings {
 			destinations: Vec::new(),
 			create_folder_on_extract: true,
 		}
-    }
+	}
 }
 
 impl Settings {
@@ -56,15 +56,13 @@ impl Settings {
 		settings_file.push("settings.json");
 		if Path::is_file(&settings_file) {
 			match fs::read_to_string(&settings_file) {
-				Ok(settings_str) => {
-					match serde_json::de::from_str::<Settings>(&settings_str) {
-						Ok(mut data) => {
-							data.file = settings_file;
-							data.sanitize();
-							return data;
-						},
-						Err(_) => {}
+				Ok(settings_str) => match serde_json::de::from_str::<Settings>(&settings_str) {
+					Ok(mut data) => {
+						data.file = settings_file;
+						data.sanitize();
+						return data;
 					}
+					Err(_) => {}
 				},
 				Err(_) => {}
 			}
@@ -73,17 +71,23 @@ impl Settings {
 		let mut data = Settings::default();
 		data.file = settings_file.clone();
 		data.sanitize();
-		
+
 		match data.save(None) {
-			Ok(_) => {},
-			Err(error) => show::panic(format!("Failed to save user settings!\nPath: {:?}\nError: {:#?}", settings_file, error))
+			Ok(_) => {}
+			Err(error) => show::panic(format!(
+				"Failed to save user settings!\nPath: {:?}\nError: {:#?}",
+				settings_file, error
+			)),
 		}
 
 		data
 	}
 
 	pub(crate) fn save(&self, location: Option<&PathBuf>) -> Result<(), Error> {
-		Ok(fs::write(&location.unwrap_or(&self.file), serde_json::ser::to_string(&self)?)?)
+		Ok(fs::write(
+			&location.unwrap_or(&self.file),
+			serde_json::ser::to_string(&self)?,
+		)?)
 	}
 
 	pub(crate) fn save_json(json: &str, location: Option<&PathBuf>) -> Result<Settings, Error> {
@@ -94,7 +98,11 @@ impl Settings {
 
 	pub(crate) fn send(&mut self, mut webview: WebviewMut) {
 		self.sanitize();
-		let success = tauri::event::emit(&mut webview, "updateAppData", Some(&*crate::APP_DATA.read().unwrap()));
+		let success = tauri::event::emit(
+			&mut webview,
+			"updateAppData",
+			Some(&*crate::APP_DATA.read().unwrap()),
+		);
 		debug_assert!(success.is_ok(), "Failed to update app data");
 	}
 }
@@ -106,7 +114,7 @@ pub(crate) fn invoke_handler(_webview: &mut Webview<'_>, settings: String) -> Re
 			deserialized.file = app_data.settings.file.clone();
 			(*app_data).settings = deserialized;
 			Ok(())
-		},
-		Err(error) => Err(format!("Failed to save settings file!\n{:#?}", error))
+		}
+		Err(error) => Err(format!("Failed to save settings file!\n{:#?}", error)),
 	}
 }

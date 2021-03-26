@@ -1,6 +1,12 @@
-use std::{collections::HashMap, fs::File, io::{BufRead, BufReader, Read, Seek, SeekFrom}, path::PathBuf, sync::Arc};
 use byteorder::ReadBytesExt;
 use serde::{Deserialize, Serialize};
+use std::{
+	collections::HashMap,
+	fs::File,
+	io::{BufRead, BufReader, Read, Seek, SeekFrom},
+	path::PathBuf,
+	sync::Arc,
+};
 use steamworks::PublishedFileId;
 
 pub const GMA_HEADER: &'static [u8; 4] = b"GMAD";
@@ -22,9 +28,14 @@ pub type ProgressCallback = Box<dyn Fn(f64) -> () + Sync + Send>;
 
 fn serialize_extracted_name<S>(data: &(bool, Option<String>), s: S) -> Result<S::Ok, S::Error>
 where
-	S: serde::Serializer
+	S: serde::Serializer,
 {
-	s.serialize_str(&data.1.as_ref().expect("Missing extracted name! Make sure to call metadata()"))
+	s.serialize_str(
+		&data
+			.1
+			.as_ref()
+			.expect("Missing extracted name! Make sure to call metadata()"),
+	)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -38,7 +49,7 @@ pub struct GMAFile {
 	pub(crate) metadata: Option<GMAMetadata>,
 	#[serde(skip)]
 	pub(crate) metadata_start: u64,
-	
+
 	pub(crate) entries: Option<Arc<Vec<GMAEntry>>>,
 	pub(crate) entries_map: Option<Arc<HashMap<String, usize>>>,
 	#[serde(skip)]
@@ -48,32 +59,34 @@ pub struct GMAFile {
 
 	#[serde(serialize_with = "serialize_extracted_name")]
 	#[serde(skip_deserializing)]
-	pub(crate) extracted_name: (bool, Option<String>)
+	pub(crate) extracted_name: (bool, Option<String>),
 }
 impl GMAFile {
 	pub fn new(path: &PathBuf, id: Option<PublishedFileId>) -> Result<GMAFile, GMAReadError> {
 		let mut handle = BufReader::new(match File::open(path) {
 			Ok(handle) => handle,
-			Err(_) => return Err(GMAReadError::IOError)
+			Err(_) => return Err(GMAReadError::IOError),
 		});
-	
+
 		let size = match path.metadata() {
 			Ok(metadata) => metadata.len(),
-			Err(_) => 0
+			Err(_) => 0,
 		};
-	
+
 		let mut magic_buf = [0; 4];
 		match handle.read_exact(&mut magic_buf) {
 			Ok(_) => {
 				if &magic_buf != GMA_HEADER {
 					return Err(GMAReadError::InvalidHeader);
 				}
-			},
-			Err(_) => return Err(GMAReadError::InvalidHeader)
+			}
+			Err(_) => return Err(GMAReadError::InvalidHeader),
 		};
-	
+
 		let fmt_version = safe_read!(handle.read_u8())?;
-		if fmt_version != SUPPORTED_GMA_VERSION { return Err(GMAReadError::UnsupportedVersion); }
+		if fmt_version != SUPPORTED_GMA_VERSION {
+			return Err(GMAReadError::UnsupportedVersion);
+		}
 
 		Ok(GMAFile {
 			path: path.into(),
@@ -98,35 +111,43 @@ impl GMAFile {
 	}
 }
 
-pub struct GMAFileHandle{
+pub struct GMAFileHandle {
 	inner: Option<BufReader<File>>,
 }
 impl Clone for GMAFileHandle {
 	/// # This doesn't actually clone it and is merely a hack to derive Clone in GMAFile
-    fn clone(&self) -> Self {
-        GMAFileHandle::default()
-    }
+	fn clone(&self) -> Self {
+		GMAFileHandle::default()
+	}
 }
 impl From<BufReader<File>> for GMAFileHandle {
-    fn from(handle: BufReader<File>) -> Self {
-		GMAFileHandle { inner: Some(handle)  }
-    }
+	fn from(handle: BufReader<File>) -> Self {
+		GMAFileHandle {
+			inner: Some(handle),
+		}
+	}
 }
 impl Default for GMAFileHandle {
-    fn default() -> Self {
+	fn default() -> Self {
 		GMAFileHandle { inner: None }
-    }
+	}
 }
 impl std::ops::Deref for GMAFileHandle {
-    type Target = BufReader<File>;
-    fn deref(&self) -> &Self::Target {
-		debug_assert!(self.inner.is_some(), "Tried to use an invalid GMA file handle!");
+	type Target = BufReader<File>;
+	fn deref(&self) -> &Self::Target {
+		debug_assert!(
+			self.inner.is_some(),
+			"Tried to use an invalid GMA file handle!"
+		);
 		self.inner.as_ref().unwrap()
 	}
 }
 impl std::ops::DerefMut for GMAFileHandle {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-		debug_assert!(self.inner.is_some(), "Tried to use an invalid GMA file handle!");
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		debug_assert!(
+			self.inner.is_some(),
+			"Tried to use an invalid GMA file handle!"
+		);
 		self.inner.as_mut().unwrap()
 	}
 }
@@ -161,12 +182,12 @@ impl GMAFileHandle {
 	}
 }
 impl std::fmt::Debug for GMAFileHandle {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self.is_open() {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.write_str(match self.is_open() {
 			true => "Open",
-			false => "Closed"
+			false => "Closed",
 		})
-    }
+	}
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -187,13 +208,13 @@ pub struct GMAEntry {
 	pub crc: u32,
 }
 impl std::fmt::Debug for GMAEntry {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GMAEntry")
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("GMAEntry")
 			.field("path", &self.path)
 			.field("size", &self.size)
 			.field("crc", &self.crc)
 			.finish()
-    }
+	}
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -202,5 +223,5 @@ pub struct AddonJson {
 	#[serde(rename = "type")]
 	pub addon_type: String,
 	pub tags: Vec<String>,
-	pub ignore: Option<Vec<String>>
+	pub ignore: Option<Vec<String>>,
 }

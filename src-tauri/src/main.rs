@@ -11,8 +11,8 @@ extern crate webview_official;
 mod util;
 pub(crate) use util::*;
 
-mod show;
 mod settings;
+mod show;
 
 mod appdata;
 use appdata::AppData;
@@ -43,28 +43,31 @@ pub(crate) mod gma;
 
 use lazy_static::lazy_static;
 lazy_static! {
-	pub(crate) static ref WORKSHOP: RwLockDebug<Workshop> = RwLockDebug::new(match Workshop::init() {
-		Ok(workshop) => workshop,
-		Err(error) => {
-			show::panic(format!("Couldn't initialize the Steam API! Is Steam running?\nError: {:#?}", error));
-			panic!();
-		},
-	});
-
-	pub(crate) static ref WORKSHOP_DOWNLOADER: RwLockDebug<WorkshopDownloader> = RwLockDebug::new(WorkshopDownloader::init());
-
-	pub(crate) static ref APP_DATA: RwLockDebug<AppData> = RwLockDebug::new(match AppData::init(WORKSHOP.read().unwrap().get_user()) {
-		Ok(app_data) => app_data,
-		Err(error) => {
-			show::panic(format!("{:#?}", error));
-			panic!();
-		}
-	});
-
-	pub(crate) static ref GAME_ADDONS: RwLockDebug<GameAddons> = RwLockDebug::new(GameAddons::init());
-
-	pub(crate) static ref TRANSACTIONS: RwLockDebug<Transactions> = RwLockDebug::new(Transactions::init());
-
+	pub(crate) static ref WORKSHOP: RwLockDebug<Workshop> =
+		RwLockDebug::new(match Workshop::init() {
+			Ok(workshop) => workshop,
+			Err(error) => {
+				show::panic(format!(
+					"Couldn't initialize the Steam API! Is Steam running?\nError: {:#?}",
+					error
+				));
+				panic!();
+			}
+		});
+	pub(crate) static ref WORKSHOP_DOWNLOADER: RwLockDebug<WorkshopDownloader> =
+		RwLockDebug::new(WorkshopDownloader::init());
+	pub(crate) static ref APP_DATA: RwLockDebug<AppData> =
+		RwLockDebug::new(match AppData::init(WORKSHOP.read().unwrap().get_user()) {
+			Ok(app_data) => app_data,
+			Err(error) => {
+				show::panic(format!("{:#?}", error));
+				panic!();
+			}
+		});
+	pub(crate) static ref GAME_ADDONS: RwLockDebug<GameAddons> =
+		RwLockDebug::new(GameAddons::init());
+	pub(crate) static ref TRANSACTIONS: RwLockDebug<Transactions> =
+		RwLockDebug::new(Transactions::init());
 	pub(crate) static ref ADDON_SIZE_ANALYZER: AddonSizeAnalyzer = AddonSizeAnalyzer::init();
 }
 
@@ -78,7 +81,11 @@ fn main() {
 
 		if first_setup {
 			webview.set_size(500, 500, webview_official::SizeHint::MIN);
-			webview.set_size(std::cmp::max(window_size.0, 500), std::cmp::max(window_size.1, 500), webview_official::SizeHint::NONE);
+			webview.set_size(
+				std::cmp::max(window_size.0, 500),
+				std::cmp::max(window_size.1, 500),
+				webview_official::SizeHint::NONE,
+			);
 
 			drop(window_size);
 			first_setup = false;
@@ -89,5 +96,6 @@ fn main() {
 		.setup(setup)
 		.plugin(AppDataPlugin::init())
 		.invoke_handler(commands::invoke_handler())
-		.build().run();
+		.build()
+		.run();
 }

@@ -1,6 +1,5 @@
 extern crate msgbox;
 
-
 use msgbox::IconType;
 
 #[allow(dead_code)]
@@ -51,5 +50,8 @@ pub fn open_file_location(path: String) -> Result<std::process::Child, std::io::
 		.spawn();
 
 	#[allow(unreachable_code)]
-	Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied, "Unsupported OS"))
+	Err(std::io::Error::new(
+		std::io::ErrorKind::PermissionDenied,
+		"Unsupported OS",
+	))
 }

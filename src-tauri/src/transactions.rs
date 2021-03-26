@@ -1,5 +1,14 @@
-use std::{collections::HashMap, fmt::Debug, sync::{Arc, RwLock, RwLockReadGuard, atomic::{AtomicBool, AtomicU16, Ordering}, mpsc::{self, SyncSender}}, thread::{JoinHandle, ThreadId}};
-use tauri::{WebviewMut};
+use std::{
+	collections::HashMap,
+	fmt::Debug,
+	sync::{
+		atomic::{AtomicBool, AtomicU16, Ordering},
+		mpsc::{self, SyncSender},
+		Arc, RwLock, RwLockReadGuard,
+	},
+	thread::{JoinHandle, ThreadId},
+};
+use tauri::WebviewMut;
 
 pub(crate) type AbortCallback = Box<dyn Fn(&TransactionStatus) + Send + Sync + 'static>;
 
@@ -53,14 +62,15 @@ pub(crate) struct Transaction {
 	aborted: Arc<AtomicBool>,
 
 	#[cfg(debug_assertions)]
-	thread: Option<ThreadId>
+	thread: Option<ThreadId>,
 }
 impl serde::Serialize for Transaction {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer {
-        serializer.serialize_u64(self.id as u64)
-    }
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		serializer.serialize_u64(self.id as u64)
+	}
 }
 
 impl Drop for Transaction {
@@ -108,8 +118,14 @@ impl Transaction {
 		std::thread::spawn(move || {
 			let abort = || {
 				let status = transaction.status.read().unwrap();
-				for callback in &*transaction.callbacks { (callback)(&*status); }
-				crate::TRANSACTIONS.write().unwrap().map.remove(&transaction.id);
+				for callback in &*transaction.callbacks {
+					(callback)(&*status);
+				}
+				crate::TRANSACTIONS
+					.write()
+					.unwrap()
+					.map
+					.remove(&transaction.id);
 			};
 
 			use TransactionMessage::*;
@@ -117,32 +133,60 @@ impl Transaction {
 				let msg: TransactionMessage = rx.recv().unwrap();
 				match msg {
 					Finish(data) => {
-						tauri::event::emit(&mut webview, "transactionFinished", Some((transaction.id, &data))).ok();
+						tauri::event::emit(
+							&mut webview,
+							"transactionFinished",
+							Some((transaction.id, &data)),
+						)
+						.ok();
 						*transaction.status.write().unwrap() = TransactionStatus::Finished(data);
 						abort();
 						break;
-					},
+					}
 					Error(data) => {
-						tauri::event::emit(&mut webview, "transactionError", Some((transaction.id, &data))).ok();
+						tauri::event::emit(
+							&mut webview,
+							"transactionError",
+							Some((transaction.id, &data)),
+						)
+						.ok();
 						*transaction.status.write().unwrap() = TransactionStatus::Error(data);
 						abort();
 						break;
-					},
+					}
 					Cancel => {
 						*transaction.status.write().unwrap() = TransactionStatus::Cancelled;
 						abort();
 						break;
-					},
+					}
 					Progress(new_progress) => {
-						transaction.progress.store(((new_progress * 10000.).round() as u16).min(10000).max(0), Ordering::SeqCst);
-						tauri::event::emit(&mut webview, "transactionProgress", Some((transaction.id, new_progress))).ok();
-					},
+						transaction.progress.store(
+							((new_progress * 10000.).round() as u16).min(10000).max(0),
+							Ordering::SeqCst,
+						);
+						tauri::event::emit(
+							&mut webview,
+							"transactionProgress",
+							Some((transaction.id, new_progress)),
+						)
+						.ok();
+					}
 					ProgressMessage(msg) => {
-						tauri::event::emit(&mut webview, "transactionProgressMsg", Some((transaction.id, msg))).ok();
-					},
+						tauri::event::emit(
+							&mut webview,
+							"transactionProgressMsg",
+							Some((transaction.id, msg)),
+						)
+						.ok();
+					}
 					Data(data) => {
-						tauri::event::emit(&mut webview, "transactionData", Some((transaction.id, data))).ok();
-					},
+						tauri::event::emit(
+							&mut webview,
+							"transactionData",
+							Some((transaction.id, data)),
+						)
+						.ok();
+					}
 				}
 			}
 		});
@@ -156,10 +200,9 @@ impl Transaction {
 			assert!(self.thread.expect("You can't create a new channel for a thread that isn't listening yet.") == std::thread::current().id(), "You can only create a new transaction channel on the thread the transaction began listening on.");
 		}
 
-		TransactionChannel
-		{
+		TransactionChannel {
 			inner: self.tx.as_ref().unwrap().clone(),
-			aborted: self.aborted.clone()
+			aborted: self.aborted.clone(),
 		}
 	}
 
@@ -198,7 +241,8 @@ macro_rules! transaction_data {
 	};
 }
 
-pub(crate) type TransactionDataFutureFn = dyn FnOnce() -> TransactionDataBoxed + Sync + Send + 'static;
+pub(crate) type TransactionDataFutureFn =
+	dyn FnOnce() -> TransactionDataBoxed + Sync + Send + 'static;
 pub(crate) struct TransactionDataFuture(pub(crate) Box<TransactionDataFutureFn>);
 impl TransactionDataToBox for TransactionDataFuture {
 	fn into_box(self) -> TransactionDataBoxed {
@@ -208,7 +252,7 @@ impl TransactionDataToBox for TransactionDataFuture {
 #[macro_export]
 macro_rules! transaction_data_fn {
 	( $x:expr ) => {
-		crate::transactions::TransactionDataFuture(Box::new(move || {$x}))
+		crate::transactions::TransactionDataFuture(Box::new(move || $x))
 	};
 }
 
@@ -242,7 +286,10 @@ impl TransactionChannel {
 	}
 
 	pub(crate) fn cancel(&self) {
-		if self.aborted.fetch_or(true, Ordering::AcqRel) { debug_assert!(false, "Tried to cancel an already aborted transaction."); return; }
+		if self.aborted.fetch_or(true, Ordering::AcqRel) {
+			debug_assert!(false, "Tried to cancel an already aborted transaction.");
+			return;
+		}
 
 		#[cfg(debug_assertions)]
 		{
@@ -250,32 +297,39 @@ impl TransactionChannel {
 		}
 
 		let res = self.send(TransactionMessage::Cancel);
-		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
+		debug_assert!(
+			res.is_ok(),
+			"Failed to send message to transaction receiver"
+		);
 	}
 
 	pub(crate) fn error<T: TransactionDataToBox>(&self, msg: &str, data: T) {
-		if self.aborted.fetch_or(true, Ordering::AcqRel) { debug_assert!(false, "Tried to error an already aborted transaction."); return; }
+		if self.aborted.fetch_or(true, Ordering::AcqRel) {
+			debug_assert!(false, "Tried to error an already aborted transaction.");
+			return;
+		}
 
-		let res = self.send(
-			TransactionMessage::Error(
-				Some((
-					msg.to_string(),
-					data.into_box()
-				))
-			)
+		let res = self.send(TransactionMessage::Error(Some((
+			msg.to_string(),
+			data.into_box(),
+		))));
+		debug_assert!(
+			res.is_ok(),
+			"Failed to send message to transaction receiver"
 		);
-		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
 	}
 
 	pub(crate) fn finish<T: TransactionDataToBox>(&self, data: T) {
-		if self.aborted.fetch_or(true, Ordering::AcqRel) { debug_assert!(false, "Tried to finish an already aborted transaction."); return; }
+		if self.aborted.fetch_or(true, Ordering::AcqRel) {
+			debug_assert!(false, "Tried to finish an already aborted transaction.");
+			return;
+		}
 
-		let res = self.send(
-			TransactionMessage::Finish(
-				data.into_box()
-			)
+		let res = self.send(TransactionMessage::Finish(data.into_box()));
+		debug_assert!(
+			res.is_ok(),
+			"Failed to send message to transaction receiver"
 		);
-		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver");
 	}
 
 	pub(crate) fn progress(&self, progress: f64) {
@@ -286,7 +340,10 @@ impl TransactionChannel {
 		}
 
 		let res = self.send(TransactionMessage::Progress(progress));
-		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
+		debug_assert!(
+			res.is_ok(),
+			"Failed to send message to transaction receiver"
+		)
 	}
 
 	pub(crate) fn progress_msg(&self, msg: &str) {
@@ -297,7 +354,10 @@ impl TransactionChannel {
 		}
 
 		let res = self.send(TransactionMessage::ProgressMessage(msg.to_string()));
-		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
+		debug_assert!(
+			res.is_ok(),
+			"Failed to send message to transaction receiver"
+		)
 	}
 
 	pub(crate) fn data<T: TransactionDataToBox>(&self, data: T) {
@@ -308,13 +368,16 @@ impl TransactionChannel {
 		}
 
 		let res = self.send(TransactionMessage::Data(data.into_box()));
-		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
+		debug_assert!(
+			res.is_ok(),
+			"Failed to send message to transaction receiver"
+		)
 	}
 }
 
 pub(crate) struct PendingTransaction {
 	tx: SyncSender<()>,
-	_recv: JoinHandle<()>
+	_recv: JoinHandle<()>,
 }
 impl PendingTransaction {
 	pub(crate) fn new(transaction_ref: Arc<Transaction>) -> Self {
@@ -326,7 +389,7 @@ impl PendingTransaction {
 				if let Ok(()) = rx.recv() {
 					channel.cancel();
 				}
-			})
+			}),
 		}
 	}
 
@@ -341,7 +404,10 @@ pub(crate) struct Transactions {
 }
 impl Transactions {
 	pub(crate) fn init() -> Transactions {
-		Transactions { id: 0, map: HashMap::new() }
+		Transactions {
+			id: 0,
+			map: HashMap::new(),
+		}
 	}
 
 	pub(crate) fn get(&self, id: usize) -> Option<&PendingTransaction> {
@@ -360,7 +426,7 @@ impl Transactions {
 		TransactionBuilder {
 			id: transactions.id,
 			inner: Transaction::new(transactions.id),
-			webview
+			webview,
 		}
 	}
 }
@@ -368,12 +434,12 @@ impl Transactions {
 pub(crate) struct TransactionBuilder {
 	pub(crate) id: usize,
 	inner: Transaction,
-	webview: WebviewMut
+	webview: WebviewMut,
 }
 impl TransactionBuilder {
 	pub(crate) fn connect_abort<F>(mut self, f: F) -> Self
 	where
-		F: Fn(&TransactionStatus) + Send + Sync + 'static
+		F: Fn(&TransactionStatus) + Send + Sync + 'static,
 	{
 		self.inner.callbacks.push(Box::new(f));
 		self
@@ -382,10 +448,11 @@ impl TransactionBuilder {
 	pub(crate) fn build(self) -> Arc<Transaction> {
 		let transaction_ref = self.inner.listen(self.webview);
 
-		crate::TRANSACTIONS.write().unwrap().map.insert(
-			self.id,
-			PendingTransaction::new(transaction_ref.clone())
-		);
+		crate::TRANSACTIONS
+			.write()
+			.unwrap()
+			.map
+			.insert(self.id, PendingTransaction::new(transaction_ref.clone()));
 
 		transaction_ref
 	}

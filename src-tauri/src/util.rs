@@ -1,11 +1,13 @@
-use std::{fs::DirEntry, sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, atomic::AtomicBool}};
+use std::{
+	fs::DirEntry,
+	sync::{atomic::AtomicBool, Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard},
+};
 
 use tauri::Webview;
 
-
 pub mod path {
+	use serde::{de::Visitor, Deserialize, Serialize};
 	use std::{fmt::Debug, path::PathBuf};
-	use serde::{Deserialize, Serialize, de::Visitor};
 
 	pub fn canonicalize(path: PathBuf) -> PathBuf {
 		dunce::canonicalize(path.clone()).unwrap_or(path)
@@ -19,15 +21,20 @@ pub mod path {
 	#[cfg(target_os = "windows")]
 	pub fn normalize(path: PathBuf) -> PathBuf {
 		match dunce::canonicalize(&path) {
-			Ok(canonicalized) => PathBuf::from(canonicalized.to_string_lossy().to_string().replace('\\', "/")),
-			Err(_) => path
+			Ok(canonicalized) => PathBuf::from(
+				canonicalized
+					.to_string_lossy()
+					.to_string()
+					.replace('\\', "/"),
+			),
+			Err(_) => path,
 		}
 	}
 
 	#[derive(Clone)]
 	pub struct NormalizedPathBuf {
 		pub normalized: PathBuf,
-		path: PathBuf
+		path: PathBuf,
 	}
 	impl std::ops::Deref for NormalizedPathBuf {
 		type Target = PathBuf;
@@ -79,12 +86,12 @@ pub mod path {
 	impl Serialize for NormalizedPathBuf {
 		fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 		where
-			S: serde::Serializer
+			S: serde::Serializer,
 		{
 			serializer.serialize_str(&self.normalized.to_string_lossy())
 		}
 	}
-	
+
 	struct NormalizedPathBufVisitor;
 	impl<'de> Visitor<'de> for NormalizedPathBufVisitor {
 		type Value = String;
@@ -92,21 +99,29 @@ pub mod path {
 		fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
 			formatter.write_str("a string")
 		}
-		
 	}
 	impl<'de> Deserialize<'de> for NormalizedPathBuf {
 		fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 		where
-			D: serde::Deserializer<'de>
+			D: serde::Deserializer<'de>,
 		{
 			Ok(NormalizedPathBuf::from(
-				deserializer.deserialize_string(NormalizedPathBufVisitor)?
+				deserializer.deserialize_string(NormalizedPathBufVisitor)?,
 			))
 		}
 	}
 }
 
-pub(crate) fn prompt_path_dialog(_callback: String, _error: String, _webview: &mut Webview, _multiple: bool, _directory: bool, _save: bool, _default_path: Option<String>, _filter: Option<String>) -> Result<(), String> {
+pub(crate) fn prompt_path_dialog(
+	_callback: String,
+	_error: String,
+	_webview: &mut Webview,
+	_multiple: bool,
+	_directory: bool,
+	_save: bool,
+	_default_path: Option<String>,
+	_filter: Option<String>,
+) -> Result<(), String> {
 	/*use nfd::{Response, DialogType};
 
 	tauri::execute_promise(webview, move || {
@@ -132,7 +147,7 @@ pub(crate) fn prompt_path_dialog(_callback: String, _error: String, _webview: &m
 
 			Err(_) => { crate::show::error("Failed to open file picking dialog!".to_string()); return Err(anyhow!("FAILED")) }
 		}
-		
+
 	}, callback, error);*/
 
 	Ok(())
@@ -149,19 +164,20 @@ pub(crate) type RwLockDebug<T> = RwLock<T>;
 #[cfg(debug_assertions)]
 pub(crate) struct RwLockDebug<T> {
 	inner: RwLock<T>,
-	backtrace: Arc<RwLock<Option<(backtrace::Backtrace, std::time::Instant)>>>
+	backtrace: Arc<RwLock<Option<(backtrace::Backtrace, std::time::Instant)>>>,
 }
 #[cfg(debug_assertions)]
 impl<T> RwLockDebug<T> {
 	pub(crate) fn new(val: T) -> Self {
 		Self {
 			inner: RwLock::new(val),
-			backtrace: Arc::new(RwLock::new(None))
+			backtrace: Arc::new(RwLock::new(None)),
 		}
 	}
 
 	fn backtrace(&self) {
-		*self.backtrace.write().unwrap() = Some((backtrace::Backtrace::new(), std::time::Instant::now()));
+		*self.backtrace.write().unwrap() =
+			Some((backtrace::Backtrace::new(), std::time::Instant::now()));
 	}
 
 	fn watchdog(&self, calling_backtrace: backtrace::Backtrace) -> Arc<AtomicBool> {
@@ -170,48 +186,47 @@ impl<T> RwLockDebug<T> {
 			let started = std::time::Instant::now();
 			let backtrace = self.backtrace.clone();
 			let success = success.clone();
-			std::thread::spawn(move || {
-				loop {
-					if success.load(std::sync::atomic::Ordering::Acquire) {
-						break;
-					} else if started.elapsed().as_secs() >= 3 {
-						println!("[RwLock] POTENTIAL DEADLOCK!");
-						println!("[RwLock] Invoked by:");
-						println!("{:#?}", calling_backtrace);
+			std::thread::spawn(move || loop {
+				if success.load(std::sync::atomic::Ordering::Acquire) {
+					break;
+				} else if started.elapsed().as_secs() >= 3 {
+					println!("[RwLock] POTENTIAL DEADLOCK!");
+					println!("[RwLock] Invoked by:");
+					println!("{:#?}", calling_backtrace);
 
-						let (backtrace, mut timestamp) = match match backtrace.try_write() {
-							Ok(mut backtrace_w) => backtrace_w.take(),
-							Err(_) => (&*backtrace.read().unwrap()).clone()
+					let (backtrace, mut timestamp) = match match backtrace.try_write() {
+						Ok(mut backtrace_w) => backtrace_w.take(),
+						Err(_) => (&*backtrace.read().unwrap()).clone(),
+					} {
+						Some(backtrace) => backtrace,
+						None => return println!("[RwLock] Locked by: UNKNOWN"),
+					};
+
+					println!("[RwLock] Locked {} before by:", {
+						timestamp = timestamp + std::time::Duration::from_secs(3);
+						let elapsed = timestamp.elapsed();
+						if elapsed.as_secs() != 0 {
+							elapsed.as_secs_f64().to_string() + "s"
+						} else if elapsed.as_millis() != 0 {
+							elapsed.as_millis().to_string() + "ms"
+						} else if elapsed.as_micros() != 0 {
+							elapsed.as_micros().to_string() + "us"
+						} else {
+							elapsed.as_nanos().to_string() + "ns"
 						}
-						{
-							Some(backtrace) => backtrace,
-							None => return println!("[RwLock] Locked by: UNKNOWN")
-						};
+					});
+					println!("{:#?}", backtrace);
 
-						println!("[RwLock] Locked {} before by:", {
-							timestamp = timestamp + std::time::Duration::from_secs(3);
-							let elapsed = timestamp.elapsed();
-							if elapsed.as_secs() != 0 {
-								elapsed.as_secs_f64().to_string() + "s"
-							} else if elapsed.as_millis() != 0 {
-								elapsed.as_millis().to_string() + "ms"
-							} else if elapsed.as_micros() != 0 {
-								elapsed.as_micros().to_string() + "us"
-							} else {
-								elapsed.as_nanos().to_string() + "ns"
-							}
-						});
-						println!("{:#?}", backtrace);
-
-						break;
-					}
+					break;
 				}
 			});
 		}
 		success
 	}
 
-	pub(crate) fn read(&self) -> Result<RwLockReadGuard<'_, T>, PoisonError<RwLockReadGuard<'_, T>>> {
+	pub(crate) fn read(
+		&self,
+	) -> Result<RwLockReadGuard<'_, T>, PoisonError<RwLockReadGuard<'_, T>>> {
 		let success = self.watchdog(backtrace::Backtrace::new());
 		let lock = self.inner.read();
 		success.store(true, std::sync::atomic::Ordering::Release);
@@ -219,7 +234,9 @@ impl<T> RwLockDebug<T> {
 		lock
 	}
 
-	pub(crate) fn write(&self) -> Result<RwLockWriteGuard<'_, T>, PoisonError<RwLockWriteGuard<'_, T>>> {
+	pub(crate) fn write(
+		&self,
+	) -> Result<RwLockWriteGuard<'_, T>, PoisonError<RwLockWriteGuard<'_, T>>> {
 		let success = self.watchdog(backtrace::Backtrace::new());
 		let lock = self.inner.write();
 		success.store(true, std::sync::atomic::Ordering::Release);
@@ -229,31 +246,33 @@ impl<T> RwLockDebug<T> {
 }
 #[cfg(debug_assertions)]
 impl<T> std::ops::Deref for RwLockDebug<T> {
-    type Target = RwLock<T>;
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
+	type Target = RwLock<T>;
+	fn deref(&self) -> &Self::Target {
+		&self.inner
+	}
 }
 #[cfg(debug_assertions)]
 impl<T> std::ops::DerefMut for RwLockDebug<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.inner
+	}
 }
 
 pub(crate) struct ThreadWatchdog {
-	callback: Box<dyn Fn() + Sync + Send + 'static>
+	callback: Box<dyn Fn() + Sync + Send + 'static>,
 }
 impl ThreadWatchdog {
 	pub(crate) fn new<F>(f: F) -> Self
 	where
-		F: Fn() + Sync + Send + 'static
+		F: Fn() + Sync + Send + 'static,
 	{
-		Self { callback: Box::new(f) }
+		Self {
+			callback: Box::new(f),
+		}
 	}
 }
 impl Drop for ThreadWatchdog {
-    fn drop(&mut self) {
-        (self.callback)();
-    }
+	fn drop(&mut self) {
+		(self.callback)();
+	}
 }

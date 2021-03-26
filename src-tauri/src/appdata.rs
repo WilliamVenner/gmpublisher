@@ -1,11 +1,14 @@
-use std::{env, fs, path::PathBuf};
-use anyhow::{Error, anyhow};
+use anyhow::{anyhow, Error};
 use serde::Serialize;
+use std::{env, fs, path::PathBuf};
 use steamworks::PublishedFileId;
 
 extern crate steamlocate;
 
-use crate::{settings::Settings, workshop::{WorkshopItem, SteamUser}};
+use crate::{
+	settings::Settings,
+	workshop::{SteamUser, WorkshopItem},
+};
 
 #[derive(Debug, Serialize, Clone)]
 pub(crate) struct AppData {
@@ -51,17 +54,31 @@ impl AppData {
 		match dirs::home_dir() {
 			Some(mut gmpublisher_dir) => {
 				gmpublisher_dir.push(".gmpublisher");
-				if gmpublisher_dir.is_file() { return Err(anyhow!(format!("This file is present on your system, and shouldn't be: {:?}", gmpublisher_dir))); }
-				if gmpublisher_dir.is_dir() || fs::create_dir(&gmpublisher_dir).is_ok() { return Ok(gmpublisher_dir); }
-			},
+				if gmpublisher_dir.is_file() {
+					return Err(anyhow!(format!(
+						"This file is present on your system, and shouldn't be: {:?}",
+						gmpublisher_dir
+					)));
+				}
+				if gmpublisher_dir.is_dir() || fs::create_dir(&gmpublisher_dir).is_ok() {
+					return Ok(gmpublisher_dir);
+				}
+			}
 			None => {}
 		}
 
 		let mut gmpublisher_dir = env::current_dir()?;
 		gmpublisher_dir.push(".gmpublisher");
 
-		if gmpublisher_dir.is_file() { return Err(anyhow!(format!("This file is present on your system, and shouldn't be: {:?}", gmpublisher_dir))); }
-		if gmpublisher_dir.is_dir() { return Ok(gmpublisher_dir); }
+		if gmpublisher_dir.is_file() {
+			return Err(anyhow!(format!(
+				"This file is present on your system, and shouldn't be: {:?}",
+				gmpublisher_dir
+			)));
+		}
+		if gmpublisher_dir.is_dir() {
+			return Ok(gmpublisher_dir);
+		}
 
 		fs::create_dir(&gmpublisher_dir)?;
 		Ok(gmpublisher_dir)
@@ -71,7 +88,9 @@ impl AppData {
 		let gmod_path_setting = self.settings.gmod.as_ref();
 		if gmod_path_setting.is_some() && gmod_path_setting.unwrap().is_dir() {
 			self.gmod = Some(gmod_path_setting.unwrap().to_owned());
-			if self.find_workshop_binaries().is_some() { return Some(()); }
+			if self.find_workshop_binaries().is_some() {
+				return Some(());
+			}
 		}
 
 		let mut steam = steamlocate::SteamDir::locate()?;
@@ -86,12 +105,21 @@ impl AppData {
 	pub(crate) fn find_workshop_binaries(&mut self) -> Option<()> {
 		let gmod_path = self.gmod.as_ref().unwrap();
 
-		#[cfg(target_os="windows")]
-		let binaries: (PathBuf, PathBuf) = (gmod_path.join(PathBuf::from("gmad.exe")), gmod_path.join(PathBuf::from("gmpublish.exe")));
-		#[cfg(target_os="linux")]
-		let binaries: (PathBuf, PathBuf) = (gmod_path.join(PathBuf::from("gmad_linux")), gmod_path.join(PathBuf::from("gmpublish_linux")));
-		#[cfg(target_os="macos")]
-		let binaries: (PathBuf, PathBuf) = (gmod_path.join(PathBuf::from("gmad_osx")), gmod_path.join(PathBuf::from("gmpublish_osx")));
+		#[cfg(target_os = "windows")]
+		let binaries: (PathBuf, PathBuf) = (
+			gmod_path.join(PathBuf::from("gmad.exe")),
+			gmod_path.join(PathBuf::from("gmpublish.exe")),
+		);
+		#[cfg(target_os = "linux")]
+		let binaries: (PathBuf, PathBuf) = (
+			gmod_path.join(PathBuf::from("gmad_linux")),
+			gmod_path.join(PathBuf::from("gmpublish_linux")),
+		);
+		#[cfg(target_os = "macos")]
+		let binaries: (PathBuf, PathBuf) = (
+			gmod_path.join(PathBuf::from("gmad_osx")),
+			gmod_path.join(PathBuf::from("gmpublish_osx")),
+		);
 
 		if binaries.0.is_file() && binaries.1.is_file() {
 			self.gmad = Some(binaries.0.to_owned());
@@ -113,9 +141,16 @@ impl AppDataPlugin {
 }
 impl Plugin for AppDataPlugin {
 	fn init_script(&self) -> Option<String> {
-		Some(include_str!("../../app/plugins/AppData.js")
-			.replace("{$_SETTINGS_$}", &serde_json::ser::to_string(&*crate::APP_DATA.read().unwrap()).unwrap())
-			.replace("{$_WS_DEAD_$}", &serde_json::ser::to_string(&WorkshopItem::from(PublishedFileId(0))).unwrap())
+		Some(
+			include_str!("../../app/plugins/AppData.js")
+				.replace(
+					"{$_SETTINGS_$}",
+					&serde_json::ser::to_string(&*crate::APP_DATA.read().unwrap()).unwrap(),
+				)
+				.replace(
+					"{$_WS_DEAD_$}",
+					&serde_json::ser::to_string(&WorkshopItem::from(PublishedFileId(0))).unwrap(),
+				),
 		)
 	}
 }
