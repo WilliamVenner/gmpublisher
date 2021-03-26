@@ -136,7 +136,7 @@ impl Workshop {
 			None => {
 				let friends = self.client.friends();
 
-				if friends.request_user_information(steamid, false) {
+				if false {//friends.request_user_information(steamid, false) {
 					let started = std::time::Instant::now();
 					
 					let sync = Arc::new(AtomicBool::new(false));
@@ -239,7 +239,7 @@ impl Workshop {
 						let mut cache = c_cache.lock().unwrap();
 						*lock = Some(Ok((
 							data.total_results(),
-							data.iter_maybe().enumerate().map(|(i, item)| {
+							data.iter().enumerate().map(|(i, item)| {
 
 								let id = ids_ref.nth(0).unwrap();
 								let item = if let Some(item) = item {
@@ -295,7 +295,7 @@ impl Workshop {
 						*lock = Some(Ok((
 							data.total_results(),
 							data.iter().enumerate().map(|(i, x)| {
-								let mut item: WorkshopItem = x.into();
+								let mut item: WorkshopItem = x.unwrap().into();
 								item.preview_url = data.preview_url(i as u32);
 								item.subscriptions = data.statistic(i as u32, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
 								cache.insert(item.id, Some(item.clone()));

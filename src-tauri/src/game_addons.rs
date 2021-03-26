@@ -398,7 +398,7 @@ pub(crate) fn open_gma_preview_entry(resolve: String, reject: String, webview: &
 
 // TODO change all args to resolve, reject, webview, ...
 
-pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut Webview<'_>, path: Option<PathBuf>, named_dir: bool, tmp: bool, downloads: bool, addons: bool) -> Result<(), String> {
+pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut Webview<'_>, tmp: bool, path: Option<PathBuf>, named_dir: bool, downloads: bool, addons: bool) -> Result<(), String> {
 	if crate::GAME_ADDONS.read().unwrap().previewing.is_none() { return Ok(()) }
 
 	let save_destination_path = path.is_some();
@@ -413,36 +413,19 @@ pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut
 			let transaction = transaction.build();
 			let channel = transaction.channel();
 
-			let mut use_named_dir = named_dir;
-
-			let dest = match tmp {
-				true => ExtractDestination::Temp,
-				false => {
-					let mut check_exists = true;
-					let mut discriminated_path = MaybeUninit::<PathBuf>::uninit();
-					unsafe {
-						if addons {
-							use_named_dir = true;
-							*discriminated_path.as_mut_ptr() = crate::APP_DATA.read().unwrap().gmod.as_ref().unwrap().join("garrysmod/addons");
-						} else if downloads {
-							use_named_dir = true;
-							*discriminated_path.as_mut_ptr() = dirs::download_dir().unwrap();
-						} else {
-							check_exists = false;
-							*discriminated_path.as_mut_ptr() = path.unwrap();
-						}
-					}
-	
-					let discriminated_path = unsafe { discriminated_path.assume_init() };
-					if discriminated_path.is_absolute() && (!check_exists || discriminated_path.exists()) {
-						match use_named_dir {
-							true => ExtractDestination::NamedDirectory(discriminated_path),
-							false => ExtractDestination::Directory(discriminated_path)
-						}
-					} else {
-						channel.error("ERR_EXTRACT_INVALID_DEST", transaction_data!(())); // TODO internationalize
-						return;
-					}
+			let (using_named_dir, dest) = match ExtractDestination::build(tmp, path, named_dir, downloads, addons) {
+				Ok(dest) => {
+					(
+						match &dest {
+							&ExtractDestination::NamedDirectory(_) => true,
+							_ => false
+						},
+						dest
+					)
+				},
+				Err(_) => {
+					channel.error("ERR_EXTRACT_INVALID_DEST", transaction_data!(())); // TODO internationalize
+					return;
 				}
 			};
 
@@ -464,7 +447,7 @@ pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut
 					channel.finish(transaction_data!(()));
 					
 					if save_destination_path {
-						if use_named_dir { path.pop(); }
+						if using_named_dir { path.pop(); }
 						let mut app_data = crate::APP_DATA.write().unwrap();
 						let settings = &mut app_data.settings;
 						if let Err(_) = settings.destinations.binary_search(&path) {

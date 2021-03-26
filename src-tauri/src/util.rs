@@ -240,3 +240,20 @@ impl<T> std::ops::DerefMut for RwLockDebug<T> {
         &mut self.inner
     }
 }
+
+pub(crate) struct ThreadWatchdog {
+	callback: Box<dyn Fn() + Sync + Send + 'static>
+}
+impl ThreadWatchdog {
+	pub(crate) fn new<F>(f: F) -> Self
+	where
+		F: Fn() + Sync + Send + 'static
+	{
+		Self { callback: Box::new(f) }
+	}
+}
+impl Drop for ThreadWatchdog {
+    fn drop(&mut self) {
+        (self.callback)();
+    }
+}

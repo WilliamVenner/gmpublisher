@@ -91,14 +91,18 @@
 	"LOG_DOWNLOAD_STARTED": "Download started for {addon}",
 	"LOG_DOWNLOAD_FINISHED": "Download finished for {addon} in {time}",
 	"LOG_DOWNLOAD_FAILED": "Download FAILED for {addon} (\"{reason}\")",
+	
 	"LOG_EXTRACT_STARTED": "Extraction started for {addon}",
+	"LOG_EXTRACT_FAILED": "Extraction FAILED for {addon} (\"{reason}\")",
 	"LOG_EXTRACT_FINISHED": "Extraction finished for {addon} in {time}",
-	"LOG_EXTRACT_FAILED": "Extraction failed for {addon} (\"{reason}\")",
 
 	"FS_ANALYZER_RENDERING": "Rendering...",
 	"FS_ANALYZER_CACHING": "Caching...",
 	"FS_ANALYZER_SERIALIZING": "Serializing...",
 	"FS_ANALYZER_STEAM": "Downloading Steam Data...",
 	"FS_ANALYZER_COMPUTING": "Computing...",
-	"FS_ANALYZER_TAGGIFYING": "Taggifying..."
+	"FS_ANALYZER_TAGGIFYING": "Taggifying...",
+
+	"time_just_now": "Just Now",
+	"click_to_open": "Click to open!"
 }

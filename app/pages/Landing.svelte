@@ -48,11 +48,12 @@
 		{
 			name: 'downloader',
 			component: WorkshopDownloader,
-			props: {}
+			props: {},
+			persist: true
 		},
 	];
 
-	let source = sources[0];
+	let activeSource = sources[0];
 
 	// TODO merge this into App.svelte
 </script>
@@ -83,7 +84,7 @@
 	<div id="sidebar">
 		<div>
 			{#each sources as choice, i}
-				<div class:active={ source.name === choice.name } on:click="{ e => source = sources[e.target.dataset.choice] }" data-choice={i}>{$_(choice.name)}</div>
+				<div class:active={ activeSource.name === choice.name } on:click="{ e => activeSource = sources[e.target.dataset.choice] }" data-choice={i}>{$_(choice.name)}</div>
 			{/each}
 		</div>
 
@@ -97,7 +98,14 @@
 	<div id="content">
 		<div id="sources">
 			<div>
-				<svelte:component this={source.component} {...source.props}/>
+				{#if !activeSource.persist}
+					<svelte:component this={activeSource.component} {...activeSource.props}/>
+				{/if}
+				{#each sources as source}
+					{#if source.persist}
+						<div class="persist" class:active={activeSource == source}><svelte:component this={source.component} {...source.props}/></div>
+					{/if}
+				{/each}
 			</div>
 		</div>
 	</div>
@@ -185,6 +193,12 @@
 	#sources > div {
 		padding: 1.5rem;
 		padding-bottom: 0;
+	}
+	#sources > div > .persist {
+		height: 100%;
+	}
+	#sources > div > .persist:not(.active) {
+		display: none;
 	}
 
 	#credits {

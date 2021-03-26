@@ -16,7 +16,7 @@ pub use write::*;
 pub mod extract;
 pub use extract::*;
 
-use crate::{util::path::NormalizedPathBuf, workshop::WorkshopItem};
+use crate::util::path::NormalizedPathBuf;
 
 pub type ProgressCallback = Box<dyn Fn(f64) -> () + Sync + Send>;
 

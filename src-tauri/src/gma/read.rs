@@ -143,7 +143,7 @@ impl GMAFile {
 }
 
 impl GMAEntry {
-	pub fn read(&self, mut handle: GMAFileHandle) -> Option<Vec<u8>> {
+	pub fn read<R: Read>(&self, mut handle: GMAFileHandle) -> Option<Vec<u8>> {
 		handle.seek(SeekFrom::Start(self.index)).unwrap();
 
 		let mut buf = vec![0; self.size as usize];

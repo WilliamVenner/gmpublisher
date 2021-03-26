@@ -21,6 +21,21 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+let orphanQueue = [];
+let orphanedTransactions = {};
+function checkOrphanQueue(id) {
+	let i = 0;
+	while (i < orphanQueue.length) {
+		const orphan = orphanQueue[i];
+		if (orphan[1][0] === id) {
+			orphanQueue.splice(i, 1);
+			fireTransactionEvent(orphan[0], orphan[1]);
+		} else {
+			i++;
+		}
+	}
+}
+
 class Transaction {
 	constructor(id, TASK_statusTextFn) {
 		if (id === null || id == undefined) return;
@@ -30,11 +45,17 @@ class Transaction {
 		this.progress = 0;
 		this.finished = false;
 		this.cancelled = false;
+		this.unconsumedEvents = [];
 
 		transactions[id] = this;
 
 		if (TASK_statusTextFn)
 			tasks.update(tasks => { tasks.push([this, TASK_statusTextFn, null]); return tasks });
+		
+		if (id in orphanedTransactions) {
+			delete orphanedTransactions[id];
+			checkOrphanQueue(id);
+		}
 	}
 
 	static get(id) {
@@ -43,17 +64,29 @@ class Transaction {
 
 	listen(callback) {
 		this.callbacks.push(callback);
+
+		if (this.callbacks.length === 1) {
+			for (let i = 0; i < this.unconsumedEvents.length; i++) {
+				callback(this.unconsumedEvents[i]);
+			}
+		}
+
 		return this;
 	}
 
 	emit(event) {
-		for (let i = 0; i < this.callbacks.length; i++)
-			this.callbacks[i](event);
+		if (this.callbacks.length === 0) {
+			this.unconsumedEvents.push(event);
+		} else {
+			for (let i = 0; i < this.callbacks.length; i++) {
+				this.callbacks[i](event);
+			}
+		}
 		return this;
 	}
 
 	cancel(fromBackend) {
-		if (this.cancelled || this.finished || this.error) return;
+		if (this.cancelled || this.finished) return;
 
 		this.cancelled = true;
 		this.emit({ cancelled: true });
@@ -90,7 +123,7 @@ class Transaction {
 	}
 
 	data(data) {
-		this.emit({ data });
+		this.emit({ stream: true, data });
 		return this;
 	};
 
@@ -111,37 +144,56 @@ class Transaction {
 	}
 }
 
-listen("transactionProgress", ({ payload: [ id, progress ] }) => {
+let transactionEvents = {};
+function fireTransactionEvent(event, data) {
+	transactionEvents[event](data);
+}
+function transactionEvent(event, callback) {
+	transactionEvents[event] = callback;
+	
+	listen('transaction' + event, ({ payload: data }) => {
+		const id = data[0];
+		const transaction = Transaction.get(id);
+		if (transaction) {
+			callback(data);
+		} else {
+			orphanedTransactions[data[0]] = true;
+			orphanQueue.push([event, data]);
+		}
+	});
+}
+
+transactionEvent('Progress', ([ id, progress ]) => {
 	const transaction = Transaction.get(id);
 	var progress = Math.floor((progress + Number.EPSILON) * 10000) / 100;
 	if (transaction && progress !== transaction.progress) transaction.setProgress(progress);
 });
 
-listen("transactionCancelled", ({ payload: id }) => {
+transactionEvent('Cancelled', id => {
 	const transaction = Transaction.get(id);
 	console.log('transactionCancelled', transaction);
 	if (transaction) transaction.cancel(true);
 });
 
-listen("transactionFinished", ({ payload: [ id, data ] }) => {
+transactionEvent('Finished', ([ id, data ]) => {
 	const transaction = Transaction.get(id);
 	console.log('transactionFinished', transaction, data);
 	if (transaction) transaction.finish(data);
 });
 
-listen("transactionError", ({ payload: [ id, [ msg, data ] ] }) => {
+transactionEvent('Error', ([ id, [ msg, data ] ]) => {
 	const transaction = Transaction.get(id);
 	console.log('transactionError', transaction, data);
 	if (transaction) transaction.error(msg, data);
 });
 
-listen("transactionProgressMsg", ({ payload: [ id, msg ] }) => {
+transactionEvent('ProgressMsg', ([ id, msg ]) => {
 	const transaction = Transaction.get(id);
 	console.log('transactionProgressMsg', transaction, msg);
 	if (transaction) transaction.setStatus(msg);
 });
 
-listen("transactionData", ({ payload: [ id, data ] }) => {
+transactionEvent('Data', ([ id, data ]) => {
 	const transaction = Transaction.get(id);
 	console.log('transactionData', data);
 	if (transaction) transaction.data(data);

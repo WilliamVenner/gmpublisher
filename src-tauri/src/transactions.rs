@@ -55,6 +55,13 @@ pub(crate) struct Transaction {
 	#[cfg(debug_assertions)]
 	thread: Option<ThreadId>
 }
+impl serde::Serialize for Transaction {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer {
+        serializer.serialize_u64(self.id as u64)
+    }
+}
 
 impl Drop for Transaction {
 	fn drop(&mut self) {
@@ -272,21 +279,33 @@ impl TransactionChannel {
 	}
 
 	pub(crate) fn progress(&self, progress: f64) {
-		if self.aborted.load(Ordering::Acquire) { debug_assert!(false, "Tried to progress an aborted transaction."); return; }
+		if self.aborted.load(Ordering::Acquire) {
+			#[cfg(debug_assertions)]
+			println!("Tried to progress an aborted transaction.");
+			return;
+		}
 
 		let res = self.send(TransactionMessage::Progress(progress));
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
 	}
 
 	pub(crate) fn progress_msg(&self, msg: &str) {
-		if self.aborted.load(Ordering::Acquire) { debug_assert!(false, "Tried to progress an aborted transaction."); return; }
+		if self.aborted.load(Ordering::Acquire) {
+			#[cfg(debug_assertions)]
+			println!("Tried to progress an aborted transaction.");
+			return;
+		}
 
 		let res = self.send(TransactionMessage::ProgressMessage(msg.to_string()));
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")
 	}
 
 	pub(crate) fn data<T: TransactionDataToBox>(&self, data: T) {
-		if self.aborted.load(Ordering::Acquire) { debug_assert!(false, "Tried to send data to an aborted transaction."); return; }
+		if self.aborted.load(Ordering::Acquire) {
+			#[cfg(debug_assertions)]
+			println!("Tried to send data to an aborted transaction.");
+			return;
+		}
 
 		let res = self.send(TransactionMessage::Data(data.into_box()));
 		debug_assert!(res.is_ok(), "Failed to send message to transaction receiver")

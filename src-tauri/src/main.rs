@@ -34,6 +34,8 @@ mod addon_size_analyzer;
 
 mod downloader;
 
+mod publish;
+
 #[macro_use]
 mod transactions;
 

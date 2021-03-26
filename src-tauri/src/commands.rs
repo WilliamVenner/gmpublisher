@@ -177,7 +177,7 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 						game_addons::open_gma_preview_entry(callback, error, webview, entry_path)
 					},
 					ExtractGma { callback, error, path, named_dir, tmp, downloads, addons } => {
-						game_addons::extract_gma_preview(callback, error, webview, path, named_dir, tmp, downloads, addons)
+						game_addons::extract_gma_preview(callback, error, webview, tmp, path, named_dir, downloads, addons)
 					},
 
 					AnalyzeAddonSizes { callback, error, w, h } => {
@@ -189,7 +189,7 @@ pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Resu
 					},
 
 					DownloadWorkshop { callback, error, ids, path, named_dir, tmp, downloads, addons } => {
-						downloader::download(callback, error, webview, ids, path, named_dir, tmp, downloads, addons)
+						downloader::download(callback, error, webview, ids, tmp, path, named_dir, downloads, addons)
 					},
 
 					LoadAsset => { Ok(()) },

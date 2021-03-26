@@ -1,6 +1,5 @@
-use std::{fs::{self, File, create_dir_all}, io::{self, Read, Seek, SeekFrom, Write}, path::PathBuf, sync::{Arc, atomic::{AtomicBool, AtomicU16}}};
+use std::{fs::{self, File}, io::{Read, Seek, SeekFrom, Write}, mem::MaybeUninit, path::PathBuf, sync::{Arc, atomic::{AtomicBool, AtomicU16}}};
 
-use byteorder::{LittleEndian, ReadBytesExt};
 use sysinfo::SystemExt;
 
 use super::{GMAEntry, GMAFile, GMAReadError, ProgressCallback};
@@ -14,7 +13,7 @@ pub enum ExtractDestination {
 	NamedDirectory(PathBuf),
 }
 impl ExtractDestination {
-    fn resolve(self, gma: &GMAFile) -> PathBuf {
+    pub(crate) fn resolve(self, gma: &GMAFile) -> PathBuf {
 		use ExtractDestination::*;
 
         match self {
@@ -37,6 +36,36 @@ impl ExtractDestination {
 			}
 		}
     }
+
+	pub(crate) fn build(tmp: bool, path: Option<PathBuf>, named_dir: bool, downloads: bool, addons: bool) -> Result<ExtractDestination, ()> {
+		Ok(match tmp {
+			true => ExtractDestination::Temp,
+			false => {
+				let mut check_exists = true;
+				let mut discriminated_path = MaybeUninit::<PathBuf>::uninit();
+				unsafe {
+					if addons {
+						*discriminated_path.as_mut_ptr() = crate::APP_DATA.read().unwrap().gmod.as_ref().unwrap().join("garrysmod/addons");
+					} else if downloads {
+						*discriminated_path.as_mut_ptr() = dirs::download_dir().unwrap();
+					} else {
+						check_exists = false;
+						*discriminated_path.as_mut_ptr() = path.unwrap();
+					}
+				}
+
+				let discriminated_path = unsafe { discriminated_path.assume_init() };
+				if discriminated_path.is_absolute() && (!check_exists || discriminated_path.exists()) {
+					match !addons && !downloads && named_dir {
+						true => ExtractDestination::NamedDirectory(discriminated_path),
+						false => ExtractDestination::Directory(discriminated_path)
+					}
+				} else {
+					return Err(());
+				}
+			}
+		})
+	}
 }
 
 impl GMAFile {
@@ -118,7 +147,7 @@ impl GMAFile {
 							match *progress_callback {
 								Some(ref progress_callback) => {
 									let progress = i.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
-									(progress_callback)(((progress as f64) / (total_entries as f64)));
+									(progress_callback)((progress as f64) / (total_entries as f64));
 								},
 								None => {}
 							}
@@ -147,7 +176,7 @@ impl GMAFile {
 				}
 
 				match *progress_callback {
-					Some(ref progress_callback) => (progress_callback)(((i as f64) / (total_entries as f64))),
+					Some(ref progress_callback) => (progress_callback)((i as f64) / (total_entries as f64)),
 					None => {}
 				}
 
