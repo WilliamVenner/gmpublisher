@@ -1,13 +1,5 @@
 use anyhow::anyhow;
-use std::{
-	collections::HashMap,
-	fs::DirEntry,
-	path::PathBuf,
-	sync::{
-		mpsc::{self, Receiver, Sender},
-		RwLock,
-	},
-};
+use std::{collections::HashMap, fs::DirEntry, path::PathBuf, sync::{Arc, RwLock, mpsc::{self, Receiver, Sender}}};
 
 use steamworks::PublishedFileId;
 use tauri::Webview;

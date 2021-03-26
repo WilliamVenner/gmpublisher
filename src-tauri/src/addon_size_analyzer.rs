@@ -1,12 +1,4 @@
-use std::{
-	collections::{hash_map::Entry, HashMap},
-	path::PathBuf,
-	sync::{
-		mpsc::{self, Receiver, SyncSender},
-		Arc, Mutex,
-	},
-	thread::JoinHandle,
-};
+use std::{collections::{hash_map::Entry, HashMap}, path::PathBuf, sync::{Arc, Mutex, mpsc::{self, Receiver, Sender, SyncSender}}, thread::JoinHandle};
 
 use indexmap::IndexMap;
 use steamworks::PublishedFileId;
@@ -401,7 +393,7 @@ impl AddonSizeAnalyzer {
 			return Err(());
 		}
 
-		let thread_count = (num_cpus::get() - 1).min(total_paths);
+		let thread_count = ((*crate::NUM_CPUS) - 1).min(total_paths);
 		let chunk_len = ((total_paths as f64) / (thread_count as f64).floor()) as usize;
 		let paths = paths
 			.iter()

@@ -152,8 +152,7 @@ impl Workshop {
 			None => {
 				let friends = self.client.friends();
 
-				if false {
-					//friends.request_user_information(steamid, false) {
+				if friends.request_user_information(steamid, false) {
 					let started = std::time::Instant::now();
 
 					let sync = Arc::new(AtomicBool::new(false));

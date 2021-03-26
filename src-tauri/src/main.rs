@@ -69,10 +69,18 @@ lazy_static! {
 	pub(crate) static ref TRANSACTIONS: RwLockDebug<Transactions> =
 		RwLockDebug::new(Transactions::init());
 	pub(crate) static ref ADDON_SIZE_ANALYZER: AddonSizeAnalyzer = AddonSizeAnalyzer::init();
+
+	pub(crate) static ref NUM_CPUS: usize = num_cpus::get();
 }
 
 fn main() {
 	// TODO use steam api to get gmod dir instead of steamlocate
+
+	#[cfg(debug_assertions)]
+	{
+		println!("Num CPUs: {}", *NUM_CPUS);
+		println!("Rayon Threads: {}", rayon::current_num_threads());
+	}
 
 	let window_size = APP_DATA.read().unwrap().settings.window_size.clone();
 	let mut first_setup = true;

@@ -53,7 +53,6 @@ impl ActiveDownload {
 			let transaction = transaction.clone();
 			let channel = transaction.channel();
 			let workshop = crate::WORKSHOP.read().unwrap();
-			println!("registered callback");
 			workshop
 				.client
 				.register_callback(move |downloaded: steamworks::DownloadItemResult| {
@@ -355,7 +354,7 @@ impl WorkshopDownloader {
 			|| (downloader
 				.extraction_pool
 				.load(std::sync::atomic::Ordering::Acquire) as usize)
-				< num_cpus::get()
+				< *crate::NUM_CPUS
 		{
 			downloader
 				.extraction_pool

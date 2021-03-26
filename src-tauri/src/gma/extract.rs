@@ -1,17 +1,13 @@
-use std::{
-	fs::{self, File},
-	io::{Read, Seek, SeekFrom, Write},
-	mem::MaybeUninit,
-	path::PathBuf,
-	sync::{
+use std::{collections::VecDeque, fs::{self, File}, io::{Read, Seek, SeekFrom, Write}, iter::FromIterator, mem::MaybeUninit, path::PathBuf, sync::{
 		atomic::{AtomicBool, AtomicU16},
 		Arc,
-	},
-};
+	}};
 
 use sysinfo::SystemExt;
 
 use super::{GMAEntry, GMAFile, GMAReadError, ProgressCallback};
+
+use rayon::prelude::*;
 
 #[derive(Debug, Clone)]
 pub enum ExtractDestination {
@@ -132,71 +128,45 @@ impl GMAFile {
 			.as_ref()
 			.expect("Expected entries to be read this point"); // TODO go through and add .expect() instead of .unwrap()
 		let total_entries = entries.len();
+		let entries_start = self.entries_start.unwrap();
 
 		// We should only multithread file i/o if we have enough available memory to actually store the GMA entry data
 		// TODO use some kind of reserved memory pool instead so even memory-strapped systems can multithread this
-		let mut threads: Option<Vec<std::thread::JoinHandle<()>>> = if available_memory > self.size
+		if available_memory > self.size
 		{
-			Some(Vec::with_capacity(total_entries))
-		} else {
-			None
-		};
-
-		let progress_callback = Arc::new(progress_callback);
-
-		let entries_start = self.entries_start.unwrap();
-
-		if let Some(threads) = &mut threads {
-			let failed = Arc::new(AtomicBool::new(false));
-			let i = Arc::new(AtomicU16::new(0));
-			for entry in entries.iter() {
-				let fs_path = extract_to.join(&entry.path);
-				fs::create_dir_all(fs_path.with_file_name(""))
-					.map_err(|_| GMAReadError::IOError)?;
-
+			let i = AtomicU16::new(0);
+			entries.par_iter().try_for_each(|entry| -> Result<(), anyhow::Error> {
 				let mut handle_r = self.handle().unwrap();
-				let size = entry.size;
-				let index = entry.index;
+				
+				let fs_path = extract_to.join(&entry.path);
+				fs::create_dir_all(fs_path.with_file_name(""))?;
+			
+				let mut handle_w = File::create(fs_path)?;
 
-				let i = i.clone();
-				let progress_callback = progress_callback.clone();
-				let failed = failed.clone();
+				let mut buf = vec![0; entry.size as usize];
+				handle_r.seek(SeekFrom::Start(entries_start + entry.index))?;
+				handle_r.read_exact(&mut buf)?;
+				drop(handle_r);
 
-				threads.push(std::thread::spawn(move || {
-					if let Err(_) = (|| -> Result<(), std::io::Error> {
-						let mut handle_w = File::create(fs_path)?;
+				handle_w.write(&buf)?;
+				handle_w.flush()?;
+				drop(handle_w);
 
-						let mut buf = vec![0; size as usize];
-						handle_r.seek(SeekFrom::Start(entries_start + index))?;
-						handle_r.read_exact(&mut buf)?;
-						drop(handle_r);
-
-						handle_w.write(&buf)?;
-						handle_w.flush()?;
-						drop(handle_w);
-
-						if !failed.load(std::sync::atomic::Ordering::Acquire) {
-							match *progress_callback {
-								Some(ref progress_callback) => {
-									let progress =
-										i.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
-									(progress_callback)((progress as f64) / (total_entries as f64));
-								}
-								None => {}
-							}
-						}
-
-						Ok(())
-					})() {
-						failed.store(true, std::sync::atomic::Ordering::Release);
+				match progress_callback {
+					Some(ref progress_callback) => {
+						let progress =
+							i.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+						(progress_callback)((progress as f64) / (total_entries as f64));
 					}
-				}));
-			}
+					None => {}
+				}
+
+				Ok(())
+			}).unwrap();
 		} else {
 			let mut handle = self.handle().map_err(|_| GMAReadError::IOError)?;
 
-			let mut i: usize = 0;
-			for entry in entries.iter() {
+			for (i, entry) in entries.iter().enumerate() {
 				let mut buf = vec![0; entry.size as usize];
 				handle.read_exact(&mut buf).unwrap();
 
@@ -206,27 +176,16 @@ impl GMAFile {
 					Err(_) => return Err(GMAReadError::IOError),
 				}
 
-				match *progress_callback {
+				match progress_callback {
 					Some(ref progress_callback) => {
 						(progress_callback)((i as f64) / (total_entries as f64))
 					}
 					None => {}
 				}
-
-				i = i + 1;
 			}
 		}
 
-		if let Some(threads) = threads {
-			for thread in threads {
-				match thread.join() {
-					Ok(_) => {}
-					Err(_) => return Err(GMAReadError::IOError),
-				}
-			}
-		}
-
-		match *progress_callback {
+		match progress_callback {
 			Some(ref progress_callback) => (progress_callback)(1.),
 			None => {}
 		}

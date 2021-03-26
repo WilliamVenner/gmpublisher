@@ -37,6 +37,8 @@ crossbeam = "0.8.0"
 indexmap = "1.6.2"
 backtrace = "0.3"
 xz2 = "0.1.6"
+rayon = "1.5.0"
+parking_lot = "0.11"
 
 [target."cfg(windows)".build-dependencies]
 winres = "0.1"
