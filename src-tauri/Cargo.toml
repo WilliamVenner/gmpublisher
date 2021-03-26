@@ -1,6 +1,6 @@
 [package]
 name = "gmpublisher"
-version = "1.0.0"
+version = "1.1.0"
 description = "A Tauri App"
 authors = [ "William Venner <william@venner.io>" ]
 license = "GPL-3.0"
@@ -36,6 +36,7 @@ thiserror = "1.0"
 crossbeam = "0.8.0"
 indexmap = "1.6.2"
 backtrace = "0.3"
+xz2 = "0.1.6"
 
 [target."cfg(windows)".build-dependencies]
 winres = "0.1"
