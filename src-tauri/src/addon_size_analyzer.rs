@@ -385,7 +385,7 @@ impl AddonSizeAnalyzer {
 	) -> Result<JoinHandle<(Vec<AnalyzedAddon>, Vec<Option<PublishedFileId>>, u64)>, ()> {
 		game_addons::cache_addon_paths();
 
-		let game_addons = crate::GAME_ADDONS.read().unwrap();
+		let game_addons = crate::GAME_ADDONS.read();
 		let paths = &game_addons.gma_cache.as_ref().unwrap().installed_gmas;
 		let total_paths = paths.len();
 
@@ -411,13 +411,11 @@ impl AddonSizeAnalyzer {
 				for (path, id) in chunk {
 					let cached_gma = crate::GAME_ADDONS
 						.read()
-						.unwrap()
 						.gma_cache
 						.as_ref()
 						.unwrap()
 						.metadata
 						.read()
-						.unwrap()
 						.get(&path)
 						.cloned();
 
@@ -553,7 +551,7 @@ impl AddonSizeAnalyzer {
 		});
 
 		{
-			let workshop = crate::WORKSHOP.write().unwrap();
+			let workshop = crate::WORKSHOP.write();
 			let tx = tx;
 			for chunk in gma_id_chunks {
 				let (_, data) = match workshop.get_items(chunk.to_vec()).unwrap() {

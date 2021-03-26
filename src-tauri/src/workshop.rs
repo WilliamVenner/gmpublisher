@@ -377,7 +377,7 @@ pub(crate) fn browse(
 ) -> Result<(), String> {
 	tauri::execute_promise(
 		webview,
-		move || match crate::WORKSHOP.read().unwrap().query(page).unwrap() {
+		move || match crate::WORKSHOP.read().query(page).unwrap() {
 			Ok(items) => Ok(items),
 			Err(error) => Err(anyhow!(error)),
 		},

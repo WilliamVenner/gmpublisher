@@ -5,12 +5,7 @@ use steamworks::PublishedFileId;
 use tauri::Webview;
 
 use super::show;
-use crate::{
-	gma::{ExtractDestination, GMAFile, GMAReadError},
-	transactions::Transactions,
-	util,
-	workshop::WorkshopItem,
-};
+use crate::{gma::{ExtractDestination, GMAFile, GMAReadError}, transactions::Transactions, util::{self, RwLockDebug}, workshop::WorkshopItem};
 
 use crate::transaction_data;
 
@@ -24,8 +19,8 @@ pub(crate) struct GameAddons {
 pub(crate) struct GMACache {
 	pub(crate) installed_gmas: Vec<(PathBuf, Option<PublishedFileId>)>,
 	pub(crate) installed_ids: Vec<(PathBuf, PublishedFileId)>,
-	pub(crate) metadata: RwLock<HashMap<PathBuf, GMAFile>>,
-	pub(crate) ws_metadata: RwLock<HashMap<PublishedFileId, Option<WorkshopItem>>>,
+	pub(crate) metadata: RwLockDebug<HashMap<PathBuf, GMAFile>>,
+	pub(crate) ws_metadata: RwLockDebug<HashMap<PublishedFileId, Option<WorkshopItem>>>,
 }
 impl GMACache {
 	pub(crate) fn gma_metadata(
@@ -33,7 +28,7 @@ impl GMACache {
 		path: &PathBuf,
 		id: Option<PublishedFileId>,
 	) -> Result<GMAFile, GMAReadError> {
-		let r_lock = self.metadata.read().unwrap();
+		let r_lock = self.metadata.read();
 		if let Some(cached) = r_lock.get(path) {
 			Ok(cached.clone())
 		} else {
@@ -43,7 +38,7 @@ impl GMACache {
 			gma.entries()?;
 			gma.metadata()?;
 
-			let mut metadata_cache = self.metadata.write().unwrap();
+			let mut metadata_cache = self.metadata.write();
 			metadata_cache.insert(path.clone(), gma.clone());
 
 			Ok(gma)
@@ -55,7 +50,7 @@ impl GMACache {
 		id: PublishedFileId,
 		fetch_owner: bool,
 	) -> Option<WorkshopItem> {
-		let r_lock = self.ws_metadata.read().unwrap();
+		let r_lock = self.ws_metadata.read();
 
 		if let Some(cached) = r_lock.get(&id).cloned() {
 			if !fetch_owner || cached.is_none() {
@@ -67,10 +62,10 @@ impl GMACache {
 				drop(item);
 				drop(r_lock);
 
-				let workshop = crate::WORKSHOP.write().unwrap();
+				let workshop = crate::WORKSHOP.write();
 				let steam_user = workshop.query_user(item.steamid.unwrap());
 
-				let mut ws_metadata_cache = self.ws_metadata.write().unwrap();
+				let mut ws_metadata_cache = self.ws_metadata.write();
 				let mut item = ws_metadata_cache.get_mut(&id).unwrap().as_mut().unwrap();
 				item.owner = Some(steam_user);
 
@@ -81,7 +76,7 @@ impl GMACache {
 		} else {
 			drop(r_lock);
 
-			let workshop = crate::WORKSHOP.write().unwrap();
+			let workshop = crate::WORKSHOP.write();
 			let mut ws_addon = workshop.get_item(id).unwrap().ok()?;
 
 			if fetch_owner {
@@ -92,7 +87,7 @@ impl GMACache {
 				}
 			}
 
-			let mut ws_metadata_cache = self.ws_metadata.write().unwrap();
+			let mut ws_metadata_cache = self.ws_metadata.write();
 			ws_metadata_cache.insert(id, ws_addon.clone());
 
 			ws_addon
@@ -111,10 +106,10 @@ impl GameAddons {
 }
 
 pub(crate) fn cache_addon_paths() -> bool {
-	let app_data = crate::APP_DATA.read().unwrap();
+	let app_data = crate::APP_DATA.read();
 	let dir = app_data.gmod.as_ref().unwrap().to_owned();
 
-	let game_addons = crate::GAME_ADDONS.read().unwrap();
+	let game_addons = crate::GAME_ADDONS.read();
 	if let None = game_addons.gma_cache {
 		drop(game_addons);
 
@@ -267,7 +262,7 @@ pub(crate) fn cache_addon_paths() -> bool {
 		gma_cache.installed_gmas = installed_gmas;
 		gma_cache.installed_ids = installed_ids;
 
-		let mut game_addons = crate::GAME_ADDONS.write().unwrap();
+		let mut game_addons = crate::GAME_ADDONS.write();
 		game_addons.total = gma_cache.installed_gmas.len() as u32;
 		game_addons.gma_cache = Some(gma_cache);
 
@@ -288,7 +283,7 @@ pub(crate) fn browse(
 		move || {
 			cache_addon_paths();
 
-			let game_addons = crate::GAME_ADDONS.read().unwrap();
+			let game_addons = crate::GAME_ADDONS.read();
 			let gma_cache = game_addons.gma_cache.as_ref().unwrap();
 
 			let page_items: Vec<(PathBuf, PublishedFileId)> = gma_cache
@@ -304,7 +299,6 @@ pub(crate) fn browse(
 			Ok(
 				match crate::WORKSHOP
 					.read()
-					.unwrap()
 					.get_items(page_items.iter().map(|entry| entry.1).collect())
 					.unwrap()
 				{
@@ -349,7 +343,6 @@ pub(crate) fn get_gma_metadata(
 		move || {
 			crate::GAME_ADDONS
 				.read()
-				.unwrap()
 				.gma_cache
 				.as_ref()
 				.unwrap()
@@ -384,7 +377,6 @@ pub(crate) fn get_gma_ws_uploader(
 		move || {
 			Ok(crate::GAME_ADDONS
 				.read()
-				.unwrap()
 				.gma_cache
 				.as_ref()
 				.unwrap()
@@ -412,7 +404,6 @@ pub(crate) fn get_gma_ws_metadata(
 		move || {
 			Ok(crate::GAME_ADDONS
 				.read()
-				.unwrap()
 				.gma_cache
 				.as_ref()
 				.unwrap()
@@ -441,7 +432,6 @@ pub(crate) fn preview_gma(
 			let result = {
 				crate::GAME_ADDONS
 					.read()
-					.unwrap()
 					.gma_cache
 					.as_ref()
 					.unwrap()
@@ -451,7 +441,7 @@ pub(crate) fn preview_gma(
 			};
 
 			if result.is_ok() {
-				crate::GAME_ADDONS.write().unwrap().previewing = Some(path.clone());
+				crate::GAME_ADDONS.write().previewing = Some(path.clone());
 			}
 
 			result
@@ -469,7 +459,7 @@ pub(crate) fn open_gma_preview_entry(
 	webview: &mut Webview<'_>,
 	entry_path: String,
 ) -> Result<(), String> {
-	if crate::GAME_ADDONS.read().unwrap().previewing.is_none() {
+	if crate::GAME_ADDONS.read().previewing.is_none() {
 		return Ok(());
 	}
 
@@ -485,7 +475,7 @@ pub(crate) fn open_gma_preview_entry(
 				let progress_transaction = transaction.build();
 				let channel = progress_transaction.channel();
 
-				let game_addons = crate::GAME_ADDONS.read().unwrap();
+				let game_addons = crate::GAME_ADDONS.read();
 				let preview_path = game_addons.previewing.as_ref().unwrap();
 
 				match game_addons
@@ -529,7 +519,7 @@ pub(crate) fn extract_gma_preview(
 	downloads: bool,
 	addons: bool,
 ) -> Result<(), String> {
-	if crate::GAME_ADDONS.read().unwrap().previewing.is_none() {
+	if crate::GAME_ADDONS.read().previewing.is_none() {
 		return Ok(());
 	}
 
@@ -562,7 +552,7 @@ pub(crate) fn extract_gma_preview(
 					};
 
 				match {
-					let game_addons = crate::GAME_ADDONS.read().unwrap();
+					let game_addons = crate::GAME_ADDONS.read();
 					let preview_path = game_addons.previewing.as_ref().unwrap();
 
 					game_addons
@@ -587,7 +577,7 @@ pub(crate) fn extract_gma_preview(
 							if using_named_dir {
 								path.pop();
 							}
-							let mut app_data = crate::APP_DATA.write().unwrap();
+							let mut app_data = crate::APP_DATA.write();
 							let settings = &mut app_data.settings;
 							if let Err(_) = settings.destinations.binary_search(&path) {
 								settings.destinations.push(path);

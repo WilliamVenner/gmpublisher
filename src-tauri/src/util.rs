@@ -1,6 +1,10 @@
 use std::{
 	fs::DirEntry,
-	sync::{atomic::AtomicBool, Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard},
+	sync::{atomic::AtomicBool, Arc, PoisonError},
+};
+
+use parking_lot::{
+	RwLock, RwLockReadGuard, RwLockWriteGuard
 };
 
 use tauri::Webview;
@@ -162,6 +166,7 @@ pub(crate) fn get_modified_time(entry: &DirEntry) -> Result<u64, anyhow::Error> 
 pub(crate) type RwLockDebug<T> = RwLock<T>;
 
 #[cfg(debug_assertions)]
+#[derive(Default)]
 pub(crate) struct RwLockDebug<T> {
 	inner: RwLock<T>,
 	backtrace: Arc<RwLock<Option<(backtrace::Backtrace, std::time::Instant)>>>,
@@ -176,7 +181,7 @@ impl<T> RwLockDebug<T> {
 	}
 
 	fn backtrace(&self) {
-		*self.backtrace.write().unwrap() =
+		*self.backtrace.write() =
 			Some((backtrace::Backtrace::new(), std::time::Instant::now()));
 	}
 
@@ -195,8 +200,8 @@ impl<T> RwLockDebug<T> {
 					println!("{:#?}", calling_backtrace);
 
 					let (backtrace, mut timestamp) = match match backtrace.try_write() {
-						Ok(mut backtrace_w) => backtrace_w.take(),
-						Err(_) => (&*backtrace.read().unwrap()).clone(),
+						Some(mut backtrace_w) => backtrace_w.take(),
+						None => (&*backtrace.read()).clone(),
 					} {
 						Some(backtrace) => backtrace,
 						None => return println!("[RwLock] Locked by: UNKNOWN"),
@@ -226,7 +231,7 @@ impl<T> RwLockDebug<T> {
 
 	pub(crate) fn read(
 		&self,
-	) -> Result<RwLockReadGuard<'_, T>, PoisonError<RwLockReadGuard<'_, T>>> {
+	) -> RwLockReadGuard<'_, T> {
 		let success = self.watchdog(backtrace::Backtrace::new());
 		let lock = self.inner.read();
 		success.store(true, std::sync::atomic::Ordering::Release);
@@ -236,7 +241,7 @@ impl<T> RwLockDebug<T> {
 
 	pub(crate) fn write(
 		&self,
-	) -> Result<RwLockWriteGuard<'_, T>, PoisonError<RwLockWriteGuard<'_, T>>> {
+	) -> RwLockWriteGuard<'_, T> {
 		let success = self.watchdog(backtrace::Backtrace::new());
 		let lock = self.inner.write();
 		success.store(true, std::sync::atomic::Ordering::Release);

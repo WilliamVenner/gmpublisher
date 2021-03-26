@@ -57,7 +57,7 @@ lazy_static! {
 	pub(crate) static ref WORKSHOP_DOWNLOADER: RwLockDebug<WorkshopDownloader> =
 		RwLockDebug::new(WorkshopDownloader::init());
 	pub(crate) static ref APP_DATA: RwLockDebug<AppData> =
-		RwLockDebug::new(match AppData::init(WORKSHOP.read().unwrap().get_user()) {
+		RwLockDebug::new(match AppData::init(WORKSHOP.read().get_user()) {
 			Ok(app_data) => app_data,
 			Err(error) => {
 				show::panic(format!("{:#?}", error));
@@ -82,7 +82,7 @@ fn main() {
 		println!("Rayon Threads: {}", rayon::current_num_threads());
 	}
 
-	let window_size = APP_DATA.read().unwrap().settings.window_size.clone();
+	let window_size = APP_DATA.read().settings.window_size.clone();
 	let mut first_setup = true;
 	let setup = move |webview: &mut Webview, _: String| {
 		webview.set_title(&format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")));

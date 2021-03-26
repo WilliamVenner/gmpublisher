@@ -101,14 +101,14 @@ impl Settings {
 		let success = tauri::event::emit(
 			&mut webview,
 			"updateAppData",
-			Some(&*crate::APP_DATA.read().unwrap()),
+			Some(&*crate::APP_DATA.read()),
 		);
 		debug_assert!(success.is_ok(), "Failed to update app data");
 	}
 }
 
 pub(crate) fn invoke_handler(_webview: &mut Webview<'_>, settings: String) -> Result<(), String> {
-	let mut app_data = crate::APP_DATA.write().unwrap();
+	let mut app_data = crate::APP_DATA.write();
 	match Settings::save_json(&settings, Some(&app_data.settings.file)) {
 		Ok(mut deserialized) => {
 			deserialized.file = app_data.settings.file.clone();

@@ -4,11 +4,14 @@ use std::{
 	sync::{
 		atomic::{AtomicBool, AtomicU16, Ordering},
 		mpsc::{self, SyncSender},
-		Arc, RwLock, RwLockReadGuard,
+		Arc
 	},
 	thread::{JoinHandle, ThreadId},
 };
 use tauri::WebviewMut;
+
+use crate::util::RwLockDebug;
+use parking_lot::RwLockReadGuard;
 
 pub(crate) type AbortCallback = Box<dyn Fn(&TransactionStatus) + Send + Sync + 'static>;
 
@@ -58,7 +61,7 @@ pub(crate) struct Transaction {
 
 	callbacks: Vec<AbortCallback>,
 
-	status: RwLock<TransactionStatus>,
+	status: RwLockDebug<TransactionStatus>,
 	aborted: Arc<AtomicBool>,
 
 	#[cfg(debug_assertions)]
@@ -75,7 +78,7 @@ impl serde::Serialize for Transaction {
 
 impl Drop for Transaction {
 	fn drop(&mut self) {
-		match &*self.status.read().unwrap() {
+		match &*self.status.read() {
 			TransactionStatus::Pending => panic!("Transaction dropped while still in progress!"),
 			_ => {}
 		}
@@ -89,7 +92,7 @@ impl Transaction {
 
 			progress: Arc::new(AtomicU16::new(0)),
 			aborted: Arc::new(AtomicBool::new(false)),
-			status: RwLock::new(TransactionStatus::default()),
+			status: RwLockDebug::new(TransactionStatus::default()),
 
 			callbacks: Vec::new(),
 
@@ -117,13 +120,12 @@ impl Transaction {
 		let transaction = transaction_ref.clone();
 		std::thread::spawn(move || {
 			let abort = || {
-				let status = transaction.status.read().unwrap();
+				let status = transaction.status.read();
 				for callback in &*transaction.callbacks {
 					(callback)(&*status);
 				}
 				crate::TRANSACTIONS
 					.write()
-					.unwrap()
 					.map
 					.remove(&transaction.id);
 			};
@@ -139,7 +141,7 @@ impl Transaction {
 							Some((transaction.id, &data)),
 						)
 						.ok();
-						*transaction.status.write().unwrap() = TransactionStatus::Finished(data);
+						*transaction.status.write() = TransactionStatus::Finished(data);
 						abort();
 						break;
 					}
@@ -150,12 +152,12 @@ impl Transaction {
 							Some((transaction.id, &data)),
 						)
 						.ok();
-						*transaction.status.write().unwrap() = TransactionStatus::Error(data);
+						*transaction.status.write() = TransactionStatus::Error(data);
 						abort();
 						break;
 					}
 					Cancel => {
-						*transaction.status.write().unwrap() = TransactionStatus::Cancelled;
+						*transaction.status.write() = TransactionStatus::Cancelled;
 						abort();
 						break;
 					}
@@ -215,7 +217,7 @@ impl Transaction {
 	}
 
 	pub(crate) fn status(&self) -> RwLockReadGuard<'_, TransactionStatus> {
-		self.status.read().unwrap()
+		self.status.read()
 	}
 
 	pub(crate) unsafe fn tx(&self) -> &SyncSender<TransactionMessage> {
@@ -421,7 +423,7 @@ impl Transactions {
 	}
 
 	pub(crate) fn new(webview: WebviewMut) -> TransactionBuilder {
-		let mut transactions = crate::TRANSACTIONS.write().unwrap();
+		let mut transactions = crate::TRANSACTIONS.write();
 		transactions.id = transactions.id + 1;
 		TransactionBuilder {
 			id: transactions.id,
@@ -450,7 +452,6 @@ impl TransactionBuilder {
 
 		crate::TRANSACTIONS
 			.write()
-			.unwrap()
 			.map
 			.insert(self.id, PendingTransaction::new(transaction_ref.clone()));
 

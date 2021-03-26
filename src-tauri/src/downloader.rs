@@ -17,12 +17,7 @@ use steamworks::{CallbackHandle, InstallInfo, ItemState, PublishedFileId, SteamE
 use sysinfo::SystemExt;
 use tauri::{Webview, WebviewMut};
 
-use crate::{
-	gma::{self, ExtractDestination, GMAFile},
-	transaction_data,
-	transactions::{Transaction, TransactionChannel, TransactionStatus, Transactions},
-	util::ThreadWatchdog,
-};
+use crate::{gma::{self, ExtractDestination, GMAFile}, transaction_data, transactions::{Transaction, TransactionChannel, TransactionStatus, Transactions}, util::{RwLockDebug, ThreadWatchdog}};
 
 lazy_static! {
 	static ref ITEM_STATE_SKIP_DOWNLOAD: ItemState =
@@ -52,7 +47,7 @@ impl ActiveDownload {
 			let mut dest = Some(dest);
 			let transaction = transaction.clone();
 			let channel = transaction.channel();
-			let workshop = crate::WORKSHOP.read().unwrap();
+			let workshop = crate::WORKSHOP.read();
 			workshop
 				.client
 				.register_callback(move |downloaded: steamworks::DownloadItemResult| {
@@ -65,7 +60,7 @@ impl ActiveDownload {
 							match download_finished(
 								webview.clone(),
 								{
-									let workshop = crate::WORKSHOP.read().unwrap();
+									let workshop = crate::WORKSHOP.read();
 									workshop.client.ugc().item_install_info(id)
 								},
 								id,
@@ -95,7 +90,7 @@ impl ActiveDownload {
 }
 
 pub(crate) struct WorkshopDownloader {
-	downloads: Arc<RwLock<Vec<ActiveDownload>>>,
+	downloads: Arc<RwLockDebug<Vec<ActiveDownload>>>,
 	thread: Option<JoinHandle<()>>,
 	kill: Arc<AtomicBool>,
 
@@ -114,7 +109,7 @@ impl WorkshopDownloader {
 	pub(crate) fn init() -> Self {
 		Self {
 			thread: None,
-			downloads: Arc::new(RwLock::new(Vec::new())),
+			downloads: Arc::new(RwLockDebug::new(Vec::new())),
 			kill: Arc::new(AtomicBool::new(false)),
 			extraction_queue: VecDeque::new(),
 			extraction_pool: AtomicU16::new(0),
@@ -148,18 +143,15 @@ impl WorkshopDownloader {
 				}
 
 				let mut active_downloads = match active_downloads.try_write() {
-					Ok(w) => w,
-					Err(err) => match err {
-						std::sync::TryLockError::Poisoned(_) => break,
-						std::sync::TryLockError::WouldBlock => continue,
-					},
+					Some(w) => w,
+					None => continue,
 				};
 
 				let mut finished = active_downloads.is_empty();
 
 				if !finished {
 					finished = true;
-					let ugc = crate::WORKSHOP.read().unwrap().client.ugc();
+					let ugc = crate::WORKSHOP.read().client.ugc();
 					let mut i = 0;
 					while i < active_downloads.len() {
 						let mut download = active_downloads.get_mut(i).unwrap();
@@ -202,7 +194,7 @@ impl WorkshopDownloader {
 					break;
 				}
 
-				if let Ok(workshop) = crate::WORKSHOP.try_read() {
+				if let Some(workshop) = crate::WORKSHOP.try_read() {
 					if let Ok(single) = workshop.single.try_lock() {
 						single.run_callbacks();
 					}
@@ -213,8 +205,8 @@ impl WorkshopDownloader {
 
 			if !killed {
 				match crate::WORKSHOP_DOWNLOADER.try_write() {
-					Ok(mut write) => write.thread = None,
-					Err(_) => {
+					Some(mut write) => write.thread = None,
+					None => {
 						#[cfg(debug_assertions)]
 						println!(
 							"[WorkshopDownloader] Failed to delete JoinHandle for listener thread."
@@ -228,7 +220,6 @@ impl WorkshopDownloader {
 	fn extraction_thread_die() {
 		crate::WORKSHOP_DOWNLOADER
 			.write()
-			.unwrap()
 			.extraction_pool
 			.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
 	}
@@ -238,11 +229,8 @@ impl WorkshopDownloader {
 
 		loop {
 			let mut w = match crate::WORKSHOP_DOWNLOADER.try_write() {
-				Ok(w) => w,
-				Err(err) => match err {
-					std::sync::TryLockError::Poisoned(_) => break,
-					std::sync::TryLockError::WouldBlock => continue,
-				},
+				Some(w) => w,
+				None => continue
 			};
 
 			if let Some((
@@ -337,7 +325,7 @@ impl WorkshopDownloader {
 		dest: ExtractDestination,
 		webview_mut: WebviewMut,
 	) -> usize {
-		let mut downloader = crate::WORKSHOP_DOWNLOADER.write().unwrap();
+		let mut downloader = crate::WORKSHOP_DOWNLOADER.write();
 
 		let transaction = Transactions::new(webview_mut).build();
 		downloader.extraction_queue.push_back((
@@ -461,9 +449,9 @@ pub(crate) fn download(
 				Vec::with_capacity(ids.len());
 			let mut failed: Vec<PublishedFileId> = Vec::with_capacity(ids.len());
 
-			crate::WORKSHOP_DOWNLOADER.write().unwrap().kill();
+			crate::WORKSHOP_DOWNLOADER.write().kill();
 
-			let workshop = crate::WORKSHOP.read().unwrap();
+			let workshop = crate::WORKSHOP.read();
 			let ugc = workshop.client.ugc();
 
 			let dest = ExtractDestination::build(tmp, path.clone(), named_dir, downloads, addons)
@@ -504,16 +492,14 @@ pub(crate) fn download(
 
 					crate::WORKSHOP_DOWNLOADER
 						.read()
-						.unwrap()
 						.downloads
 						.write()
-						.unwrap()
 						.push(active_download);
 				}
 			}
 
 			if !transaction_ids.is_empty() {
-				crate::WORKSHOP_DOWNLOADER.write().unwrap().listen();
+				crate::WORKSHOP_DOWNLOADER.write().listen();
 			}
 
 			Ok((transaction_ids, installed_transaction_ids, failed))

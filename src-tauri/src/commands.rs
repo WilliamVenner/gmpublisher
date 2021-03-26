@@ -127,7 +127,7 @@ pub(crate) fn invoke_handler<'a>(
 				use Command::*;
 				match match cmd {
 					CancelTransaction { id } => {
-						crate::TRANSACTIONS.write().unwrap().cancel(id);
+						crate::TRANSACTIONS.write().cancel(id);
 						Ok(())
 					}
 
@@ -187,7 +187,7 @@ pub(crate) fn invoke_handler<'a>(
 						callback,
 						error,
 					} => {
-						if crate::APP_DATA.read().unwrap().gmod.is_some() {
+						if crate::APP_DATA.read().gmod.is_some() {
 							game_addons::browse(callback, error, webview, page)
 						} else {
 							Err("Garry's Mod not found".to_string()) // TODO

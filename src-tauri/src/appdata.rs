@@ -145,7 +145,7 @@ impl Plugin for AppDataPlugin {
 			include_str!("../../app/plugins/AppData.js")
 				.replace(
 					"{$_SETTINGS_$}",
-					&serde_json::ser::to_string(&*crate::APP_DATA.read().unwrap()).unwrap(),
+					&serde_json::ser::to_string(&*crate::APP_DATA.read()).unwrap(),
 				)
 				.replace(
 					"{$_WS_DEAD_$}",

@@ -58,7 +58,6 @@ impl ExtractDestination {
 					if addons {
 						*discriminated_path.as_mut_ptr() = crate::APP_DATA
 							.read()
-							.unwrap()
 							.gmod
 							.as_ref()
 							.unwrap()
@@ -145,7 +144,7 @@ impl GMAFile {
 
 				let mut buf = vec![0; entry.size as usize];
 				handle_r.seek(SeekFrom::Start(entries_start + entry.index))?;
-				handle_r.read_exact(&mut buf)?;
+				handle_r.read_exact(&mut buf).ok();
 				drop(handle_r);
 
 				handle_w.write(&buf)?;
