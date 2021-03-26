@@ -241,7 +241,9 @@ impl GMAFile {
 			}
 		}
 		if let Some(id) = self.id {
-			dir_name.push('_');
+			if !underscored {
+				dir_name.push('_');
+			}
 			dir_name.push_str(&id.0.to_string());
 		}
 		dir_name
