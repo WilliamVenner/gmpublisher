@@ -58,6 +58,8 @@ mod treemap {
 		}
 
 		pub(super) fn process(&mut self, data_sizes: Vec<f64>, total_size: f64) {
+			if data_sizes.is_empty() { return; }
+
 			let mut scaled: Vec<f64> = data_sizes.into_iter().map(|x| (x * self.h * self.w) / total_size).collect();
 			self.squarify(&mut scaled, &mut Vec::new(), self.min_width().0);
 		}
@@ -188,13 +190,19 @@ impl AddonSizeAnalyzer {
 							Ok(thread) => thread.join().unwrap(),
 						};
 
+						if transaction.aborted() { return; }
+
 						channel.progress_msg("FS_ANALYZER_STEAM");
 						
 						gma_files = self.download_steam(transaction.channel(), gma_files, gma_ids);
 
+						if transaction.aborted() { return; }
+
 						channel.progress_msg("FS_ANALYZER_TAGGIFYING");
 
-						let treemap = self.taggify(gma_files, w, h, total_size, transaction);
+						let treemap = self.taggify(gma_files, w, h, total_size, transaction.clone());
+
+						if transaction.aborted() { return; }
 
 						channel.progress_msg("FS_ANALYZER_CACHING");
 
@@ -202,6 +210,8 @@ impl AddonSizeAnalyzer {
 						lock.as_ref().unwrap()
 					}
 				};
+
+				if transaction.aborted() { return; }
 
 				channel.progress(1.);
 				channel.progress_msg("FS_ANALYZER_SERIALIZING");
@@ -284,8 +294,11 @@ impl AddonSizeAnalyzer {
 				let tag_sizes = tag_sizes.remove(&tag).unwrap();
 				let tag_data = tag_data.remove(&tag).unwrap();
 
+				let transaction = transaction.clone();
 				let channel = transaction.channel();
 				scope.spawn(move |_| {
+					if transaction.aborted() { return; }
+
 					let padding = (f64::min(square.w, square.h) * 0.05).ceil();
 					let mut treemap = TreeMap::new(square.w.floor() - padding, square.h.floor() - padding);
 
