@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, hash_map::Entry}, path::PathBuf, sync::{Arc, Mutex, mpsc::{self, Receiver, Sender, SyncSender}}, thread::JoinHandle};
+use std::{collections::{HashMap, hash_map::Entry}, path::PathBuf, sync::{Arc, Mutex, mpsc::{self, Receiver, SyncSender}}, thread::JoinHandle};
 
 use indexmap::IndexMap;
 use steamworks::PublishedFileId;
@@ -404,7 +404,7 @@ impl AddonSizeAnalyzer {
 		}))
 	}
 
-	pub(crate) fn download_steam(&self, ws_channel: TransactionChannel, gma_files: Vec<AnalyzedAddon>, gma_ids: Vec<Option<PublishedFileId>>) -> Vec<AnalyzedAddon> {
+	pub(crate) fn download_steam(&self, ws_channel: TransactionChannel, gma_files: Vec<AnalyzedAddon>, _gma_ids: Vec<Option<PublishedFileId>>) -> Vec<AnalyzedAddon> {
 		let mut gma_ids = Vec::with_capacity(gma_files.len());
 		let mut gma_files_index: HashMap<PublishedFileId, Vec<AnalyzedAddon>> = HashMap::with_capacity(gma_files.len());
 		let gma_files_count = gma_files.len();

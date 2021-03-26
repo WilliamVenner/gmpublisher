@@ -1,4 +1,4 @@
-use std::{collections::{HashMap}, fs::{DirEntry}, mem::MaybeUninit, path::PathBuf, sync::{RwLock, mpsc::{self, Receiver, Sender}}};
+use std::{collections::{HashMap}, fs::{DirEntry}, path::PathBuf, sync::{RwLock, mpsc::{self, Receiver, Sender}}};
 use anyhow::anyhow;
 
 use steamworks::PublishedFileId;
@@ -216,7 +216,7 @@ pub(crate) fn cache_addon_paths() -> bool {
 						None => continue
 					}) {
 						Ok(id) => tx_entry_id.send((entry, Some(PublishedFileId(id)))).unwrap(),
-						Err(ok) => tx_entry_id.send((entry, None)).unwrap(),
+						Err(_ok) => tx_entry_id.send((entry, None)).unwrap(),
 					};
 				},
 

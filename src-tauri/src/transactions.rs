@@ -1,4 +1,4 @@
-use std::{cell::UnsafeCell, collections::HashMap, fmt::Debug, panic::{self, AssertUnwindSafe}, rc::Rc, sync::{Arc, Mutex, RwLock, RwLockReadGuard, atomic::{AtomicBool, AtomicU16, AtomicUsize, Ordering}, mpsc::{self, Sender, SyncSender}}, thread::{JoinHandle, Thread, ThreadId}};
+use std::{collections::HashMap, fmt::Debug, sync::{Arc, RwLock, RwLockReadGuard, atomic::{AtomicBool, AtomicU16, Ordering}, mpsc::{self, SyncSender}}, thread::{JoinHandle, ThreadId}};
 use tauri::{WebviewMut};
 
 pub(crate) type AbortCallback = Box<dyn Fn(&TransactionStatus) + Send + Sync + 'static>;
@@ -314,7 +314,7 @@ impl TransactionChannel {
 
 pub(crate) struct PendingTransaction {
 	tx: SyncSender<()>,
-	recv: JoinHandle<()>
+	_recv: JoinHandle<()>
 }
 impl PendingTransaction {
 	pub(crate) fn new(transaction_ref: Arc<Transaction>) -> Self {
@@ -322,7 +322,7 @@ impl PendingTransaction {
 		let (tx, rx) = mpsc::sync_channel(1);
 		Self {
 			tx,
-			recv: std::thread::spawn(move || {
+			_recv: std::thread::spawn(move || {
 				if let Ok(()) = rx.recv() {
 					channel.cancel();
 				}

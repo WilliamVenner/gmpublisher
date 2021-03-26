@@ -194,7 +194,7 @@ impl WorkshopDownloader {
 				}
 			};
 
-			if let Some((id, path, compressed, dest, channel, progress_channel, compression_channel)) = w.extraction_queue.pop_front() {
+			if let Some((id, path, compressed, dest, channel, progress_channel, _compression_channel)) = w.extraction_queue.pop_front() {
 				match (|| -> Result<PathBuf, GMAReadError> {
 
 					let mut gma = if compressed {
@@ -203,7 +203,7 @@ impl WorkshopDownloader {
 							let input = std::fs::read(&path).map_err(|_| GMAReadError::IOError)?;
 							let mut output = Vec::with_capacity(input.len());
 
-							let total_bytes = input.len();
+							let _total_bytes = input.len();
 
 							let available_memory = ({
 								let mut sys = sysinfo::System::new();

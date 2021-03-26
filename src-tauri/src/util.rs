@@ -1,7 +1,7 @@
 use std::{fs::DirEntry, sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, atomic::AtomicBool}};
 
 use tauri::Webview;
-use anyhow::anyhow;
+
 
 pub mod path {
 	use std::{fmt::Debug, path::PathBuf};
@@ -106,7 +106,7 @@ pub mod path {
 	}
 }
 
-pub(crate) fn prompt_path_dialog(callback: String, error: String, webview: &mut Webview, multiple: bool, directory: bool, save: bool, default_path: Option<String>, filter: Option<String>) -> Result<(), String> {
+pub(crate) fn prompt_path_dialog(_callback: String, _error: String, _webview: &mut Webview, _multiple: bool, _directory: bool, _save: bool, _default_path: Option<String>, _filter: Option<String>) -> Result<(), String> {
 	/*use nfd::{Response, DialogType};
 
 	tauri::execute_promise(webview, move || {

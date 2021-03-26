@@ -13,6 +13,7 @@ lazy_static! {
 	static ref PERSONACHANGE_USER_INFO: steamworks::PersonaChange = steamworks::PersonaChange::NAME | steamworks::PersonaChange::AVATAR;
 }
 
+#[allow(non_upper_case_globals)]
 pub(crate) const kNumUGCResultsPerPage: u32 = 50;
 
 #[derive(Serialize, Debug, Clone)]
