@@ -91,6 +91,7 @@
 	"LOG_DOWNLOAD_STARTED": "Загрузка начата для {addon}",
 	"LOG_DOWNLOAD_FINISHED": "Загрузка завершена для {addon} за {time}",
 	"LOG_DOWNLOAD_FAILED": "Не удалось загрузить {addon} (\"{reason}\")",
+
 	"LOG_EXTRACT_STARTED": "Извлечение начато для {addon}",
 	"LOG_EXTRACT_FINISHED": "Извлечение завершено для {addon} за {time}",
 	"LOG_EXTRACT_FAILED": "Не удалось извлечь {addon} (\"{reason}\")",
@@ -101,4 +102,7 @@
 	"FS_ANALYZER_STEAM": "Скачивание данных Steam...",
 	"FS_ANALYZER_COMPUTING": "Вычисление...",
 	"FS_ANALYZER_TAGGIFYING": "Тегирование..."
+
+	"time_just_now": "Только что",
+	"click_to_open": "Нажмите, чтобы открыть!"
 }
