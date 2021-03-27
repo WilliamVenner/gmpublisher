@@ -1,0 +1,22 @@
+[package]
+name = "gmpublisher"
+version = "2.0.0"
+description = "gmpublisher"
+authors = [ "William Venner <william@venner.io>" ]
+license = "GPL-3.0"
+repository = "https://github.com/WilliamVenner/gmpublisher"
+default-run = "gmpublisher"
+edition = "2018"
+build = "src/build.rs"
+
+[build-dependencies]
+tauri-build = { path = "../../tauri/core/tauri-build", features = [ "codegen" ] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tauri = { path = "../../tauri/tauri", features =["api-all"]}
+
+[features]
+default = [ "custom-protocol" ]
+custom-protocol = [ "tauri/custom-protocol" ]
