@@ -53,28 +53,26 @@ impl ExtractDestination {
 			true => ExtractDestination::Temp,
 			false => {
 				let mut check_exists = true;
-				let mut discriminated_path = MaybeUninit::<PathBuf>::uninit();
-				unsafe {
-					if addons {
-						*discriminated_path.as_mut_ptr() = crate::APP_DATA
-							.read()
-							.gmod
-							.as_ref()
-							.unwrap()
-							.join("garrysmod/addons");
-					} else if downloads {
-						*discriminated_path.as_mut_ptr() = dirs::download_dir().unwrap();
-					} else {
-						check_exists = false;
-						*discriminated_path.as_mut_ptr() = path.unwrap();
-					}
-				}
+				let discriminated_path = if addons {
 
-				let discriminated_path = unsafe { discriminated_path.assume_init() };
+					crate::APP_DATA
+						.read()
+						.gmod
+						.as_ref()
+						.unwrap()
+						.join("garrysmod/addons")
+
+				} else if downloads {
+					dirs::download_dir().unwrap()
+				} else {
+					check_exists = false;
+					path.unwrap()
+				};
+
 				if discriminated_path.is_absolute()
 					&& (!check_exists || discriminated_path.exists())
 				{
-					match !addons && !downloads && named_dir {
+					match addons || downloads || named_dir {
 						true => ExtractDestination::NamedDirectory(discriminated_path),
 						false => ExtractDestination::Directory(discriminated_path),
 					}

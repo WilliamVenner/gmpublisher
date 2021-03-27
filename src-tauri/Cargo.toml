@@ -39,6 +39,7 @@ backtrace = "0.3"
 xz2 = "0.1.6"
 rayon = "1.5.0"
 parking_lot = "0.11"
+rfd = "0.2.2"
 
 [target."cfg(windows)".build-dependencies]
 winres = "0.1"

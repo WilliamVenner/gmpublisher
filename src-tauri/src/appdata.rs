@@ -129,9 +129,19 @@ impl AppData {
 			None
 		}
 	}
+
+	pub(crate) fn send(&mut self, mut webview: WebviewMut) {
+		self.settings.sanitize();
+		let success = tauri::event::emit(
+			&mut webview,
+			"updateAppData",
+			Some(self),
+		);
+		debug_assert!(success.is_ok(), "Failed to update app data");
+	}
 }
 
-use tauri::plugin::Plugin;
+use tauri::{WebviewMut, plugin::Plugin};
 #[derive(Serialize)]
 pub(crate) struct AppDataPlugin;
 impl AppDataPlugin {

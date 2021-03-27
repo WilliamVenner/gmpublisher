@@ -117,42 +117,40 @@ pub mod path {
 }
 
 pub(crate) fn prompt_path_dialog(
-	_callback: String,
-	_error: String,
-	_webview: &mut Webview,
-	_multiple: bool,
-	_directory: bool,
-	_save: bool,
-	_default_path: Option<String>,
-	_filter: Option<String>,
+	callback: String,
+	error: String,
+	webview: &mut Webview,
+	multiple: bool,
+	directory: bool,
+	save: bool,
+	default_path: Option<String>,
 ) -> Result<(), String> {
-	/*use nfd::{Response, DialogType};
+	use rfd::FileDialog;
+	use std::path::PathBuf;
 
 	tauri::execute_promise(webview, move || {
 
-		match nfd::open_dialog(
-			filter.as_deref(),
-			default_path.as_deref(),
-			if directory {
-				DialogType::PickFolder
-			} else if save {
-				DialogType::SaveFile
-			} else if multiple {
-				DialogType::MultipleFiles
-			} else {
-				DialogType::SingleFile
-			}
-		) {
-			Ok(response) => match response {
-				Response::Okay(path) => Ok(vec![path]),
-				Response::OkayMultiple(paths) => Ok(paths),
-				Response::Cancel => Ok(Vec::with_capacity(0))
-			},
+		let builder = FileDialog::new();
+		
+	 	let builder = if let Some(default_path) = default_path {
+			let mut path = PathBuf::from(default_path);
+			if path.is_file() { path.pop(); }
+			builder.set_directory(&path)
+		} else {
+			builder
+		};
 
-			Err(_) => { crate::show::error("Failed to open file picking dialog!".to_string()); return Err(anyhow!("FAILED")) }
+		if save {
+			Ok(builder.save_file().map(|x| vec![x]))
+		} else if directory {
+			Ok(builder.pick_folder().map(|x| vec![x]))
+		} else if multiple {
+			Ok(builder.pick_files())
+		} else {
+			Ok(builder.pick_file().map(|x| vec![x]))
 		}
 
-	}, callback, error);*/
+	}, callback, error);
 
 	Ok(())
 }

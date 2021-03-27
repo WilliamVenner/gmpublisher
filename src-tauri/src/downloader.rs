@@ -1,13 +1,4 @@
-use std::{
-	collections::VecDeque,
-	path::PathBuf,
-	sync::{
-		atomic::{AtomicBool, AtomicU16},
-		Arc, RwLock,
-	},
-	thread::JoinHandle,
-	time::Duration,
-};
+use std::{collections::VecDeque, path::PathBuf, sync::{Arc, RwLock, atomic::{AtomicBool, AtomicU16}, mpsc}, thread::JoinHandle, time::Duration};
 
 use anyhow::anyhow;
 use gma::GMAReadError;
@@ -243,6 +234,7 @@ impl WorkshopDownloader {
 				_compression_channel,
 			)) = w.extraction_queue.pop_front()
 			{
+				drop(w);
 				match (|| -> Result<PathBuf, GMAReadError> {
 					let mut gma = if compressed {
 						let output = {
@@ -444,9 +436,8 @@ pub(crate) fn download(
 	tauri::execute_promise(
 		webview,
 		move || {
-			let mut transaction_ids: Vec<(usize, PublishedFileId)> = Vec::with_capacity(ids.len());
-			let mut installed_transaction_ids: Vec<(usize, PublishedFileId)> =
-				Vec::with_capacity(ids.len());
+			let mut downloading: Vec<(usize, PublishedFileId)> = Vec::with_capacity(ids.len());
+			let mut extracting: Vec<(usize, PublishedFileId)> = Vec::with_capacity(ids.len());
 			let mut failed: Vec<PublishedFileId> = Vec::with_capacity(ids.len());
 
 			crate::WORKSHOP_DOWNLOADER.write().kill();
@@ -456,7 +447,7 @@ pub(crate) fn download(
 
 			let dest = ExtractDestination::build(tmp, path.clone(), named_dir, downloads, addons)
 				.unwrap_or(ExtractDestination::Temp);
-
+			
 			for id in ids {
 				let state = ugc.item_state(id);
 				if state.intersects(ItemState::INSTALLED)
@@ -469,11 +460,11 @@ pub(crate) fn download(
 						dest.clone(),
 					) {
 						Err(_) => failed.push(id),
-						Ok(transaction_id) => installed_transaction_ids.push((transaction_id, id)),
+						Ok(transaction_id) => extracting.push((transaction_id, id)),
 					}
 				} else {
 					let transaction = Transactions::new(webview_mut.clone()).build();
-					transaction_ids.push((transaction.id, id));
+					downloading.push((transaction.id, id));
 
 					let active_download =
 						ActiveDownload::new(webview_mut.clone(), id, transaction, dest.clone());
@@ -498,11 +489,11 @@ pub(crate) fn download(
 				}
 			}
 
-			if !transaction_ids.is_empty() {
+			if !downloading.is_empty() {
 				crate::WORKSHOP_DOWNLOADER.write().listen();
 			}
 
-			Ok((transaction_ids, installed_transaction_ids, failed))
+			Ok((downloading, extracting, failed))
 		},
 		callback,
 		reject,

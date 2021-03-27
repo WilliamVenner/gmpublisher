@@ -54,8 +54,10 @@ lazy_static! {
 				panic!();
 			}
 		});
+		
 	pub(crate) static ref WORKSHOP_DOWNLOADER: RwLockDebug<WorkshopDownloader> =
 		RwLockDebug::new(WorkshopDownloader::init());
+
 	pub(crate) static ref APP_DATA: RwLockDebug<AppData> =
 		RwLockDebug::new(match AppData::init(WORKSHOP.read().get_user()) {
 			Ok(app_data) => app_data,
@@ -64,10 +66,13 @@ lazy_static! {
 				panic!();
 			}
 		});
+		
 	pub(crate) static ref GAME_ADDONS: RwLockDebug<GameAddons> =
 		RwLockDebug::new(GameAddons::init());
+
 	pub(crate) static ref TRANSACTIONS: RwLockDebug<Transactions> =
 		RwLockDebug::new(Transactions::init());
+		
 	pub(crate) static ref ADDON_SIZE_ANALYZER: AddonSizeAnalyzer = AddonSizeAnalyzer::init();
 
 	pub(crate) static ref NUM_CPUS: usize = num_cpus::get();

@@ -582,7 +582,7 @@ pub(crate) fn extract_gma_preview(
 							if let Err(_) = settings.destinations.binary_search(&path) {
 								settings.destinations.push(path);
 								if let Ok(_) = settings.save(None) {
-									settings.send(webview_mut);
+									app_data.send(webview_mut);
 								} else {
 									settings.destinations.pop();
 								}

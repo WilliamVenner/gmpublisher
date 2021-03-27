@@ -2,6 +2,7 @@
 <script>
 	export let size = '1rem';
 	export let inline = false;
+	export let text = null;
 </script>
 
 <svg class="loading" class:inline={inline} style="width: {size}; height: {size}" width={size} height={size} xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="none" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
@@ -51,10 +52,16 @@
 		</rect>
 	</g>
 </svg>
+{#if text}
+	<span class="label">&nbsp;{text}</span>
+{/if}
 
 <style>
 	.loading:not(.inline) {
 		display: block;
 		margin: auto;
+	}
+	.loading, .loading + span.label {
+		vertical-align: middle;
 	}
 </style>

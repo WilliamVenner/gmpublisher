@@ -1,11 +1,8 @@
 use anyhow::{anyhow, Error};
 use lazy_static::lazy_static;
 use serde::Serialize;
-use std::{
-	collections::HashMap,
-	path::PathBuf,
-	sync::{atomic::AtomicBool, Arc, Mutex},
-};
+use std::{cell::RefCell, collections::{HashMap, VecDeque}, path::PathBuf, sync::{Arc, Mutex, atomic::AtomicBool, mpsc::{Receiver, Sender}}};
+use std::sync::mpsc;
 use steamworks::{
 	AccountId, AppId, Client, CreateQueryError, PublishedFileId, QueryResult, QueryResults,
 	SingleClient, SteamError, SteamId,
@@ -168,11 +165,13 @@ impl Workshop {
 							})
 					};
 
-					let single = self.single.lock().unwrap();
 					while !sync.load(std::sync::atomic::Ordering::Acquire) {
-						single.run_callbacks();
-						std::thread::sleep(std::time::Duration::from_millis(50));
-						if started.elapsed().as_secs() >= 5 {
+						match self.single.try_lock() {
+							Ok(lock) => lock.run_callbacks(),
+							Err(_) => std::thread::sleep(std::time::Duration::from_millis(50))
+						}
+
+						if started.elapsed().as_secs() >= 10 {
 							#[cfg(debug_assertions)]
 							println!("Failed to query user {:?} via ISteamFriends", &steamid);
 							break;
@@ -240,10 +239,11 @@ impl Workshop {
 			);
 		}
 
-		let single = self.single.lock().unwrap();
 		while sync.lock().unwrap().is_none() {
-			single.run_callbacks();
-			::std::thread::sleep(::std::time::Duration::from_millis(50));
+			match self.single.try_lock() {
+				Ok(lock) => lock.run_callbacks(),
+				Err(_) => std::thread::sleep(std::time::Duration::from_millis(50))
+			}
 		}
 
 		let data = sync.lock().unwrap().take().unwrap();
@@ -298,10 +298,11 @@ impl Workshop {
 			);
 		}
 
-		let single = self.single.lock().unwrap();
 		while sync.lock().unwrap().is_none() {
-			single.run_callbacks();
-			::std::thread::sleep(::std::time::Duration::from_millis(50));
+			match self.single.try_lock() {
+				Ok(lock) => lock.run_callbacks(),
+				Err(_) => std::thread::sleep(std::time::Duration::from_millis(50))
+			}
 		}
 
 		let data = sync.lock().unwrap().take().unwrap();
@@ -358,10 +359,11 @@ impl Workshop {
 				});
 		}
 
-		let single = self.single.lock().unwrap();
 		while sync.lock().unwrap().is_none() {
-			single.run_callbacks();
-			::std::thread::sleep(::std::time::Duration::from_millis(50));
+			match self.single.try_lock() {
+				Ok(lock) => lock.run_callbacks(),
+				Err(_) => std::thread::sleep(std::time::Duration::from_millis(50))
+			}
 		}
 
 		let data = sync.lock().unwrap().take().unwrap();

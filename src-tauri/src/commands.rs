@@ -83,7 +83,6 @@ enum Command {
 		directory: bool,
 		save: bool,
 		default_path: Option<String>,
-		filter: Option<String>,
 		callback: String,
 		error: String,
 	},
@@ -152,7 +151,6 @@ pub(crate) fn invoke_handler<'a>(
 						directory,
 						save,
 						default_path,
-						filter,
 					} => util::prompt_path_dialog(
 						callback,
 						error,
@@ -161,7 +159,6 @@ pub(crate) fn invoke_handler<'a>(
 						directory,
 						save,
 						default_path,
-						filter,
 					),
 
 					WorkshopBrowser {

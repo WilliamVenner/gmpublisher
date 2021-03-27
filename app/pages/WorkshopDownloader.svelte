@@ -68,7 +68,6 @@
 		if (total > 0 && progress > 0) {
 			const elapsed = ((new Date().getTime() - timestamp) / 1000);
 			if (elapsed > 0) {
-				console.log('calculating', timestamp, progress, total);
 				return filesize((total * (progress / 100)) / elapsed);
 			}
 		}
@@ -301,7 +300,7 @@
 	<div id="layout">
 		<div id="extracting">
 			<h2>{$_('extracting')}{#if extractingJobs.length > 0}<img src="/img/dog.gif" class="working"/>{/if}</h2>
-			<div class="table"><div class="hide-scroll">
+			<div class="table hide-scroll">
 				<table class:idle={extractingJobs.length === 0}>
 					<thead>
 						<tr>
@@ -336,15 +335,15 @@
 								<td class="details">
 									{#if job.ws_id}
 										{#await Addons.getWorkshopMetadata(Number(job.ws_id))}
-											<Loading inline/>&nbsp;{job.ws_id}
+											<Loading inline text={job.ws_id}/>
 										{:then metadata}
 											{#if !metadata || metadata.dead}
-												<Dead inline/>&nbsp;{job.ws_id}
+												<Dead inline text={job.ws_id}/>
 											{:else}
 												{metadata.title}
 											{/if}
 										{:catch}
-											<Dead inline/>&nbsp;{job.ws_id}
+											<Dead inline text={job.ws_id}/>
 										{/await}
 									{:else}
 										{job.fileName}
@@ -375,12 +374,12 @@
 						-->
 					</tbody>
 				</table>
-			</div></div>
+			</div>
 		</div>
 
 		<div id="downloading">
 			<h2>{$_('downloading')}{#if downloadingJobs.length > 0}<img src="/img/dog.gif" class="working"/>{/if}</h2>
-			<div class="table"><div class="hide-scroll">
+			<div class="table hide-scroll">
 				<table class:idle={downloadingJobs.length === 0}>
 					<thead>
 						<tr>
@@ -431,12 +430,12 @@
 						{/each}
 					</tbody>
 				</table>
-			</div></div>
+			</div>
 		</div>
 
 		<div id="log">
 			<h2>{$_('log')}</h2>
-			<div class="table"><div class="hide-scroll">
+			<div class="table hide-scroll">
 				{#each jobLog as log}
 					<div class="row" class:click={log.type === LOG_EXTRACT_FINISHED} on:click={log.type === LOG_EXTRACT_FINISHED ? openExtractedGMA : null} data-path={log.path}>
 						<Timestamp unix={log.timestamp}/>
@@ -476,7 +475,7 @@
 						</div>
 					</div>
 				{/each}
-			</div></div>
+			</div>
 		</div>
 	</div>
 </main>
@@ -493,14 +492,15 @@
 		flex: 1;
 		display: grid;
 		grid-template-columns: 1fr max(25%, 350px);
-		grid-template-rows: 1fr 1fr;
+		grid-template-rows: calc(50% - .75rem) calc(50% - .75rem);
 		grid-gap: 1.5rem;
 		height: 100%;
+		min-height: 0;
 	}
 	@media (max-width: 1280px) {
 		#layout {
 			grid-template-columns: 1fr;
-			grid-template-rows: 1fr 1fr 1fr;
+			grid-template-rows: calc(33.33% - 1rem) calc(33.33% - 1rem) calc(33.33% - 1rem);
 		}
 		#layout #log {
 			grid-column: 1 !important;
@@ -771,5 +771,34 @@
 		display: block;
 		margin-top: .5rem;
 		margin-bottom: 5px;
+	}
+
+	#layout #log .row.click, #layout #log .row.error {
+		position: relative;
+		z-index: 1;
+	}
+	#layout #log .row.click::after, #layout #log .row.error::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		animation: flash 5s forwards;
+		z-index: -1;
+	}
+	#layout #log .row.click::after {
+		background-color: green;
+	}
+	#layout #log .row.error::after {
+		background-color: red;
+	}
+	@keyframes flash {
+		from {
+			opacity: .5;
+		}
+		to {
+			opacity: 0;
+		}
 	}
 </style>

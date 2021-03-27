@@ -95,16 +95,6 @@ impl Settings {
 		settings.save(location)?;
 		Ok(settings)
 	}
-
-	pub(crate) fn send(&mut self, mut webview: WebviewMut) {
-		self.sanitize();
-		let success = tauri::event::emit(
-			&mut webview,
-			"updateAppData",
-			Some(&*crate::APP_DATA.read()),
-		);
-		debug_assert!(success.is_ok(), "Failed to update app data");
-	}
 }
 
 pub(crate) fn invoke_handler(_webview: &mut Webview<'_>, settings: String) -> Result<(), String> {
