@@ -35,11 +35,11 @@
 			component: GameAddonsBrowser,
 			props: {}
 		},
-		{
+		/*{
 			name: 'filesystem',
 			component: null,//FileSystemAddonsBrowser,
 			props: {}
-		},
+		},*/
 		{
 			name: 'size_analyzer',
 			component: AddonSizeAnalyzer,
@@ -49,11 +49,17 @@
 			name: 'downloader',
 			component: WorkshopDownloader,
 			props: {},
-			persist: true
+			persist: true,
+			/* created: true */
 		},
 	];
 
 	let activeSource = sources[0];
+
+	function chooseSource(e) {
+		sources[e.target.dataset.choice].created = true;
+		activeSource = sources[e.target.dataset.choice];
+	}
 
 	// TODO merge this into App.svelte
 </script>
@@ -84,7 +90,7 @@
 	<div id="sidebar">
 		<div>
 			{#each sources as choice, i}
-				<div class:active={ activeSource.name === choice.name } on:click="{ e => activeSource = sources[e.target.dataset.choice] }" data-choice={i}>{$_(choice.name)}</div>
+				<div class:active={ activeSource.name === choice.name } on:click={chooseSource} data-choice={i}>{$_(choice.name)}</div>
 			{/each}
 		</div>
 
@@ -102,7 +108,7 @@
 					<svelte:component this={activeSource.component} {...activeSource.props}/>
 				{/if}
 				{#each sources as source}
-					{#if source.persist}
+					{#if source.persist && source.created}
 						<div class="persist" class:active={activeSource == source}><svelte:component this={source.component} {...source.props}/></div>
 					{/if}
 				{/each}

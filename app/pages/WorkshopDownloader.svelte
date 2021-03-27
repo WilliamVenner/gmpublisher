@@ -10,6 +10,7 @@
 	import Loading from '../components/Loading.svelte';
 	import filesize from 'filesize';
 	import { listen } from 'tauri/api/event';
+	import Destination from '../modals/Destination.svelte';
 
 	const RE_FILE_NAME = /(?:\\|\/|^)([^\/\\]+?)$/m;
 
@@ -273,8 +274,24 @@
 		// TODO make sure all async stuff in the backend is respecting aborted()
 	}
 
-	function setDestination() {
-		// TODO
+	function setDestination(extractPath) {
+		destinationModal = false;
+
+		const dest = extractPath[0];
+		destination = {
+			named_dir: AppSettings.create_folder_on_extract,
+			path: dest === 'browse' ? extractPath[1] : null,
+			tmp: dest === 'tmp',
+			addons: dest === 'addons',
+			downloads: dest === 'downloads',
+		};
+	}
+	let destinationModal = false;
+	function openDestination() {
+		destinationModal = true;
+	}
+	function cancelDestination() {
+		destinationModal = false;
 	}
 
 	listen('extractionJobStarted', (transaction_id, ws_id, path) => {
@@ -319,7 +336,7 @@
 										<div><img src="/img/dog_sleep.gif"/></div>
 										<div>{$_('waiting')}</div>
 										<div class="tip">{$_('extraction_tip')}</div>
-										<div class="btn" on:click={setDestination}>{$_('set_destination')}</div>
+										<div class="btn" on:click={openDestination}>{$_('set_destination')}</div>
 									</div>
 								</td>
 							</tr>
@@ -478,9 +495,25 @@
 			</div>
 		</div>
 	</div>
+
+	<div id="destination" class:active={destinationModal}>
+		<Destination text={$_('set_destination')} active={destinationModal} callback={setDestination} cancel={cancelDestination} forceCreateFolder={true}/>
+	</div>
 </main>
 
 <style>
+	#destination {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		z-index: 100;
+		top: 0;
+		left: 0;
+	}
+	#destination:not(.active) {
+		pointer-events: none;
+	}
+
 	main {
 		display: flex;
 		flex-direction: column;
