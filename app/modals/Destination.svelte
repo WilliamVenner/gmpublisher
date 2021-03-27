@@ -13,6 +13,8 @@
 	export let gma = null;
 	export let forceCreateFolder = false;
 
+	// TODO make all img undraggable
+
 	const extractPath = writable([null, null, AppSettings.create_folder_on_extract]);
 	let extractPathInput;
 
