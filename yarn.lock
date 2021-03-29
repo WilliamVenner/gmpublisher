@@ -156,6 +156,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tauri-apps/api@file:../tauri/api::locator=gmpublisher%40workspace%3A.":
+  version: 0.1.0
+  resolution: "@tauri-apps/api@file:../tauri/api#../tauri/api::hash=20a4ab&locator=gmpublisher%40workspace%3A."
+  checksum: 8f0fdbc1714984c9c975cf83b4888f106d8a2fe56c6076677bfc5f097d8c9e499e5d7cfc5bdbf9288052d1fc57bb2cf71ae0768c3625bd5ad16cb1e5082d8162
+  languageName: node
+  linkType: hard
+
 "@types/estree@npm:*":
   version: 0.0.47
   resolution: "@types/estree@npm:0.0.47"
@@ -756,6 +763,7 @@ fsevents@~2.3.1:
     "@rollup/plugin-json": ^4.1.0
     "@rollup/plugin-node-resolve": ^11.0.0
     "@rollup/plugin-replace": ^2.4.1
+    "@tauri-apps/api": ../tauri/api
     akar-icons-svelte: ^1.1.1
     filesize: ^6.1.0
     luxon: ^1.26.0
