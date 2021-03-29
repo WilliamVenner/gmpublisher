@@ -1,4 +1,4 @@
-use std::{fs, env, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 
 fn main() {
 	let src = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
@@ -19,10 +19,7 @@ fn main() {
 
 	let steam_api_src = src.join("lib/steam_api").join(&steam_api_lib);
 	if !steam_api_src.is_file() {
-		panic!(
-			"\n\nCouldn't find Steam API libraries at {:?}\nSee src-tauri/lib/steam_api/README\n\n",
-			steam_api_src
-		);
+		panic!("\n\nCouldn't find Steam API libraries at {:?}\nSee src-tauri/lib/steam_api/README\n\n", steam_api_src);
 	}
 
 	let steam_api_dest = out.join(steam_api_lib.file_name().unwrap());

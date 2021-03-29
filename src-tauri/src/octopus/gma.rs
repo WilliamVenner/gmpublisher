@@ -1,3 +1,1 @@
-pub struct GMA {
-	
-}
+pub struct GMA {}

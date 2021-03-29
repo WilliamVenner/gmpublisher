@@ -1,27 +1,23 @@
-#![cfg_attr(
-	all(not(debug_assertions), target_os = "windows"),
-	windows_subsystem = "windows"
-)]
+#![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
 use std::collections::HashMap;
 
 use lazy_static::lazy_static;
 use steamworks::PublishedFileId;
-use tauri::{WebviewBuilderExt, WebviewManager};
+use tauri::WebviewBuilderExt;
 
 pub(crate) mod base64_image;
 pub(crate) use base64_image::Base64Image;
 
 pub(crate) mod octopus;
 use octopus::Steamworks;
-use octopus::GMA;
 
 lazy_static! {
 	static ref STEAMWORKS: Steamworks = Steamworks::init();
 }
 
 #[tauri::command]
-fn new_cmd_test(test: bool) -> Result<HashMap<&'static str, &'static str>, &'static str> {
+fn new_cmd_test(_test: bool) -> Result<HashMap<&'static str, &'static str>, &'static str> {
 	let mut hashmap = HashMap::new();
 	hashmap.insert("don\\\\'t", "don\\'t");
 	Ok(hashmap)
@@ -36,13 +32,7 @@ fn main() {
 
 	tauri::AppBuilder::default()
 		.create_webview("gmpublisher".to_string(), tauri::WindowUrl::App, |args| {
-			Ok(
-				args
-					.title("gmpublisher".to_string())
-					.resizable(true)
-					.width(800.)
-					.height(600.)
-			)
+			Ok(args.title("gmpublisher".to_string()).resizable(true).width(800.).height(600.))
 		})
 		.unwrap()
 		.invoke_handler(tauri::generate_handler![new_cmd_test])
