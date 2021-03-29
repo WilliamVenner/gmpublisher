@@ -55,12 +55,7 @@ impl ExtractDestination {
 				let mut check_exists = true;
 				let discriminated_path = if addons {
 
-					crate::APP_DATA
-						.read()
-						.gmod
-						.as_ref()
-						.unwrap()
-						.join("garrysmod/addons")
+					todo!()
 
 				} else if downloads {
 					dirs::download_dir().unwrap()

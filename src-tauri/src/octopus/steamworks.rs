@@ -14,12 +14,11 @@ use steamworks::{AccountId, Callback, CallbackHandle, Client, ClientManager, Fri
 
 use atomic_refcell::AtomicRefCell;
 
-use super::{AtomicRefSome, PromiseCache};
+use super::{AtomicRefSome, PromiseCache, PromiseHashCache, PromiseHashNullableCache};
 
 use crate::main_thread_forbidden;
 
-use lazy_static::lazy_static;
-lazy_static! {
+lazy_static::lazy_static! {
 	static ref PERSONACHANGE_USER_INFO: steamworks::PersonaChange = steamworks::PersonaChange::NAME | steamworks::PersonaChange::AVATAR;
 }
 
@@ -174,8 +173,8 @@ pub struct Steamworks {
 	interface: AtomicRefCell<Option<Interface>>,
 	thread_pool: ThreadPool,
 
-	users: PromiseCache<HashMap<SteamId, SteamUser>, SteamId, Option<SteamUser>>,
-	workshop: PromiseCache<HashMap<PublishedFileId, WorkshopItem>, PublishedFileId, WorkshopItem>,
+	users: PromiseHashNullableCache<SteamId, SteamUser>,
+	workshop: PromiseHashCache<PublishedFileId, WorkshopItem>,
 }
 
 unsafe impl Sync for Steamworks {}
@@ -435,6 +434,24 @@ impl Steamworks {
 		Arc::try_unwrap(items_response).unwrap().into_inner()
 	}
 
+	pub fn fetch_workshop_item_with_uploader(&'static self, id: PublishedFileId) -> WorkshopItem {
+		let mut item = self.fetch_workshop_item(id);
+		if !item.dead {
+			if let None = item.owner {
+				if let Some(steamid) = item.steamid {
+					item.owner = self.fetch_user(steamid);
+					if item.owner.is_some() {
+						let item = item.clone();
+						crate::STEAMWORKS.workshop.write(move |mut workshop| {
+							workshop.insert(id, item);
+						});
+					}
+				}
+			}
+		}
+		item
+	}
+
 	pub fn fetch_workshop_item_async<F>(&'static self, item: PublishedFileId, f: F)
 	where
 		F: FnOnce(&mut WorkshopItem) + 'static + Send,
@@ -456,6 +473,22 @@ impl Steamworks {
 		F: FnOnce(Vec<WorkshopItem>) + 'static + Send,
 	{
 		self.thread_pool.spawn(move || f(crate::STEAMWORKS.fetch_workshop_items(items)));
+	}
+
+	pub fn fetch_workshop_item_with_uploader_async<F>(&'static self, item: PublishedFileId, f: F)
+	where
+		F: FnOnce(&mut WorkshopItem) + 'static + Send,
+	{
+		match self.workshop.read().get(&item) {
+			Some(item) => if let Some(_) = item.owner {
+				f(&mut item.clone());
+			},
+			None => {
+				self.thread_pool.spawn(move || {
+					crate::STEAMWORKS.workshop.execute(&item, crate::STEAMWORKS.fetch_workshop_item_with_uploader(item));
+				});
+			}
+		}
 	}
 
 	// Static Steamworks //

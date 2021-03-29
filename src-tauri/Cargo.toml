@@ -36,6 +36,9 @@ base64 = "0.13.0"
 rfd = "0.2.2"
 threadpool = "1.8.1"
 atomic_refcell = "0.1.7"
+thiserror = "1.0.24"
+chardetng = "0.1.10"
+byteorder = "1.4.3"
 
 [features]
 default = [ "custom-protocol" ]

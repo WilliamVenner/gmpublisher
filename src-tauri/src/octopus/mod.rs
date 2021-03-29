@@ -38,6 +38,9 @@ pub enum VariableSingleton<T> {
 	Variable(Vec<T>),
 }
 
+pub type PromiseHashCache<K, V> = PromiseCache<HashMap<K, V>, K, V>;
+pub type PromiseHashNullableCache<K, V> = PromiseCache<HashMap<K, V>, K, Option<V>>;
+
 pub struct PromiseCache<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> {
 	cache: RelaxedRwLock<Cache>,
 	promises: RwLock<HashMap<K, VariableSingleton<Box<dyn FnOnce(&mut Args) + Send + 'static>>>>,

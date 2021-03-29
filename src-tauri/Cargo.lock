@@ -334,6 +334,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
 
 [[package]]
+name = "chardetng"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f866cba7596c2e70200523e399101d460514a5e59191223aa87d579e49e52025"
+dependencies = [
+ "cfg-if 0.1.10",
+ "encoding_rs",
+ "memchr",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1167,6 +1178,8 @@ dependencies = [
  "atomic_refcell",
  "base64",
  "bindgen",
+ "byteorder",
+ "chardetng",
  "dirs 3.0.1",
  "dunce",
  "image",
@@ -1181,6 +1194,7 @@ dependencies = [
  "sysinfo 0.16.5",
  "tauri",
  "tauri-build",
+ "thiserror",
  "threadpool",
  "xz2",
 ]

@@ -1,12 +1,6 @@
 use byteorder::ReadBytesExt;
 use serde::{Deserialize, Serialize};
-use std::{
-	collections::HashMap,
-	fs::File,
-	io::{BufRead, BufReader, Read, Seek, SeekFrom},
-	path::PathBuf,
-	sync::Arc,
-};
+use std::{collections::HashMap, fs::File, io::{BufRead, BufReader, Read, Seek, SeekFrom}, path::{Path, PathBuf}, sync::Arc};
 use steamworks::PublishedFileId;
 
 pub const GMA_HEADER: &'static [u8; 4] = b"GMAD";
@@ -62,7 +56,9 @@ pub struct GMAFile {
 	pub(crate) extracted_name: (bool, Option<String>),
 }
 impl GMAFile {
-	pub fn new(path: &PathBuf, id: Option<PublishedFileId>) -> Result<GMAFile, GMAReadError> {
+	pub fn new<P: AsRef<Path>>(path: P, id: Option<PublishedFileId>) -> Result<GMAFile, GMAReadError> {
+		let path = path.as_ref();
+
 		let mut handle = BufReader::new(match File::open(path) {
 			Ok(handle) => handle,
 			Err(_) => return Err(GMAReadError::IOError),
@@ -89,7 +85,7 @@ impl GMAFile {
 		}
 
 		Ok(GMAFile {
-			path: path.into(),
+			path: path.to_path_buf().into(),
 			size,
 
 			id,
