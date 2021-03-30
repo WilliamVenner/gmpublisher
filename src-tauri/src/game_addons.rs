@@ -259,11 +259,23 @@ pub(crate) fn cache_addon_paths() -> bool {
 
 		let mut gma_cache = GMACache::default();
 		let (installed_gmas, installed_ids) = local_files.join().unwrap();
+
+		// really stupid temporary solution to bug that will disappear in the beta version which I am currently too lazy to fix properly
+		let mut dedup = HashMap::with_capacity(installed_ids.len());
+		for (path, id) in installed_ids {
+			dedup.insert(id, path);
+		}
+		let mut installed_ids = Vec::with_capacity(dedup.len());
+		for (id, path) in dedup.into_iter() {
+			// this is the dumbest line of code i've ever written
+			installed_ids.push((path, id));
+		}
+
 		gma_cache.installed_gmas = installed_gmas;
 		gma_cache.installed_ids = installed_ids;
 
 		let mut game_addons = crate::GAME_ADDONS.write();
-		game_addons.total = gma_cache.installed_gmas.len() as u32;
+		game_addons.total = gma_cache.installed_ids.len() as u32;
 		game_addons.gma_cache = Some(gma_cache);
 
 		false
@@ -293,8 +305,6 @@ pub(crate) fn browse(
 				.take(50)
 				.cloned()
 				.collect();
-
-			// FIXME: Duplicate Ids cause issues with this
 
 			Ok(
 				match crate::WORKSHOP
