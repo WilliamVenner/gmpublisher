@@ -1,5 +1,7 @@
 use std::{fs::File, io::{BufReader, BufWriter}, path::PathBuf};
 
+use crate::webview;
+
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use tauri::WebviewManager;
@@ -53,10 +55,6 @@ impl Settings {
 		Ok(serde_json::ser::to_writer(BufWriter::new(File::open(&*APP_SETTINGS_PATH)?), self)?)
 	}
 
-	pub(crate) fn send(&self) {
-		todo!()
-	}
-
 	pub(crate) fn sanitize(&mut self) -> bool {
 		// TODO replace with drain_filter when it's stable
 		let mut i = 0;
@@ -83,6 +81,10 @@ impl AppData {
 		Self {
 			settings: RwLock::new(Settings::init())
 		}
+	}
+
+	pub(crate) fn send(&self) {
+		webview!().emit("UpdateAppData", Some(self)).unwrap();
 	}
 }
 
