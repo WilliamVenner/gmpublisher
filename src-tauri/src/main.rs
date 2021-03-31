@@ -31,21 +31,27 @@ fn main() {
 	lazy_static::initialize(&STEAMWORKS);
 	lazy_static::initialize(&GMA);
 
-	std::thread::spawn(|| {
-		STEAMWORKS.client_wait();
-		STEAMWORKS.fetch_collection_items_async(steamworks::PublishedFileId(685235367), |items| println!("{:#?}", items));
-	});
-
 	tauri::AppBuilder::default()
 		.create_webview("gmpublisher".to_string(), tauri::WindowUrl::App, |args| {
 			let settings = APP_DATA.settings.read();
-			Ok(
-				args.title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
-				.resizable(true)
-				.width(settings.window_size.0)
-				.height(settings.window_size.1)
-				//.maximized(settings.window_maximized)
-			)
+			Ok({
+				#[cfg(not(debug_assertions))]
+				{
+					args.title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
+					.resizable(true)
+					.width(settings.window_size.0)
+					.height(settings.window_size.1)
+					.maximized(settings.window_maximized)
+				}
+				
+				#[cfg(debug_assertions)]
+				{
+					args.title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
+					.resizable(true)
+					.width(settings.window_size.0)
+					.height(settings.window_size.1)
+				}
+			})
 		})
 		.unwrap()
 		.plugin(appdata::Plugin)
