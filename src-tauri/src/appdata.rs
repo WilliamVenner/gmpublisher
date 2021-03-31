@@ -100,7 +100,7 @@ impl<Application: tauri::ApplicationExt + 'static> tauri::plugin::Plugin<Applica
 		Some(
 			include_str!("../../app/plugins/AppData.js")
 				.replace(
-					"{$_SETTINGS_$}",
+					"{$_APP_DATA_$}",
 					&serde_json::ser::to_string(&*crate::APP_DATA).unwrap().replace("\\", "\\\\").replace("'", "\\'"),
 				)
 				.replace(

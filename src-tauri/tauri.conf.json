@@ -7,7 +7,8 @@
     "distDir": "../public",
     "devPath": "http://localhost:5000",
     "beforeDevCommand": "yarn dev",
-    "beforeBuildCommand": "yarn build"
+    "beforeBuildCommand": "yarn build",
+	"withGlobalTauri": true
   },
   "tauri": {
     "bundle": {
@@ -23,10 +24,10 @@
       ],
       "resources": [],
       "externalBin": [],
-      "copyright": "",
+      "copyright": "2021 William Venner",
       "category": "DeveloperTool",
-      "shortDescription": "",
-      "longDescription": "",
+      "shortDescription": "Garry's Mod Workshop Publishing Utility",
+      "longDescription": "Garry's Mod Workshop Publishing Utility",
       "deb": {
         "depends": [],
         "useBootstrapper": false

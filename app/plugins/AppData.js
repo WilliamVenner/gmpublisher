@@ -49,18 +49,21 @@ window.__GMPUBLISHER__ = () => {
 		get: function(_, key) { return _._[key]; }
 	});
 
-	function updateAppData(AppData) {
-		const settings = AppSettings.init(AppData.settings);
+	function updateAppData(newAppData) {
+		console.log('UpdateAppData');
+		console.log(newAppData);
+
+		const settings = AppSettings.init(newAppData.settings);
 		window.AppSettings = settings;
 
-		delete AppData.settings;
-		AppDataPtr._ = Object.freeze(AppData);
+		delete newAppData.settings;
+		AppDataPtr._ = Object.freeze(newAppData);
 
-		window.PATH_SEPARATOR = AppData.path_separator;
+		window.PATH_SEPARATOR = newAppData.path_separator;
 	}
 
-	updateAppData(JSON.parse('{$_SETTINGS_$}'));
-	__TAURI__.event.listen('updateAppData', ({ payload }) => updateAppData(payload)); // FIXME - why doesn't it work?
+	updateAppData(JSON.parse('{$_APP_DATA_$}'));
+	__TAURI__.event.listen('UpdateAppData', ({ payload }) => updateAppData(payload));
 };
 
 window.__WS_DEAD__ = JSON.parse('{$_WS_DEAD_$}');
