@@ -24,11 +24,15 @@ lazy_static! {
 }
 #[macro_export]
 macro_rules! steamworks {
-	() => { &*crate::STEAMWORKS };
+	() => {
+		&*crate::STEAMWORKS
+	};
 }
 #[macro_export]
 macro_rules! gma {
-	() => { &*crate::GMA };
+	() => {
+		&*crate::GMA
+	};
 }
 
 pub(crate) mod appdata;
@@ -38,18 +42,22 @@ lazy_static! {
 }
 #[macro_export]
 macro_rules! app_data {
-	() => { &*crate::APP_DATA };
+	() => {
+		&*crate::APP_DATA
+	};
 }
 
 pub(crate) struct WrappedWebview<Application: ApplicationExt + 'static> {
 	setup: AtomicBool,
 	pub(crate) inner: RefCell<MaybeUninit<WebviewDispatcher<Application::Dispatcher>>>,
 }
+unsafe impl<Application: ApplicationExt + 'static> Send for WrappedWebview<Application> {}
+unsafe impl<Application: ApplicationExt + 'static> Sync for WrappedWebview<Application> {}
 impl<Application: ApplicationExt + 'static> WrappedWebview<Application> {
 	fn pending() -> Self {
 		Self {
 			setup: AtomicBool::new(false),
-			inner: RefCell::new(MaybeUninit::uninit())
+			inner: RefCell::new(MaybeUninit::uninit()),
 		}
 	}
 
@@ -57,20 +65,20 @@ impl<Application: ApplicationExt + 'static> WrappedWebview<Application> {
 		use std::sync::atomic::Ordering;
 		if !self.setup.load(Ordering::Acquire) {
 			self.setup.store(true, Ordering::Release);
-			unsafe { self.inner.borrow_mut().as_mut_ptr().write(webview.current_webview().unwrap()); }
+			unsafe {
+				self.inner.borrow_mut().as_mut_ptr().write(webview.current_webview().unwrap());
+			}
 		}
 	}
 }
-
-unsafe impl<Application: ApplicationExt + 'static> Send for WrappedWebview<Application> {}
-unsafe impl<Application: ApplicationExt + 'static> Sync for WrappedWebview<Application> {}
-
 lazy_static! {
 	pub(crate) static ref WEBVIEW: WrappedWebview<tauri::flavors::Wry> = WrappedWebview::pending();
 }
 #[macro_export]
 macro_rules! webview {
-	() => { unsafe { &*crate::WEBVIEW.inner.borrow().as_ptr() } };
+	() => {
+		unsafe { &*crate::WEBVIEW.inner.borrow().as_ptr() }
+	};
 }
 
 fn main() {
@@ -85,18 +93,18 @@ fn main() {
 				#[cfg(not(debug_assertions))]
 				{
 					args.title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
-					.resizable(true)
-					.width(settings.window_size.0)
-					.height(settings.window_size.1)
-					.maximized(settings.window_maximized)
+						.resizable(true)
+						.width(settings.window_size.0)
+						.height(settings.window_size.1)
+						.maximized(settings.window_maximized)
 				}
-				
+
 				#[cfg(debug_assertions)]
 				{
 					args.title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
-					.resizable(true)
-					.width(settings.window_size.0)
-					.height(settings.window_size.1)
+						.resizable(true)
+						.width(settings.window_size.0)
+						.height(settings.window_size.1)
 				}
 			})
 		})

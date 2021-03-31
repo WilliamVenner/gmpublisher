@@ -1,16 +1,20 @@
 use rayon::{
-	prelude::*,
 	iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator},
 	ThreadPool, ThreadPoolBuilder,
 };
 use serde::Serialize;
-use std::{collections::HashMap, mem::MaybeUninit, path::PathBuf, sync::{Arc, atomic::{AtomicBool, AtomicUsize}}};
+use std::{
+	collections::HashMap,
+	mem::MaybeUninit,
+	path::PathBuf,
+	sync::{atomic::AtomicBool, Arc},
+};
 
 use steamworks::{AccountId, Callback, CallbackHandle, Client, ClientManager, Friend, PublishedFileId, QueryResult, QueryResults, SingleClient, SteamError, SteamId};
 
 use atomic_refcell::AtomicRefCell;
 
-use super::{AtomicRefSome, PromiseCache, PromiseHashCache, PromiseHashNullableCache};
+use super::{AtomicRefSome, PromiseCache, PromiseHashCache};
 
 use crate::main_thread_forbidden;
 
@@ -481,9 +485,11 @@ impl Steamworks {
 		F: FnOnce(&WorkshopItem) + 'static + Send,
 	{
 		match self.workshop.read().get(&item) {
-			Some(item) => if let Some(_) = item.owner {
-				f(&item.clone());
-			},
+			Some(item) => {
+				if let Some(_) = item.owner {
+					f(&item.clone());
+				}
+			}
 			None => {
 				self.thread_pool.spawn(move || {
 					crate::STEAMWORKS.workshop.execute(&item, crate::STEAMWORKS.fetch_workshop_item_with_uploader(item));
@@ -498,21 +504,26 @@ impl Steamworks {
 		let response = Arc::new(AtomicRefCell::new(None));
 		{
 			let response = response.clone();
-			self.client().ugc().query_item(collection).unwrap().include_children(true).fetch(move |query: Result<QueryResults<'_>, SteamError>| {
-				if let Ok(results) = query {
-					if let Some(result) = results.get(0) {
-						if matches!(result.file_type, steamworks::FileType::Collection) {
-							if let Some(children) = results.get_children(0) {
-								*response.borrow_mut() = Some(Some(children));
-								return;
+			self.client()
+				.ugc()
+				.query_item(collection)
+				.unwrap()
+				.include_children(true)
+				.fetch(move |query: Result<QueryResults<'_>, SteamError>| {
+					if let Ok(results) = query {
+						if let Some(result) = results.get(0) {
+							if matches!(result.file_type, steamworks::FileType::Collection) {
+								if let Some(children) = results.get_children(0) {
+									*response.borrow_mut() = Some(Some(children));
+									return;
+								}
 							}
 						}
 					}
-				}
-				*response.borrow_mut() = Some(None);
-			});
+					*response.borrow_mut() = Some(None);
+				});
 		}
-		
+
 		loop {
 			if let Ok(response) = response.try_borrow() {
 				if response.is_some() {
@@ -539,11 +550,13 @@ impl Steamworks {
 		F: FnOnce(&Option<Vec<PublishedFileId>>) + 'static + Send,
 	{
 		match self.collections.read().get(&collection) {
-		    Some(cached) => f(cached),
-		    None => if self.collections.task(collection, f) {
-				self.thread_pool.spawn(move || {
-					crate::STEAMWORKS.collections.execute(&collection, self.fetch_collection_items(collection));
-				});
+			Some(cached) => f(cached),
+			None => {
+				if self.collections.task(collection, f) {
+					self.thread_pool.spawn(move || {
+						crate::STEAMWORKS.collections.execute(&collection, self.fetch_collection_items(collection));
+					});
+				}
 			}
 		}
 	}

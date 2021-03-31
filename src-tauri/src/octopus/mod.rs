@@ -14,9 +14,7 @@ use std::{
 };
 
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
-use lazy_static::lazy_static;
 use parking_lot::RwLock;
-use rayon::{ThreadPool, ThreadPoolBuilder};
 
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 

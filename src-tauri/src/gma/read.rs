@@ -15,7 +15,7 @@ macro_rules! safe_read {
 		match $x {
 			Ok(data) => Ok(data),
 			Err(_) => Err(GMAReadError::FormatError),
-			}
+		}
 	};
 }
 
@@ -31,11 +31,14 @@ impl Display for GMAReadError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		use GMAReadError::*;
 		match self {
-			IOError => write!(f, "An error occured opening or writing to a file. Make sure you have the appropriate permissions for this file and it is not in use by another process."),
+			IOError => write!(
+				f,
+				"An error occured opening or writing to a file. Make sure you have the appropriate permissions for this file and it is not in use by another process."
+			),
 			InvalidHeader => write!(f, "This doesn't appear to be a valid GMA file."),
 			UnsupportedVersion => write!(f, "This GMA file uses an unsupported version of the format - sorry!"),
 			FormatError => write!(f, "This GMA file appears to be corrupted or of an unrecognised format or version of the format."),
-			EntryNotFound => write!(f, "The entry could not be found in this GMA file.")
+			EntryNotFound => write!(f, "The entry could not be found in this GMA file."),
 		}
 	}
 }
@@ -77,12 +80,7 @@ impl GMAFile {
 			handle.skip_nt_string()?; // author [unused]
 			safe_read!(handle.read_u32::<LittleEndian>())?; // addon version [unused]
 
-			self.metadata = Some(GMAMetadata {
-				name,
-				tags,
-				ignore,
-				addon_type,
-			});
+			self.metadata = Some(GMAMetadata { name, tags, ignore, addon_type });
 
 			self.entries_list_start = Some(handle.seek(SeekFrom::Current(0)).unwrap());
 
@@ -92,18 +90,14 @@ impl GMAFile {
 		Ok(&self.metadata.as_ref().unwrap())
 	}
 
-	pub fn entries(
-		&mut self,
-	) -> Result<(Arc<Vec<GMAEntry>>, Arc<HashMap<String, usize>>), GMAReadError> {
+	pub fn entries(&mut self) -> Result<(Arc<Vec<GMAEntry>>, Arc<HashMap<String, usize>>), GMAReadError> {
 		if let None = self.entries {
 			if let None = self.entries_list_start {
 				self.metadata().unwrap();
 			}
 
 			let mut handle = self.handle().map_err(|_| GMAReadError::IOError)?;
-			handle
-				.seek(SeekFrom::Start(self.entries_list_start.unwrap()))
-				.unwrap();
+			handle.seek(SeekFrom::Start(self.entries_list_start.unwrap())).unwrap();
 
 			let mut entries = Vec::new();
 			let mut entries_map = HashMap::new();
@@ -132,18 +126,11 @@ impl GMAFile {
 			self.entries_start = Some(handle.seek(SeekFrom::Current(0)).unwrap());
 		}
 
-		Ok((
-			self.entries.as_ref().unwrap().clone(),
-			self.entries_map.as_ref().unwrap().clone(),
-		))
+		Ok((self.entries.as_ref().unwrap().clone(), self.entries_map.as_ref().unwrap().clone()))
 	}
 
 	pub fn read_entry(&self, path: String) -> Option<Vec<u8>> {
-		let entry = self
-			.entries
-			.as_ref()
-			.unwrap()
-			.get(*self.entries_map.as_ref().unwrap().get(&path)?)?;
+		let entry = self.entries.as_ref().unwrap().get(*self.entries_map.as_ref().unwrap().get(&path)?)?;
 
 		let mut handle = self.handle().ok()?;
 

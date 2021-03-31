@@ -14,12 +14,7 @@ pub mod path {
 	#[cfg(target_os = "windows")]
 	pub fn normalize(path: PathBuf) -> PathBuf {
 		match dunce::canonicalize(&path) {
-			Ok(canonicalized) => PathBuf::from(
-				canonicalized
-					.to_string_lossy()
-					.to_string()
-					.replace('\\', "/"),
-			),
+			Ok(canonicalized) => PathBuf::from(canonicalized.to_string_lossy().to_string().replace('\\', "/")),
 			Err(_) => path,
 		}
 	}
@@ -98,9 +93,7 @@ pub mod path {
 		where
 			D: serde::Deserializer<'de>,
 		{
-			Ok(NormalizedPathBuf::from(
-				deserializer.deserialize_string(NormalizedPathBufVisitor)?,
-			))
+			Ok(NormalizedPathBuf::from(deserializer.deserialize_string(NormalizedPathBufVisitor)?))
 		}
 	}
 }

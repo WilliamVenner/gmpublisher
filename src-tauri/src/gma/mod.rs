@@ -1,6 +1,12 @@
 use byteorder::ReadBytesExt;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs::File, io::{BufRead, BufReader, Read, Seek, SeekFrom}, path::{Path, PathBuf}, sync::Arc};
+use std::{
+	collections::HashMap,
+	fs::File,
+	io::{BufRead, BufReader, Read, Seek, SeekFrom},
+	path::{Path, PathBuf},
+	sync::Arc,
+};
 use steamworks::PublishedFileId;
 
 pub const GMA_HEADER: &'static [u8; 4] = b"GMAD";
@@ -24,12 +30,7 @@ fn serialize_extracted_name<S>(data: &(bool, Option<String>), s: S) -> Result<S:
 where
 	S: serde::Serializer,
 {
-	s.serialize_str(
-		&data
-			.1
-			.as_ref()
-			.expect("Missing extracted name! Make sure to call metadata()"),
-	)
+	s.serialize_str(&data.1.as_ref().expect("Missing extracted name! Make sure to call metadata()"))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -118,9 +119,7 @@ impl Clone for GMAFileHandle {
 }
 impl From<BufReader<File>> for GMAFileHandle {
 	fn from(handle: BufReader<File>) -> Self {
-		GMAFileHandle {
-			inner: Some(handle),
-		}
+		GMAFileHandle { inner: Some(handle) }
 	}
 }
 impl Default for GMAFileHandle {
@@ -131,19 +130,13 @@ impl Default for GMAFileHandle {
 impl std::ops::Deref for GMAFileHandle {
 	type Target = BufReader<File>;
 	fn deref(&self) -> &Self::Target {
-		debug_assert!(
-			self.inner.is_some(),
-			"Tried to use an invalid GMA file handle!"
-		);
+		debug_assert!(self.inner.is_some(), "Tried to use an invalid GMA file handle!");
 		self.inner.as_ref().unwrap()
 	}
 }
 impl std::ops::DerefMut for GMAFileHandle {
 	fn deref_mut(&mut self) -> &mut Self::Target {
-		debug_assert!(
-			self.inner.is_some(),
-			"Tried to use an invalid GMA file handle!"
-		);
+		debug_assert!(self.inner.is_some(), "Tried to use an invalid GMA file handle!");
 		self.inner.as_mut().unwrap()
 	}
 }
@@ -205,11 +198,7 @@ pub struct GMAEntry {
 }
 impl std::fmt::Debug for GMAEntry {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("GMAEntry")
-			.field("path", &self.path)
-			.field("size", &self.size)
-			.field("crc", &self.crc)
-			.finish()
+		f.debug_struct("GMAEntry").field("path", &self.path).field("size", &self.size).field("crc", &self.crc).finish()
 	}
 }
 

@@ -1,15 +1,21 @@
-use std::{collections::HashMap, fmt::Display, path::{Path, PathBuf}, sync::Arc};
+use std::{
+	collections::HashMap,
+	path::{Path, PathBuf},
+};
 
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use steamworks::PublishedFileId;
 
-use crate::{gma::{GMAFile, GMAReadError}, main_thread_forbidden};
+use crate::{
+	gma::{GMAFile, GMAReadError},
+	main_thread_forbidden,
+};
 
 use super::PromiseCache;
 
 pub struct GMA {
 	thread_pool: ThreadPool,
-	cache: PromiseCache<HashMap<PathBuf, GMAFile>, PathBuf, Result<GMAFile, GMAReadError>>
+	cache: PromiseCache<HashMap<PathBuf, GMAFile>, PathBuf, Result<GMAFile, GMAReadError>>,
 }
 
 unsafe impl Sync for GMA {}
@@ -19,7 +25,7 @@ impl GMA {
 	pub fn init() -> GMA {
 		Self {
 			thread_pool: ThreadPoolBuilder::new().build().unwrap(),
-			cache: PromiseCache::new(HashMap::new())
+			cache: PromiseCache::new(HashMap::new()),
 		}
 	}
 
@@ -45,16 +51,16 @@ impl GMA {
 
 	pub fn get_async<P: AsRef<Path>, F>(&'static self, path: P, id: Option<PublishedFileId>, f: F)
 	where
-		F: FnOnce(&Result<GMAFile, GMAReadError>) + 'static + Send
+		F: FnOnce(&Result<GMAFile, GMAReadError>) + 'static + Send,
 	{
 		let path = path.as_ref();
 		match self.cache.read().get(path) {
-		    Some(gma) => {
+			Some(gma) => {
 				let mut gma = gma.clone();
 				gma.id = id;
 				f(&Ok(gma));
-			},
-		    None => {
+			}
+			None => {
 				let path = path.to_path_buf();
 				if self.cache.task(path.clone(), f) {
 					self.thread_pool.spawn(move || {
