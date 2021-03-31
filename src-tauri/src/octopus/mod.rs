@@ -22,10 +22,6 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 pub use self::{gma::GMA, steamworks::Steamworks};
 
-lazy_static! {
-	static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
-}
-
 #[macro_export]
 macro_rules! main_thread_forbidden {
 	() => {
@@ -43,7 +39,7 @@ pub type PromiseHashNullableCache<K, V> = PromiseCache<HashMap<K, V>, K, Option<
 
 pub struct PromiseCache<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> {
 	cache: RelaxedRwLock<Cache>,
-	promises: RwLock<HashMap<K, VariableSingleton<Box<dyn FnOnce(&mut Args) + Send + 'static>>>>,
+	promises: RwLock<HashMap<K, VariableSingleton<Box<dyn FnOnce(&Args) + Send + 'static>>>>,
 }
 impl<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> std::ops::Deref for PromiseCache<Cache, K, Args> {
 	type Target = RelaxedRwLock<Cache>;
@@ -66,7 +62,7 @@ impl<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Se
 
 	pub fn task<F>(&self, k: K, f: F) -> bool
 	where
-		F: FnOnce(&mut Args) + Send + 'static,
+		F: FnOnce(&Args) + Send + 'static,
 	{
 		use VariableSingleton::*;
 		match self.promises.write().entry(k.clone()) {
@@ -84,7 +80,7 @@ impl<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Se
 		}
 	}
 
-	pub fn promises(&self, k: &K) -> Option<VariableSingleton<Box<dyn FnOnce(&mut Args) + Send + 'static>>> {
+	pub fn promises(&self, k: &K) -> Option<VariableSingleton<Box<dyn FnOnce(&Args) + Send + 'static>>> {
 		self.promises.write().remove(k)
 	}
 
@@ -93,9 +89,9 @@ impl<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Se
 		use VariableSingleton::*;
 		if let Some(promises) = self.promises(k) {
 			match promises {
-				Singleton(f) => f(&mut v),
+				Singleton(f) => f(&v),
 				Variable(vec) => {
-					vec.into_par_iter().for_each_with(v, |v, f| f(v));
+					vec.into_par_iter().for_each_with(v, |v, f| f(v as &Args));
 				}
 			}
 		}
@@ -108,6 +104,7 @@ pub struct AtomicRefSome<'a, V> {
 impl<V> std::ops::Deref for AtomicRefSome<'_, V> {
 	type Target = V;
 	fn deref(&self) -> &Self::Target {
+		debug_assert!(self.inner.as_ref().is_some(), "Steamworks has not connected yet");
 		self.inner.as_ref().unwrap()
 	}
 }
@@ -159,7 +156,7 @@ impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
 			let begin_ref = begin.clone();
 			let w_ref = w.clone();
 			let r_ref = r.clone();
-			THREAD_POOL.spawn(move || loop {
+			std::thread::spawn(move || loop {
 				let f = match rx.try_recv() {
 					Ok(f) => f,
 					Err(err) => {

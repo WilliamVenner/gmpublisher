@@ -67,6 +67,8 @@ pub struct SteamUser {
 	steamid: SteamId,
 	name: String,
 	avatar: Option<crate::Base64Image>,
+
+	dead: bool,
 }
 impl<Manager: steamworks::Manager> From<Friend<Manager>> for SteamUser {
 	fn from(friend: Friend<Manager>) -> Self {
@@ -74,6 +76,7 @@ impl<Manager: steamworks::Manager> From<Friend<Manager>> for SteamUser {
 			steamid: friend.id(),
 			name: friend.name(),
 			avatar: friend.medium_avatar().map(|buf| crate::base64_image::Base64Image::new(buf, 64, 64)),
+			dead: false, // TODO
 		}
 	}
 }
@@ -173,7 +176,7 @@ pub struct Steamworks {
 	interface: AtomicRefCell<Option<Interface>>,
 	thread_pool: ThreadPool,
 
-	users: PromiseHashNullableCache<SteamId, SteamUser>,
+	users: PromiseHashCache<SteamId, SteamUser>,
 	workshop: PromiseHashCache<PublishedFileId, WorkshopItem>,
 }
 
@@ -273,7 +276,7 @@ impl Steamworks {
 
 	// Users //
 
-	pub fn fetch_user(&'static self, steamid: SteamId) -> Option<SteamUser> {
+	pub fn fetch_user(&'static self, steamid: SteamId) -> SteamUser {
 		main_thread_forbidden!();
 
 		if self.client().friends().request_user_information(steamid, false) {
@@ -292,10 +295,10 @@ impl Steamworks {
 			});
 		}
 
-		Some(user)
+		user
 	}
 
-	pub fn fetch_users(&'static self, steamids: Vec<SteamId>) -> Vec<Option<SteamUser>> {
+	pub fn fetch_users(&'static self, steamids: Vec<SteamId>) -> Vec<SteamUser> {
 		self.users.begin();
 		let mut users = Vec::with_capacity(steamids.len());
 		steamids.into_par_iter().map(|steamid| self.fetch_user(steamid)).collect_into_vec(&mut users);
@@ -305,10 +308,10 @@ impl Steamworks {
 
 	pub fn fetch_user_async<F>(&'static self, steamid: SteamId, f: F)
 	where
-		F: FnOnce(&mut Option<SteamUser>) + 'static + Send,
+		F: FnOnce(&SteamUser) + 'static + Send,
 	{
 		match self.users.read().get(&steamid) {
-			Some(user) => f(&mut Some(user.clone())),
+			Some(user) => f(user),
 			None => {
 				if self.users.task(steamid, f) {
 					if self.client().friends().request_user_information(steamid, false) {
@@ -325,7 +328,7 @@ impl Steamworks {
 
 	pub fn fetch_users_async<F>(&'static self, steamids: Vec<SteamId>, f: F)
 	where
-		F: FnOnce(Vec<Option<SteamUser>>) + 'static + Send,
+		F: FnOnce(Vec<SteamUser>) + 'static + Send,
 	{
 		self.thread_pool.spawn(move || f(self.fetch_users(steamids)));
 	}
@@ -439,8 +442,9 @@ impl Steamworks {
 		if !item.dead {
 			if let None = item.owner {
 				if let Some(steamid) = item.steamid {
-					item.owner = self.fetch_user(steamid);
-					if item.owner.is_some() {
+					let owner = self.fetch_user(steamid);
+					if !owner.dead {
+						item.owner = Some(owner);
 						let item = item.clone();
 						crate::STEAMWORKS.workshop.write(move |mut workshop| {
 							workshop.insert(id, item);
@@ -454,10 +458,10 @@ impl Steamworks {
 
 	pub fn fetch_workshop_item_async<F>(&'static self, item: PublishedFileId, f: F)
 	where
-		F: FnOnce(&mut WorkshopItem) + 'static + Send,
+		F: FnOnce(&WorkshopItem) + 'static + Send,
 	{
 		match self.workshop.read().get(&item) {
-			Some(item) => f(&mut item.clone()),
+			Some(item) => f(&item),
 			None => {
 				if self.workshop.task(item, f) {
 					self.thread_pool.spawn(move || {
@@ -477,11 +481,11 @@ impl Steamworks {
 
 	pub fn fetch_workshop_item_with_uploader_async<F>(&'static self, item: PublishedFileId, f: F)
 	where
-		F: FnOnce(&mut WorkshopItem) + 'static + Send,
+		F: FnOnce(&WorkshopItem) + 'static + Send,
 	{
 		match self.workshop.read().get(&item) {
 			Some(item) => if let Some(_) = item.owner {
-				f(&mut item.clone());
+				f(&item.clone());
 			},
 			None => {
 				self.thread_pool.spawn(move || {

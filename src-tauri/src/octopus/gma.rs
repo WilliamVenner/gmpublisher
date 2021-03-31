@@ -45,14 +45,14 @@ impl GMA {
 
 	pub fn get_async<P: AsRef<Path>, F>(&'static self, path: P, id: Option<PublishedFileId>, f: F)
 	where
-		F: FnOnce(&mut Result<GMAFile, GMAReadError>) + 'static + Send
+		F: FnOnce(&Result<GMAFile, GMAReadError>) + 'static + Send
 	{
 		let path = path.as_ref();
 		match self.cache.read().get(path) {
 		    Some(gma) => {
 				let mut gma = gma.clone();
 				gma.id = id;
-				f(&mut Ok(gma));
+				f(&Ok(gma));
 			},
 		    None => {
 				let path = path.to_path_buf();
