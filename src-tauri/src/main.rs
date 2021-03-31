@@ -14,8 +14,8 @@ pub(crate) use base64_image::Base64Image;
 
 pub(crate) mod octopus;
 lazy_static! {
-	static ref STEAMWORKS: octopus::Steamworks = octopus::Steamworks::init();
-	static ref GMA: octopus::GMA = octopus::GMA::init();
+	pub(crate) static ref STEAMWORKS: octopus::Steamworks = octopus::Steamworks::init();
+	pub(crate) static ref GMA: octopus::GMA = octopus::GMA::init();
 }
 
 pub(crate) mod appdata;
@@ -30,6 +30,11 @@ fn main() {
 	lazy_static::initialize(&APP_DATA);
 	lazy_static::initialize(&STEAMWORKS);
 	lazy_static::initialize(&GMA);
+
+	std::thread::spawn(|| {
+		STEAMWORKS.client_wait();
+		STEAMWORKS.fetch_collection_items_async(steamworks::PublishedFileId(685235367), |items| println!("{:#?}", items));
+	});
 
 	tauri::AppBuilder::default()
 		.create_webview("gmpublisher".to_string(), tauri::WindowUrl::App, |args| {

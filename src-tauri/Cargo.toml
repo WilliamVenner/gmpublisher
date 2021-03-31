@@ -22,8 +22,9 @@ tauri = { path = "../../tauri/tauri", features =["api-all"]}
 serde_json = "1.0"
 serde = { version = "1.0", features = [ "derive", "rc" ] }
 steamworks = { git = "https://github.com/WilliamVenner/steamworks-rs.git", branch = "master", features = [ "serde" ] }
+#steamworks = { path = "../../steamworks-rs", features = [ "serde" ] }
 rayon = "1.5.0"
-parking_lot = "0.11"
+parking_lot = { version = "0.11", features = [ "serde" ] }
 xz2 = "0.1.6"
 indexmap = "1.6.2"
 dunce = "1.0.1"
@@ -39,6 +40,7 @@ atomic_refcell = "0.1.7"
 thiserror = "1.0.24"
 chardetng = "0.1.10"
 byteorder = "1.4.3"
+app_dirs = "1.2.1"
 
 [features]
 default = [ "custom-protocol" ]

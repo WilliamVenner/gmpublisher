@@ -1,14 +1,10 @@
 use rayon::{
+	prelude::*,
 	iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator},
 	ThreadPool, ThreadPoolBuilder,
 };
 use serde::Serialize;
-use std::{
-	collections::HashMap,
-	mem::MaybeUninit,
-	path::PathBuf,
-	sync::{atomic::AtomicBool, Arc},
-};
+use std::{collections::HashMap, mem::MaybeUninit, path::PathBuf, sync::{Arc, atomic::{AtomicBool, AtomicUsize}}};
 
 use steamworks::{AccountId, Callback, CallbackHandle, Client, ClientManager, Friend, PublishedFileId, QueryResult, QueryResults, SingleClient, SteamError, SteamId};
 
@@ -178,6 +174,7 @@ pub struct Steamworks {
 
 	users: PromiseHashCache<SteamId, SteamUser>,
 	workshop: PromiseHashCache<PublishedFileId, WorkshopItem>,
+	collections: PromiseHashCache<PublishedFileId, Option<Vec<PublishedFileId>>>,
 }
 
 unsafe impl Sync for Steamworks {}
@@ -495,6 +492,62 @@ impl Steamworks {
 		}
 	}
 
+	pub fn fetch_collection_items(&'static self, collection: PublishedFileId) -> Option<Vec<PublishedFileId>> {
+		main_thread_forbidden!();
+
+		let response = Arc::new(AtomicRefCell::new(None));
+		{
+			let response = response.clone();
+			self.client().ugc().query_item(collection).unwrap().include_children(true).fetch(move |query: Result<QueryResults<'_>, SteamError>| {
+				if let Ok(results) = query {
+					if let Some(result) = results.get(0) {
+						if matches!(result.file_type, steamworks::FileType::Collection) {
+							if let Some(children) = results.get_children(0) {
+								*response.borrow_mut() = Some(Some(children));
+								return;
+							}
+						}
+					}
+				}
+				*response.borrow_mut() = Some(None);
+			});
+		}
+		
+		loop {
+			if let Ok(response) = response.try_borrow() {
+				if response.is_some() {
+					break;
+				}
+			}
+			self.run_callbacks();
+		}
+
+		let children = Arc::try_unwrap(response).unwrap().into_inner().unwrap();
+
+		if children.is_some() {
+			let children = Some(children.clone().unwrap());
+			self.collections.write(move |mut collections| {
+				collections.insert(collection, children);
+			});
+		}
+
+		children
+	}
+
+	pub fn fetch_collection_items_async<F>(&'static self, collection: PublishedFileId, f: F)
+	where
+		F: FnOnce(&Option<Vec<PublishedFileId>>) + 'static + Send,
+	{
+		match self.collections.read().get(&collection) {
+		    Some(cached) => f(cached),
+		    None => if self.collections.task(collection, f) {
+				self.thread_pool.spawn(move || {
+					crate::STEAMWORKS.collections.execute(&collection, self.fetch_collection_items(collection));
+				});
+			}
+		}
+	}
+
 	// Static Steamworks //
 
 	pub fn init() -> Steamworks {
@@ -504,6 +557,7 @@ impl Steamworks {
 			thread_pool: ThreadPoolBuilder::new().build().unwrap(),
 			users: PromiseCache::new(HashMap::new()),
 			workshop: PromiseCache::new(HashMap::new()),
+			collections: PromiseCache::new(HashMap::new()),
 		}
 	}
 
