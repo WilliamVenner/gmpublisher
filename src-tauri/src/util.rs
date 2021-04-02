@@ -1,4 +1,4 @@
-use std::{collections::HashSet, io::{Seek, SeekFrom}};
+use std::{collections::HashSet, io::{BufRead, BufReader, BufWriter, ErrorKind, Read, Seek, SeekFrom, Write}};
 use std::hash::Hash;
 use std::rc::{Rc, Weak};
 
@@ -183,4 +183,22 @@ pub fn stream_len<F: Seek>(f: &mut F) -> Result<u64, std::io::Error> {
 	}
 
 	Ok(len)
+}
+
+pub fn stream_bytes<R: Read, W: Write>(r: &mut BufReader<R>, w: &mut BufWriter<W>, mut bytes: usize) -> Result<(), std::io::Error> {
+	Ok(loop {
+		match r.fill_buf() {
+			Ok([]) => break,
+			Ok(data) if data.len() >= bytes => {
+				w.write_all(&data[..bytes])?;
+				break;
+			}
+			Ok(data) => {
+				w.write_all(data)?;
+				bytes -= data.len();
+			}
+			Err(e) if e.kind() == ErrorKind::Interrupted => {},
+			Err(e) => return Err(e),
+		}
+	})
 }

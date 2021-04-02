@@ -1,13 +1,14 @@
-use std::{collections::HashMap, fmt::Display, fs::File, io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write}, path::PathBuf, time::SystemTime};
+use std::{collections::HashMap, fmt::Display, fs::File, io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write}, path::PathBuf, sync::Arc, thread::ThreadId, time::SystemTime};
 
 use byteorder::ReadBytesExt;
+use lazy_static::lazy_static;
 use steamworks::PublishedFileId;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
 use crate::main_thread_forbidden;
 
-use self::read::GMAReadHandle;
+use self::{read::GMAReadHandle, write::GMAWriteHandle};
 
 const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 
@@ -99,7 +100,6 @@ impl Serialize for GMAEntriesMap {
 }
 
 #[derive(Debug, Clone, Serialize)]
-#[serde(remote = "GMAFile")]
 pub struct GMAFile {
 	pub path: PathBuf,
 	pub size: u64,
@@ -117,8 +117,7 @@ pub struct GMAFile {
 	#[serde(skip)]
 	pub version: u8,
 
-	#[serde(getter = "GMAFile::extracted_name")]
-	extracted_name: String
+	extracted_name: String,
 }
 
 impl GMAFile {
@@ -135,7 +134,7 @@ impl GMAFile {
 		    entries: None,
 		    pointers: GMAFilePointers::default(),
 			version: 0,
-			extracted_name: String::new()
+			extracted_name: String::new(),
 		};
 
 		if gma.size == 0 {
@@ -154,25 +153,28 @@ impl GMAFile {
 
 		gma.pointers.metadata = f.seek(SeekFrom::Current(0))?;
 
+		gma.compute_extracted_name();
+
 		Ok(gma)
 	}
 
 	pub fn set_ws_id(&mut self, id: PublishedFileId) {
 		self.id = Some(id);
+		self.compute_extracted_name();
 	}
 
-	pub fn extracted_name(&self) -> String {
+	fn compute_extracted_name(&mut self) {
 		let mut extracted_name = String::new();
 		let mut underscored = false;
 
 		{
 			let name = match self.metadata() {
-				Ok(metadata) => match metadata {
-					GMAMetadata::Legacy(LegacyGMAMetadata { title, .. }) | GMAMetadata::Standard(StandardGMAMetadata { title, .. }) => title.clone(),
+				Ok(_) => match self.metadata.as_ref().unwrap() {
+					GMAMetadata::Legacy(LegacyGMAMetadata { title, .. }) | GMAMetadata::Standard(StandardGMAMetadata { title, .. }) => title.to_lowercase(),
 				},
 				Err(_) => {
 					match self.path.file_name() {
-						Some(file_name) => file_name.to_string_lossy().to_string(),
+						Some(file_name) => file_name.to_string_lossy().to_lowercase(),
 						None => match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
 							Ok(unix) => format!("gmpublisher_extracted_{}", unix.as_secs()),
 							Err(_) => "gmpublisher_extracted".into()
@@ -183,14 +185,16 @@ impl GMAFile {
 
 			extracted_name.reserve(name.len());
 
+			let mut first = true;
 			for char in name.chars() {
 				if char.is_alphanumeric() {
 					underscored = false;
 					extracted_name.push(char);
-				} else if !underscored {
+				} else if !underscored && !first {
 					underscored = true;
 					extracted_name.push('_');
 				}
+				first = false;
 			}
 		}
 
@@ -208,11 +212,7 @@ impl GMAFile {
 			extracted_name.pop();
 		}
 
-		extracted_name
-	}
-
-	fn extracted_name_serde(&self, _: String) -> String {
-		self.extracted_name()
+		self.extracted_name = extracted_name;
 	}
 
 	pub fn read(&self) -> Result<GMAReadHandle<File>, GMAError> {
@@ -222,21 +222,6 @@ impl GMAFile {
 	pub fn write(&self) -> Result<GMAWriteHandle<File>, GMAError> {
 		Ok(GMAWriteHandle { inner: BufWriter::new(File::create(&self.path)?) })
 	}
-}
-
-pub struct GMAWriteHandle<W: Write + Seek> {
-	inner: BufWriter<W>
-}
-impl<W: Write + Seek> std::ops::Deref for GMAWriteHandle<W> {
-    type Target = BufWriter<W>;
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-impl<W: Write + Seek> std::ops::DerefMut for GMAWriteHandle<W> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
 }
 
 pub mod read;

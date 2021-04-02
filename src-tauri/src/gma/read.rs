@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::{BufRead, BufReader, Read, Seek, SeekFrom}};
+use std::{collections::HashMap, fs::File, io::{BufRead, BufReader, Read, Seek, SeekFrom}};
 
 use byteorder::{LittleEndian, ReadBytesExt};
 
@@ -50,11 +50,11 @@ impl<R: Read + Seek> std::ops::DerefMut for GMAReadHandle<R> {
 }
 
 impl GMAFile {
-	pub fn metadata(&mut self) -> Result<&GMAMetadata, GMAError> {
+	pub fn metadata(&mut self) -> Result<Option<GMAReadHandle<File>>, GMAError> {
 		main_thread_forbidden!();
 
 		if let Some(ref metadata) = self.metadata {
-			Ok(metadata)
+			Ok(None)
 		} else {
 			let mut handle = self.read()?;
 			handle.seek(SeekFrom::Start(self.pointers.metadata))?;
@@ -85,19 +85,22 @@ impl GMAFile {
 
 			self.pointers.entries_list = handle.seek(SeekFrom::Current(0))?;
 
-			Ok(self.metadata.as_ref().unwrap())
+			self.compute_extracted_name();
+
+			Ok(Some(handle))
 		}
 	}
 
-	pub fn entries(&mut self) -> Result<&GMAEntriesMap, GMAError> {
+	pub fn entries(&mut self) -> Result<Option<GMAReadHandle<File>>, GMAError> {
 		main_thread_forbidden!();
 		
 		if let Some(ref entries) = self.entries {
-			Ok(entries)
+			Ok(None)
 		} else {
-			self.metadata()?;
-
-			let mut handle = self.read()?;
+			let mut handle = match self.metadata()? {
+				Some(handle) => handle,
+				None => self.read()?
+			};
 			handle.seek(SeekFrom::Start(self.pointers.entries_list))?;
 
 			let mut entries = GMAEntriesMap { inner: HashMap::new() };
@@ -123,7 +126,7 @@ impl GMAFile {
 			self.entries = Some(entries);
 			self.pointers.entries = handle.seek(SeekFrom::Current(0))?;
 
-			Ok(&self.entries.as_ref().unwrap())
+			Ok(Some(handle))
 		}
 	}
 }

@@ -2,7 +2,8 @@
 
 pub(crate) const GMOD_APP_ID: AppId = AppId(4000);
 
-use std::{cell::RefCell, mem::MaybeUninit, sync::atomic::AtomicBool};
+use std::{cell::RefCell, fs::File, mem::MaybeUninit, path::PathBuf, sync::atomic::AtomicBool};
+use gma::extract::ExtractDestination;
 use tauri::{ApplicationExt, WebviewBuilderExt, WebviewDispatcher, WebviewManager};
 
 use lazy_static::lazy_static;
@@ -121,10 +122,24 @@ fn main() {
 	lazy_static::initialize(&GMA);
 
 	std::thread::spawn(move || {
-		std::thread::sleep(std::time::Duration::from_secs(5));
-		let downloads = downloads!();
-		downloads.download(vec![PublishedFileId(2436880817)]);
-		downloads.start();
+		std::thread::sleep(std::time::Duration::from_secs(1));
+		let now = std::time::Instant::now();
+
+		let path = PathBuf::from(r#"D:\Steam\steamapps\common\GarrysMod\GarrysMod\addons\[lw]_bmw_pack_1400113491.gma"#);
+
+		let mut gma = GMAFile::open(path).unwrap();
+		println!("{:?}", gma.extract(ExtractDestination::Temp, &transaction!()));
+
+		println!("{:?}ms", now.elapsed().as_millis());
+
+		let now = std::time::Instant::now();
+
+		let path = PathBuf::from(r#"D:\Steam\steamapps\common\GarrysMod\GarrysMod\addons\[lw]_bmw_pack_1400113491.gma"#);
+
+		let mut gma = GMAFile::open(path).unwrap();
+		println!("{:?}", gma.extract(ExtractDestination::Temp, &transaction!()));
+
+		println!("{:?}ms", now.elapsed().as_millis());
 	});
 
 	tauri::AppBuilder::default()
