@@ -9,7 +9,7 @@ use crate::webview;
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use tauri::WebviewManager;
+use crate::GMOD_APP_ID;
 
 const APP_INFO: app_dirs::AppInfo = app_dirs::AppInfo {
 	name: "gmpublisher",
@@ -90,10 +90,25 @@ impl AppData {
 	pub(crate) fn send(&self) {
 		webview!().emit("UpdateAppData", Some(self)).unwrap();
 	}
+
+	pub fn gmod(&self) -> Option<PathBuf> {
+		if let Some(ref gmod) = self.settings.read().gmod {
+			if gmod.is_dir() && gmod.exists() {
+				return Some(gmod.clone());
+			}
+		}
+		
+		let gmod: PathBuf = steamworks!().client().apps().app_install_dir(GMOD_APP_ID).into();
+		if gmod.is_dir() && gmod.exists() {
+			Some(gmod)
+		} else {
+			None
+		}
+	}
 }
 
-#[tauri::command(with_manager)]
-pub(crate) fn update_settings(mgr: WebviewManager, mut settings: Settings) {
+#[tauri::command]
+pub(crate) fn update_settings(mut settings: Settings) {
 	if settings.sanitize() {
 		settings.save().ok();
 		*crate::APP_DATA.settings.write() = settings;
