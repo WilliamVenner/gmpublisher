@@ -16,6 +16,7 @@ tauri-build = { path = "../../tauri/core/tauri-build", features = [ "codegen" ] 
 bindgen = "0.57.0"
 
 [dependencies]
+turbonone = { path = "../../turbonone" }
 #tauri = { git = "https://github.com/tauri-apps/tauri", features = [ "api-all" ] }
 tauri = { path = "../../tauri/tauri", features =["api-all"]}
 #tauri = { git = "https://github.com/williamvenner/tauri", features =["api-all"], branch = "fix/slow_dev_builds" }
@@ -35,7 +36,6 @@ anyhow = "1.0.38"
 image = "0.23.13"
 base64 = "0.13.0"
 rfd = "0.2.2"
-threadpool = "1.8.1"
 atomic_refcell = "0.1.7"
 thiserror = "1.0.24"
 chardetng = "0.1.10"
