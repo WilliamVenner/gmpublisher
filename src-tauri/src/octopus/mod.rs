@@ -25,7 +25,7 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 pub use self::{gma::GMA, steamworks::Steamworks};
 
 lazy_static! {
-	pub(crate) static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
+	pub static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
 }
 
 pub enum VariableSingleton<T> {

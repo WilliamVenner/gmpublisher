@@ -17,8 +17,8 @@ fn progress_as_int(progress: f64) -> u16 {
 }
 
 #[derive(Debug)]
-pub(crate) struct TransactionInner {
-	pub(crate) id: usize,
+pub struct TransactionInner {
+	pub id: usize,
 	aborted: AtomicBool
 }
 impl TransactionInner {
@@ -30,15 +30,15 @@ impl TransactionInner {
 		self.aborted.store(true, Ordering::Release);
 	}
 
-	pub(crate) fn data<D: Serialize>(&self, data: D) {
+	pub fn data<D: Serialize>(&self, data: D) {
 		self.emit("TransactionData", data);
 	}
 
-	pub(crate) fn status<S: AsRef<str> + Serialize>(&self, status: S) {
+	pub fn status<S: AsRef<str> + Serialize>(&self, status: S) {
 		self.emit("TransactionStatus", status)
 	}
 
-	pub(crate) fn progress(&self, progress: f64) {
+	pub fn progress(&self, progress: f64) {
 		if self.aborted() {
 			dprintln!("Tried to progress an aborted transaction!");
 		} else {
@@ -46,7 +46,7 @@ impl TransactionInner {
 		}
 	}
 
-	pub(crate) fn progress_incr(&self, progress: f64) {
+	pub fn progress_incr(&self, progress: f64) {
 		if self.aborted() {
 			dprintln!("Tried to progress an aborted transaction!");
 		} else {
@@ -54,21 +54,21 @@ impl TransactionInner {
 		}
 	}
 
-	pub(crate) fn error<S: AsRef<str> + Serialize>(&self, error: S) {
+	pub fn error<S: AsRef<str> + Serialize>(&self, error: S) {
 		self.emit("TransactionError", error);
 	}
 
-	pub(crate) fn finished<D: Serialize>(&self, data: Option<D>) {
+	pub fn finished<D: Serialize>(&self, data: Option<D>) {
 		debug_assert!(!self.aborted(), "Tried to finish an aborted transaction!");
 		self.abort();
 		self.emit("TransactionFinished", data);
 	}
 
-	pub(crate) fn cancel(&self) {
+	pub fn cancel(&self) {
 		self.abort();
 	}
 
-	pub(crate) fn aborted(&self) -> bool {
+	pub fn aborted(&self) -> bool {
 		self.aborted.load(Ordering::Acquire)
 	}
 }
@@ -88,8 +88,8 @@ impl serde::Serialize for TransactionInner {
     }
 }
 
-pub(crate) type Transaction = Arc<TransactionInner>;
-pub(crate) fn new() -> Transaction {
+pub type Transaction = Arc<TransactionInner>;
+pub fn new() -> Transaction {
 	main_thread_forbidden!();
 
 	let mut transaction = TransactionInner {

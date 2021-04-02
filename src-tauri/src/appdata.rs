@@ -25,12 +25,12 @@ fn settings_path() -> PathBuf {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct Settings {
-	pub(crate) gmod: Option<PathBuf>,
-	pub(crate) window_size: (f64, f64),
-	pub(crate) window_maximized: bool,
-	pub(crate) destinations: Vec<PathBuf>,
-	pub(crate) create_folder_on_extract: bool,
+pub struct Settings {
+	pub gmod: Option<PathBuf>,
+	pub window_size: (f64, f64),
+	pub window_maximized: bool,
+	pub destinations: Vec<PathBuf>,
+	pub create_folder_on_extract: bool,
 }
 impl Default for Settings {
 	fn default() -> Self {
@@ -44,7 +44,7 @@ impl Default for Settings {
 	}
 }
 impl Settings {
-	pub(crate) fn init() -> Settings {
+	pub fn init() -> Settings {
 		match Settings::load() {
 			Ok(settings) => settings,
 			Err(_) => Settings::default(),
@@ -55,11 +55,11 @@ impl Settings {
 		Ok(serde_json::de::from_reader(BufReader::new(File::open(&*APP_SETTINGS_PATH)?))?)
 	}
 
-	pub(crate) fn save(&self) -> Result<(), anyhow::Error> {
+	pub fn save(&self) -> Result<(), anyhow::Error> {
 		Ok(serde_json::ser::to_writer(BufWriter::new(File::open(&*APP_SETTINGS_PATH)?), self)?)
 	}
 
-	pub(crate) fn sanitize(&mut self) -> bool {
+	pub fn sanitize(&mut self) -> bool {
 		// TODO replace with drain_filter when it's stable
 		let mut i = 0;
 		while i != self.destinations.len() {
@@ -77,17 +77,17 @@ impl Settings {
 }
 
 #[derive(Debug, Serialize)]
-pub(crate) struct AppData {
-	pub(crate) settings: RwLock<Settings>,
+pub struct AppData {
+	pub settings: RwLock<Settings>,
 }
 impl AppData {
-	pub(crate) fn init() -> Self {
+	pub fn init() -> Self {
 		Self {
 			settings: RwLock::new(Settings::init()),
 		}
 	}
 
-	pub(crate) fn send(&self) {
+	pub fn send(&self) {
 		webview!().emit("UpdateAppData", Some(self)).unwrap();
 	}
 
@@ -108,14 +108,14 @@ impl AppData {
 }
 
 #[tauri::command]
-pub(crate) fn update_settings(mut settings: Settings) {
+pub fn update_settings(mut settings: Settings) {
 	if settings.sanitize() {
 		settings.save().ok();
 		*crate::APP_DATA.settings.write() = settings;
 	}
 }
 
-pub(crate) struct Plugin;
+pub struct Plugin;
 impl<Application: tauri::ApplicationExt + 'static> tauri::plugin::Plugin<Application> for Plugin {
 	fn initialization_script(&self) -> Option<String> {
 		Some(

@@ -1,6 +1,6 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
-pub(crate) const GMOD_APP_ID: AppId = AppId(4000);
+pub const GMOD_APP_ID: AppId = AppId(4000);
 
 use std::{cell::RefCell, fs::File, mem::MaybeUninit, path::PathBuf, sync::atomic::AtomicBool};
 use gma::extract::ExtractDestination;
@@ -11,23 +11,23 @@ use steamworks::{AppId, PublishedFileId};
 
 #[macro_use] extern crate turbonone;
 
-pub(crate) mod transactions;
+pub mod transactions;
 
 #[macro_use]
-pub(crate) mod util;
-pub(crate) use util::*;
+pub mod util;
+pub use util::*;
 
-pub(crate) mod gma;
-pub(crate) use gma::*;
+pub mod gma;
+pub use gma::*;
 
-pub(crate) mod base64_image;
-pub(crate) use base64_image::Base64Image;
+pub mod base64_image;
+pub use base64_image::Base64Image;
 
-pub(crate) mod octopus;
-pub(crate) use octopus::steamworks::WorkshopItem;
+pub mod octopus;
+pub use octopus::steamworks::WorkshopItem;
 lazy_static! {
-	pub(crate) static ref STEAMWORKS: octopus::Steamworks = octopus::Steamworks::init();
-	pub(crate) static ref GMA: octopus::GMA = octopus::GMA::init();
+	pub static ref STEAMWORKS: octopus::Steamworks = octopus::Steamworks::init();
+	pub static ref GMA: octopus::GMA = octopus::GMA::init();
 }
 #[macro_export]
 macro_rules! steamworks {
@@ -48,10 +48,10 @@ macro_rules! gma {
 	};
 }
 
-pub(crate) mod appdata;
-pub(crate) use appdata::AppData;
+pub mod appdata;
+pub use appdata::AppData;
 lazy_static! {
-	pub(crate) static ref APP_DATA: AppData = AppData::init();
+	pub static ref APP_DATA: AppData = AppData::init();
 }
 #[macro_export]
 macro_rules! app_data {
@@ -60,9 +60,9 @@ macro_rules! app_data {
 	};
 }
 
-pub(crate) struct WrappedWebview<Application: ApplicationExt + 'static> {
-	pub(crate) setup: AtomicBool,
-	pub(crate) inner: RefCell<MaybeUninit<WebviewDispatcher<Application::Dispatcher>>>,
+pub struct WrappedWebview<Application: ApplicationExt + 'static> {
+	pub setup: AtomicBool,
+	pub inner: RefCell<MaybeUninit<WebviewDispatcher<Application::Dispatcher>>>,
 }
 unsafe impl<Application: ApplicationExt + 'static> Send for WrappedWebview<Application> {}
 unsafe impl<Application: ApplicationExt + 'static> Sync for WrappedWebview<Application> {}
@@ -83,7 +83,7 @@ impl<Application: ApplicationExt + 'static> WrappedWebview<Application> {
 	}
 }
 lazy_static! {
-	pub(crate) static ref WEBVIEW: WrappedWebview<tauri::flavors::Wry> = WrappedWebview::pending();
+	pub static ref WEBVIEW: WrappedWebview<tauri::flavors::Wry> = WrappedWebview::pending();
 }
 #[macro_export]
 macro_rules! webview {

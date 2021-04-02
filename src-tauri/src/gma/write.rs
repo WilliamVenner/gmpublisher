@@ -1,7 +1,7 @@
 use std::io::{BufWriter, Seek, Write};
 
 pub struct GMAWriteHandle<W: Write + Seek> {
-	pub(crate) inner: BufWriter<W>
+	pub inner: BufWriter<W>
 }
 impl<W: Write + Seek> std::ops::Deref for GMAWriteHandle<W> {
     type Target = BufWriter<W>;

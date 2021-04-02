@@ -10,7 +10,7 @@ macro_rules! safe_read {
 	};
 }
 pub struct GMAReadHandle<R: Read + Seek> {
-	pub(crate) inner: BufReader<R>,
+	pub inner: BufReader<R>,
 }
 impl<R: Read + Seek> GMAReadHandle<R> {
 	pub fn read_nt_string(&mut self) -> Result<String, GMAError> {
@@ -32,7 +32,7 @@ impl<R: Read + Seek> GMAReadHandle<R> {
 		})
 	}
 	
-	pub(crate) fn skip_nt_string(&mut self) -> Result<usize, GMAError> {
+	pub fn skip_nt_string(&mut self) -> Result<usize, GMAError> {
 		let mut buf = vec![];
 		safe_read!(self.read_until(0, &mut buf))
 	}

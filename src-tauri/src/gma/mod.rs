@@ -16,21 +16,15 @@ const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 pub enum GMAError {
 	IOError,
 	InvalidHeader,
-	FormatError,
 	EntryNotFound,
 }
 impl Display for GMAError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		use GMAError::*;
 		match self {
-			IOError => write!(
-				f,
-				"An error occured opening or writing to a file. Make sure you have the appropriate permissions for this file and it is not in use by another process."
-			),
-			InvalidHeader => write!(f, "This doesn't appear to be a valid GMA file."),
-			UnsupportedVersion => write!(f, "This GMA file uses an unsupported version of the format - sorry!"),
-			FormatError => write!(f, "This GMA file appears to be corrupted or of an unrecognised format or version of the format."),
-			EntryNotFound => write!(f, "The entry could not be found in this GMA file."),
+			IOError => write!(f, "ERR_GMA_IO_ERROR"),
+			InvalidHeader => write!(f, "ERR_GMA_INVALID_HEADER"),
+			EntryNotFound => write!(f, "ERR_GMA_ENTRY_NOT_FOUND"),
 		}
 	}
 }
