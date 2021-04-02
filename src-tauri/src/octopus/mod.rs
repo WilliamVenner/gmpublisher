@@ -1,5 +1,7 @@
 // Utility library for shared concurrency between JS and Rust.
 
+// TODO https://pkolaczk.github.io/multiple-threadpools-rust/
+
 pub mod gma;
 pub mod steamworks;
 
@@ -14,17 +16,16 @@ use std::{
 };
 
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
+use lazy_static::lazy_static;
 use parking_lot::RwLock;
+use rayon::{ThreadPool, ThreadPoolBuilder};
 
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 pub use self::{gma::GMA, steamworks::Steamworks};
 
-#[macro_export]
-macro_rules! main_thread_forbidden {
-	() => {
-		debug_assert_ne!(std::thread::current().name(), Some("main"), "This should never be called from the main thread");
-	};
+lazy_static! {
+	pub(crate) static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
 }
 
 pub enum VariableSingleton<T> {

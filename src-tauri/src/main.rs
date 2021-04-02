@@ -1,12 +1,18 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
-use std::{cell::RefCell, mem::MaybeUninit, sync::atomic::AtomicBool};
+pub(crate) const GMOD_APP_ID: AppId = AppId(4000);
 
-use lazy_static::lazy_static;
+use std::{cell::RefCell, mem::MaybeUninit, sync::atomic::AtomicBool};
 use tauri::{ApplicationExt, WebviewBuilderExt, WebviewDispatcher, WebviewManager};
 
-//pub(crate) mod transactions;
+use lazy_static::lazy_static;
+use steamworks::{AppId, PublishedFileId};
 
+#[macro_use] extern crate turbonone;
+
+pub(crate) mod transactions;
+
+#[macro_use]
 pub(crate) mod util;
 pub(crate) use util::*;
 
@@ -29,6 +35,12 @@ macro_rules! steamworks {
 	};
 }
 #[macro_export]
+macro_rules! downloads {
+	() => {
+		&*crate::octopus::steamworks::DOWNLOADS
+	};
+}
+#[macro_export]
 macro_rules! gma {
 	() => {
 		&*crate::GMA
@@ -48,7 +60,7 @@ macro_rules! app_data {
 }
 
 pub(crate) struct WrappedWebview<Application: ApplicationExt + 'static> {
-	setup: AtomicBool,
+	pub(crate) setup: AtomicBool,
 	pub(crate) inner: RefCell<MaybeUninit<WebviewDispatcher<Application::Dispatcher>>>,
 }
 unsafe impl<Application: ApplicationExt + 'static> Send for WrappedWebview<Application> {}
@@ -62,9 +74,7 @@ impl<Application: ApplicationExt + 'static> WrappedWebview<Application> {
 	}
 
 	fn init(&self, webview: WebviewManager<Application>) {
-		use std::sync::atomic::Ordering;
-		if !self.setup.load(Ordering::Acquire) {
-			self.setup.store(true, Ordering::Release);
+		if !self.setup.fetch_or(true, std::sync::atomic::Ordering::SeqCst) {
 			unsafe {
 				self.inner.borrow_mut().as_mut_ptr().write(webview.current_webview().unwrap());
 			}
@@ -80,11 +90,42 @@ macro_rules! webview {
 		unsafe { &*crate::WEBVIEW.inner.borrow().as_ptr() }
 	};
 }
+#[macro_export]
+macro_rules! webview_emit_safe {
+	( $event:expr, $data:expr ) => {
+		if crate::WEBVIEW.setup.load(std::sync::atomic::Ordering::Acquire) {
+			ignore! { webview_emit!($event, $data) };
+		}
+	};
+
+	( $event:expr ) => {
+		if crate::WEBVIEW.setup.load(std::sync::atomic::Ordering::Acquire) {
+			ignore! { webview_emit!($event) };
+		}
+	};
+}
+#[macro_export]
+macro_rules! webview_emit {
+	( $event:expr, $data:expr ) => {
+		webview!().emit($event, Some($data))
+	};
+
+	( $event:expr ) => {
+		webview!().emit($event, turbonone!())
+	};
+}
 
 fn main() {
 	lazy_static::initialize(&APP_DATA);
 	lazy_static::initialize(&STEAMWORKS);
 	lazy_static::initialize(&GMA);
+
+	std::thread::spawn(move || {
+		std::thread::sleep(std::time::Duration::from_secs(5));
+		let downloads = downloads!();
+		downloads.download(vec![PublishedFileId(2436880817)]);
+		downloads.start();
+	});
 
 	tauri::AppBuilder::default()
 		.create_webview("gmpublisher".to_string(), tauri::WindowUrl::App, |args| {
@@ -111,7 +152,7 @@ fn main() {
 		.unwrap()
 		.setup(|mgr| crate::WEBVIEW.init(mgr))
 		.plugin(appdata::Plugin)
-		.invoke_handler(tauri::generate_handler![])
+		.invoke_handler(tauri::generate_handler![transactions::cancel_transaction, appdata::update_settings])
 		.build(tauri::generate_context!())
 		.run();
 }

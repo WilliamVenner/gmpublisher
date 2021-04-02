@@ -3,19 +3,17 @@ use std::{
 	path::{Path, PathBuf},
 };
 
-use rayon::{ThreadPool, ThreadPoolBuilder};
 use steamworks::PublishedFileId;
 
 use crate::{
-	gma::{GMAFile, GMAReadError},
+	gma::{GMAFile, GMAError},
 	main_thread_forbidden,
 };
 
 use super::PromiseCache;
 
 pub struct GMA {
-	thread_pool: ThreadPool,
-	cache: PromiseCache<HashMap<PathBuf, GMAFile>, PathBuf, Result<GMAFile, GMAReadError>>,
+	cache: PromiseCache<HashMap<PathBuf, GMAFile>, PathBuf, Result<GMAFile, GMAError>>,
 }
 
 unsafe impl Sync for GMA {}
@@ -24,12 +22,11 @@ unsafe impl Send for GMA {}
 impl GMA {
 	pub fn init() -> GMA {
 		Self {
-			thread_pool: ThreadPoolBuilder::new().build().unwrap(),
 			cache: PromiseCache::new(HashMap::new()),
 		}
 	}
 
-	pub fn get<P: AsRef<Path>>(&'static self, path: P, id: Option<PublishedFileId>) -> Result<GMAFile, GMAReadError> {
+	/*pub fn get<P: AsRef<Path>>(&'static self, path: P, id: Option<PublishedFileId>) -> Result<GMAFile, GMAError> {
 		main_thread_forbidden!();
 
 		let path = path.as_ref();
@@ -51,7 +48,7 @@ impl GMA {
 
 	pub fn get_async<P: AsRef<Path>, F>(&'static self, path: P, id: Option<PublishedFileId>, f: F)
 	where
-		F: FnOnce(&Result<GMAFile, GMAReadError>) + 'static + Send,
+		F: FnOnce(&Result<GMAFile, GMAError>) + 'static + Send,
 	{
 		let path = path.as_ref();
 		match self.cache.read().get(path) {
@@ -70,5 +67,5 @@ impl GMA {
 				}
 			}
 		}
-	}
+	}*/
 }
