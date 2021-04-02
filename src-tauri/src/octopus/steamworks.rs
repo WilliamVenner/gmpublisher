@@ -1,25 +1,177 @@
+use lazy_static::lazy_static;
+use parking_lot::{Condvar, Mutex, RwLock};
 use rayon::{
 	iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator},
-	ThreadPool, ThreadPoolBuilder,
 };
 use serde::Serialize;
-use std::{
-	collections::HashMap,
-	mem::MaybeUninit,
-	path::PathBuf,
-	sync::{atomic::AtomicBool, Arc},
-};
+use std::{collections::HashMap, hash::Hash, mem::MaybeUninit, path::PathBuf, sync::{atomic::AtomicBool, Arc}};
 
-use steamworks::{AccountId, Callback, CallbackHandle, Client, ClientManager, Friend, PublishedFileId, QueryResult, QueryResults, SingleClient, SteamError, SteamId};
+use steamworks::{AccountId, AppId, Callback, CallbackHandle, Client, ClientManager, Friend, ItemState, PublishedFileId, QueryResult, QueryResults, SingleClient, SteamError, SteamId, SteamServerConnectFailure, SteamServersConnected, SteamServersDisconnected};
 
 use atomic_refcell::AtomicRefCell;
 
-use super::{AtomicRefSome, PromiseCache, PromiseHashCache};
+use super::{THREAD_POOL, AtomicRefSome, PromiseCache, PromiseHashCache};
 
-use crate::main_thread_forbidden;
+use crate::{main_thread_forbidden, transaction, webview, webview_emit, webview_emit_safe, steamworks, transactions::Transaction};
 
-lazy_static::lazy_static! {
+lazy_static! {
 	static ref PERSONACHANGE_USER_INFO: steamworks::PersonaChange = steamworks::PersonaChange::NAME | steamworks::PersonaChange::AVATAR;
+	static ref ITEM_STATE_SKIP_DOWNLOAD: ItemState = ItemState::DOWNLOAD_PENDING | ItemState::DOWNLOADING;
+}
+
+lazy_static! {
+	pub static ref DOWNLOADS: Downloads = Downloads::init();
+}
+#[derive(Debug)]
+pub struct DownloadInner {
+	id: PublishedFileId,
+	transaction: Transaction,
+	sent_total: AtomicBool
+}
+impl std::hash::Hash for DownloadInner {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
+impl Eq for DownloadInner {}
+impl PartialEq for DownloadInner {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+impl std::ops::Deref for DownloadInner {
+    type Target = PublishedFileId;
+    fn deref(&self) -> &Self::Target {
+        &self.id
+    }
+}
+pub type Download = Arc<DownloadInner>;
+pub struct Downloads {
+	pending: Mutex<Vec<Download>>,
+	downloading: Mutex<Vec<Download>>,
+	watchdog: Condvar,
+}
+pub struct IDList {
+	inner: Vec<PublishedFileId>
+}
+impl Into<Vec<PublishedFileId>> for IDList {
+	fn into(self) -> Vec<PublishedFileId> {
+		self.inner
+	}
+}
+impl From<PublishedFileId> for IDList {
+	fn from(id: PublishedFileId) -> Self {
+		IDList { inner: vec![id] }
+	}
+}
+impl From<Vec<PublishedFileId>> for IDList {
+	fn from(ids: Vec<PublishedFileId>) -> Self {
+		IDList { inner: ids }
+	}
+}
+impl Downloads {
+	fn init() -> Self {
+		Self {
+			pending: Mutex::new(Vec::new()),
+			downloading: Mutex::new(Vec::new()),
+			watchdog: Condvar::new(),
+		}
+	}
+
+	pub fn download<IDs: Into<IDList>>(&self, ids: IDs) {
+		let ids: Vec<PublishedFileId> = ids.into().into();
+
+		let mut pending = self.pending.lock();
+		pending.reserve(ids.len());
+
+		for id in ids {
+			let download = Arc::new(DownloadInner {
+				id,
+				sent_total: AtomicBool::new(false),
+				transaction: transaction!()
+			});
+
+			pending.push(download.clone());
+
+			webview_emit!("DownloadStarted", download.transaction.id).unwrap();
+		}
+	}
+
+	pub fn start(&self) {
+		let mut downloading = self.downloading.lock();
+		downloading.append(&mut self.pending.lock());
+		
+		self.watchdog.notify_one();
+	}
+
+	fn watchdog() {
+		loop {
+			DOWNLOADS.watchdog.wait(&mut DOWNLOADS.downloading.lock());
+
+			let ugc = steamworks!().client().ugc();
+
+			loop {
+				let mut downloading = std::mem::take(&mut *DOWNLOADS.downloading.lock());
+				if downloading.is_empty() { break; }
+
+				downloading = crate::dedup_unsorted(downloading);
+
+				/* TODO
+				steamworks!().register_callback(|download: steamworks::DownloadItemResult| {
+					Remember to check the app id
+				});
+				*/
+			
+				while !downloading.is_empty() {
+					let started = std::time::Instant::now();
+
+					let mut i = 0;
+					while i != downloading.len() {
+						let download = &mut downloading[i];
+
+						let state = ugc.item_state(download.id);
+						if state.intersects(ItemState::INSTALLED) && !state.intersects(ItemState::NEEDS_UPDATE) {
+							if let Some(info) = ugc.item_install_info(download.id) {
+								download.transaction.finished(Some(info.folder));
+								downloading.remove(i);
+								continue;
+							}
+						} else if !state.intersects(*ITEM_STATE_SKIP_DOWNLOAD) {
+							if !ugc.download_item(download.id, true) {
+								download.transaction.error("ERR_DOWNLOAD_FAILED");
+								downloading.remove(i);
+								continue;
+							} else {
+								dprintln!("Starting ISteamUGC Download for {:?}", download.id);
+							}
+						}
+
+						if let Some((downloaded, total)) = ugc.item_download_info(download.id) {
+							if total != 0 {
+								if !download.sent_total.fetch_or(true, std::sync::atomic::Ordering::SeqCst) {
+									download.transaction.data(total);
+								}
+
+								download.transaction.progress((downloaded as f64) / (total as f64));
+
+								i += 1;
+								continue;
+							}
+						}
+
+						if started.elapsed().as_secs() >= 10 {
+							download.transaction.error("ERR_DOWNLOAD_TIMEOUT");
+							downloading.remove(i);
+						} else {
+							i += 1;
+						}
+					}
+
+					sleep_ms!(50);
+				}
+			}
+		}
+	}
 }
 
 mod serde_steamid64 {
@@ -173,8 +325,9 @@ impl From<(Client, SingleClient)> for Interface {
 }
 
 pub struct Steamworks {
+	connected: AtomicBool,
+
 	interface: AtomicRefCell<Option<Interface>>,
-	thread_pool: ThreadPool,
 
 	users: PromiseHashCache<SteamId, SteamUser>,
 	workshop: PromiseHashCache<PublishedFileId, WorkshopItem>,
@@ -291,7 +444,7 @@ impl Steamworks {
 
 		{
 			let user = user.clone();
-			crate::STEAMWORKS.users.write(move |mut users| {
+			steamworks!().users.write(move |mut users| {
 				users.insert(user.steamid, user);
 			});
 		}
@@ -316,11 +469,11 @@ impl Steamworks {
 			None => {
 				if self.users.task(steamid, f) {
 					if self.client().friends().request_user_information(steamid, false) {
-						self.thread_pool.spawn(move || {
-							crate::STEAMWORKS.users.execute(&steamid, crate::STEAMWORKS.fetch_user(steamid));
+						THREAD_POOL.spawn(move || {
+							steamworks!().users.execute(&steamid, steamworks!().fetch_user(steamid));
 						});
 					} else {
-						crate::STEAMWORKS.users.execute(&steamid, crate::STEAMWORKS.fetch_user(steamid));
+						steamworks!().users.execute(&steamid, steamworks!().fetch_user(steamid));
 					}
 				}
 			}
@@ -331,7 +484,7 @@ impl Steamworks {
 	where
 		F: FnOnce(Vec<SteamUser>) + 'static + Send,
 	{
-		self.thread_pool.spawn(move || f(self.fetch_users(steamids)));
+		THREAD_POOL.spawn(move || f(self.fetch_users(steamids)));
 	}
 
 	// Workshop //
@@ -447,7 +600,7 @@ impl Steamworks {
 					if !owner.dead {
 						item.owner = Some(owner);
 						let item = item.clone();
-						crate::STEAMWORKS.workshop.write(move |mut workshop| {
+						steamworks!().workshop.write(move |mut workshop| {
 							workshop.insert(id, item);
 						});
 					}
@@ -465,8 +618,8 @@ impl Steamworks {
 			Some(item) => f(&item),
 			None => {
 				if self.workshop.task(item, f) {
-					self.thread_pool.spawn(move || {
-						crate::STEAMWORKS.workshop.execute(&item, crate::STEAMWORKS.fetch_workshop_item(item));
+					THREAD_POOL.spawn(move || {
+						steamworks!().workshop.execute(&item, steamworks!().fetch_workshop_item(item));
 					});
 				}
 			}
@@ -477,7 +630,7 @@ impl Steamworks {
 	where
 		F: FnOnce(Vec<WorkshopItem>) + 'static + Send,
 	{
-		self.thread_pool.spawn(move || f(crate::STEAMWORKS.fetch_workshop_items(items)));
+		THREAD_POOL.spawn(move || f(steamworks!().fetch_workshop_items(items)));
 	}
 
 	pub fn fetch_workshop_item_with_uploader_async<F>(&'static self, item: PublishedFileId, f: F)
@@ -491,12 +644,14 @@ impl Steamworks {
 				}
 			}
 			None => {
-				self.thread_pool.spawn(move || {
-					crate::STEAMWORKS.workshop.execute(&item, crate::STEAMWORKS.fetch_workshop_item_with_uploader(item));
+				THREAD_POOL.spawn(move || {
+					steamworks!().workshop.execute(&item, steamworks!().fetch_workshop_item_with_uploader(item));
 				});
 			}
 		}
 	}
+	
+	// Collections //
 
 	pub fn fetch_collection_items(&'static self, collection: PublishedFileId) -> Option<Vec<PublishedFileId>> {
 		main_thread_forbidden!();
@@ -553,8 +708,8 @@ impl Steamworks {
 			Some(cached) => f(cached),
 			None => {
 				if self.collections.task(collection, f) {
-					self.thread_pool.spawn(move || {
-						crate::STEAMWORKS.collections.execute(&collection, self.fetch_collection_items(collection));
+					THREAD_POOL.spawn(move || {
+						steamworks!().collections.execute(&collection, self.fetch_collection_items(collection));
 					});
 				}
 			}
@@ -566,25 +721,55 @@ impl Steamworks {
 	pub fn init() -> Steamworks {
 		std::thread::spawn(Steamworks::connect);
 		Steamworks {
+			connected: AtomicBool::new(false),
 			interface: AtomicRefCell::new(None),
-			thread_pool: ThreadPoolBuilder::new().build().unwrap(),
 			users: PromiseCache::new(HashMap::new()),
 			workshop: PromiseCache::new(HashMap::new()),
 			collections: PromiseCache::new(HashMap::new()),
 		}
 	}
 
+	fn watchdog() {
+		#[cfg(debug_assertions)]
+		std::mem::forget(steamworks!().register_callback(|c: SteamServerConnectFailure| {
+			println!("[Steamworks] SteamServerConnectFailure {:#?}", c);
+		}));
+
+		std::mem::forget(steamworks!().register_callback(|_: SteamServersConnected| {
+			steamworks!().set_connected(true);
+			println!("[Steamworks] Connected");
+		}));
+
+		std::mem::forget(steamworks!().register_callback(|c: SteamServersDisconnected| {
+			steamworks!().set_connected(false);
+			println!("[Steamworks] SteamServersDisconnected {:#?}", c);
+		}));
+
+		loop { steamworks!().run_callbacks(); }
+	}
+
+	fn on_initialized() {
+		std::thread::spawn(Steamworks::watchdog);
+
+		lazy_static::initialize(&DOWNLOADS);
+		std::thread::spawn(Downloads::watchdog);
+	}
+
 	pub fn connect() {
 		loop {
 			if let Ok(connection) = Client::init() {
-				println!("[Steamworks] Connected!");
+				println!("[Steamworks] Client initialized");
 
 				loop {
-					if let Ok(mut interface) = crate::STEAMWORKS.interface.try_borrow_mut() {
+					if let Ok(mut interface) = steamworks!().interface.try_borrow_mut() {
 						*interface = Some(connection.into());
 						break;
 					}
 				}
+
+				steamworks!().set_connected(true);
+
+				Steamworks::on_initialized();
 
 				break;
 			}
@@ -594,10 +779,12 @@ impl Steamworks {
 	}
 
 	pub fn connected(&self) -> bool {
-		match self.interface.try_borrow() {
-			Ok(interface) => interface.is_some(),
-			Err(_) => true,
-		}
+		self.connected.load(std::sync::atomic::Ordering::Acquire)
+	}
+
+	fn set_connected(&self, connected: bool) {
+		self.connected.store(connected, std::sync::atomic::Ordering::Release);
+		webview_emit_safe!(if connected { "SteamConnected" } else { "SteamDisconnected" });
 	}
 
 	pub fn client(&self) -> AtomicRefSome<Interface> {
