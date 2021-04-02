@@ -1,212 +1,244 @@
+use std::{collections::HashMap, fmt::Display, fs::File, io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write}, path::PathBuf, time::SystemTime};
+
 use byteorder::ReadBytesExt;
-use serde::{Deserialize, Serialize};
-use std::{
-	collections::HashMap,
-	fs::File,
-	io::{BufRead, BufReader, Read, Seek, SeekFrom},
-	path::{Path, PathBuf},
-	sync::Arc,
-};
 use steamworks::PublishedFileId;
+use thiserror::Error;
+use serde::{Serialize, Deserialize};
 
-pub const GMA_HEADER: &'static [u8; 4] = b"GMAD";
-pub const SUPPORTED_GMA_VERSION: u8 = 3;
+use crate::main_thread_forbidden;
 
-#[macro_use]
-pub mod read;
-pub use read::*;
+use self::read::GMAReadHandle;
 
-pub mod write;
-pub use write::*;
+const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 
-pub mod extract;
-pub use extract::*;
-
-use crate::util::path::NormalizedPathBuf;
-
-pub type ProgressCallback = Box<dyn Fn(f64) -> () + Sync + Send>;
-
-fn serialize_extracted_name<S>(data: &(bool, Option<String>), s: S) -> Result<S::Ok, S::Error>
-where
-	S: serde::Serializer,
-{
-	s.serialize_str(&data.1.as_ref().expect("Missing extracted name! Make sure to call metadata()"))
+#[derive(Debug, Clone, Serialize, Error)]
+pub enum GMAError {
+	IOError,
+	InvalidHeader,
+	FormatError,
+	EntryNotFound,
 }
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct GMAFile {
-	pub id: Option<PublishedFileId>,
-
-	pub path: NormalizedPathBuf,
-	pub size: u64,
-
-	#[serde(flatten)]
-	pub(crate) metadata: Option<GMAMetadata>,
-	#[serde(skip)]
-	pub(crate) metadata_start: u64,
-
-	pub(crate) entries: Option<Arc<Vec<GMAEntry>>>,
-	pub(crate) entries_map: Option<Arc<HashMap<String, usize>>>,
-	#[serde(skip)]
-	pub(crate) entries_list_start: Option<u64>,
-	#[serde(skip)]
-	pub(crate) entries_start: Option<u64>,
-
-	#[serde(serialize_with = "serialize_extracted_name")]
-	#[serde(skip_deserializing)]
-	pub(crate) extracted_name: (bool, Option<String>),
-}
-impl GMAFile {
-	pub fn new<P: AsRef<Path>>(path: P, id: Option<PublishedFileId>) -> Result<GMAFile, GMAReadError> {
-		let path = path.as_ref();
-
-		let mut handle = BufReader::new(match File::open(path) {
-			Ok(handle) => handle,
-			Err(_) => return Err(GMAReadError::IOError),
-		});
-
-		let size = match path.metadata() {
-			Ok(metadata) => metadata.len(),
-			Err(_) => 0,
-		};
-
-		let mut magic_buf = [0; 4];
-		match handle.read_exact(&mut magic_buf) {
-			Ok(_) => {
-				if &magic_buf != GMA_HEADER {
-					return Err(GMAReadError::InvalidHeader);
-				}
-			}
-			Err(_) => return Err(GMAReadError::InvalidHeader),
-		};
-
-		let fmt_version = safe_read!(handle.read_u8())?;
-		if fmt_version != SUPPORTED_GMA_VERSION {
-			return Err(GMAReadError::UnsupportedVersion);
+impl Display for GMAError {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		use GMAError::*;
+		match self {
+			IOError => write!(
+				f,
+				"An error occured opening or writing to a file. Make sure you have the appropriate permissions for this file and it is not in use by another process."
+			),
+			InvalidHeader => write!(f, "This doesn't appear to be a valid GMA file."),
+			UnsupportedVersion => write!(f, "This GMA file uses an unsupported version of the format - sorry!"),
+			FormatError => write!(f, "This GMA file appears to be corrupted or of an unrecognised format or version of the format."),
+			EntryNotFound => write!(f, "The entry could not be found in this GMA file."),
 		}
-
-		Ok(GMAFile {
-			path: path.to_path_buf().into(),
-			size,
-
-			id,
-
-			metadata_start: handle.seek(SeekFrom::Current(0)).unwrap(),
-			metadata: None,
-
-			entries: None,
-			entries_map: None,
-			entries_start: None,
-			entries_list_start: None,
-
-			extracted_name: (id.is_some(), None),
-		})
-	}
-
-	pub fn handle(&self) -> Result<GMAFileHandle, std::io::Error> {
-		Ok(BufReader::new(File::open(&*self.path)?).into())
 	}
 }
-
-pub struct GMAFileHandle {
-	inner: Option<BufReader<File>>,
-}
-impl Clone for GMAFileHandle {
-	/// # This doesn't actually clone it and is merely a hack to derive Clone in GMAFile
-	fn clone(&self) -> Self {
-		GMAFileHandle::default()
-	}
-}
-impl From<BufReader<File>> for GMAFileHandle {
-	fn from(handle: BufReader<File>) -> Self {
-		GMAFileHandle { inner: Some(handle) }
-	}
-}
-impl Default for GMAFileHandle {
-	fn default() -> Self {
-		GMAFileHandle { inner: None }
-	}
-}
-impl std::ops::Deref for GMAFileHandle {
-	type Target = BufReader<File>;
-	fn deref(&self) -> &Self::Target {
-		debug_assert!(self.inner.is_some(), "Tried to use an invalid GMA file handle!");
-		self.inner.as_ref().unwrap()
-	}
-}
-impl std::ops::DerefMut for GMAFileHandle {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		debug_assert!(self.inner.is_some(), "Tried to use an invalid GMA file handle!");
-		self.inner.as_mut().unwrap()
-	}
-}
-impl GMAFileHandle {
-	pub(crate) fn is_open(&self) -> bool {
-		self.inner.is_some()
-	}
-
-	pub(crate) fn read_nt_string(&mut self) -> Result<String, GMAReadError> {
-		let mut buf = Vec::new();
-		safe_read!(self.read_until(0, &mut buf))?;
-
-		let nt_string = &buf[0..buf.len() - 1];
-
-		Ok(match std::str::from_utf8(nt_string) {
-			Ok(str) => str.to_owned(),
-			Err(_) => {
-				// Some file paths aren't UTF-8 encoded, usually due to Windows NTFS
-				// This will simply guess the text encoding and decode it with that instead
-				let mut decoder = chardetng::EncodingDetector::new();
-				decoder.feed(nt_string, true);
-				let encoding = decoder.guess(None, false);
-				let (str, _, _) = encoding.decode(nt_string);
-				str.to_string()
-			}
-		})
-	}
-
-	pub(crate) fn skip_nt_string(&mut self) -> Result<usize, GMAReadError> {
-		let mut buf = Vec::new();
-		safe_read!(self.read_until(0, &mut buf))
-	}
-}
-impl std::fmt::Debug for GMAFileHandle {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		f.write_str(match self.is_open() {
-			true => "Open",
-			false => "Closed",
-		})
-	}
+impl From<std::io::Error> for GMAError {
+    fn from(_: std::io::Error) -> Self {
+        Self::IOError
+    }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct GMAMetadata {
-	pub name: String,
-	#[serde(rename = "type")]
-	pub addon_type: Option<String>,
-	pub tags: Option<Vec<String>>,
-	pub ignore: Option<Vec<String>>,
+#[derive(Debug, Clone, Default)]
+pub struct GMAFilePointers {
+	metadata: u64,
+	entries: u64,
+	entries_list: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct GMAEntry {
-	#[serde(skip)]
-	pub(crate) index: u64,
-	pub path: String,
-	pub size: u64,
-	pub crc: u32,
-}
-impl std::fmt::Debug for GMAEntry {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("GMAEntry").field("path", &self.path).field("size", &self.size).field("crc", &self.crc).finish()
-	}
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AddonJson {
+#[derive(Debug, Clone, Serialize)]
+pub struct LegacyGMAMetadata {
+	pub title: String,
 	pub description: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StandardGMAMetadata {
+	#[serde(default)]
+	pub title: String,
 	#[serde(rename = "type")]
 	pub addon_type: String,
 	pub tags: Vec<String>,
-	pub ignore: Option<Vec<String>>,
+	pub ignore: Vec<String>,
 }
+#[derive(Debug, Clone, Serialize)]
+#[serde(untagged)]
+pub enum GMAMetadata {
+	Legacy(LegacyGMAMetadata),
+	Standard(StandardGMAMetadata)
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GMAEntry {
+	path: String,
+	size: u64,
+	crc: u32,
+
+	#[serde(skip)]
+	index: u64,
+}
+
+#[derive(Clone, Debug)]
+pub struct GMAEntriesMap {
+	inner: HashMap<String, GMAEntry>,
+}
+impl std::ops::Deref for GMAEntriesMap {
+    type Target = HashMap<String, GMAEntry>;
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+impl std::ops::DerefMut for GMAEntriesMap {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+impl Serialize for GMAEntriesMap {
+	fn serialize<S: serde::Serializer>(&self, serialize: S) -> Result<S::Ok, S::Error> {
+		serialize.collect_seq(self.inner.keys())
+	}
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(remote = "GMAFile")]
+pub struct GMAFile {
+	pub path: PathBuf,
+	pub size: u64,
+
+	pub id: Option<PublishedFileId>,
+
+	#[serde(flatten)]
+	pub metadata: Option<GMAMetadata>,
+
+	pub entries: Option<GMAEntriesMap>,
+
+	#[serde(skip)]
+	pub pointers: GMAFilePointers,
+
+	#[serde(skip)]
+	pub version: u8,
+
+	#[serde(getter = "GMAFile::extracted_name")]
+	extracted_name: String
+}
+
+impl GMAFile {
+	pub fn open(path: PathBuf) -> Result<GMAFile, GMAError> {
+		main_thread_forbidden!();
+
+		let mut f = BufReader::new(File::open(&path)?);
+
+		let mut gma = GMAFile {
+			size: path.metadata().and_then(|metadata| Ok(metadata.len())).unwrap_or(0),
+			path,
+		    id: None,
+		    metadata: None,
+		    entries: None,
+		    pointers: GMAFilePointers::default(),
+			version: 0,
+			extracted_name: String::new()
+		};
+
+		if gma.size == 0 {
+			if let Ok(size) = crate::stream_len(&mut f) {
+				gma.size = size;
+			}
+		}
+
+		let mut header_buf = [0; 4];
+		f.read_exact(&mut header_buf).map_err(|_| GMAError::InvalidHeader)?;
+		if &header_buf != GMA_HEADER {
+			return Err(GMAError::InvalidHeader);
+		}
+
+		gma.version = f.read_u8()?;
+
+		gma.pointers.metadata = f.seek(SeekFrom::Current(0))?;
+
+		Ok(gma)
+	}
+
+	pub fn set_ws_id(&mut self, id: PublishedFileId) {
+		self.id = Some(id);
+	}
+
+	pub fn extracted_name(&self) -> String {
+		let mut extracted_name = String::new();
+		let mut underscored = false;
+
+		{
+			let name = match self.metadata() {
+				Ok(metadata) => match metadata {
+					GMAMetadata::Legacy(LegacyGMAMetadata { title, .. }) | GMAMetadata::Standard(StandardGMAMetadata { title, .. }) => title.clone(),
+				},
+				Err(_) => {
+					match self.path.file_name() {
+						Some(file_name) => file_name.to_string_lossy().to_string(),
+						None => match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+							Ok(unix) => format!("gmpublisher_extracted_{}", unix.as_secs()),
+							Err(_) => "gmpublisher_extracted".into()
+						}
+					}
+				},
+			};
+
+			extracted_name.reserve(name.len());
+
+			for char in name.chars() {
+				if char.is_alphanumeric() {
+					underscored = false;
+					extracted_name.push(char);
+				} else if !underscored {
+					underscored = true;
+					extracted_name.push('_');
+				}
+			}
+		}
+
+		if let Some(id) = self.id {
+			let id_str = id.0.to_string();
+			if !underscored {
+				extracted_name.reserve(id_str.len() + 1);
+				extracted_name.push('_');
+				extracted_name.push_str(&id_str);
+			} else {
+				extracted_name.reserve(id_str.len());
+				extracted_name.push_str(&id_str);
+			}
+		} else if underscored {
+			extracted_name.pop();
+		}
+
+		extracted_name
+	}
+
+	fn extracted_name_serde(&self, _: String) -> String {
+		self.extracted_name()
+	}
+
+	pub fn read(&self) -> Result<GMAReadHandle<File>, GMAError> {
+		Ok(GMAReadHandle { inner: BufReader::new(File::open(&self.path)?) })
+	}
+
+	pub fn write(&self) -> Result<GMAWriteHandle<File>, GMAError> {
+		Ok(GMAWriteHandle { inner: BufWriter::new(File::create(&self.path)?) })
+	}
+}
+
+pub struct GMAWriteHandle<W: Write + Seek> {
+	inner: BufWriter<W>
+}
+impl<W: Write + Seek> std::ops::Deref for GMAWriteHandle<W> {
+    type Target = BufWriter<W>;
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+impl<W: Write + Seek> std::ops::DerefMut for GMAWriteHandle<W> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+
+pub mod read;
+pub mod write;
+pub mod extract;
