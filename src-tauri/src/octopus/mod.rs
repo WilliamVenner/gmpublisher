@@ -83,7 +83,7 @@ impl<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Se
 		self.promises.write().remove(k)
 	}
 
-	pub fn execute(&self, k: &K, mut v: Args) {
+	pub fn execute(&self, k: &K, v: Args) {
 		use rayon::iter::{IntoParallelIterator, ParallelIterator};
 		use VariableSingleton::*;
 		if let Some(promises) = self.promises(k) {

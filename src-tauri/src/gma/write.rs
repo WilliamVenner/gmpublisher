@@ -1,12 +1,19 @@
-use std::{collections::LinkedList, fs::{self, File}, io::{BufWriter, Seek, Write}, path::{Path, PathBuf}, sync::{atomic::AtomicBool, mpsc}, time::SystemTime};
 use byteorder::{LittleEndian, WriteBytesExt};
 use lazy_static::lazy_static;
-use rayon::{ThreadBuilder, ThreadPool, ThreadPoolBuilder, iter::{IntoParallelIterator, ParallelBridge, ParallelIterator}};
-use serde::{Serialize, Deserialize};
-use walkdir::WalkDir;
-use path_slash::PathExt;
+use rayon::{ThreadPool, ThreadPoolBuilder};
+use std::{
+	collections::LinkedList,
+	fs,
+	io::{BufWriter, Seek, Write},
+	path::Path,
+	sync::mpsc,
+	time::SystemTime,
+};
 
-use crate::{GMAError, octopus::steamworks::publishing::ContentPath, transactions::Transaction, whitelist, GMAMetadata};
+use path_slash::PathExt;
+use walkdir::WalkDir;
+
+use crate::{transactions::Transaction, whitelist, GMAError, GMAMetadata};
 
 use super::GMA_HEADER;
 
@@ -15,7 +22,7 @@ lazy_static! {
 }
 
 pub struct GMAWriteHandle<W: Write + Seek> {
-	pub inner: BufWriter<W>
+	pub inner: BufWriter<W>,
 }
 impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 	pub fn write_nt_string(&mut self, str: &str) -> Result<(), std::io::Error> {
@@ -29,7 +36,7 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 
 		let (title, addon_json) = match data {
 			GMAMetadata::Legacy(data) => (data.title.as_str(), None),
-			GMAMetadata::Standard(data) => (data.title.as_str(), Some(data))
+			GMAMetadata::Standard(data) => (data.title.as_str(), Some(data)),
 		};
 
 		self.write(GMA_HEADER)?;
@@ -40,7 +47,7 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 		// timestamp [unused]
 		self.write_u64::<LittleEndian>(match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
 			Ok(unix) => unix.as_secs(),
-			Err(_) => 0
+			Err(_) => 0,
 		})?;
 
 		// required content [unused]
@@ -52,7 +59,7 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 		// addon description
 		match addon_json {
 			Some(addon_json) => self.write_nt_string(serde_json::ser::to_string(addon_json).as_deref().unwrap())?,
-			None => self.write_nt_string("Description")?
+			None => self.write_nt_string("Description")?,
 		};
 
 		// addon author [unused]
@@ -74,7 +81,9 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 						let path = entry.into_path();
 
 						let mut relative_path = path.to_slash_lossy().to_lowercase();
-						{ relative_path.drain(0..root_path_strip_len); }
+						{
+							relative_path.drain(0..root_path_strip_len);
+						}
 
 						if whitelist::check(&relative_path) {
 							return Some((path, relative_path));
@@ -90,7 +99,7 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 				THREAD_POOL.spawn(move || {
 					let contents = match fs::read(&path) {
 						Ok(contents) => contents,
-						Err(_) => return transaction.data(("ERR_GMA_IO_ERROR", path))
+						Err(_) => return transaction.data(("ERR_GMA_IO_ERROR", path)),
 					};
 
 					let mut crc32 = crc32fast::Hasher::new();
@@ -98,11 +107,8 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 					crc32.update(&contents);
 					let crc32 = crc32.finalize();
 
-					tx.send((
-						relative_path.into_bytes().into_boxed_slice(),
-						contents.into_boxed_slice(),
-						crc32
-					)).unwrap();
+					tx.send((relative_path.into_bytes().into_boxed_slice(), contents.into_boxed_slice(), crc32))
+						.unwrap();
 				});
 
 				total += 1;
@@ -137,7 +143,7 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 			self.write(&contents)?;
 			self.write_u8(0)?;
 		}
-		
+
 		let written = self.buffer();
 
 		let mut crc32 = crc32fast::Hasher::new();
@@ -153,13 +159,13 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 	}
 }
 impl<W: Write + Seek> std::ops::Deref for GMAWriteHandle<W> {
-    type Target = BufWriter<W>;
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
+	type Target = BufWriter<W>;
+	fn deref(&self) -> &Self::Target {
+		&self.inner
+	}
 }
 impl<W: Write + Seek> std::ops::DerefMut for GMAWriteHandle<W> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.inner
+	}
 }

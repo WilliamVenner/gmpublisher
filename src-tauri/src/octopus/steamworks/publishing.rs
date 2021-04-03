@@ -1,11 +1,9 @@
 use crate::GMOD_APP_ID;
-use std::{io::BufReader, path::PathBuf, sync::Arc};
 use anyhow::anyhow;
-use parking_lot::RwLock;
-use steamworks::PublishedFileId;
-use std::fs::File;
 use image::{ImageError, ImageFormat};
-use std::mem::MaybeUninit;
+use parking_lot::RwLock;
+use std::{fs::File, io::BufReader, mem::MaybeUninit, path::PathBuf, sync::Arc};
+use steamworks::PublishedFileId;
 
 use super::Steamworks;
 pub struct ContentPath(PathBuf);
@@ -27,19 +25,27 @@ impl ContentPath {
 		}
 
 		let mut gma_path: MaybeUninit<PathBuf> = MaybeUninit::uninit();
-		for (i, path) in path.read_dir()?.filter_map(|entry| entry.ok().and_then(|entry| {
-			let path = entry.path();
-			let extension = path.extension()?;
-			if extension == "gma" {
-				Some(path)
-			} else {
-				None
-			}
-		})).enumerate() {
+		for (i, path) in path
+			.read_dir()?
+			.filter_map(|entry| {
+				entry.ok().and_then(|entry| {
+					let path = entry.path();
+					let extension = path.extension()?;
+					if extension == "gma" {
+						Some(path)
+					} else {
+						None
+					}
+				})
+			})
+			.enumerate()
+		{
 			if i > 0 {
 				return Err(anyhow!("ERR_CONTENT_PATH_MULTIPLE_GMA"));
 			}
-			unsafe { gma_path.as_mut_ptr().write(path); }
+			unsafe {
+				gma_path.as_mut_ptr().write(path);
+			}
 		}
 
 		Ok(ContentPath(unsafe { gma_path.assume_init() }))
@@ -82,7 +88,6 @@ impl WorkshopIcon {
 				} else {
 					WorkshopIcon::try_format(tried_best_guess, file_types.remove(0), path, file_types)
 				}
-
 			} else {
 				Err(anyhow!(error))
 			}
@@ -131,7 +136,7 @@ pub struct WorkshopUpdateDetails {
 }
 pub enum WorkshopUpdateType {
 	Creation(WorkshopCreationDetails),
-	Update(WorkshopUpdateDetails)
+	Update(WorkshopUpdateDetails),
 }
 
 pub fn update(steamworks: &'static Steamworks, details: WorkshopUpdateType) -> Result<(PublishedFileId, bool), anyhow::Error> {
@@ -141,23 +146,29 @@ pub fn update(steamworks: &'static Steamworks, details: WorkshopUpdateType) -> R
 	let result_ref = result.clone();
 	match details {
 		Creation(details) => {
-			steamworks.client().ugc().start_item_update(GMOD_APP_ID, details.id)
-			.content_path(&details.path)
-			.title(&details.title)
-			.preview_path(&details.preview)
-			.submit(None, move |result| {
-				*result_ref.write() = Some(result);
-			});
-		},
-		
+			steamworks
+				.client()
+				.ugc()
+				.start_item_update(GMOD_APP_ID, details.id)
+				.content_path(&details.path)
+				.title(&details.title)
+				.preview_path(&details.preview)
+				.submit(None, move |result| {
+					*result_ref.write() = Some(result);
+				});
+		}
+
 		Update(details) => {
 			let path = ContentPath::new(details.path)?;
-			let preview = match details.preview { Some(preview) => Some(WorkshopIcon::new(preview)?), None => None };
+			let preview = match details.preview {
+				Some(preview) => Some(WorkshopIcon::new(preview)?),
+				None => None,
+			};
 
 			let update = steamworks.client().ugc().start_item_update(GMOD_APP_ID, details.id);
 			match preview {
 				Some(preview) => update.preview_path(&*preview),
-				None => update
+				None => update,
 			}
 			.content_path(&path)
 			.submit(details.changes.as_deref(), move |result| {
@@ -181,17 +192,20 @@ pub fn publish(steamworks: &'static Steamworks, path: PathBuf, title: String, pr
 
 	let published = Arc::new(RwLock::new(None));
 	let published_ref = published.clone();
-	steamworks.client().ugc().create_item(GMOD_APP_ID, steamworks::FileType::Community, move |result| {
-		match result {
-			Ok((id, accepted_legal_agreement)) => {
-				// TODO test accepted_legal_agreement
-				*published_ref.write() = Some(Some(id));
-			},
-			Err(_) => {
-				*published_ref.write() = Some(None);
-			},
-		}
-	});
+	steamworks
+		.client()
+		.ugc()
+		.create_item(GMOD_APP_ID, steamworks::FileType::Community, move |result| {
+			match result {
+				Ok((id, _accepted_legal_agreement)) => {
+					// TODO test accepted_legal_agreement
+					*published_ref.write() = Some(Some(id));
+				}
+				Err(_) => {
+					*published_ref.write() = Some(None);
+				}
+			}
+		});
 
 	loop {
 		if let Some(published_ref) = published.try_read() {
@@ -207,12 +221,7 @@ pub fn publish(steamworks: &'static Steamworks, path: PathBuf, title: String, pr
 		Some(id) => id,
 	};
 
-	let details = WorkshopUpdateType::Creation(WorkshopCreationDetails {
-		id,
-		title,
-		preview,
-		path
-	});
+	let details = WorkshopUpdateType::Creation(WorkshopCreationDetails { id, title, preview, path });
 
 	self::update(steamworks, details)
 }

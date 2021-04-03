@@ -1,10 +1,17 @@
-use std::{collections::HashMap, fmt::Display, fs::File, io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write}, path::{Path, PathBuf}, sync::Arc, thread::ThreadId, time::SystemTime};
+use std::{
+	collections::HashMap,
+	fmt::Display,
+	fs::File,
+	io::{BufReader, BufWriter, Read, Seek, SeekFrom},
+	path::{Path, PathBuf},
+	time::SystemTime,
+};
 
 use byteorder::ReadBytesExt;
-use lazy_static::lazy_static;
+
+use serde::{Deserialize, Serialize};
 use steamworks::PublishedFileId;
 use thiserror::Error;
-use serde::{Serialize, Deserialize};
 
 use crate::{main_thread_forbidden, transaction, transactions::Transaction};
 
@@ -31,9 +38,9 @@ impl Display for GMAError {
 	}
 }
 impl From<std::io::Error> for GMAError {
-    fn from(_: std::io::Error) -> Self {
-        Self::IOError
-    }
+	fn from(_: std::io::Error) -> Self {
+		Self::IOError
+	}
 }
 
 #[derive(Debug, Clone, Default)]
@@ -61,7 +68,7 @@ pub struct StandardGMAMetadata {
 #[serde(untagged)]
 pub enum GMAMetadata {
 	Legacy(LegacyGMAMetadata),
-	Standard(StandardGMAMetadata)
+	Standard(StandardGMAMetadata),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -79,15 +86,15 @@ pub struct GMAEntriesMap {
 	inner: HashMap<String, GMAEntry>,
 }
 impl std::ops::Deref for GMAEntriesMap {
-    type Target = HashMap<String, GMAEntry>;
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
+	type Target = HashMap<String, GMAEntry>;
+	fn deref(&self) -> &Self::Target {
+		&self.inner
+	}
 }
 impl std::ops::DerefMut for GMAEntriesMap {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.inner
+	}
 }
 impl Serialize for GMAEntriesMap {
 	fn serialize<S: serde::Serializer>(&self, serialize: S) -> Result<S::Ok, S::Error> {
@@ -127,10 +134,10 @@ impl GMAFile {
 		let mut gma = GMAFile {
 			size: path.metadata().and_then(|metadata| Ok(metadata.len())).unwrap_or(0),
 			path: path.to_path_buf(),
-		    id: None,
-		    metadata: None,
-		    entries: None,
-		    pointers: GMAFilePointers::default(),
+			id: None,
+			metadata: None,
+			entries: None,
+			pointers: GMAFilePointers::default(),
 			version: 0,
 			extracted_name: String::new(),
 		};
@@ -168,14 +175,16 @@ impl GMAFile {
 		{
 			let name = match self.metadata() {
 				Ok(_) => match self.metadata.as_ref().unwrap() {
-					GMAMetadata::Legacy(LegacyGMAMetadata { title, .. }) | GMAMetadata::Standard(StandardGMAMetadata { title, .. }) => title.to_lowercase(),
+					GMAMetadata::Legacy(LegacyGMAMetadata { title, .. }) | GMAMetadata::Standard(StandardGMAMetadata { title, .. }) => {
+						title.to_lowercase()
+					}
 				},
 				Err(_) => match self.path.file_name() {
 					Some(file_name) => file_name.to_string_lossy().to_lowercase(),
 					None => match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
 						Ok(unix) => format!("gmpublisher_extracted_{}", unix.as_secs()),
-						Err(_) => "gmpublisher_extracted".into()
-					}
+						Err(_) => "gmpublisher_extracted".into(),
+					},
 				},
 			};
 
@@ -212,17 +221,22 @@ impl GMAFile {
 	}
 
 	pub fn read(&self) -> Result<GMAReadHandle<File>, GMAError> {
-		Ok(GMAReadHandle { inner: BufReader::new(File::open(&self.path)?) })
+		Ok(GMAReadHandle {
+			inner: BufReader::new(File::open(&self.path)?),
+		})
 	}
 
 	pub fn write<P: AsRef<Path>>(src_path: P, dest_path: P, data: &GMAMetadata) -> Result<Transaction, GMAError> {
 		let transaction = transaction!();
-		GMAWriteHandle { inner: BufWriter::new(File::create(dest_path.as_ref())?) }.create(src_path, data, transaction.clone())?;
+		GMAWriteHandle {
+			inner: BufWriter::new(File::create(dest_path.as_ref())?),
+		}
+		.create(src_path, data, transaction.clone())?;
 		Ok(transaction)
 	}
 }
 
-pub mod whitelist;
-pub mod read;
-pub mod write;
 pub mod extract;
+pub mod read;
+pub mod whitelist;
+pub mod write;

@@ -16,7 +16,7 @@ tauri-build = { path = "../../tauri/core/tauri-build", features = [ "codegen" ] 
 bindgen = "0.57.0"
 
 [dependencies]
-turbonone = { path = "../../turbonone" }
+turbonone = "0.2.1"
 #tauri = { git = "https://github.com/tauri-apps/tauri", features = [ "api-all" ] }
 tauri = { path = "../../tauri/tauri", features =["api-all"]}
 #tauri = { git = "https://github.com/williamvenner/tauri", features =["api-all"], branch = "fix/slow_dev_builds" }

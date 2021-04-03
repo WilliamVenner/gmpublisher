@@ -1,11 +1,19 @@
-use std::{fs::{self, File}, io::{BufReader, BufWriter, Read, Seek, SeekFrom}, path::PathBuf, sync::atomic::{AtomicUsize, Ordering}};
+use std::{
+	fs::{self, File},
+	io::{BufReader, BufWriter, Read, Seek, SeekFrom},
+	path::PathBuf,
+	sync::atomic::{AtomicUsize, Ordering},
+};
 
-use crate::{whitelist, app_data, transactions::Transaction};
+use crate::{app_data, transactions::Transaction, whitelist};
 
-use super::{GMAError, GMAFile, GMAEntry, GMAMetadata};
+use super::{GMAEntry, GMAError, GMAFile, GMAMetadata};
 
 use lazy_static::lazy_static;
-use rayon::{ThreadPool, ThreadPoolBuilder, iter::{IntoParallelRefIterator, ParallelIterator}};
+use rayon::{
+	iter::{IntoParallelRefIterator, ParallelIterator},
+	ThreadPool, ThreadPoolBuilder,
+};
 use serde::Deserialize;
 
 lazy_static! {
@@ -23,8 +31,8 @@ pub enum ExtractDestination {
 	NamedDirectory(PathBuf),
 }
 impl ExtractDestination {
-    fn into(self, extracted_name: &String) -> PathBuf {
-        use ExtractDestination::*;
+	fn into(self, extracted_name: &String) -> PathBuf {
+		use ExtractDestination::*;
 
 		let push_extracted_name = |mut path: PathBuf| {
 			path.push(extracted_name);
@@ -32,11 +40,10 @@ impl ExtractDestination {
 		};
 
 		match self {
-
 			Temp => None,
 
-		    Directory(path) => Some(path),
-			
+			Directory(path) => Some(path),
+
 			Addons => app_data!().gmod().and_then(|mut path| {
 				path.push("garrysmod");
 				path.push("addons");
@@ -46,13 +53,13 @@ impl ExtractDestination {
 			Downloads => dirs::download_dir().and_then(push_extracted_name),
 
 			NamedDirectory(path) => push_extracted_name(path),
-
-		}.unwrap_or_else(|| {
+		}
+		.unwrap_or_else(|| {
 			let mut path = std::env::temp_dir();
 			path.push("gmpublisher");
 			push_extracted_name(path).unwrap()
 		})
-    }
+	}
 }
 
 impl GMAFile {
@@ -71,19 +78,17 @@ impl GMAFile {
 			let i = AtomicUsize::new(0);
 			entries.par_iter().for_each_init(
 				|| File::open(&self.path).map(|f| BufReader::new(f)),
-				|handle, (entry_path, entry)| {
-					match handle {
-						Ok(handle) => {
-							if whitelist::check(entry_path) {
-								ignore! { GMAFile::stream_entry_bytes(handle, entries_start, &dest_path.join(entry_path), entry) };
-								transaction.progress(((i.fetch_add(1, Ordering::AcqRel) + 1) as f64) / entries_len);
-							} else {
-								transaction.data(("ERR_WHITELIST", entry_path.clone()));
-							}
-						},
-						Err(_) => transaction.error(("ERR_GMA_IO_ERROR", entry_path.clone()))
+				|handle, (entry_path, entry)| match handle {
+					Ok(handle) => {
+						if whitelist::check(entry_path) {
+							ignore! { GMAFile::stream_entry_bytes(handle, entries_start, &dest_path.join(entry_path), entry) };
+							transaction.progress(((i.fetch_add(1, Ordering::AcqRel) + 1) as f64) / entries_len);
+						} else {
+							transaction.data(("ERR_WHITELIST", entry_path.clone()));
+						}
 					}
-				}
+					Err(_) => transaction.error(("ERR_GMA_IO_ERROR", entry_path.clone())),
+				},
 			);
 
 			if let GMAMetadata::Standard(ref metadata) = self.metadata.as_ref().unwrap() {
@@ -105,7 +110,7 @@ impl GMAFile {
 
 		let mut handle = match self.entries()? {
 			Some(handle) => handle,
-			None => self.read()?
+			None => self.read()?,
 		};
 
 		let entry = self.entries.as_ref().unwrap().get(&entry_path).ok_or(GMAError::EntryNotFound)?;
@@ -121,7 +126,12 @@ impl GMAFile {
 		Ok(path)
 	}
 
-	fn stream_entry_bytes<R: Read + Seek>(handle: &mut BufReader<R>, entries_start: u64, entry_path: &PathBuf, entry: &GMAEntry) -> Result<(), GMAError> {
+	fn stream_entry_bytes<R: Read + Seek>(
+		handle: &mut BufReader<R>,
+		entries_start: u64,
+		entry_path: &PathBuf,
+		entry: &GMAEntry,
+	) -> Result<(), GMAError> {
 		fs::create_dir_all(&entry_path.with_file_name(""))?;
 		let f = File::create(entry_path)?;
 

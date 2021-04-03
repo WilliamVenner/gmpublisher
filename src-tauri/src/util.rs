@@ -1,6 +1,8 @@
-use std::{collections::HashSet, io::{BufRead, BufReader, BufWriter, ErrorKind, Read, Seek, SeekFrom, Write}};
-use std::hash::Hash;
-use std::rc::{Rc, Weak};
+use std::{
+	collections::HashSet,
+	hash::Hash,
+	io::{BufRead, BufReader, BufWriter, ErrorKind, Read, Seek, SeekFrom, Write},
+};
 
 #[macro_export]
 macro_rules! ignore {
@@ -22,17 +24,27 @@ macro_rules! dprintln {
 
 #[macro_export]
 macro_rules! sleep {
-	( $x:expr ) => { std::thread::sleep(std::time::Duration::from_secs($x)) }
+	( $x:expr ) => {
+		std::thread::sleep(std::time::Duration::from_secs($x))
+	};
 }
 
 #[macro_export]
 macro_rules! sleep_ms {
-	( $x:expr ) => { std::thread::sleep(std::time::Duration::from_millis($x)) }
+	( $x:expr ) => {
+		std::thread::sleep(std::time::Duration::from_millis($x))
+	};
 }
 
 #[macro_export]
 macro_rules! main_thread_forbidden {
-	() => { debug_assert_ne!(std::thread::current().name(), Some("main"), "This should never be called from the main thread"); };
+	() => {
+		debug_assert_ne!(
+			std::thread::current().name(),
+			Some("main"),
+			"This should never be called from the main thread"
+		);
+	};
 }
 
 pub mod path {
@@ -138,7 +150,7 @@ pub mod path {
 // cursed
 pub fn dedup_unsorted<T: Hash + Eq>(vec: &mut Vec<T>) {
 	struct PtrCmp<T: Hash + Eq> {
-		ptr: *const T
+		ptr: *const T,
 	}
 	impl<T: Hash + Eq> Hash for PtrCmp<T> {
 		fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -153,13 +165,10 @@ pub fn dedup_unsorted<T: Hash + Eq>(vec: &mut Vec<T>) {
 	impl<T: Hash + Eq> Eq for PtrCmp<T> {}
 
 	if vec.len() == 2 {
-
 		if vec[0] == vec[1] {
 			vec.truncate(1);
 		}
-
 	} else if vec.len() > 2 {
-
 		let mut dedup = HashSet::with_capacity(vec.len());
 		let mut i = 0;
 		while i != vec.len() {
@@ -169,7 +178,6 @@ pub fn dedup_unsorted<T: Hash + Eq>(vec: &mut Vec<T>) {
 				i += 1;
 			}
 		}
-
 	}
 }
 
@@ -195,7 +203,7 @@ pub fn stream_bytes<R: Read, W: Write>(r: &mut BufReader<R>, w: &mut BufWriter<W
 				w.write_all(data)?;
 				bytes -= data.len();
 			}
-			Err(e) if e.kind() == ErrorKind::Interrupted => {},
+			Err(e) if e.kind() == ErrorKind::Interrupted => {}
 			Err(e) => return Err(e),
 		}
 	})

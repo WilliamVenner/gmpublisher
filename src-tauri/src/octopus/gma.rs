@@ -1,14 +1,6 @@
-use std::{
-	collections::HashMap,
-	path::{Path, PathBuf},
-};
+use std::{collections::HashMap, path::PathBuf};
 
-use steamworks::PublishedFileId;
-
-use crate::{
-	gma::{GMAFile, GMAError},
-	main_thread_forbidden,
-};
+use crate::gma::{GMAError, GMAFile};
 
 use super::PromiseCache;
 

@@ -1,18 +1,16 @@
-use lazy_static::lazy_static;
-use parking_lot::{Condvar, Mutex, RwLock};
-use rayon::{
-	iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator},
-};
 use serde::Serialize;
-use std::{collections::HashMap, hash::Hash, mem::MaybeUninit, path::PathBuf, sync::{atomic::AtomicBool, Arc}};
+use std::{
+	path::PathBuf,
+	sync::{atomic::AtomicBool, Arc},
+};
 
-use steamworks::{AccountId, AppId, Callback, CallbackHandle, Client, ClientManager, Friend, ItemState, PublishedFileId, QueryResult, QueryResults, SingleClient, SteamError, SteamId, SteamServerConnectFailure, SteamServersConnected, SteamServersDisconnected};
+use steamworks::{PublishedFileId, QueryResult, QueryResults, SteamError, SteamId};
 
 use atomic_refcell::AtomicRefCell;
 
-use super::{AtomicRefSome, PromiseCache, PromiseHashCache, Steamworks, THREAD_POOL, users::SteamUser};
+use super::{users::SteamUser, Steamworks, THREAD_POOL};
 
-use crate::{main_thread_forbidden, transaction, GMOD_APP_ID, webview_emit, steamworks, transactions::Transaction};
+use crate::{main_thread_forbidden, steamworks};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -95,24 +93,28 @@ impl Steamworks {
 			{
 				let item_response = item_response.clone();
 				let response_received = response_received.clone();
-				self.client().ugc().query_item(id.clone()).unwrap().fetch(move |query: Result<QueryResults<'_>, SteamError>| {
-					if let Ok(results) = query {
-						let item = if let Some(item) = results.get(0) {
-							let mut item: WorkshopItem = item.into();
-							item.preview_url = results.preview_url(0);
-							item.subscriptions = results.statistic(0, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
-							item
-						} else {
-							WorkshopItem::from(id)
-						};
+				self.client()
+					.ugc()
+					.query_item(id.clone())
+					.unwrap()
+					.fetch(move |query: Result<QueryResults<'_>, SteamError>| {
+						if let Ok(results) = query {
+							let item = if let Some(item) = results.get(0) {
+								let mut item: WorkshopItem = item.into();
+								item.preview_url = results.preview_url(0);
+								item.subscriptions = results.statistic(0, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+								item
+							} else {
+								WorkshopItem::from(id)
+							};
 
-						*(*item_response).borrow_mut() = Some(item.clone());
-						self.workshop.write(move |mut workshop| {
-							workshop.insert(id, item);
-						});
-					}
-					response_received.store(true, std::sync::atomic::Ordering::Release);
-				});
+							*(*item_response).borrow_mut() = Some(item.clone());
+							self.workshop.write(move |mut workshop| {
+								workshop.insert(id, item);
+							});
+						}
+						response_received.store(true, std::sync::atomic::Ordering::Release);
+					});
 			}
 			while !response_received.load(std::sync::atomic::Ordering::Acquire) {
 				self.run_callbacks();
@@ -152,30 +154,34 @@ impl Steamworks {
 			let response_received = Arc::new(AtomicBool::new(false));
 			{
 				let response_received = response_received.clone();
-				self.client().ugc().query_items(uncached.to_owned()).unwrap().fetch(move |query: Result<QueryResults<'_>, SteamError>| {
-					let mut items_response = (*items_response).borrow_mut();
-					if let Ok(results) = query {
-						self.workshop.begin();
-						for (i, item) in results.iter().enumerate() {
-							let id = uncached[i];
-							let item = if let Some(item) = item {
-								let mut item: WorkshopItem = item.into();
-								item.preview_url = results.preview_url(i as u32);
-								item.subscriptions = results.statistic(i as u32, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
-								item
-							} else {
-								WorkshopItem::from(id)
-							};
+				self.client()
+					.ugc()
+					.query_items(uncached.to_owned())
+					.unwrap()
+					.fetch(move |query: Result<QueryResults<'_>, SteamError>| {
+						let mut items_response = (*items_response).borrow_mut();
+						if let Ok(results) = query {
+							self.workshop.begin();
+							for (i, item) in results.iter().enumerate() {
+								let id = uncached[i];
+								let item = if let Some(item) = item {
+									let mut item: WorkshopItem = item.into();
+									item.preview_url = results.preview_url(i as u32);
+									item.subscriptions = results.statistic(i as u32, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+									item
+								} else {
+									WorkshopItem::from(id)
+								};
 
-							items_response.push(item.clone());
-							self.workshop.write(move |mut workshop| {
-								workshop.insert(id, item);
-							});
+								items_response.push(item.clone());
+								self.workshop.write(move |mut workshop| {
+									workshop.insert(id, item);
+								});
+							}
+							self.workshop.commit();
 						}
-						self.workshop.commit();
-					}
-					response_received.store(true, std::sync::atomic::Ordering::Release);
-				});
+						response_received.store(true, std::sync::atomic::Ordering::Release);
+					});
 			}
 			while !response_received.load(std::sync::atomic::Ordering::Acquire) {
 				self.run_callbacks();
@@ -239,7 +245,9 @@ impl Steamworks {
 			}
 			None => {
 				THREAD_POOL.spawn(move || {
-					steamworks!().workshop.execute(&item, steamworks!().fetch_workshop_item_with_uploader(item));
+					steamworks!()
+						.workshop
+						.execute(&item, steamworks!().fetch_workshop_item_with_uploader(item));
 				});
 			}
 		}

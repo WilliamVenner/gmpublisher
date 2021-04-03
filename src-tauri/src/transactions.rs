@@ -1,10 +1,13 @@
-use std::sync::{Arc, Weak, atomic::{AtomicBool, AtomicUsize, Ordering}};
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::Serialize;
+use std::sync::{
+	atomic::{AtomicBool, AtomicUsize, Ordering},
+	Arc, Weak,
+};
 
-use crate::{dprintln, ignore, main_thread_forbidden, webview, webview_emit};
+use crate::{dprintln, main_thread_forbidden, webview_emit};
 
 lazy_static! {
 	static ref TRANSACTIONS: Transactions = Transactions::init();
@@ -13,7 +16,7 @@ lazy_static! {
 
 pub struct Transactions {
 	inner: RwLock<Vec<TransactionRef>>,
-	id: AtomicUsize
+	id: AtomicUsize,
 }
 impl std::ops::Deref for Transactions {
 	type Target = RwLock<Vec<TransactionRef>>;
@@ -25,7 +28,7 @@ impl Transactions {
 	fn init() -> Transactions {
 		Transactions {
 			inner: RwLock::new(Vec::new()),
-			id: AtomicUsize::new(0)
+			id: AtomicUsize::new(0),
 		}
 	}
 
@@ -56,9 +59,9 @@ impl std::ops::Deref for TransactionRef {
 	}
 }
 impl PartialOrd for TransactionRef {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.id.partial_cmp(&other.id)
-    }
+	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+		self.id.partial_cmp(&other.id)
+	}
 }
 impl Ord for TransactionRef {
 	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
@@ -81,7 +84,7 @@ pub type Transaction = Arc<TransactionInner>;
 #[derive(Debug)]
 pub struct TransactionInner {
 	pub id: usize,
-	aborted: AtomicBool
+	aborted: AtomicBool,
 }
 impl TransactionInner {
 	fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, data: D) {
@@ -153,7 +156,7 @@ impl Drop for TransactionInner {
 impl serde::Serialize for TransactionInner {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
-		S: serde::Serializer
+		S: serde::Serializer,
 	{
 		serializer.serialize_u64(self.id as u64)
 	}
@@ -164,18 +167,18 @@ pub fn new() -> Transaction {
 
 	let transaction = Arc::new(TransactionInner {
 		id: TRANSACTIONS.id.fetch_add(1, Ordering::SeqCst),
-		aborted: AtomicBool::new(false)
+		aborted: AtomicBool::new(false),
 	});
 
 	{
 		let mut transactions = TRANSACTIONS.write();
 		transactions.push(TransactionRef {
 			id: transaction.id,
-			ptr: Arc::downgrade(&transaction)
+			ptr: Arc::downgrade(&transaction),
 		});
 		transactions.reserve(1);
 	}
-	
+
 	transaction
 }
 
@@ -188,5 +191,7 @@ fn cancel_transaction(id: usize) {
 
 #[macro_export]
 macro_rules! transaction {
-	() => { crate::transactions::new() };
+	() => {
+		crate::transactions::new()
+	};
 }

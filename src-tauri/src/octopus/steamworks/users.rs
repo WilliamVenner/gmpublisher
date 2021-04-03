@@ -1,18 +1,13 @@
 use lazy_static::lazy_static;
-use parking_lot::{Condvar, Mutex, RwLock};
-use rayon::{
-	iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator},
-};
+
+use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use serde::Serialize;
-use std::{collections::HashMap, hash::Hash, mem::MaybeUninit, path::PathBuf, sync::{atomic::AtomicBool, Arc}};
 
-use steamworks::{AccountId, AppId, Callback, CallbackHandle, Client, ClientManager, Friend, ItemState, PublishedFileId, QueryResult, QueryResults, SingleClient, SteamError, SteamId, SteamServerConnectFailure, SteamServersConnected, SteamServersDisconnected};
+use steamworks::{Friend, SteamId};
 
-use atomic_refcell::AtomicRefCell;
+use super::{Steamworks, THREAD_POOL};
 
-use super::{AtomicRefSome, PromiseCache, PromiseHashCache, Steamworks, THREAD_POOL};
-
-use crate::{main_thread_forbidden, transaction, GMOD_APP_ID, webview_emit, steamworks, transactions::Transaction};
+use crate::{main_thread_forbidden, steamworks};
 
 lazy_static! {
 	static ref PERSONACHANGE_USER_INFO: steamworks::PersonaChange = steamworks::PersonaChange::NAME | steamworks::PersonaChange::AVATAR;
@@ -25,7 +20,7 @@ pub struct SteamUser {
 	pub steamid: SteamId,
 	pub name: String,
 	pub avatar: Option<crate::Base64Image>,
-	
+
 	pub dead: bool,
 }
 impl<Manager: steamworks::Manager> From<Friend<Manager>> for SteamUser {
@@ -67,7 +62,10 @@ impl Steamworks {
 	pub fn fetch_users(&'static self, steamids: Vec<SteamId>) -> Vec<SteamUser> {
 		self.users.begin();
 		let mut users = Vec::with_capacity(steamids.len());
-		steamids.into_par_iter().map(|steamid| self.fetch_user(steamid)).collect_into_vec(&mut users);
+		steamids
+			.into_par_iter()
+			.map(|steamid| self.fetch_user(steamid))
+			.collect_into_vec(&mut users);
 		self.users.commit();
 		users
 	}

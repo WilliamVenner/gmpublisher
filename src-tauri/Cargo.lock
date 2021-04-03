@@ -3375,6 +3375,8 @@ checksum = "3e5d7cd7ab3e47dda6e56542f4bbf3824c15234958c6e1bd6aaa347e93499fdc"
 [[package]]
 name = "turbonone"
 version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01236f5515b91109a145c6ec132b9a0d4b5518017d63795441eea7e819d35b32"
 
 [[package]]
 name = "ucd-trie"

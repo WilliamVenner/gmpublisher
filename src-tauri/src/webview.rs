@@ -1,10 +1,8 @@
-use std::{cell::RefCell, mem::MaybeUninit, sync::{atomic::AtomicBool, mpsc::{self, Receiver, SendError, Sender}}};
+use std::sync::mpsc::{self, Receiver, SendError, Sender};
 
-use atomic_refcell::AtomicRefCell;
 use lazy_static::lazy_static;
 use serde::Serialize;
 use tauri::{ApplicationExt, WebviewDispatcher, WebviewManager};
-
 
 lazy_static! {
 	pub static ref WEBVIEW: WrappedWebview<tauri::flavors::Wry> = WrappedWebview::pending();
@@ -14,7 +12,7 @@ pub type WebviewEmit = (&'static str, Option<Box<dyn erased_serde::Serialize + S
 
 pub struct WrappedWebview<Application: ApplicationExt + 'static> {
 	pub tx: Sender<WebviewEmit>,
-	tx_webview: Sender<WebviewDispatcher<Application::Dispatcher>>
+	tx_webview: Sender<WebviewDispatcher<Application::Dispatcher>>,
 }
 unsafe impl<Application: ApplicationExt + 'static> Send for WrappedWebview<Application> {}
 unsafe impl<Application: ApplicationExt + 'static> Sync for WrappedWebview<Application> {}
@@ -42,10 +40,17 @@ impl<Application: ApplicationExt + 'static> WrappedWebview<Application> {
 		ignore! { self.tx_webview.send(webview.current_webview().unwrap()) };
 	}
 
-	pub fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, payload: Option<D>) -> Result<(), SendError<(&'static str, Option<Box<dyn erased_serde::Serialize + Send>>)>> {
-		self.tx.send((event, match payload {
-			Some(payload) => Some(Box::new(payload)),
-			None => None
-		}))
+	pub fn emit<D: Serialize + Send + 'static>(
+		&self,
+		event: &'static str,
+		payload: Option<D>,
+	) -> Result<(), SendError<(&'static str, Option<Box<dyn erased_serde::Serialize + Send>>)>> {
+		self.tx.send((
+			event,
+			match payload {
+				Some(payload) => Some(Box::new(payload)),
+				None => None,
+			},
+		))
 	}
 }

@@ -2,7 +2,9 @@
 // https://github.com/Facepunch/gmad/blob/master/include/AddonWhiteList.h
 
 macro_rules! nul_terminated_str {
-	( $str:literal ) => { concat!($str, "\0") };
+	( $str:literal ) => {
+		concat!($str, "\0")
+	};
 }
 
 const ADDON_WHITELIST: &'static [&'static str] = &[
@@ -117,7 +119,7 @@ pub fn check<S: Into<String> + Clone>(str: &S) -> bool {
 			return true;
 		}
 	}
-	
+
 	false
 }
 

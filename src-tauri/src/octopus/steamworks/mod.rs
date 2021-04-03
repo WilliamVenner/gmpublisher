@@ -1,17 +1,21 @@
-use rayon::{
-	iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator},
+use std::{
+	collections::HashMap,
+	mem::MaybeUninit,
+	sync::{atomic::AtomicBool, Arc},
 };
-use std::{collections::HashMap, hash::Hash, mem::MaybeUninit, path::PathBuf, sync::{atomic::AtomicBool, Arc}};
 
-use steamworks::{AccountId, AppId, Callback, CallbackHandle, Client, ClientManager, Friend, ItemState, PublishedFileId, QueryResult, QueryResults, SingleClient, SteamError, SteamId, SteamServerConnectFailure, SteamServersConnected, SteamServersDisconnected};
+use steamworks::{
+	AccountId, Callback, CallbackHandle, Client, ClientManager, PublishedFileId, SingleClient, SteamId, SteamServerConnectFailure,
+	SteamServersConnected, SteamServersDisconnected,
+};
 
 use atomic_refcell::AtomicRefCell;
 
 use self::{downloads::Downloads, users::SteamUser, workshop::WorkshopItem};
 
-use super::{THREAD_POOL, AtomicRefSome, PromiseCache, PromiseHashCache};
+use super::{AtomicRefSome, PromiseCache, PromiseHashCache, THREAD_POOL};
 
-use crate::{main_thread_forbidden, transaction, GMOD_APP_ID, webview_emit, steamworks, transactions::Transaction};
+use crate::{steamworks, webview_emit};
 
 pub mod downloads;
 pub mod publishing;
@@ -124,7 +128,9 @@ impl Steamworks {
 			println!("[Steamworks] SteamServersDisconnected {:#?}", c);
 		}));
 
-		loop { steamworks!().run_callbacks(); }
+		loop {
+			steamworks!().run_callbacks();
+		}
 	}
 
 	fn on_initialized() {

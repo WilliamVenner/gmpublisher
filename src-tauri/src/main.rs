@@ -2,14 +2,15 @@
 
 pub const GMOD_APP_ID: AppId = AppId(4000);
 
+use gma::extract::ExtractDestination;
 use std::path::PathBuf;
-use gma::{extract::ExtractDestination};
 use tauri::WebviewBuilderExt;
 
 use lazy_static::lazy_static;
 use steamworks::{AppId, PublishedFileId};
 
-#[macro_use] extern crate turbonone;
+#[macro_use]
+extern crate turbonone;
 
 pub mod transactions;
 
@@ -24,8 +25,7 @@ pub mod base64_image;
 pub use base64_image::Base64Image;
 
 pub mod octopus;
-pub use octopus::steamworks::workshop::WorkshopItem;
-pub use octopus::steamworks::users::SteamUser;
+pub use octopus::steamworks::{users::SteamUser, workshop::WorkshopItem};
 lazy_static! {
 	pub static ref STEAMWORKS: octopus::Steamworks = octopus::Steamworks::init();
 	pub static ref GMA: octopus::GMA = octopus::GMA::init();
@@ -66,7 +66,9 @@ mod webview;
 pub use webview::WEBVIEW;
 #[macro_export]
 macro_rules! webview {
-	() => { &*crate::WEBVIEW };
+	() => {
+		&*crate::WEBVIEW
+	};
 }
 #[macro_export]
 macro_rules! webview_emit {
@@ -86,7 +88,11 @@ fn main() {
 
 	std::thread::spawn(move || {
 		steamworks!().client_wait();
-		downloads!().download(vec![PublishedFileId(2439258443), PublishedFileId(2439806441), PublishedFileId(2440241937)]);
+		downloads!().download(vec![
+			PublishedFileId(2439258443),
+			PublishedFileId(2439806441),
+			PublishedFileId(2440241937),
+		]);
 	});
 
 	std::thread::spawn(move || {
@@ -98,12 +104,17 @@ fn main() {
 
 		println!("=================================================================");
 
-		GMAFile::write(src_path, dest_path.clone(), &GMAMetadata::Standard(StandardGMAMetadata {
-		    title: "LW BMW Pack Test".to_string(),
-		    addon_type: "addon".to_string(),
-		    tags: vec!["gmpublisher".to_string()],
-		    ignore: vec!["test".to_string()],
-		})).unwrap();
+		GMAFile::write(
+			src_path,
+			dest_path.clone(),
+			&GMAMetadata::Standard(StandardGMAMetadata {
+				title: "LW BMW Pack Test".to_string(),
+				addon_type: "addon".to_string(),
+				tags: vec!["gmpublisher".to_string()],
+				ignore: vec!["test".to_string()],
+			}),
+		)
+		.unwrap();
 
 		println!("{:?}ms", now.elapsed().as_millis());
 

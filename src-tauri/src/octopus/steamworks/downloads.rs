@@ -1,18 +1,11 @@
 use lazy_static::lazy_static;
-use parking_lot::{Condvar, Mutex, RwLock};
-use rayon::{
-	iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator},
-};
-use serde::Serialize;
-use std::{collections::HashMap, hash::Hash, mem::MaybeUninit, path::PathBuf, sync::{atomic::AtomicBool, Arc}};
+use parking_lot::{Condvar, Mutex};
 
-use steamworks::{AccountId, AppId, Callback, CallbackHandle, Client, ClientManager, Friend, ItemState, PublishedFileId, QueryResult, QueryResults, SingleClient, SteamError, SteamId, SteamServerConnectFailure, SteamServersConnected, SteamServersDisconnected};
+use std::sync::{atomic::AtomicBool, Arc};
 
-use atomic_refcell::AtomicRefCell;
+use steamworks::{ItemState, PublishedFileId};
 
-use super::{THREAD_POOL, AtomicRefSome, PromiseCache, PromiseHashCache};
-
-use crate::{main_thread_forbidden, transaction, GMOD_APP_ID, webview_emit, steamworks, transactions::Transaction};
+use crate::{steamworks, transaction, transactions::Transaction, webview_emit, GMOD_APP_ID};
 
 lazy_static! {
 	pub static ref DOWNLOADS: Downloads = Downloads::init();
@@ -22,24 +15,24 @@ lazy_static! {
 pub struct DownloadInner {
 	id: PublishedFileId,
 	transaction: Transaction,
-	sent_total: AtomicBool
+	sent_total: AtomicBool,
 }
 impl std::hash::Hash for DownloadInner {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
-    }
+	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+		self.id.hash(state);
+	}
 }
 impl Eq for DownloadInner {}
 impl PartialEq for DownloadInner {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
+	fn eq(&self, other: &Self) -> bool {
+		self.id == other.id
+	}
 }
 impl std::ops::Deref for DownloadInner {
-    type Target = PublishedFileId;
-    fn deref(&self) -> &Self::Target {
-        &self.id
-    }
+	type Target = PublishedFileId;
+	fn deref(&self) -> &Self::Target {
+		&self.id
+	}
 }
 pub type Download = Arc<DownloadInner>;
 pub struct Downloads {
@@ -48,7 +41,7 @@ pub struct Downloads {
 	watchdog: Condvar,
 }
 pub struct IDList {
-	inner: Vec<PublishedFileId>
+	inner: Vec<PublishedFileId>,
 }
 impl Into<Vec<PublishedFileId>> for IDList {
 	fn into(self) -> Vec<PublishedFileId> {
@@ -84,7 +77,7 @@ impl Downloads {
 			let download = Arc::new(DownloadInner {
 				id,
 				sent_total: AtomicBool::new(false),
-				transaction: transaction!()
+				transaction: transaction!(),
 			});
 
 			pending.push(download.clone());
@@ -96,7 +89,7 @@ impl Downloads {
 	pub fn start(&self) {
 		let mut downloading = self.downloading.lock();
 		downloading.append(&mut self.pending.lock());
-		
+
 		self.watchdog.notify_one();
 	}
 
@@ -108,7 +101,9 @@ impl Downloads {
 
 			loop {
 				let mut downloading = std::mem::take(&mut *DOWNLOADS.downloading.lock());
-				if downloading.is_empty() { break; }
+				if downloading.is_empty() {
+					break;
+				}
 
 				downloading.sort_unstable_by_key(|download| download.0);
 				downloading.dedup_by_key(|download| download.0);
@@ -131,7 +126,7 @@ impl Downloads {
 						}
 					}
 				});
-				
+
 				let started = std::time::Instant::now();
 
 				loop {
@@ -140,7 +135,9 @@ impl Downloads {
 						None => continue,
 					};
 
-					if downloading.is_empty() { break; }
+					if downloading.is_empty() {
+						break;
+					}
 
 					let mut i = 0;
 					while i != downloading.len() {

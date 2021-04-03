@@ -1,4 +1,8 @@
-use std::{collections::HashMap, fs::File, io::{BufRead, BufReader, Read, Seek, SeekFrom}};
+use std::{
+	collections::HashMap,
+	fs::File,
+	io::{BufRead, BufReader, Read, Seek, SeekFrom},
+};
 
 use byteorder::{LittleEndian, ReadBytesExt};
 
@@ -31,22 +35,22 @@ impl<R: Read + Seek> GMAReadHandle<R> {
 			}
 		})
 	}
-	
+
 	pub fn skip_nt_string(&mut self) -> Result<usize, std::io::Error> {
 		let mut buf = vec![];
 		self.read_until(0, &mut buf)
 	}
 }
 impl<R: Read + Seek> std::ops::Deref for GMAReadHandle<R> {
-    type Target = BufReader<R>;
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
+	type Target = BufReader<R>;
+	fn deref(&self) -> &Self::Target {
+		&self.inner
+	}
 }
 impl<R: Read + Seek> std::ops::DerefMut for GMAReadHandle<R> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.inner
+	}
 }
 
 impl GMAFile {
@@ -66,18 +70,13 @@ impl GMAFile {
 				// required content [unused]
 				safe_read!(handle.skip_nt_string())?;
 			}
-			
+
 			let title = safe_read!(handle.read_nt_string())?;
 			let description = safe_read!(handle.read_nt_string())?;
 
 			self.metadata = Some(match serde_json::de::from_str::<StandardGMAMetadata>(&description) {
 				Ok(addon_json) => GMAMetadata::Standard(addon_json),
-				Err(_) => {
-					GMAMetadata::Legacy(LegacyGMAMetadata {
-						title,
-						description
-					})
-				}
+				Err(_) => GMAMetadata::Legacy(LegacyGMAMetadata { title, description }),
 			});
 
 			safe_read!(handle.skip_nt_string())?; // author [unused]
@@ -93,19 +92,19 @@ impl GMAFile {
 
 	pub fn entries(&mut self) -> Result<Option<GMAReadHandle<File>>, GMAError> {
 		main_thread_forbidden!();
-		
+
 		if self.entries.is_some() {
 			Ok(None)
 		} else {
 			let mut handle = match self.metadata()? {
 				Some(handle) => handle,
-				None => self.read()?
+				None => self.read()?,
 			};
 			handle.seek(SeekFrom::Start(self.pointers.entries_list))?;
 
 			let mut entries = GMAEntriesMap { inner: HashMap::new() };
 			let mut entry_cursor = 0;
-			
+
 			while handle.read_u32::<LittleEndian>()? != 0 {
 				let path = handle.read_nt_string()?;
 				let size = handle.read_i64::<LittleEndian>()? as u64;
@@ -115,7 +114,7 @@ impl GMAFile {
 					path: path.clone(),
 					size,
 					crc,
-					index: entry_cursor
+					index: entry_cursor,
 				};
 
 				entry_cursor = entry_cursor + size;

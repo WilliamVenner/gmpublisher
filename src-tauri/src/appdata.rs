@@ -6,10 +6,10 @@ use std::{
 
 use crate::webview_emit;
 
+use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use crate::GMOD_APP_ID;
 
 const APP_INFO: app_dirs::AppInfo = app_dirs::AppInfo {
 	name: "gmpublisher",
@@ -17,7 +17,9 @@ const APP_INFO: app_dirs::AppInfo = app_dirs::AppInfo {
 };
 lazy_static! {
 	static ref APP_DATA_DIR: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO).unwrap();
-	static ref APP_SETTINGS_PATH: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO).unwrap().join("settings.json");
+	static ref APP_SETTINGS_PATH: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO)
+		.unwrap()
+		.join("settings.json");
 }
 
 fn settings_path() -> PathBuf {
@@ -97,7 +99,7 @@ impl AppData {
 				return Some(gmod.clone());
 			}
 		}
-		
+
 		let gmod: PathBuf = steamworks!().client().apps().app_install_dir(GMOD_APP_ID).into();
 		if gmod.is_dir() && gmod.exists() {
 			Some(gmod)
@@ -120,7 +122,13 @@ impl<Application: tauri::ApplicationExt + 'static> tauri::plugin::Plugin<Applica
 	fn initialization_script(&self) -> Option<String> {
 		Some(
 			include_str!("../../app/plugins/AppData.js")
-				.replace("{$_APP_DATA_$}", &serde_json::ser::to_string(&*crate::APP_DATA).unwrap().replace("\\", "\\\\").replace("'", "\\'"))
+				.replace(
+					"{$_APP_DATA_$}",
+					&serde_json::ser::to_string(&*crate::APP_DATA)
+						.unwrap()
+						.replace("\\", "\\\\")
+						.replace("'", "\\'"),
+				)
 				.replace(
 					"{$_WS_DEAD_$}",
 					&serde_json::ser::to_string(&crate::WorkshopItem::from(steamworks::PublishedFileId(0)))
