@@ -61,7 +61,6 @@ impl GMAFile {
 
 		self.entries()?;
 
-		// FIXME: unwrap
 		THREAD_POOL.install(move || {
 			let mut dest_path = dest.into(&self.extracted_name);
 			let entries_start = self.pointers.entries;
@@ -71,21 +70,28 @@ impl GMAFile {
 
 			let i = AtomicUsize::new(0);
 			entries.par_iter().for_each_init(
-				|| BufReader::new(File::open(&self.path).unwrap()),
+				|| File::open(&self.path).map(|f| BufReader::new(f)),
 				|handle, (entry_path, entry)| {
-					if whitelist::check(entry_path) {
-						ignore! { GMAFile::stream_entry_bytes(handle, entries_start, &dest_path.join(entry_path), entry) };
-						transaction.progress(((i.fetch_add(1, Ordering::AcqRel) + 1) as f64) / entries_len);
-					} else {
-						transaction.data(("ERR_WHITELIST", entry_path.clone()));
+					match handle {
+						Ok(handle) => {
+							if whitelist::check(entry_path) {
+								ignore! { GMAFile::stream_entry_bytes(handle, entries_start, &dest_path.join(entry_path), entry) };
+								transaction.progress(((i.fetch_add(1, Ordering::AcqRel) + 1) as f64) / entries_len);
+							} else {
+								transaction.data(("ERR_WHITELIST", entry_path.clone()));
+							}
+						},
+						Err(_) => transaction.error(("ERR_GMA_IO_ERROR", entry_path.clone()))
 					}
 				}
 			);
 
-			if let GMAMetadata::Standard(metadata) = self.metadata.clone().unwrap() {
-				dest_path.push("addon.json");
-				ignore! { fs::write(&dest_path, serde_json::ser::to_string_pretty(&metadata).unwrap().as_bytes()) };
-				dest_path.pop();
+			if let GMAMetadata::Standard(ref metadata) = self.metadata.as_ref().unwrap() {
+				if let Ok(json) = serde_json::ser::to_string_pretty(&metadata) {
+					dest_path.push("addon.json");
+					ignore! { fs::write(&dest_path, json.as_bytes()) };
+					dest_path.pop();
+				}
 			}
 
 			transaction.finished(turbonone!());

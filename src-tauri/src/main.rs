@@ -2,10 +2,9 @@
 
 pub const GMOD_APP_ID: AppId = AppId(4000);
 
-use std::{cell::RefCell, fs::File, hash::Hash, mem::MaybeUninit, path::PathBuf, sync::{atomic::AtomicBool, mpsc::{self, Sender}}};
+use std::path::PathBuf;
 use gma::{extract::ExtractDestination};
-use serde::Serialize;
-use tauri::{ApplicationExt, WebviewBuilderExt, WebviewDispatcher, WebviewManager};
+use tauri::WebviewBuilderExt;
 
 use lazy_static::lazy_static;
 use steamworks::{AppId, PublishedFileId};
@@ -25,7 +24,8 @@ pub mod base64_image;
 pub use base64_image::Base64Image;
 
 pub mod octopus;
-pub use octopus::steamworks::WorkshopItem;
+pub use octopus::steamworks::workshop::WorkshopItem;
+pub use octopus::steamworks::users::SteamUser;
 lazy_static! {
 	pub static ref STEAMWORKS: octopus::Steamworks = octopus::Steamworks::init();
 	pub static ref GMA: octopus::GMA = octopus::GMA::init();
@@ -85,6 +85,11 @@ fn main() {
 	lazy_static::initialize(&GMA);
 
 	std::thread::spawn(move || {
+		steamworks!().client_wait();
+		downloads!().download(vec![PublishedFileId(2439258443), PublishedFileId(2439806441), PublishedFileId(2440241937)]);
+	});
+
+	std::thread::spawn(move || {
 		std::thread::sleep(std::time::Duration::from_secs(2));
 		let now = std::time::Instant::now();
 
@@ -93,12 +98,12 @@ fn main() {
 
 		println!("=================================================================");
 
-		let mut gma = GMAFile::write(src_path, dest_path.clone(), &GMAMetadata::Standard(StandardGMAMetadata {
+		GMAFile::write(src_path, dest_path.clone(), &GMAMetadata::Standard(StandardGMAMetadata {
 		    title: "LW BMW Pack Test".to_string(),
 		    addon_type: "addon".to_string(),
 		    tags: vec!["gmpublisher".to_string()],
 		    ignore: vec!["test".to_string()],
-		}));
+		})).unwrap();
 
 		println!("{:?}ms", now.elapsed().as_millis());
 

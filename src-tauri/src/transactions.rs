@@ -124,7 +124,7 @@ impl TransactionInner {
 		}
 	}
 
-	pub fn error<S: AsRef<str> + Serialize + Send + 'static>(&self, error: S) {
+	pub fn error<D: Serialize + Send + 'static>(&self, error: D) {
 		self.emit("TransactionError", error);
 	}
 

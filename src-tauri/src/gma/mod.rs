@@ -117,14 +117,16 @@ pub struct GMAFile {
 }
 
 impl GMAFile {
-	pub fn open(path: PathBuf) -> Result<GMAFile, GMAError> {
+	pub fn open<P: AsRef<Path>>(path: P) -> Result<GMAFile, GMAError> {
 		main_thread_forbidden!();
 
-		let mut f = BufReader::new(File::open(&path)?);
+		let path = path.as_ref();
+
+		let mut f = BufReader::new(File::open(path)?);
 
 		let mut gma = GMAFile {
 			size: path.metadata().and_then(|metadata| Ok(metadata.len())).unwrap_or(0),
-			path,
+			path: path.to_path_buf(),
 		    id: None,
 		    metadata: None,
 		    entries: None,

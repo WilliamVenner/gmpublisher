@@ -31,7 +31,7 @@ impl<Application: ApplicationExt + 'static> WrappedWebview<Application> {
 			let webview: WebviewDispatcher<Application::Dispatcher> = rx_webview.recv().unwrap();
 			loop {
 				let (event, payload) = rx.recv().unwrap();
-				webview.emit(event, payload);
+				ignore! { webview.emit(event, payload) };
 			}
 		});
 

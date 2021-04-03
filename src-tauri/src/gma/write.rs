@@ -26,7 +26,7 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 
 	pub(crate) fn create<P: AsRef<Path>>(mut self, src_path: P, data: &GMAMetadata, transaction: Transaction) -> Result<(), GMAError> {
 		let src_path = src_path.as_ref();
-		
+
 		let (title, addon_json) = match data {
 			GMAMetadata::Legacy(data) => (data.title.as_str(), None),
 			GMAMetadata::Standard(data) => (data.title.as_str(), Some(data))
@@ -62,7 +62,6 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 		self.write_i32::<LittleEndian>(1)?;
 
 		// file list
-		// FIXME handle IO errors, don't unwrap
 		let (rx, total) = {
 			let (tx, rx) = mpsc::channel();
 
@@ -87,8 +86,12 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 				})
 			}) {
 				let tx = tx.clone();
+				let transaction = transaction.clone();
 				THREAD_POOL.spawn(move || {
-					let contents = fs::read(&path).unwrap();
+					let contents = match fs::read(&path) {
+						Ok(contents) => contents,
+						Err(_) => return transaction.data(("ERR_GMA_IO_ERROR", path))
+					};
 
 					let mut crc32 = crc32fast::Hasher::new();
 					crc32.reset();
