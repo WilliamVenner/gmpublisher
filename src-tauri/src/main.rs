@@ -2,8 +2,9 @@
 
 pub const GMOD_APP_ID: AppId = AppId(4000);
 
-use std::{cell::RefCell, fs::File, hash::Hash, mem::MaybeUninit, path::PathBuf, sync::atomic::AtomicBool};
-use gma::{extract::ExtractDestination, write::GMACreationData};
+use std::{cell::RefCell, fs::File, hash::Hash, mem::MaybeUninit, path::PathBuf, sync::{atomic::AtomicBool, mpsc::{self, Sender}}};
+use gma::{extract::ExtractDestination};
+use serde::Serialize;
 use tauri::{ApplicationExt, WebviewBuilderExt, WebviewDispatcher, WebviewManager};
 
 use lazy_static::lazy_static;
@@ -60,59 +61,21 @@ macro_rules! app_data {
 	};
 }
 
-pub struct WrappedWebview<Application: ApplicationExt + 'static> {
-	pub setup: AtomicBool,
-	pub inner: RefCell<MaybeUninit<WebviewDispatcher<Application::Dispatcher>>>,
-}
-unsafe impl<Application: ApplicationExt + 'static> Send for WrappedWebview<Application> {}
-unsafe impl<Application: ApplicationExt + 'static> Sync for WrappedWebview<Application> {}
-impl<Application: ApplicationExt + 'static> WrappedWebview<Application> {
-	fn pending() -> Self {
-		Self {
-			setup: AtomicBool::new(false),
-			inner: RefCell::new(MaybeUninit::uninit()),
-		}
-	}
-
-	fn init(&self, webview: WebviewManager<Application>) {
-		if !self.setup.fetch_or(true, std::sync::atomic::Ordering::SeqCst) {
-			unsafe {
-				self.inner.borrow_mut().as_mut_ptr().write(webview.current_webview().unwrap());
-			}
-		}
-	}
-}
-lazy_static! {
-	pub static ref WEBVIEW: WrappedWebview<tauri::flavors::Wry> = WrappedWebview::pending();
-}
+#[macro_use]
+mod webview;
+pub use webview::WEBVIEW;
 #[macro_export]
 macro_rules! webview {
-	() => {
-		unsafe { &*crate::WEBVIEW.inner.borrow().as_ptr() }
-	};
-}
-#[macro_export]
-macro_rules! webview_emit_safe {
-	( $event:expr, $data:expr ) => {
-		if crate::WEBVIEW.setup.load(std::sync::atomic::Ordering::Acquire) {
-			ignore! { webview_emit!($event, $data) };
-		}
-	};
-
-	( $event:expr ) => {
-		if crate::WEBVIEW.setup.load(std::sync::atomic::Ordering::Acquire) {
-			ignore! { webview_emit!($event) };
-		}
-	};
+	() => { &*crate::WEBVIEW };
 }
 #[macro_export]
 macro_rules! webview_emit {
 	( $event:expr, $data:expr ) => {
-		webview!().emit($event, Some($data))
+		crate::webview!().emit($event, Some($data)).unwrap()
 	};
 
 	( $event:expr ) => {
-		webview!().emit($event, turbonone!())
+		crate::webview!().emit($event, turbonone!()).unwrap()
 	};
 }
 
@@ -130,18 +93,19 @@ fn main() {
 
 		println!("=================================================================");
 
-		let mut gma = GMAFile::write(src_path, dest_path.clone(), GMACreationData {
+		let mut gma = GMAFile::write(src_path, dest_path.clone(), &GMAMetadata::Standard(StandardGMAMetadata {
 		    title: "LW BMW Pack Test".to_string(),
 		    addon_type: "addon".to_string(),
 		    tags: vec!["gmpublisher".to_string()],
 		    ignore: vec!["test".to_string()],
-		});
+		}));
 
 		println!("{:?}ms", now.elapsed().as_millis());
 
 		let now = std::time::Instant::now();
 
-		GMAFile::open(dest_path).unwrap().extract(ExtractDestination::Temp, &transaction!()).unwrap();
+		let transaction = transaction!();
+		GMAFile::open(dest_path).unwrap().extract(ExtractDestination::Temp, transaction).unwrap();
 
 		println!("{:?}ms", now.elapsed().as_millis());
 	});

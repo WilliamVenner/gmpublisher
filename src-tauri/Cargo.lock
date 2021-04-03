@@ -814,6 +814,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "erased-serde"
+version = "0.3.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0465971a8cc1fa2455c8465aaa377131e1f1cf4983280f474a13e68793aa770c"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "fastrand"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1196,6 +1205,7 @@ dependencies = [
  "crc32fast",
  "dirs 3.0.1",
  "dunce",
+ "erased-serde",
  "image",
  "indexmap",
  "lazy_static",

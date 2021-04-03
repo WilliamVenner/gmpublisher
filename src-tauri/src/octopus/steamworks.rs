@@ -12,7 +12,7 @@ use atomic_refcell::AtomicRefCell;
 
 use super::{THREAD_POOL, AtomicRefSome, PromiseCache, PromiseHashCache};
 
-use crate::{main_thread_forbidden, transaction, webview, webview_emit, webview_emit_safe, steamworks, transactions::Transaction};
+use crate::{main_thread_forbidden, transaction, webview, webview_emit, steamworks, transactions::Transaction};
 
 lazy_static! {
 	static ref PERSONACHANGE_USER_INFO: steamworks::PersonaChange = steamworks::PersonaChange::NAME | steamworks::PersonaChange::AVATAR;
@@ -93,7 +93,7 @@ impl Downloads {
 
 			pending.push(download.clone());
 
-			webview_emit!("DownloadStarted", download.transaction.id).unwrap();
+			webview_emit!("DownloadStarted", download.transaction.id);
 		}
 	}
 
@@ -784,7 +784,7 @@ impl Steamworks {
 
 	fn set_connected(&self, connected: bool) {
 		self.connected.store(connected, std::sync::atomic::Ordering::Release);
-		webview_emit_safe!(if connected { "SteamConnected" } else { "SteamDisconnected" });
+		webview_emit!(if connected { "SteamConnected" } else { "SteamDisconnected" });
 	}
 
 	pub fn client(&self) -> AtomicRefSome<Interface> {

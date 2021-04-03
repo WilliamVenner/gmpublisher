@@ -84,8 +84,8 @@ pub struct TransactionInner {
 	aborted: AtomicBool
 }
 impl TransactionInner {
-	fn emit<S: AsRef<str>, D: Serialize>(&self, event: S, data: D) {
-		ignore! { webview_emit!(event.as_ref(), (self.id, data)) }
+	fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, data: D) {
+		webview_emit!(event, (self.id, data));
 	}
 
 	fn abort(&self) {
@@ -100,11 +100,11 @@ impl TransactionInner {
 		});
 	}
 
-	pub fn data<D: Serialize>(&self, data: D) {
+	pub fn data<D: Serialize + Send + 'static>(&self, data: D) {
 		self.emit("TransactionData", data);
 	}
 
-	pub fn status<S: AsRef<str> + Serialize>(&self, status: S) {
+	pub fn status<S: AsRef<str> + Serialize + Send + 'static>(&self, status: S) {
 		self.emit("TransactionStatus", status)
 	}
 
@@ -124,11 +124,11 @@ impl TransactionInner {
 		}
 	}
 
-	pub fn error<S: AsRef<str> + Serialize>(&self, error: S) {
+	pub fn error<S: AsRef<str> + Serialize + Send + 'static>(&self, error: S) {
 		self.emit("TransactionError", error);
 	}
 
-	pub fn finished<D: Serialize>(&self, data: Option<D>) {
+	pub fn finished<D: Serialize + Send + 'static>(&self, data: Option<D>) {
 		debug_assert!(!self.aborted(), "Tried to finish an aborted transaction!");
 		self.abort();
 		self.emit("TransactionFinished", data);

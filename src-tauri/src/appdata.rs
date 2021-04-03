@@ -4,7 +4,7 @@ use std::{
 	path::PathBuf,
 };
 
-use crate::webview;
+use crate::webview_emit;
 
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
@@ -87,8 +87,8 @@ impl AppData {
 		}
 	}
 
-	pub fn send(&self) {
-		webview!().emit("UpdateAppData", Some(self)).unwrap();
+	pub fn send(&'static self) {
+		webview_emit!("UpdateAppData", self);
 	}
 
 	pub fn gmod(&self) -> Option<PathBuf> {

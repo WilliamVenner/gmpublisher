@@ -44,6 +44,7 @@ app_dirs = "1.2.1"
 walkdir = "2.3.2"
 crc32fast = "1.2.1"
 path-slash = "0.1.4"
+erased-serde = "0.3.13"
 
 [features]
 default = [ "custom-protocol" ]
