@@ -1,7 +1,5 @@
 // Utility library for shared concurrency between JS and Rust.
 
-// TODO https://pkolaczk.github.io/multiple-threadpools-rust/
-
 pub mod gma;
 pub mod steamworks;
 

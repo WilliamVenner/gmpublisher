@@ -1,4 +1,4 @@
-use std::sync::mpsc::{self, Receiver, SendError, Sender};
+use std::sync::mpsc::{self, Receiver, SendError, SyncSender};
 
 use lazy_static::lazy_static;
 use serde::Serialize;
@@ -11,8 +11,8 @@ lazy_static! {
 pub type WebviewEmit = (&'static str, Option<Box<dyn erased_serde::Serialize + Send>>);
 
 pub struct WrappedWebview<Application: ApplicationExt + 'static> {
-	pub tx: Sender<WebviewEmit>,
-	tx_webview: Sender<WebviewDispatcher<Application::Dispatcher>>,
+	pub tx: SyncSender<WebviewEmit>,
+	tx_webview: SyncSender<WebviewDispatcher<Application::Dispatcher>>,
 }
 unsafe impl<Application: ApplicationExt + 'static> Send for WrappedWebview<Application> {}
 unsafe impl<Application: ApplicationExt + 'static> Sync for WrappedWebview<Application> {}
@@ -22,9 +22,9 @@ impl<Application: ApplicationExt + 'static> WrappedWebview<Application> {
 		Self { tx_webview, tx }
 	}
 
-	fn channel() -> (Sender<WebviewDispatcher<Application::Dispatcher>>, Sender<WebviewEmit>) {
-		let (tx, rx): (Sender<WebviewEmit>, Receiver<WebviewEmit>) = mpsc::channel();
-		let (tx_webview, rx_webview) = mpsc::channel();
+	fn channel() -> (SyncSender<WebviewDispatcher<Application::Dispatcher>>, SyncSender<WebviewEmit>) {
+		let (tx, rx): (SyncSender<WebviewEmit>, Receiver<WebviewEmit>) = mpsc::sync_channel(1);
+		let (tx_webview, rx_webview) = mpsc::sync_channel(101);
 		std::thread::spawn(move || {
 			let webview: WebviewDispatcher<Application::Dispatcher> = rx_webview.recv().unwrap();
 			loop {
