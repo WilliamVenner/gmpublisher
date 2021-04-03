@@ -41,6 +41,9 @@ thiserror = "1.0.24"
 chardetng = "0.1.10"
 byteorder = "1.4.3"
 app_dirs = "1.2.1"
+walkdir = "2.3.2"
+crc32fast = "1.2.1"
+path-slash = "0.1.4"
 
 [features]
 default = [ "custom-protocol" ]

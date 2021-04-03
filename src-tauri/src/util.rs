@@ -142,12 +142,12 @@ pub fn dedup_unsorted<T: Hash + Eq>(mut vec: Vec<T>) -> Vec<T> {
 	}
 	impl<T: Hash + Eq> Hash for PtrCmp<T> {
 		fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-			unsafe { (*self.ptr).hash(state) };
+			unsafe { (&*self.ptr).hash(state) };
 		}
 	}
 	impl<T: Hash + Eq> PartialEq for PtrCmp<T> {
 		fn eq(&self, other: &Self) -> bool {
-			unsafe { *self.ptr == *other.ptr }
+			unsafe { &*self.ptr == &*other.ptr }
 		}
 	}
 	impl<T: Hash + Eq> Eq for PtrCmp<T> {}

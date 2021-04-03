@@ -2,8 +2,8 @@
 
 pub const GMOD_APP_ID: AppId = AppId(4000);
 
-use std::{cell::RefCell, fs::File, mem::MaybeUninit, path::PathBuf, sync::atomic::AtomicBool};
-use gma::extract::ExtractDestination;
+use std::{cell::RefCell, fs::File, hash::Hash, mem::MaybeUninit, path::PathBuf, sync::atomic::AtomicBool};
+use gma::{extract::ExtractDestination, write::GMACreationData};
 use tauri::{ApplicationExt, WebviewBuilderExt, WebviewDispatcher, WebviewManager};
 
 use lazy_static::lazy_static;
@@ -122,22 +122,26 @@ fn main() {
 	lazy_static::initialize(&GMA);
 
 	std::thread::spawn(move || {
-		std::thread::sleep(std::time::Duration::from_secs(1));
+		std::thread::sleep(std::time::Duration::from_secs(2));
 		let now = std::time::Instant::now();
 
-		let path = PathBuf::from(r#"D:\Steam\steamapps\common\GarrysMod\GarrysMod\addons\[lw]_bmw_pack_1400113491.gma"#);
+		let src_path = PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\lw_bmw_pack"#);
+		let dest_path = PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\lw_bmw_pack_sneed.gma"#);
 
-		let mut gma = GMAFile::open(path).unwrap();
-		println!("{:?}", gma.extract(ExtractDestination::Temp, &transaction!()));
+		println!("=================================================================");
+
+		let mut gma = GMAFile::write(src_path, dest_path.clone(), GMACreationData {
+		    title: "LW BMW Pack Test".to_string(),
+		    addon_type: "addon".to_string(),
+		    tags: vec!["gmpublisher".to_string()],
+		    ignore: vec!["test".to_string()],
+		});
 
 		println!("{:?}ms", now.elapsed().as_millis());
 
 		let now = std::time::Instant::now();
 
-		let path = PathBuf::from(r#"D:\Steam\steamapps\common\GarrysMod\GarrysMod\addons\[lw]_bmw_pack_1400113491.gma"#);
-
-		let mut gma = GMAFile::open(path).unwrap();
-		println!("{:?}", gma.extract(ExtractDestination::Temp, &transaction!()));
+		GMAFile::open(dest_path).unwrap().extract(ExtractDestination::Temp, &transaction!()).unwrap();
 
 		println!("{:?}ms", now.elapsed().as_millis());
 	});

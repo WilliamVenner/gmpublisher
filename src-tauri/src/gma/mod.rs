@@ -8,13 +8,14 @@ use serde::{Serialize, Deserialize};
 
 use crate::main_thread_forbidden;
 
-use self::{read::GMAReadHandle, write::GMAWriteHandle};
+use self::{read::GMAReadHandle, write::{GMACreationData, GMAWriteHandle}};
 
 const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 
 #[derive(Debug, Clone, Serialize, Error)]
 pub enum GMAError {
 	IOError,
+	FormatError,
 	InvalidHeader,
 	EntryNotFound,
 }
@@ -23,6 +24,7 @@ impl Display for GMAError {
 		use GMAError::*;
 		match self {
 			IOError => write!(f, "ERR_GMA_IO_ERROR"),
+			FormatError => write!(f, "ERR_GMA_FORMAT_ERROR"),
 			InvalidHeader => write!(f, "ERR_GMA_INVALID_HEADER"),
 			EntryNotFound => write!(f, "ERR_GMA_ENTRY_NOT_FOUND"),
 		}
@@ -166,13 +168,11 @@ impl GMAFile {
 				Ok(_) => match self.metadata.as_ref().unwrap() {
 					GMAMetadata::Legacy(LegacyGMAMetadata { title, .. }) | GMAMetadata::Standard(StandardGMAMetadata { title, .. }) => title.to_lowercase(),
 				},
-				Err(_) => {
-					match self.path.file_name() {
-						Some(file_name) => file_name.to_string_lossy().to_lowercase(),
-						None => match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-							Ok(unix) => format!("gmpublisher_extracted_{}", unix.as_secs()),
-							Err(_) => "gmpublisher_extracted".into()
-						}
+				Err(_) => match self.path.file_name() {
+					Some(file_name) => file_name.to_string_lossy().to_lowercase(),
+					None => match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+						Ok(unix) => format!("gmpublisher_extracted_{}", unix.as_secs()),
+						Err(_) => "gmpublisher_extracted".into()
 					}
 				},
 			};
@@ -213,11 +213,12 @@ impl GMAFile {
 		Ok(GMAReadHandle { inner: BufReader::new(File::open(&self.path)?) })
 	}
 
-	pub fn write(&self) -> Result<GMAWriteHandle<File>, GMAError> {
-		Ok(GMAWriteHandle { inner: BufWriter::new(File::create(&self.path)?) })
+	pub fn write(src_path: PathBuf, dest_path: PathBuf, data: GMACreationData) -> Result<(), GMAError> {
+		GMAWriteHandle { inner: BufWriter::new(File::create(&dest_path)?) }.create(src_path, data)
 	}
 }
 
+pub mod whitelist;
 pub mod read;
 pub mod write;
 pub mod extract;

@@ -13,9 +13,9 @@ pub struct GMAReadHandle<R: Read + Seek> {
 	pub inner: BufReader<R>,
 }
 impl<R: Read + Seek> GMAReadHandle<R> {
-	pub fn read_nt_string(&mut self) -> Result<String, GMAError> {
+	pub fn read_nt_string(&mut self) -> Result<String, std::io::Error> {
 		let mut buf = vec![];
-		let bytes_read = safe_read!(self.read_until(0, &mut buf))?;
+		let bytes_read = self.read_until(0, &mut buf)?;
 		let nt_string = &buf[0..bytes_read - 1];
 
 		Ok(match std::str::from_utf8(nt_string) {
@@ -32,9 +32,9 @@ impl<R: Read + Seek> GMAReadHandle<R> {
 		})
 	}
 	
-	pub fn skip_nt_string(&mut self) -> Result<usize, GMAError> {
+	pub fn skip_nt_string(&mut self) -> Result<usize, std::io::Error> {
 		let mut buf = vec![];
-		safe_read!(self.read_until(0, &mut buf))
+		self.read_until(0, &mut buf)
 	}
 }
 impl<R: Read + Seek> std::ops::Deref for GMAReadHandle<R> {
@@ -53,22 +53,22 @@ impl GMAFile {
 	pub fn metadata(&mut self) -> Result<Option<GMAReadHandle<File>>, GMAError> {
 		main_thread_forbidden!();
 
-		if let Some(ref metadata) = self.metadata {
+		if self.metadata.is_some() {
 			Ok(None)
 		} else {
 			let mut handle = self.read()?;
 			handle.seek(SeekFrom::Start(self.pointers.metadata))?;
 
-			handle.read_u64::<LittleEndian>()?; // steamid [unused]
-			handle.read_u64::<LittleEndian>()?; // timestamp
+			safe_read!(handle.read_u64::<LittleEndian>())?; // steamid [unused]
+			safe_read!(handle.read_u64::<LittleEndian>())?; // timestamp
 
 			if self.version > 1 {
 				// required content [unused]
-				handle.skip_nt_string()?;
+				safe_read!(handle.skip_nt_string())?;
 			}
 			
-			let title = handle.read_nt_string()?;
-			let description = handle.read_nt_string()?;
+			let title = safe_read!(handle.read_nt_string())?;
+			let description = safe_read!(handle.read_nt_string())?;
 
 			self.metadata = Some(match serde_json::de::from_str::<StandardGMAMetadata>(&description) {
 				Ok(addon_json) => GMAMetadata::Standard(addon_json),
@@ -80,8 +80,8 @@ impl GMAFile {
 				}
 			});
 
-			handle.skip_nt_string()?; // author [unused]
-			handle.read_i32::<LittleEndian>()?; // addon version [unused]
+			safe_read!(handle.skip_nt_string())?; // author [unused]
+			safe_read!(handle.read_i32::<LittleEndian>())?; // addon version [unused]
 
 			self.pointers.entries_list = handle.seek(SeekFrom::Current(0))?;
 
@@ -94,7 +94,7 @@ impl GMAFile {
 	pub fn entries(&mut self) -> Result<Option<GMAReadHandle<File>>, GMAError> {
 		main_thread_forbidden!();
 		
-		if let Some(ref entries) = self.entries {
+		if self.entries.is_some() {
 			Ok(None)
 		} else {
 			let mut handle = match self.metadata()? {

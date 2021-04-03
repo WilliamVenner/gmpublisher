@@ -2,7 +2,7 @@ use std::{fs::{self, File}, io::{BufReader, BufWriter, Read, Seek, SeekFrom}, pa
 
 use crate::{app_data, transactions::Transaction};
 
-use super::{GMAError, GMAFile, GMAEntry};
+use super::{GMAError, GMAFile, GMAEntry, GMAMetadata, GMACreationData};
 
 use lazy_static::lazy_static;
 use rayon::{ThreadPool, ThreadPoolBuilder, iter::{IntoParallelRefIterator, ParallelIterator}};
@@ -61,8 +61,9 @@ impl GMAFile {
 
 		self.entries()?;
 
+		// FIXME: unwrap
 		THREAD_POOL.install(move || {
-			let dest_path = dest.into(&self.extracted_name);
+			let mut dest_path = dest.into(&self.extracted_name);
 			let entries_start = self.pointers.entries;
 
 			self.entries.as_ref().unwrap().par_iter().for_each_init(
@@ -71,6 +72,12 @@ impl GMAFile {
 					ignore! { GMAFile::stream_entry_bytes(handle, entries_start, &dest_path.join(entry_path), entry) };
 				}
 			);
+
+			if let GMAMetadata::Standard(metadata) = self.metadata.clone().unwrap() {
+				dest_path.push("addon.json");
+				fs::write(&dest_path, serde_json::ser::to_string_pretty(&metadata).unwrap().as_bytes()).unwrap();
+				dest_path.pop();
+			}
 
 			Ok(dest_path)
 		})
