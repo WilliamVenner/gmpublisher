@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display, fs::File, io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write}, path::PathBuf, sync::Arc, thread::ThreadId, time::SystemTime};
+use std::{collections::HashMap, fmt::Display, fs::File, io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write}, path::{Path, PathBuf}, sync::Arc, thread::ThreadId, time::SystemTime};
 
 use byteorder::ReadBytesExt;
 use lazy_static::lazy_static;
@@ -6,9 +6,9 @@ use steamworks::PublishedFileId;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
-use crate::main_thread_forbidden;
+use crate::{main_thread_forbidden, transaction, transactions::Transaction};
 
-use self::{read::GMAReadHandle, write::{GMACreationData, GMAWriteHandle}};
+use self::{read::GMAReadHandle, write::GMAWriteHandle};
 
 const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 
@@ -213,8 +213,10 @@ impl GMAFile {
 		Ok(GMAReadHandle { inner: BufReader::new(File::open(&self.path)?) })
 	}
 
-	pub fn write(src_path: PathBuf, dest_path: PathBuf, data: GMACreationData) -> Result<(), GMAError> {
-		GMAWriteHandle { inner: BufWriter::new(File::create(&dest_path)?) }.create(src_path, data)
+	pub fn write<P: AsRef<Path>>(src_path: P, dest_path: P, data: &GMAMetadata) -> Result<Transaction, GMAError> {
+		let transaction = transaction!();
+		GMAWriteHandle { inner: BufWriter::new(File::create(dest_path.as_ref())?) }.create(src_path, data, transaction.clone())?;
+		Ok(transaction)
 	}
 }
 

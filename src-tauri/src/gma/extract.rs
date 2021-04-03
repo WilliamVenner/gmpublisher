@@ -1,8 +1,8 @@
-use std::{fs::{self, File}, io::{BufReader, BufWriter, Read, Seek, SeekFrom}, path::PathBuf};
+use std::{fs::{self, File}, io::{BufReader, BufWriter, Read, Seek, SeekFrom}, path::PathBuf, sync::atomic::{AtomicUsize, Ordering}};
 
-use crate::{app_data, transactions::Transaction};
+use crate::{whitelist, app_data, transactions::Transaction};
 
-use super::{GMAError, GMAFile, GMAEntry, GMAMetadata, GMACreationData};
+use super::{GMAError, GMAFile, GMAEntry, GMAMetadata};
 
 use lazy_static::lazy_static;
 use rayon::{ThreadPool, ThreadPoolBuilder, iter::{IntoParallelRefIterator, ParallelIterator}};
@@ -56,7 +56,7 @@ impl ExtractDestination {
 }
 
 impl GMAFile {
-	pub fn extract(&mut self, dest: ExtractDestination, transaction: &Transaction) -> Result<PathBuf, GMAError> {
+	pub fn extract(&mut self, dest: ExtractDestination, transaction: Transaction) -> Result<PathBuf, GMAError> {
 		main_thread_forbidden!();
 
 		self.entries()?;
@@ -66,18 +66,29 @@ impl GMAFile {
 			let mut dest_path = dest.into(&self.extracted_name);
 			let entries_start = self.pointers.entries;
 
-			self.entries.as_ref().unwrap().par_iter().for_each_init(
+			let entries = self.entries.as_ref().unwrap();
+			let entries_len = entries.len() as f64;
+
+			let i = AtomicUsize::new(0);
+			entries.par_iter().for_each_init(
 				|| BufReader::new(File::open(&self.path).unwrap()),
 				|handle, (entry_path, entry)| {
-					ignore! { GMAFile::stream_entry_bytes(handle, entries_start, &dest_path.join(entry_path), entry) };
+					if whitelist::check(entry_path) {
+						ignore! { GMAFile::stream_entry_bytes(handle, entries_start, &dest_path.join(entry_path), entry) };
+						transaction.progress(((i.fetch_add(1, Ordering::AcqRel) + 1) as f64) / entries_len);
+					} else {
+						transaction.data(("ERR_WHITELIST", entry_path.clone()));
+					}
 				}
 			);
 
 			if let GMAMetadata::Standard(metadata) = self.metadata.clone().unwrap() {
 				dest_path.push("addon.json");
-				fs::write(&dest_path, serde_json::ser::to_string_pretty(&metadata).unwrap().as_bytes()).unwrap();
+				ignore! { fs::write(&dest_path, serde_json::ser::to_string_pretty(&metadata).unwrap().as_bytes()) };
 				dest_path.pop();
 			}
+
+			transaction.finished(turbonone!());
 
 			Ok(dest_path)
 		})
