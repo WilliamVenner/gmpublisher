@@ -24,11 +24,14 @@ pub use gma::*;
 pub mod base64_image;
 pub use base64_image::Base64Image;
 
+pub mod addon_size_analyzer;
+
 pub mod octopus;
 pub use octopus::steamworks::{users::SteamUser, workshop::WorkshopItem};
 lazy_static! {
 	pub static ref STEAMWORKS: octopus::Steamworks = octopus::Steamworks::init();
 	pub static ref GMA: octopus::GMA = octopus::GMA::init();
+	pub static ref GAME_ADDONS: octopus::GameAddons = octopus::GameAddons::init();
 }
 #[macro_export]
 macro_rules! steamworks {
@@ -46,6 +49,12 @@ macro_rules! downloads {
 macro_rules! gma {
 	() => {
 		&*crate::GMA
+	};
+}
+#[macro_export]
+macro_rules! game_addons {
+	() => {
+		&*crate::GAME_ADDONS
 	};
 }
 
@@ -82,9 +91,7 @@ macro_rules! webview_emit {
 }
 
 fn main() {
-	lazy_static::initialize(&APP_DATA);
 	lazy_static::initialize(&STEAMWORKS);
-	lazy_static::initialize(&GMA);
 
 	std::thread::spawn(move || {
 		steamworks!().client_wait();
@@ -93,6 +100,12 @@ fn main() {
 			PublishedFileId(2439806441),
 			PublishedFileId(2440241937),
 		]);
+	});
+
+	std::thread::spawn(move || {
+		steamworks!().client_wait();
+		game_addons!().discover_addons();
+		println!("{:#?}", game_addons!());
 	});
 
 	std::thread::spawn(move || {

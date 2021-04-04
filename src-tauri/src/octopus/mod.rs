@@ -2,6 +2,7 @@
 
 pub mod gma;
 pub mod steamworks;
+pub mod game_addons;
 
 use std::{
 	collections::HashMap,
@@ -20,7 +21,7 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 
-pub use self::{gma::GMA, steamworks::Steamworks};
+pub use self::{gma::GMA, steamworks::Steamworks, game_addons::GameAddons};
 
 lazy_static! {
 	pub static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();

@@ -4,7 +4,7 @@ use std::{
 	path::PathBuf,
 };
 
-use crate::webview_emit;
+use crate::{octopus::game_addons, webview_emit};
 
 use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
@@ -100,6 +100,8 @@ impl AppData {
 			}
 		}
 
+		if !steamworks!().connected() { return None };
+
 		let gmod: PathBuf = steamworks!().client().apps().app_install_dir(GMOD_APP_ID).into();
 		if gmod.is_dir() && gmod.exists() {
 			Some(gmod)
@@ -112,8 +114,15 @@ impl AppData {
 #[tauri::command]
 pub fn update_settings(mut settings: Settings) {
 	if settings.sanitize() {
-		settings.save().ok();
+		ignore! { settings.save() };
+		
+		let rediscover_addons = crate::APP_DATA.settings.read().gmod != settings.gmod;
+
 		*crate::APP_DATA.settings.write() = settings;
+
+		if rediscover_addons {
+			game_addons!().discover_addons();
+		}
 	}
 }
 
