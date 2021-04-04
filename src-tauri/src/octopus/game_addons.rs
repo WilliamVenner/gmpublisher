@@ -1,21 +1,31 @@
-use std::{ffi::OsString, fs::DirEntry, path::{Path, PathBuf}, sync::mpsc, time::SystemTime};
+use std::{collections::{BinaryHeap, HashMap}, fs::DirEntry, path::{Path, PathBuf}, pin::Pin, sync::mpsc};
 
-use indexmap::IndexMap;
 use lazy_static::lazy_static;
-use parking_lot::RwLock;
+use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use steamworks::PublishedFileId;
 
-use crate::{app_data, GMAFile};
+use crate::{app_data, game_addons, GMAFile};
 
 lazy_static! {
 	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
-	static ref GMA_FILE_EXTENSION: OsString = OsString::from("gma");
+}
+
+#[derive(derive_more::Deref, derive_more::DerefMut, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
+pub struct PinnedGMAFile(Pin<Box<GMAFile>>);
+impl serde::Serialize for PinnedGMAFile {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer
+	{
+		self.as_ref().serialize(serializer)
+	}
 }
 
 #[derive(Debug)]
 pub struct GameAddons {
-	addons: RwLock<IndexMap<PathBuf, GMAFile>>,
+	paths: RwLock<HashMap<PathBuf, PinnedGMAFile>>,
+	pages: RwLock<Vec<PinnedGMAFile>>,
 }
 
 unsafe impl Sync for GameAddons {}
@@ -24,7 +34,8 @@ unsafe impl Send for GameAddons {}
 impl GameAddons {
 	pub fn init() -> Self {
 		let game_addons = Self {
-		    addons: RwLock::new(IndexMap::new()),
+			paths: RwLock::new(HashMap::new()),
+			pages: RwLock::new(Vec::new()),
 		};
 		game_addons.discover_addons();
 		game_addons
@@ -33,10 +44,9 @@ impl GameAddons {
 	fn gma_check(entry: Result<DirEntry, std::io::Error>) -> Option<(PathBuf, String)> {
 		let path = entry.ok()?.path();
 		if !path.is_file() { return None; }
-		
-		let mut extension = path.extension()?.to_owned();
-		extension.make_ascii_lowercase();
-		if extension != *GMA_FILE_EXTENSION { return None; }
+
+		let extension = path.extension()?.to_string_lossy().to_lowercase();
+		if extension != "gma" { return None; }
 
 		let file_name = path.file_name()?.to_string_lossy().to_string();
 
@@ -45,73 +55,74 @@ impl GameAddons {
 
 	pub fn discover_addons(&self) {
 		let mut gmod = if let Some(gmod) = app_data!().gmod() { gmod } else {
-			*self.addons.write() = IndexMap::new();
+			*self.paths.write() = HashMap::new();
+			*self.pages.write() = Vec::new();
 			return;
 		};
 
-		DISCOVERY_POOL.scope(move |scope| {
-			let (tx, rx) = mpsc::channel();
+		let addons_dir = gmod.join("GarrysMod/addons");
 
-			let addons_dir = gmod.join("GarrysMod/addons");
+		gmod.push("GarrysMod/cache/workshop");
+		let cache_dir = gmod;
 
-			gmod.push("GarrysMod/cache/workshop");
-			let cache_dir = gmod;
+		let (tx_metadata, rx_metadata) = mpsc::channel();
+		let (tx, rx) = mpsc::channel();
 
-			let tx_addons = tx.clone();
-			scope.spawn(move |_| {
-				let addons = match addons_dir.read_dir() {
-					Ok(addons) => addons,
-					Err(_) => return
-				};
+		let tx_addons_metadata = tx_metadata.clone();
+		DISCOVERY_POOL.spawn(move || {
+			let addons = match addons_dir.read_dir() {
+				Ok(addons) => addons,
+				Err(_) => return
+			};
 
-				'paths: for (path, file_name) in addons.filter_map(GameAddons::gma_check) {
-					let mut id = 0u64;
+			'paths: for (path, file_name) in addons.filter_map(GameAddons::gma_check) {
+				let mut id = 0u64;
 
-					for char in file_name
-						.chars()
-						.rev() // Reverse iterator so we're looking at the suffix (the PublishedFileId)
-						.take_while(|c| c.is_digit(10))
-						.collect::<Vec<char>>()
-						.into_iter()
-						.rev()
-					{
-						match id.checked_add(char::to_digit(char, 10).unwrap() as u64) {
+				for char in file_name
+					.chars()
+					.rev() // Reverse iterator so we're looking at the suffix (the PublishedFileId)
+					.take_while(|c| c.is_digit(10))
+					.collect::<Vec<char>>()
+					.into_iter()
+					.rev()
+				{
+					match id.checked_add(char::to_digit(char, 10).unwrap() as u64) {
+						None => continue 'paths,
+						Some(id_op) => match 10_u64.checked_mul(id_op) {
 							None => continue 'paths,
-							Some(id_op) => match 10_u64.checked_mul(id_op) {
-								None => continue 'paths,
-								Some(id_op) => id = id_op
-							},
-						}
+							Some(id_op) => id = id_op
+						},
 					}
-
-					tx_addons.send((
-						path,
-						if id == 0 { None } else {
-							Some(PublishedFileId(id / 10))
-						}
-					)).unwrap();
 				}
-			});
-	
-			let tx_cache = tx;
-			scope.spawn(move |_| {
-				let cache = match cache_dir.read_dir() {
-					Ok(cache) => cache,
-					Err(_) => return
+
+				tx_addons_metadata.send((
+					path,
+					if id == 0 { None } else {
+						Some(PublishedFileId(id / 10))
+					}
+				)).unwrap();
+			}
+		});
+
+		let tx_cache_metadata = tx_metadata;
+		DISCOVERY_POOL.spawn(move || {
+			let cache = match cache_dir.read_dir() {
+				Ok(cache) => cache,
+				Err(_) => return
+			};
+
+			for (path, file_name) in cache.filter_map(GameAddons::gma_check) {
+				let id = match str::parse::<u64>(&file_name) {
+					Ok(id) => Some(PublishedFileId(id)),
+					Err(_ok) => None,
 				};
 
-				for (path, file_name) in cache.filter_map(GameAddons::gma_check) {
-					let id = match str::parse::<u64>(&file_name) {
-						Ok(id) => Some(PublishedFileId(id)),
-						Err(_ok) => None,
-					};
+				tx_cache_metadata.send((path, id)).unwrap();
+			}
+		});
 
-					tx_cache.send((path, id)).unwrap();
-				}
-			});
-			
-			let mut addons: Vec<(GMAFile, Option<SystemTime>)> = vec![];
-			while let Ok((path, id)) = rx.recv() {
+		DISCOVERY_POOL.spawn(move || {
+			while let Ok((path, id)) = rx_metadata.recv() {
 				let mut gma = match GMAFile::open(&path) {
 					Ok(gma) => gma,
 					Err(_) => continue
@@ -119,28 +130,56 @@ impl GameAddons {
 
 				if let Some(id) = id { gma.set_ws_id(id); }
 
-				let modified = path.metadata().and_then(|metadata| metadata.modified().map(|x| Some(x))).unwrap_or(None);
-				let pos = addons.binary_search_by_key(&modified, |x| x.1).unwrap_or_else(|pos| pos);
-				addons.insert(pos, (gma, modified));
-			}
+				ignore! { gma.metadata() };
 
-			let mut addons_map: IndexMap<PathBuf, GMAFile> = IndexMap::with_capacity(addons.len());
-			for (addon, _) in addons.into_iter() {
-				addons_map.insert(addon.path.to_owned(), addon);
+				tx.send(gma).unwrap();
 			}
-
-			*self.addons.write() = addons_map;
 		});
+
+		let mut pages = self.pages.write();
+		*pages = Vec::new();
+
+		let mut paths = self.paths.write();
+		*paths = HashMap::new();
+
+		let mut pages_heap = BinaryHeap::new();
+
+		while let Ok(mut gma) = rx.recv() {
+			let modified = gma.path.metadata().and_then(|metadata| metadata.modified().map(|x| Some(x))).unwrap_or(None);
+			gma.modified = modified;
+
+			let pinned = Pin::new(Box::new(gma));
+
+			pages_heap.push(PinnedGMAFile(pinned.clone()));
+			paths.insert(pinned.path.clone(), PinnedGMAFile(pinned));
+		}
+
+		*pages = pages_heap.into_sorted_vec();
 	}
 
-	pub fn addon<P: AsRef<Path>>(&self, path: P) -> Option<GMAFile> {
-		self.addons.read().get(path.as_ref()).cloned()
+	pub fn from_path<P: AsRef<Path>>(&self, path: P) -> Option<PinnedGMAFile> {
+		self.paths.read().get(path.as_ref()).cloned()
 	}
 }
 
-/*
+const RESULTS_PER_PAGE: usize = steamworks::RESULTS_PER_PAGE as usize;
+
+#[derive(derive_more::Deref, derive_more::DerefMut, Debug)]
+pub struct InstalledAddonsPage(MappedRwLockReadGuard<'static, [PinnedGMAFile]>);
+impl serde::Serialize for InstalledAddonsPage {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer
+	{
+		self.as_ref().serialize(serializer)
+	}
+}
+
 #[tauri::command]
-fn installed_addons(page: u16) -> &'static [GMAFile] {
+pub fn installed_addons(page: u32) -> InstalledAddonsPage {
+	let start = ((page.max(1) - 1) as usize) * RESULTS_PER_PAGE;
 
+	InstalledAddonsPage(RwLockReadGuard::map(game_addons!().pages.read(), |read| {
+		&(&*read)[start..(start + RESULTS_PER_PAGE)]
+	}))
 }
-*/

@@ -104,8 +104,9 @@ fn main() {
 
 	std::thread::spawn(move || {
 		steamworks!().client_wait();
+		let now = std::time::Instant::now();
 		game_addons!().discover_addons();
-		println!("{:#?}", game_addons!());
+		println!("Game addons {:?}ms", now.elapsed().as_millis());
 	});
 
 	std::thread::spawn(move || {

@@ -479,6 +479,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
 
 [[package]]
+name = "convert_case"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
+
+[[package]]
 name = "core-foundation"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -665,6 +671,18 @@ version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
 dependencies = [
+ "proc-macro2",
+ "quote 1.0.9",
+ "syn 1.0.65",
+]
+
+[[package]]
+name = "derive_more"
+version = "0.99.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f82b1b72f1263f214c0f823371768776c4f5841b942c9883aa8e5ec584fd0ba6"
+dependencies = [
+ "convert_case",
  "proc-macro2",
  "quote 1.0.9",
  "syn 1.0.65",
@@ -1203,6 +1221,7 @@ dependencies = [
  "byteorder",
  "chardetng",
  "crc32fast",
+ "derive_more",
  "dirs 3.0.1",
  "dunce",
  "erased-serde",
@@ -2894,7 +2913,7 @@ dependencies = [
 [[package]]
 name = "steamworks"
 version = "0.7.0"
-source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#6b31438da5f28f3fd4e19061d3b2f03da623e451"
+source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#ee85a1b15e4b91877972d8a94d9e24519ae9e44f"
 dependencies = [
  "bitflags 1.2.1",
  "lazy_static",
@@ -2906,7 +2925,7 @@ dependencies = [
 [[package]]
 name = "steamworks-sys"
 version = "0.7.0"
-source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#6b31438da5f28f3fd4e19061d3b2f03da623e451"
+source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#ee85a1b15e4b91877972d8a94d9e24519ae9e44f"
 dependencies = [
  "bindgen",
 ]
@@ -3066,6 +3085,7 @@ dependencies = [
 [[package]]
 name = "tauri"
 version = "0.11.1"
+source = "git+https://github.com/williamvenner/tauri?branch=dev#5eb04461ae4c918db250077855d53dc34ba4544b"
 dependencies = [
  "async-trait",
  "base64",
@@ -3075,7 +3095,7 @@ dependencies = [
  "rand 0.8.3",
  "serde",
  "serde_json",
- "tauri-api",
+ "tauri-api 0.7.5 (git+https://github.com/williamvenner/tauri?branch=dev)",
  "tauri-macros",
  "thiserror",
  "tokio",
@@ -3086,6 +3106,36 @@ dependencies = [
 [[package]]
 name = "tauri-api"
 version = "0.7.5"
+dependencies = [
+ "bytes",
+ "dirs-next",
+ "either",
+ "flate2",
+ "http",
+ "once_cell",
+ "open",
+ "os_pipe",
+ "rand 0.8.3",
+ "reqwest",
+ "rfd",
+ "semver",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "shared_child",
+ "tar",
+ "tauri-utils 0.5.1",
+ "tempfile",
+ "thiserror",
+ "tinyfiledialogs",
+ "tokio",
+ "zip",
+]
+
+[[package]]
+name = "tauri-api"
+version = "0.7.5"
+source = "git+https://github.com/williamvenner/tauri?branch=dev#5eb04461ae4c918db250077855d53dc34ba4544b"
 dependencies = [
  "bytes",
  "dirs-next",
@@ -3106,7 +3156,7 @@ dependencies = [
  "shared_child",
  "tar",
  "tauri-hotkey",
- "tauri-utils",
+ "tauri-utils 0.5.1 (git+https://github.com/williamvenner/tauri?branch=dev)",
  "tempfile",
  "thiserror",
  "tinyfiledialogs",
@@ -3121,7 +3171,7 @@ dependencies = [
  "anyhow",
  "proc-macro2",
  "quote 1.0.9",
- "tauri-codegen",
+ "tauri-codegen 0.1.0",
  "winres",
 ]
 
@@ -3133,7 +3183,22 @@ dependencies = [
  "quote 1.0.9",
  "serde",
  "serde_json",
- "tauri-api",
+ "tauri-api 0.7.5",
+ "thiserror",
+ "walkdir",
+ "zstd",
+]
+
+[[package]]
+name = "tauri-codegen"
+version = "0.1.0"
+source = "git+https://github.com/williamvenner/tauri?branch=dev#5eb04461ae4c918db250077855d53dc34ba4544b"
+dependencies = [
+ "proc-macro2",
+ "quote 1.0.9",
+ "serde",
+ "serde_json",
+ "tauri-api 0.7.5 (git+https://github.com/williamvenner/tauri?branch=dev)",
  "thiserror",
  "walkdir",
  "zstd",
@@ -3167,16 +3232,32 @@ dependencies = [
 [[package]]
 name = "tauri-macros"
 version = "0.1.0"
+source = "git+https://github.com/williamvenner/tauri?branch=dev#5eb04461ae4c918db250077855d53dc34ba4544b"
 dependencies = [
  "proc-macro2",
  "quote 1.0.9",
  "syn 1.0.65",
- "tauri-codegen",
+ "tauri-codegen 0.1.0 (git+https://github.com/williamvenner/tauri?branch=dev)",
 ]
 
 [[package]]
 name = "tauri-utils"
 version = "0.5.1"
+dependencies = [
+ "phf",
+ "proc-macro2",
+ "quote 1.0.9",
+ "serde",
+ "serde_json",
+ "sysinfo 0.10.5",
+ "thiserror",
+ "zstd",
+]
+
+[[package]]
+name = "tauri-utils"
+version = "0.5.1"
+source = "git+https://github.com/williamvenner/tauri?branch=dev#5eb04461ae4c918db250077855d53dc34ba4544b"
 dependencies = [
  "phf",
  "proc-macro2",

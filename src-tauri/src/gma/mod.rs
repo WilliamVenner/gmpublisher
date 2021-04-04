@@ -53,17 +53,20 @@ pub struct GMAFilePointers {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum GMAMetadata {
-	Legacy {
-		title: String,
-		description: String,
-	},
 	Standard {
 		#[serde(default)]
 		title: String,
+		#[serde(default)]
 		#[serde(rename = "type")]
 		addon_type: String,
+		#[serde(default)]
 		tags: Vec<String>,
+		#[serde(default)]
 		ignore: Vec<String>,
+	},
+	Legacy {
+		title: String,
+		description: String,
 	},
 }
 
@@ -117,6 +120,25 @@ pub struct GMAFile {
 	pub version: u8,
 
 	extracted_name: String,
+
+	#[serde(skip)]
+	pub modified: Option<SystemTime>,
+}
+impl PartialEq for GMAFile {
+	fn eq(&self, other: &Self) -> bool {
+		self.path == other.path
+	}
+}
+impl Eq for GMAFile {}
+impl PartialOrd for GMAFile {
+	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+		self.modified.partial_cmp(&other.modified)
+	}
+}
+impl Ord for GMAFile {
+	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+		self.modified.cmp(&other.modified).reverse()
+	}
 }
 
 impl GMAFile {
@@ -136,6 +158,7 @@ impl GMAFile {
 			pointers: GMAFilePointers::default(),
 			version: 0,
 			extracted_name: String::new(),
+			modified: None
 		};
 
 		if gma.size == 0 {
@@ -160,8 +183,16 @@ impl GMAFile {
 	}
 
 	pub fn set_ws_id(&mut self, id: PublishedFileId) {
+		let compute = self.id.is_some() || self.metadata.is_some();
+
 		self.id = Some(id);
-		self.compute_extracted_name();
+
+		if compute {
+			self.compute_extracted_name();
+		} else {
+			self.extracted_name.push('_');
+			self.extracted_name.push_str(&id.0.to_string());
+		}
 	}
 
 	fn compute_extracted_name(&mut self) {
@@ -169,13 +200,13 @@ impl GMAFile {
 		let mut underscored = false;
 
 		{
-			let name = match self.metadata() {
-				Ok(_) => match self.metadata.as_ref().unwrap() {
+			let name = match self.metadata {
+				Some(ref metadata) => match metadata {
 					GMAMetadata::Legacy { title, .. } | GMAMetadata::Standard { title, .. } => {
 						title.to_lowercase()
 					}
 				},
-				Err(_) => match self.path.file_name() {
+				None => match self.path.file_name() {
 					Some(file_name) => file_name.to_string_lossy().to_lowercase(),
 					None => match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
 						Ok(unix) => format!("gmpublisher_extracted_{}", unix.as_secs()),
