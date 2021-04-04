@@ -1,8 +1,4 @@
-use std::{
-	fs::File,
-	io::{BufReader, BufWriter},
-	path::PathBuf,
-};
+use std::{fs::File, io::{BufReader, BufWriter}, path::PathBuf};
 
 use crate::{octopus::game_addons, webview_emit};
 
@@ -133,17 +129,11 @@ impl<Application: tauri::ApplicationExt + 'static> tauri::plugin::Plugin<Applica
 			include_str!("../../app/plugins/AppData.js")
 				.replace(
 					"{$_APP_DATA_$}",
-					&serde_json::ser::to_string(&*crate::APP_DATA)
-						.unwrap()
-						.replace("\\", "\\\\")
-						.replace("'", "\\'"),
+					&crate::escape_single_quoted_json(serde_json::ser::to_string(&*crate::APP_DATA).unwrap()),
 				)
 				.replace(
 					"{$_WS_DEAD_$}",
-					&serde_json::ser::to_string(&crate::WorkshopItem::from(steamworks::PublishedFileId(0)))
-						.unwrap()
-						.replace("\\", "\\\\")
-						.replace("'", "\\'"),
+					&crate::escape_single_quoted_json(serde_json::ser::to_string(&crate::WorkshopItem::from(steamworks::PublishedFileId(0))).unwrap()),
 				),
 		)
 	}
