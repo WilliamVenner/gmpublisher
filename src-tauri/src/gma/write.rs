@@ -35,8 +35,8 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 		let src_path = src_path.as_ref();
 
 		let (title, addon_json) = match data {
-			GMAMetadata::Legacy(data) => (data.title.as_str(), None),
-			GMAMetadata::Standard(data) => (data.title.as_str(), Some(data)),
+			GMAMetadata::Legacy { title, .. } => (title.as_str(), None),
+			GMAMetadata::Standard { title, .. } => (title.as_str(), Some(data)),
 		};
 
 		self.write(GMA_HEADER)?;

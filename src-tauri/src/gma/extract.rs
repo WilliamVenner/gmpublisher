@@ -91,8 +91,9 @@ impl GMAFile {
 				},
 			);
 
-			if let GMAMetadata::Standard(ref metadata) = self.metadata.as_ref().unwrap() {
-				if let Ok(json) = serde_json::ser::to_string_pretty(&metadata) {
+			let metadata = self.metadata.as_ref().unwrap();
+			if let GMAMetadata::Standard { .. } = metadata {
+				if let Ok(json) = serde_json::ser::to_string_pretty(metadata) {
 					dest_path.push("addon.json");
 					ignore! { fs::write(&dest_path, json.as_bytes()) };
 					dest_path.pop();

@@ -74,10 +74,7 @@ impl GMAFile {
 			let title = safe_read!(handle.read_nt_string())?;
 			let description = safe_read!(handle.read_nt_string())?;
 
-			self.metadata = Some(match serde_json::de::from_str::<StandardGMAMetadata>(&description) {
-				Ok(addon_json) => GMAMetadata::Standard(addon_json),
-				Err(_) => GMAMetadata::Legacy(LegacyGMAMetadata { title, description }),
-			});
+			self.metadata = serde_json::de::from_str::<GMAMetadata>(&description).ok();
 
 			safe_read!(handle.skip_nt_string())?; // author [unused]
 			safe_read!(handle.read_i32::<LittleEndian>())?; // addon version [unused]

@@ -120,12 +120,12 @@ fn main() {
 		GMAFile::write(
 			src_path,
 			dest_path.clone(),
-			&GMAMetadata::Standard(StandardGMAMetadata {
+			&GMAMetadata::Standard {
 				title: "LW BMW Pack Test".to_string(),
 				addon_type: "addon".to_string(),
 				tags: vec!["gmpublisher".to_string()],
 				ignore: vec!["test".to_string()],
-			}),
+			},
 		)
 		.unwrap();
 

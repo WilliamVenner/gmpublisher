@@ -50,25 +50,21 @@ pub struct GMAFilePointers {
 	entries_list: u64,
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct LegacyGMAMetadata {
-	pub title: String,
-	pub description: String,
-}
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StandardGMAMetadata {
-	#[serde(default)]
-	pub title: String,
-	#[serde(rename = "type")]
-	pub addon_type: String,
-	pub tags: Vec<String>,
-	pub ignore: Vec<String>,
-}
-#[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum GMAMetadata {
-	Legacy(LegacyGMAMetadata),
-	Standard(StandardGMAMetadata),
+	Legacy {
+		title: String,
+		description: String,
+	},
+	Standard {
+		#[serde(default)]
+		title: String,
+		#[serde(rename = "type")]
+		addon_type: String,
+		tags: Vec<String>,
+		ignore: Vec<String>,
+	},
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -175,7 +171,7 @@ impl GMAFile {
 		{
 			let name = match self.metadata() {
 				Ok(_) => match self.metadata.as_ref().unwrap() {
-					GMAMetadata::Legacy(LegacyGMAMetadata { title, .. }) | GMAMetadata::Standard(StandardGMAMetadata { title, .. }) => {
+					GMAMetadata::Legacy { title, .. } | GMAMetadata::Standard { title, .. } => {
 						title.to_lowercase()
 					}
 				},
