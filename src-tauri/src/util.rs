@@ -143,6 +143,29 @@ pub mod path {
 	}
 }
 
+#[derive(derive_more::Deref, derive_more::DerefMut, Debug, PartialEq, PartialOrd, Ord, Eq)]
+pub struct AsVec<T>(Vec<T>);
+impl<T> From<Vec<T>> for AsVec<T> {
+    fn from(x: Vec<T>) -> Self {
+        AsVec(x)
+    }
+}
+impl<T> From<T> for AsVec<T> {
+    fn from(x: T) -> Self {
+        AsVec(vec![x])
+    }
+}
+impl<T: Clone> From<&[T]> for AsVec<T> {
+    fn from(x: &[T]) -> Self {
+        AsVec(x.to_vec())
+    }
+}
+impl <T> Into<Vec<T>> for AsVec<T> {
+    fn into(self) -> Vec<T> {
+        self.0
+    }
+}
+
 // cursed
 pub fn dedup_unsorted<T: Hash + Eq>(vec: &mut Vec<T>) {
 	struct PtrCmp<T: Hash + Eq> {

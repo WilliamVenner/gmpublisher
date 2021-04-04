@@ -1,8 +1,6 @@
+use lazy_static::lazy_static;
 use serde::Serialize;
-use std::{
-	path::PathBuf,
-	sync::{atomic::AtomicBool, Arc},
-};
+use std::{collections::VecDeque, path::PathBuf, sync::{Arc, atomic::{AtomicBool, Ordering}}};
 
 use steamworks::{PublishedFileId, QueryResult, QueryResults, SteamError, SteamId};
 
@@ -10,7 +8,7 @@ use atomic_refcell::AtomicRefCell;
 
 use super::{users::SteamUser, Steamworks, THREAD_POOL};
 
-use crate::{main_thread_forbidden, steamworks};
+use crate::{AsVec, main_thread_forbidden, steamworks, webview_emit};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -79,6 +77,69 @@ impl From<PublishedFileId> for WorkshopItem {
 }
 
 impl Steamworks {
+	pub fn workshop_fetcher() {
+		let mut backlog = VecDeque::new();
+		loop {
+			backlog.append(&mut loop {
+				if let Ok(pending) = steamworks!().workshop.try_take_inner(|set| &mut set.1 as *mut Vec<PublishedFileId>) {
+					if !pending.is_empty() {
+						break pending;
+					}
+				}
+				sleep_ms!(100);
+				continue;
+			}.into());
+			
+			while !backlog.is_empty() {
+				let mut pending = backlog;
+				backlog = pending.split_off((steamworks::RESULTS_PER_PAGE as usize).min(pending.len()));
+
+				let next = Arc::new(AtomicBool::new(false));
+				let next_ref = next.clone();
+
+				steamworks!().client().ugc().query_items(pending.to_owned().into()).unwrap().fetch(move |results: Result<QueryResults<'_>, SteamError>| {
+					if let Ok(results) = results {
+						let mut i = 0;
+						for item in results.iter() {
+							webview_emit!("WorkshopItem", if let Some(item) = item {
+								let mut item: WorkshopItem = item.into();
+								item.preview_url = results.preview_url(0);
+								item.subscriptions = results.statistic(0, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+								item
+							} else {
+								WorkshopItem::from(pending[i])
+							});
+							i += 1;
+						}
+					} else {
+						steamworks!().workshop.write(|mut workshop| {
+							for id in pending {
+								workshop.0.remove(&id);
+							}
+						});
+					}
+					next_ref.store(true, Ordering::Release);
+				});
+
+				while next.load(Ordering::Acquire) {
+					steamworks!().run_callbacks();
+				}
+			}
+		}
+	}
+
+	pub fn fetch_workshop_items(&'static self, ids: Vec<PublishedFileId>) {
+		self.workshop.write(|mut workshop| {
+			let (cache, queue) = workshop.inner.as_mut().unwrap();
+			queue.reserve(ids.len());
+			for id in ids.into_iter().filter(|id| cache.insert(*id)) {
+				queue.push(id);
+			}
+			queue.shrink_to_fit();
+		});
+	}
+
+	/*
 	// Workshop //
 
 	pub fn fetch_workshop_item(&'static self, id: PublishedFileId) -> WorkshopItem {
@@ -124,7 +185,7 @@ impl Steamworks {
 		}
 	}
 
-	pub fn fetch_workshop_items(&'static self, items: Vec<PublishedFileId>) -> Vec<WorkshopItem> {
+	pub fn fetch_workshop_items(&'static self, items: Vec<PublishedFileId>, include_cached: bool) -> Vec<WorkshopItem> {
 		main_thread_forbidden!();
 		debug_assert!(!items.is_empty());
 
@@ -137,10 +198,12 @@ impl Steamworks {
 				.into_iter()
 				.filter_map(move |id| {
 					if let Some(item) = workshop.get(&id) {
-						items_response.push(match item.dead {
-							false => item.clone(),
-							true => WorkshopItem::from(id.to_owned()),
-						});
+						if include_cached {
+							items_response.push(match item.dead {
+								false => item.clone(),
+								true => WorkshopItem::from(id.to_owned()),
+							});
+						}
 						None
 					} else {
 						Some(id)
@@ -226,11 +289,11 @@ impl Steamworks {
 		}
 	}
 
-	pub fn fetch_workshop_items_async<F>(&'static self, items: Vec<PublishedFileId>, f: F)
+	pub fn fetch_workshop_items_async<F>(&'static self, items: Vec<PublishedFileId>, f: F, include_cached: bool)
 	where
 		F: FnOnce(Vec<WorkshopItem>) + 'static + Send,
 	{
-		THREAD_POOL.spawn(move || f(steamworks!().fetch_workshop_items(items)));
+		THREAD_POOL.spawn(move || f(steamworks!().fetch_workshop_items(items, include_cached)));
 	}
 
 	pub fn fetch_workshop_item_with_uploader_async<F>(&'static self, item: PublishedFileId, f: F)
@@ -252,6 +315,7 @@ impl Steamworks {
 			}
 		}
 	}
+	*/
 
 	// Collections //
 

@@ -36,25 +36,25 @@ lazy_static! {
 #[macro_export]
 macro_rules! steamworks {
 	() => {
-		&*crate::STEAMWORKS
+		&crate::STEAMWORKS
 	};
 }
 #[macro_export]
 macro_rules! downloads {
 	() => {
-		&*crate::octopus::steamworks::DOWNLOADS
+		&crate::octopus::steamworks::DOWNLOADS
 	};
 }
 #[macro_export]
 macro_rules! gma {
 	() => {
-		&*crate::GMA
+		&crate::GMA
 	};
 }
 #[macro_export]
 macro_rules! game_addons {
 	() => {
-		&*crate::GAME_ADDONS
+		&crate::GAME_ADDONS
 	};
 }
 
@@ -66,7 +66,7 @@ lazy_static! {
 #[macro_export]
 macro_rules! app_data {
 	() => {
-		&*crate::APP_DATA
+		&crate::APP_DATA
 	};
 }
 
@@ -76,7 +76,7 @@ pub use webview::WEBVIEW;
 #[macro_export]
 macro_rules! webview {
 	() => {
-		&*crate::WEBVIEW
+		&crate::WEBVIEW
 	};
 }
 #[macro_export]
@@ -104,6 +104,7 @@ fn main() {
 
 	std::thread::spawn(move || {
 		steamworks!().client_wait();
+		lazy_static::initialize(&GAME_ADDONS);
 		let now = std::time::Instant::now();
 		game_addons!().discover_addons();
 		println!("Game addons {:?}ms", now.elapsed().as_millis());
@@ -168,4 +169,9 @@ fn main() {
 		.invoke_handler(tauri::generate_handler![transactions::cancel_transaction, appdata::update_settings])
 		.build(tauri::generate_context!())
 		.run();
+}
+
+#[tauri::command]
+fn free_caches() {
+	// TODO
 }

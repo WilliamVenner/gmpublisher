@@ -4,17 +4,13 @@ pub mod gma;
 pub mod steamworks;
 pub mod game_addons;
 
-use std::{
-	collections::HashMap,
-	hash::Hash,
-	sync::{
+use std::{collections::HashMap, hash::Hash, rc::Rc, sync::{
 		atomic::{AtomicBool, Ordering},
 		mpsc::{self, Receiver, Sender},
 		Arc,
-	},
-};
+	}};
 
-use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
+use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut, BorrowMutError};
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use rayon::{ThreadPool, ThreadPoolBuilder};
@@ -35,22 +31,22 @@ pub enum VariableSingleton<T> {
 pub type PromiseHashCache<K, V> = PromiseCache<HashMap<K, V>, K, V>;
 pub type PromiseHashNullableCache<K, V> = PromiseCache<HashMap<K, V>, K, Option<V>>;
 
-pub struct PromiseCache<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> {
+pub struct PromiseCache<Cache: Default + Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> {
 	cache: RelaxedRwLock<Cache>,
 	promises: RwLock<HashMap<K, VariableSingleton<Box<dyn FnOnce(&Args) + Send + 'static>>>>,
 }
-impl<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> std::ops::Deref for PromiseCache<Cache, K, Args> {
+impl<Cache: Default + Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> std::ops::Deref for PromiseCache<Cache, K, Args> {
 	type Target = RelaxedRwLock<Cache>;
 	fn deref(&self) -> &Self::Target {
 		&self.cache
 	}
 }
-impl<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> std::ops::DerefMut for PromiseCache<Cache, K, Args> {
+impl<Cache: Default + Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> std::ops::DerefMut for PromiseCache<Cache, K, Args> {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.cache
 	}
 }
-impl<Cache: Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> PromiseCache<Cache, K, Args> {
+impl<Cache: Default + Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> PromiseCache<Cache, K, Args> {
 	pub fn new(cache: Cache) -> PromiseCache<Cache, K, Args> {
 		PromiseCache {
 			cache: RelaxedRwLock::new(cache),
@@ -131,17 +127,17 @@ impl<'a, V> From<AtomicRefMut<'a, Option<V>>> for AtomicRefMutSome<'a, V> {
 	}
 }
 
-pub struct RelaxedRwLock<V: Send + Sync + 'static> {
+pub struct RelaxedRwLock<V: Default + Send + Sync + 'static> {
 	r: Arc<AtomicRefCell<V>>,
 	w: Arc<AtomicRefCell<Option<V>>>,
 	tx: Sender<Box<dyn FnOnce(AtomicRefMutSome<V>) + 'static + Send + Sync>>,
 	begin: Arc<AtomicBool>,
 }
 
-unsafe impl<V: Send + Sync + 'static> Send for RelaxedRwLock<V> {}
-unsafe impl<V: Send + Sync + 'static> Sync for RelaxedRwLock<V> {}
+unsafe impl<V: Default + Send + Sync + 'static> Send for RelaxedRwLock<V> {}
+unsafe impl<V: Default + Send + Sync + 'static> Sync for RelaxedRwLock<V> {}
 
-impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
+impl<V: Default + Send + Sync + 'static> RelaxedRwLock<V> {
 	pub fn new(v: V) -> RelaxedRwLock<V> {
 		let (tx, rx): (
 			Sender<Box<dyn FnOnce(AtomicRefMutSome<V>) + 'static + Send + Sync>>,
@@ -154,7 +150,7 @@ impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
 			let begin_ref = begin.clone();
 			let w_ref = w.clone();
 			let r_ref = r.clone();
-			std::thread::spawn(move || loop {
+			std::thread::spawn(move || loop { // TODO use a static vec of weak rc relaxedrwlocks and a single worker thread
 				let f = match rx.try_recv() {
 					Ok(f) => f,
 					Err(err) => {
@@ -192,6 +188,28 @@ impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
 				return r;
 			}
 		}
+	}
+
+	pub fn take(&self) -> V {
+		loop {
+			if let Ok(_r) = self.r.try_borrow_mut() {
+				break unsafe { std::mem::take(&mut *self.r.as_ptr()) };
+			}
+		}
+	}
+
+	pub fn try_take(&self) -> Result<V, BorrowMutError> {
+		let _r = self.r.try_borrow_mut()?;
+		Ok(std::mem::take(unsafe { &mut *self.r.as_ptr() }))
+	}
+
+	pub fn try_take_inner<F, U: Default>(&self, map: F) -> Result<U, BorrowMutError>
+	where
+		F: FnOnce(&mut AtomicRefMut<'_, V>) -> *mut U + 'static
+	{
+		let mut borrow = self.r.try_borrow_mut()?;
+		let inner = map(&mut borrow);
+		Ok(std::mem::take(unsafe { &mut *inner }))
 	}
 
 	pub fn write<F>(&self, callback: F) -> &Self

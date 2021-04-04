@@ -117,7 +117,7 @@ pub fn update_settings(mut settings: Settings) {
 		*crate::APP_DATA.settings.write() = settings;
 
 		if rediscover_addons {
-			game_addons!().discover_addons();
+			game_addons!().refresh();
 		}
 	}
 }

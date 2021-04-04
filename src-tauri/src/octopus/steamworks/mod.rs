@@ -1,9 +1,6 @@
-use std::{
-	collections::HashMap,
-	mem::MaybeUninit,
-	sync::{atomic::AtomicBool, Arc},
-};
+use std::{collections::{HashMap, HashSet}, mem::MaybeUninit, sync::{atomic::AtomicBool, Arc}};
 
+use parking_lot::RwLock;
 use steamworks::{
 	AccountId, Callback, CallbackHandle, Client, ClientManager, PublishedFileId, SingleClient, SteamId, SteamServerConnectFailure,
 	SteamServersConnected, SteamServersDisconnected,
@@ -13,9 +10,9 @@ use atomic_refcell::AtomicRefCell;
 
 use self::{downloads::Downloads, users::SteamUser, workshop::WorkshopItem};
 
-use super::{AtomicRefSome, PromiseCache, PromiseHashCache, THREAD_POOL};
+use super::{AtomicRefSome, PromiseCache, PromiseHashCache, RelaxedRwLock, THREAD_POOL};
 
-use crate::{steamworks, webview_emit};
+use crate::{Base64Image, steamworks, webview_emit};
 
 pub mod downloads;
 pub mod publishing;
@@ -65,7 +62,7 @@ mod serde_steamid64 {
 pub struct Interface {
 	client: Client,
 	single: SingleClient,
-	account_id: AccountId,
+	steam_id: SteamId,
 }
 impl std::ops::Deref for Interface {
 	type Target = Client;
@@ -80,7 +77,7 @@ impl From<(Client, SingleClient)> for Interface {
 		client.friends().request_user_information(user.steam_id(), false);
 
 		Interface {
-			account_id: user.steam_id().account_id(),
+			steam_id: user.steam_id(),
 			client,
 			single,
 		}
@@ -93,8 +90,9 @@ pub struct Steamworks {
 	interface: AtomicRefCell<Option<Interface>>,
 
 	users: PromiseHashCache<SteamId, SteamUser>,
-	workshop: PromiseHashCache<PublishedFileId, WorkshopItem>,
 	collections: PromiseHashCache<PublishedFileId, Option<Vec<PublishedFileId>>>,
+
+	workshop: RelaxedRwLock<(HashSet<PublishedFileId>, Vec<PublishedFileId>)>,
 }
 
 unsafe impl Sync for Steamworks {}
@@ -107,8 +105,9 @@ impl Steamworks {
 			connected: AtomicBool::new(false),
 			interface: AtomicRefCell::new(None),
 			users: PromiseCache::new(HashMap::new()),
-			workshop: PromiseCache::new(HashMap::new()),
 			collections: PromiseCache::new(HashMap::new()),
+
+			workshop: RelaxedRwLock::new((HashSet::new(), Vec::new())),
 		}
 	}
 
@@ -135,6 +134,7 @@ impl Steamworks {
 
 	fn on_initialized() {
 		std::thread::spawn(Steamworks::watchdog);
+		std::thread::spawn(Steamworks::workshop_fetcher);
 
 		lazy_static::initialize(&DOWNLOADS);
 		std::thread::spawn(Downloads::watchdog);
@@ -280,4 +280,11 @@ impl Steamworks {
 #[tauri::command]
 fn is_steam_connected() -> bool {
 	steamworks!().connected()
+}
+
+#[tauri::command]
+fn get_user_info() -> (String, Option<Base64Image>) {
+	steamworks!().client_wait();
+	let user = steamworks!().fetch_user(steamworks!().client().steam_id);
+	(user.name, user.avatar)
 }

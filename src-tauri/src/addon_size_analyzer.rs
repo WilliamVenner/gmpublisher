@@ -1,14 +1,15 @@
 /*
-use std::{collections::{hash_map::Entry, HashMap}, path::PathBuf, sync::{Arc, Mutex, mpsc::{self, Receiver, Sender, SyncSender}}, thread::JoinHandle};
+use std::{collections::{hash_map::Entry, HashMap}, path::PathBuf, sync::{Arc, Mutex, atomic::AtomicU64, mpsc::{self, Receiver, Sender, SyncSender}}, thread::JoinHandle};
 
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
-use rayon::{ThreadPool, ThreadPoolBuilder};
+use parking_lot::RwLockReadGuard;
+use rayon::{ThreadPool, ThreadPoolBuilder, iter::{IntoParallelRefIterator, ParallelIterator}};
 use steamworks::PublishedFileId;
 
 use serde::Serialize;
 
-use crate::{WorkshopItem, game_addons, gma::GMAFile, transaction, transactions::Transaction};
+use crate::{steamworks, WorkshopItem, game_addons, gma::GMAFile, transaction, transactions::Transaction};
 
 lazy_static! {
 	static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(4).build().unwrap();
@@ -169,11 +170,13 @@ mod treemap {
 
 pub(super) struct AddonSizeAnalyzer {
 	analyzed: Mutex<Option<TreeMap>>,
+	total_size: AtomicU64,
 }
 impl AddonSizeAnalyzer {
 	pub(super) fn init() -> Self {
 		Self {
 			analyzed: Mutex::new(None),
+			total_size: AtomicU64::new(0)
 		}
 	}
 
@@ -198,23 +201,13 @@ impl AddonSizeAnalyzer {
 				None => {
 					transaction.data("FS_ANALYZER_COMPUTING");
 
-					let (mut gma_files, gma_ids, total_size) =
-						match self.analyze(transaction.clone()) {
-							Err(_) => {
-								return transaction
-									.error("ERROR_NO_ADDONS_FOUND")
-							}
-							Ok(data) => data,
-						};
-
-					if transaction.aborted() {
+					let addons = game_addons!().get_addons();
+					if addons.len() == 0 {
+						transaction.error("ERR_NO_ADDONS_FOUND");
 						return;
 					}
 
-					transaction.data("FS_ANALYZER_STEAM");
-
-					gma_files =
-						self.download_steam(transaction.clone(), gma_files);
+					let total_size = self.count(&addons);
 
 					if transaction.aborted() {
 						return;
@@ -247,6 +240,22 @@ impl AddonSizeAnalyzer {
 		});
 
 		Ok(transaction_ref)
+	}
+
+	fn count(&'static self, addons: &RwLockReadGuard<Vec<Arc<GMAFile>>>) -> u64 {
+		let mut ids: Vec<PublishedFileId> = Vec::with_capacity(addons.len());
+
+		self.total_size.store(0, std::sync::atomic::Ordering::Release);
+		addons.par_iter().for_each(|gma| {
+			if let Some(ref id) = gma.id {
+				ids.push(*id);
+			}
+			self.total_size.fetch_add(gma.size, std::sync::atomic::Ordering::Relaxed);
+		});
+
+		steamworks!().fetch_and_send(ids);
+
+		self.total_size.load(std::sync::atomic::Ordering::Acquire)
 	}
 
 	fn taggify(
@@ -377,53 +386,6 @@ impl AddonSizeAnalyzer {
 
 		let (tx, rx) = mpsc::channel();
 
-		ANALYZER_THREAD_POOL.install(move || {
-			.for_each_with(tx, |tx, path| {
-				let cached_gma = crate::GAME_ADDONS
-					.read()
-					.gma_cache
-					.as_ref()
-					.unwrap()
-					.metadata
-					.read()
-					.get(&path)
-					.cloned();
-
-				if tx
-					.send({
-						let mut gma = match cached_gma {
-							Some(cached_gma) => {
-								if cached_gma.size == 0 {
-									continue;
-								}
-								cached_gma
-							}
-							None => match GMAFile::new(&path, None) {
-								Ok(mut gma) => {
-									if gma.metadata().is_err() {
-										continue;
-									}
-									if gma.size == 0 {
-										continue;
-									}
-									gma
-								}
-								Err(_) => continue,
-							},
-						};
-
-						if id.is_some() && gma.id.is_none() {
-							gma.id = id;
-						}
-						gma
-					})
-					.is_err()
-				{
-					break;
-				}
-			})
-		});
-
 		let mut total_size: u64 = 0;
 		let mut sorted_gmas: Vec<AnalyzedAddon> = Vec::with_capacity(total_paths);
 		let mut sorted_ids: Vec<Option<PublishedFileId>> = Vec::with_capacity(total_paths);
@@ -458,81 +420,6 @@ impl AddonSizeAnalyzer {
 		}
 
 		Ok((sorted_gmas, sorted_ids, total_size))
-	}
-
-	pub(crate) fn download_steam(
-		&self,
-		transaction: Transaction,
-		gma_files: Vec<AnalyzedAddon>,
-	) -> Vec<AnalyzedAddon> {
-		let mut gma_ids = Vec::with_capacity(gma_files.len());
-		let mut gma_files_index: HashMap<PublishedFileId, Vec<AnalyzedAddon>> =
-			HashMap::with_capacity(gma_files.len());
-		let gma_files_count = gma_files.len();
-		for gma_file in gma_files {
-			if let Some(id) = gma_file.gma.id {
-				match gma_files_index.entry(id) {
-					Entry::Vacant(v) => {
-						v.insert(vec![gma_file]);
-						gma_ids.push(id);
-					}
-					Entry::Occupied(mut o) => {
-						o.get_mut().push(gma_file);
-					}
-				}
-			}
-		}
-
-		let gma_id_chunks = gma_ids.chunks(steamworks::RESULTS_PER_PAGE as usize);
-		let chunks_num = gma_id_chunks.len();
-
-		let (tx, rx): (SyncSender<Vec<WorkshopItem>>, Receiver<Vec<WorkshopItem>>) =
-			mpsc::sync_channel(chunks_num);
-
-		let gma_files = std::thread::spawn(move || {
-			let mut gma_files = Vec::with_capacity(gma_files_count);
-			let mut progress: u32 = 0;
-			loop {
-				let workshop_data = match rx.recv() {
-					Ok(results) => results,
-					Err(_) => break,
-				};
-
-				if transaction.aborted() {
-					break;
-				}
-
-				progress = progress + 1;
-				transaction.progress(0.33 + (((progress as f64) / (chunks_num as f64)) / 3.));
-
-				for item in workshop_data {
-					if let Some(indexed_gma_files) = gma_files_index.remove(&item.id) {
-						for mut gma_file in indexed_gma_files {
-							gma_file.preview_url = item.preview_url.clone();
-							gma_files.push(gma_file);
-						}
-					}
-				}
-			}
-			gma_files
-		});
-
-		{
-			let workshop = crate::WORKSHOP.write();
-			let tx = tx;
-			for chunk in gma_id_chunks {
-				let (_, data) = match workshop.get_items(chunk.to_vec()).unwrap() {
-					Ok(data) => data,
-					Err(_) => break,
-				};
-
-				if tx.send(data).is_err() {
-					break;
-				}
-			}
-		}
-
-		gma_files.join().unwrap()
 	}
 }
 */

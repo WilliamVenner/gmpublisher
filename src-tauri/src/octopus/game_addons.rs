@@ -1,44 +1,33 @@
-use std::{collections::{BinaryHeap, HashMap}, fs::DirEntry, path::{Path, PathBuf}, pin::Pin, sync::mpsc};
+use std::{collections::{BinaryHeap, HashMap}, fs::DirEntry, path::{Path, PathBuf}, sync::{Arc, atomic::{AtomicBool, Ordering}, mpsc}};
 
 use lazy_static::lazy_static;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use steamworks::PublishedFileId;
 
-use crate::{app_data, game_addons, GMAFile};
+use crate::{steamworks, app_data, game_addons, GMAFile};
 
 lazy_static! {
 	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
 }
 
-#[derive(derive_more::Deref, derive_more::DerefMut, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
-pub struct PinnedGMAFile(Pin<Box<GMAFile>>);
-impl serde::Serialize for PinnedGMAFile {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where
-		S: serde::Serializer
-	{
-		self.as_ref().serialize(serializer)
-	}
-}
-
 #[derive(Debug)]
 pub struct GameAddons {
-	paths: RwLock<HashMap<PathBuf, PinnedGMAFile>>,
-	pages: RwLock<Vec<PinnedGMAFile>>,
+	discovered: AtomicBool,
+	paths: RwLock<HashMap<PathBuf, Arc<GMAFile>>>,
+	pages: RwLock<Vec<Arc<GMAFile>>>,
 }
 
 unsafe impl Sync for GameAddons {}
 unsafe impl Send for GameAddons {}
 
 impl GameAddons {
-	pub fn init() -> Self {
-		let game_addons = Self {
+	pub fn init() -> GameAddons {
+		GameAddons {
+			discovered: AtomicBool::new(false),
 			paths: RwLock::new(HashMap::new()),
 			pages: RwLock::new(Vec::new()),
-		};
-		game_addons.discover_addons();
-		game_addons
+		}
 	}
 
 	fn gma_check(entry: Result<DirEntry, std::io::Error>) -> Option<(PathBuf, String)> {
@@ -53,7 +42,7 @@ impl GameAddons {
 		Some((path, (&file_name[..(file_name.len()-4)]).to_owned()))
 	}
 
-	pub fn discover_addons(&self) {
+	pub fn refresh(&self) {
 		let mut gmod = if let Some(gmod) = app_data!().gmod() { gmod } else {
 			*self.paths.write() = HashMap::new();
 			*self.pages.write() = Vec::new();
@@ -136,36 +125,55 @@ impl GameAddons {
 			}
 		});
 
-		let mut pages = self.pages.write();
-		*pages = Vec::new();
+		{
+			let mut pages = self.pages.write();
+			*pages = Vec::new();
 
-		let mut paths = self.paths.write();
-		*paths = HashMap::new();
+			let mut paths = self.paths.write();
+			*paths = HashMap::new();
 
-		let mut pages_heap = BinaryHeap::new();
+			let mut pages_heap = BinaryHeap::new();
 
-		while let Ok(mut gma) = rx.recv() {
-			let modified = gma.path.metadata().and_then(|metadata| metadata.modified().map(|x| Some(x))).unwrap_or(None);
-			gma.modified = modified;
+			while let Ok(mut gma) = rx.recv() {
+				let modified = gma.path.metadata().and_then(|metadata| metadata.modified().map(|x| Some(x))).unwrap_or(None);
+				gma.modified = modified;
 
-			let pinned = Pin::new(Box::new(gma));
+				let gma = Arc::new(gma);
 
-			pages_heap.push(PinnedGMAFile(pinned.clone()));
-			paths.insert(pinned.path.clone(), PinnedGMAFile(pinned));
+				pages_heap.push(gma.clone());
+				paths.insert(gma.path.clone(), gma);
+			}
+
+			*pages = pages_heap.into_sorted_vec();
 		}
 
-		*pages = pages_heap.into_sorted_vec();
+		self.discovered.store(true, Ordering::Release);
+
+		// Download the first page from Steam
+		installed_addons(1);
 	}
 
-	pub fn from_path<P: AsRef<Path>>(&self, path: P) -> Option<PinnedGMAFile> {
+	pub fn discover_addons(&self) {
+		if !self.discovered.load(Ordering::Acquire) {
+			self.refresh();
+		}
+	}
+
+	pub fn from_path<P: AsRef<Path>>(&self, path: P) -> Option<Arc<GMAFile>> {
+		self.discover_addons();
 		self.paths.read().get(path.as_ref()).cloned()
+	}
+
+	pub fn get_addons(&self) -> RwLockReadGuard<Vec<Arc<GMAFile>>> {
+		self.discover_addons();
+		self.pages.read()
 	}
 }
 
 const RESULTS_PER_PAGE: usize = steamworks::RESULTS_PER_PAGE as usize;
 
 #[derive(derive_more::Deref, derive_more::DerefMut, Debug)]
-pub struct InstalledAddonsPage(MappedRwLockReadGuard<'static, [PinnedGMAFile]>);
+pub struct InstalledAddonsPage(MappedRwLockReadGuard<'static, [Arc<GMAFile>]>);
 impl serde::Serialize for InstalledAddonsPage {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -177,9 +185,11 @@ impl serde::Serialize for InstalledAddonsPage {
 
 #[tauri::command]
 pub fn installed_addons(page: u32) -> InstalledAddonsPage {
-	let start = ((page.max(1) - 1) as usize) * RESULTS_PER_PAGE;
+	game_addons!().discover_addons();
 
+	let start = ((page.max(1) - 1) as usize) * RESULTS_PER_PAGE;
 	InstalledAddonsPage(RwLockReadGuard::map(game_addons!().pages.read(), |read| {
+		steamworks!().fetch_workshop_items(read.iter().skip(start).take(RESULTS_PER_PAGE).filter_map(|x| x.id).collect());
 		&(&*read)[start..(start + RESULTS_PER_PAGE)]
 	}))
 }
