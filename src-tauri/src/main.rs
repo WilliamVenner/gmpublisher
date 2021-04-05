@@ -3,6 +3,7 @@
 pub const GMOD_APP_ID: AppId = AppId(4000);
 
 use gma::extract::ExtractDestination;
+use octopus::steamworks::publishing;
 use std::path::PathBuf;
 use tauri::WebviewBuilderExt;
 
@@ -114,8 +115,8 @@ fn main() {
 		std::thread::sleep(std::time::Duration::from_secs(2));
 		let now = std::time::Instant::now();
 
-		let src_path = PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\lw_bmw_pack"#);
-		let dest_path = PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\lw_bmw_pack_sneed.gma"#);
+		let src_path = PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\jerma_sus_playermodel_npc_2349955985"#);
+		let dest_path = PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\publish_test\sneed.gma"#);
 
 		println!("=================================================================");
 
@@ -123,10 +124,10 @@ fn main() {
 			src_path,
 			dest_path.clone(),
 			&GMAMetadata::Standard {
-				title: "LW BMW Pack Test".to_string(),
+				title: "gmpublisher".to_string(),
 				addon_type: "addon".to_string(),
 				tags: vec!["gmpublisher".to_string()],
-				ignore: vec!["test".to_string()],
+				ignore: vec![],
 			},
 		)
 		.unwrap();
@@ -136,9 +137,18 @@ fn main() {
 		let now = std::time::Instant::now();
 
 		let transaction = transaction!();
-		GMAFile::open(dest_path).unwrap().extract(ExtractDestination::Temp, transaction).unwrap();
+		GMAFile::open(&dest_path).unwrap().extract(ExtractDestination::Temp, transaction).unwrap();
 
 		println!("{:?}ms", now.elapsed().as_millis());
+		use crate::publishing::{WorkshopUpdateType, WorkshopUpdateDetails};
+
+		//println!("{:#?}", steamworks!().publish(dest_path.with_file_name(""), "gmpublisher".to_string(), PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\publish_test\imdeadbru.gif"#)));
+		/*println!("{:#?}", steamworks!().update(WorkshopUpdateType::Update(WorkshopUpdateDetails {
+		    id: PublishedFileId(2446913281),
+		    path: dest_path.with_file_name(""),
+		    preview: None,
+		    changes: None,
+		})));*/
 	});
 
 	tauri::AppBuilder::default()

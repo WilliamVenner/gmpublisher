@@ -104,10 +104,10 @@ impl WorkshopIcon {
 			return Err(anyhow!("ERR_ICON_TOO_SMALL"));
 		}
 
-		let (w, h) = image::image_dimensions(&path)?;
+		/*let (w, h) = image::image_dimensions(&path)?;
 		if w != 512 || h != 512 {
 			return Err(anyhow!("ERR_ICON_INCORRECT_DIMENSIONS"));
-		}
+		}*/
 
 		let file_extension = path.extension().and_then(|x| x.to_str()).unwrap_or("jpg").to_ascii_lowercase();
 		let mut file_types = match file_extension.as_str() {
@@ -123,105 +123,102 @@ impl WorkshopIcon {
 }
 
 pub struct WorkshopCreationDetails {
-	id: PublishedFileId,
-	title: String,
-	path: ContentPath,
-	preview: WorkshopIcon,
+	pub id: PublishedFileId,
+	pub title: String,
+	pub path: ContentPath,
+	pub preview: WorkshopIcon,
 }
 pub struct WorkshopUpdateDetails {
-	id: PublishedFileId,
-	path: PathBuf,
-	preview: Option<PathBuf>,
-	changes: Option<String>,
+	pub id: PublishedFileId,
+	pub path: PathBuf,
+	pub preview: Option<PathBuf>,
+	pub changes: Option<String>,
 }
 pub enum WorkshopUpdateType {
 	Creation(WorkshopCreationDetails),
 	Update(WorkshopUpdateDetails),
 }
 
-pub fn update(steamworks: &'static Steamworks, details: WorkshopUpdateType) -> Result<(PublishedFileId, bool), anyhow::Error> {
-	use WorkshopUpdateType::*;
+impl Steamworks {
+	pub fn update(&self, details: WorkshopUpdateType) -> Result<(PublishedFileId, bool), anyhow::Error> {
+		use WorkshopUpdateType::*;
 
-	let result = Arc::new(RwLock::new(None));
-	let result_ref = result.clone();
-	match details {
-		Creation(details) => {
-			steamworks
-				.client()
-				.ugc()
-				.start_item_update(GMOD_APP_ID, details.id)
-				.content_path(&details.path)
-				.title(&details.title)
-				.preview_path(&details.preview)
-				.submit(None, move |result| {
+		let result = Arc::new(RwLock::new(None));
+		let result_ref = result.clone();
+		match details {
+			Creation(details) => {
+				self
+					.client()
+					.ugc()
+					.start_item_update(GMOD_APP_ID, details.id)
+					.content_path(&details.path)
+					.title(&details.title)
+					.preview_path(&details.preview)
+					.submit(None, move |result| {
+						*result_ref.write() = Some(result);
+					});
+			}
+
+			Update(details) => {
+				let path = ContentPath::new(details.path)?;
+				let preview = match details.preview {
+					Some(preview) => Some(WorkshopIcon::new(preview)?),
+					None => None,
+				};
+
+				let update = self.client().ugc().start_item_update(GMOD_APP_ID, details.id);
+				match preview {
+					Some(preview) => update.preview_path(&*preview),
+					None => update,
+				}
+				.content_path(&path)
+				.submit(details.changes.as_deref(), move |result| {
 					*result_ref.write() = Some(result);
 				});
+			}
 		}
 
-		Update(details) => {
-			let path = ContentPath::new(details.path)?;
-			let preview = match details.preview {
-				Some(preview) => Some(WorkshopIcon::new(preview)?),
-				None => None,
-			};
-
-			let update = steamworks.client().ugc().start_item_update(GMOD_APP_ID, details.id);
-			match preview {
-				Some(preview) => update.preview_path(&*preview),
-				None => update,
+		loop {
+			if !result.is_locked() && result.read().is_some() {
+				break Arc::try_unwrap(result).unwrap().into_inner().unwrap().map_err(|error| anyhow!(error));
+			} else {
+				self.run_callbacks();
 			}
-			.content_path(&path)
-			.submit(details.changes.as_deref(), move |result| {
-				*result_ref.write() = Some(result);
+		}
+	}
+
+	pub fn publish(&self, path: PathBuf, title: String, preview: PathBuf) -> Result<(PublishedFileId, bool), anyhow::Error> {
+		let path = ContentPath::new(path)?;
+		let preview = WorkshopIcon::new(preview)?;
+
+		let published = Arc::new(RwLock::new(None));
+		let published_ref = published.clone();
+		self
+			.client()
+			.ugc()
+			.create_item(GMOD_APP_ID, steamworks::FileType::Community, move |result| {
+				match result {
+					Ok((id, _accepted_legal_agreement)) => {
+						// TODO test accepted_legal_agreement
+						*published_ref.write() = Some(Some(id));
+					}
+					Err(_) => {
+						*published_ref.write() = Some(None);
+					}
+				}
 			});
-		}
-	}
 
-	loop {
-		if !result.is_locked() && result.read().is_some() {
-			break Arc::try_unwrap(result).unwrap().into_inner().unwrap().map_err(|error| anyhow!(error));
-		} else {
-			steamworks.run_callbacks();
-		}
-	}
-}
-
-pub fn publish(steamworks: &'static Steamworks, path: PathBuf, title: String, preview: PathBuf) -> Result<(PublishedFileId, bool), anyhow::Error> {
-	let path = ContentPath::new(path)?;
-	let preview = WorkshopIcon::new(preview)?;
-
-	let published = Arc::new(RwLock::new(None));
-	let published_ref = published.clone();
-	steamworks
-		.client()
-		.ugc()
-		.create_item(GMOD_APP_ID, steamworks::FileType::Community, move |result| {
-			match result {
-				Ok((id, _accepted_legal_agreement)) => {
-					// TODO test accepted_legal_agreement
-					*published_ref.write() = Some(Some(id));
-				}
-				Err(_) => {
-					*published_ref.write() = Some(None);
+		loop {
+			if let Some(published_ref) = published.try_read() {
+				if published_ref.is_some() {
+					break;
 				}
 			}
-		});
-
-	loop {
-		if let Some(published_ref) = published.try_read() {
-			if published_ref.is_some() {
-				break;
-			}
+			self.run_callbacks();
 		}
-		steamworks.run_callbacks();
+
+		let id = Arc::try_unwrap(published).unwrap().into_inner().unwrap().ok_or(anyhow!("ERR_PUBLISH_FAILED"))?;
+
+		self.update(WorkshopUpdateType::Creation(WorkshopCreationDetails { id, title, preview, path }))
 	}
-
-	let id = match Arc::try_unwrap(published).unwrap().into_inner().unwrap() {
-		None => return Err(anyhow!("ERR_PUBLISH_FAILED")),
-		Some(id) => id,
-	};
-
-	let details = WorkshopUpdateType::Creation(WorkshopCreationDetails { id, title, preview, path });
-
-	self::update(steamworks, details)
 }

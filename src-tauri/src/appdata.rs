@@ -122,6 +122,12 @@ pub fn update_settings(mut settings: Settings) {
 	}
 }
 
+#[tauri::command]
+pub fn clean_app_data() {
+	// TODO
+	// clean %temp%/gmpublisher
+}
+
 pub struct Plugin;
 impl<Application: tauri::ApplicationExt + 'static> tauri::plugin::Plugin<Application> for Plugin {
 	fn initialization_script(&self) -> Option<String> {
