@@ -1,7 +1,7 @@
 use crate::GMOD_APP_ID;
 use anyhow::anyhow;
 use image::{ImageError, ImageFormat};
-use parking_lot::RwLock;
+use parking_lot::Mutex;
 use std::{fs::File, io::BufReader, mem::MaybeUninit, path::PathBuf, sync::Arc};
 use steamworks::PublishedFileId;
 
@@ -143,7 +143,7 @@ impl Steam {
 	pub fn update(&self, details: WorkshopUpdateType) -> Result<(PublishedFileId, bool), anyhow::Error> {
 		use WorkshopUpdateType::*;
 
-		let result = Arc::new(RwLock::new(None));
+		let result = Arc::new(Mutex::new(None));
 		let result_ref = result.clone();
 		match details {
 			Creation(details) => {
@@ -154,7 +154,7 @@ impl Steam {
 					.title(&details.title)
 					.preview_path(&details.preview)
 					.submit(None, move |result| {
-						*result_ref.write() = Some(result);
+						*result_ref.lock() = Some(result);
 					});
 			}
 
@@ -172,13 +172,13 @@ impl Steam {
 				}
 				.content_path(&path)
 				.submit(details.changes.as_deref(), move |result| {
-					*result_ref.write() = Some(result);
+					*result_ref.lock() = Some(result);
 				});
 			}
 		}
 
 		loop {
-			if !result.is_locked() && result.read().is_some() {
+			if !result.is_locked() && result.lock().is_some() {
 				break Arc::try_unwrap(result).unwrap().into_inner().unwrap().map_err(|error| anyhow!(error));
 			} else {
 				self.run_callbacks();
@@ -190,7 +190,7 @@ impl Steam {
 		let path = ContentPath::new(path)?;
 		let preview = WorkshopIcon::new(preview)?;
 
-		let published = Arc::new(RwLock::new(None));
+		let published = Arc::new(Mutex::new(None));
 		let published_ref = published.clone();
 		self.client()
 			.ugc()
@@ -198,16 +198,16 @@ impl Steam {
 				match result {
 					Ok((id, _accepted_legal_agreement)) => {
 						// TODO test accepted_legal_agreement
-						*published_ref.write() = Some(Some(id));
+						*published_ref.lock() = Some(Some(id));
 					}
 					Err(_) => {
-						*published_ref.write() = Some(None);
+						*published_ref.lock() = Some(None);
 					}
 				}
 			});
 
 		loop {
-			if let Some(published_ref) = published.try_read() {
+			if let Some(published_ref) = published.try_lock() {
 				if published_ref.is_some() {
 					break;
 				}

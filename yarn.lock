@@ -158,8 +158,8 @@ __metadata:
 
 "@tauri-apps/api@file:../tauri/api::locator=gmpublisher%40workspace%3A.":
   version: 0.1.0
-  resolution: "@tauri-apps/api@file:../tauri/api#../tauri/api::hash=20a4ab&locator=gmpublisher%40workspace%3A."
-  checksum: 8f0fdbc1714984c9c975cf83b4888f106d8a2fe56c6076677bfc5f097d8c9e499e5d7cfc5bdbf9288052d1fc57bb2cf71ae0768c3625bd5ad16cb1e5082d8162
+  resolution: "@tauri-apps/api@file:../tauri/api#../tauri/api::hash=4efedc&locator=gmpublisher%40workspace%3A."
+  checksum: 81e9b3ccf5bee4b58794d84db523fb8f20eb6326b00fd7ac8a63a180f5b6d22e519a08bb91a6448528d3bfd0ff9efe69591107b9f96a5fd96cb2305486b0ffc7
   languageName: node
   linkType: hard
 

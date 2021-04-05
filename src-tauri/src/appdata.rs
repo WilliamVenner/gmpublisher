@@ -81,11 +81,13 @@ impl Settings {
 #[derive(Debug, Serialize)]
 pub struct AppData {
 	pub settings: RwLock<Settings>,
+	pub version: &'static str,
 }
 impl AppData {
 	pub fn init() -> Self {
 		Self {
 			settings: RwLock::new(Settings::init()),
+			version: env!("CARGO_PKG_VERSION"),
 		}
 	}
 
@@ -113,27 +115,6 @@ impl AppData {
 	}
 }
 
-#[tauri::command]
-pub fn update_settings(mut settings: Settings) {
-	if settings.sanitize() {
-		ignore! { settings.save() };
-
-		let rediscover_addons = crate::APP_DATA.settings.read().gmod != settings.gmod;
-
-		*crate::APP_DATA.settings.write() = settings;
-
-		if rediscover_addons {
-			game_addons!().refresh();
-		}
-	}
-}
-
-#[tauri::command]
-pub fn clean_app_data() {
-	// TODO
-	// clean %temp%/gmpublisher
-}
-
 pub struct Plugin;
 impl<Application: tauri::ApplicationExt + 'static> tauri::plugin::Plugin<Application> for Plugin {
 	fn initialization_script(&self) -> Option<String> {
@@ -155,4 +136,25 @@ impl<Application: tauri::ApplicationExt + 'static> tauri::plugin::Plugin<Applica
 	fn name(&self) -> &'static str {
 		"AppData"
 	}
+}
+
+#[tauri::command]
+pub fn update_settings(mut settings: Settings) {
+	if settings.sanitize() {
+		ignore! { settings.save() };
+
+		let rediscover_addons = app_data!().settings.read().gmod != settings.gmod;
+
+		*app_data!().settings.write() = settings;
+
+		if rediscover_addons {
+			game_addons!().refresh();
+		}
+	}
+}
+
+#[tauri::command]
+pub fn clean_app_data() {
+	// TODO
+	// clean %temp%/gmpublisher
 }

@@ -24,6 +24,8 @@ pub mod workshop;
 
 pub use downloads::DOWNLOADS;
 
+pub const RESULTS_PER_PAGE: usize = steamworks::RESULTS_PER_PAGE as usize;
+
 mod serde_steamid64 {
 	use serde::{
 		de::{self, Visitor},
@@ -65,7 +67,7 @@ mod serde_steamid64 {
 pub struct Interface {
 	client: Client,
 	single: SingleClient,
-	steam_id: SteamId,
+	pub steam_id: SteamId,
 }
 impl std::ops::Deref for Interface {
 	type Target = Client;
@@ -93,7 +95,6 @@ pub struct Steam {
 	interface: AtomicRefCell<Option<Interface>>,
 
 	users: PromiseHashCache<SteamId, SteamUser>,
-	collections: PromiseHashCache<PublishedFileId, Option<Vec<PublishedFileId>>>,
 
 	workshop: RelaxedRwLock<(HashSet<PublishedFileId>, Vec<PublishedFileId>)>,
 }
@@ -108,7 +109,6 @@ impl Steam {
 			connected: AtomicBool::new(false),
 			interface: AtomicRefCell::new(None),
 			users: PromiseCache::new(HashMap::new()),
-			collections: PromiseCache::new(HashMap::new()),
 
 			workshop: RelaxedRwLock::new((HashSet::new(), Vec::new())),
 		}
@@ -286,7 +286,7 @@ fn is_steam_connected() -> bool {
 }
 
 #[tauri::command]
-fn get_steam_user() -> (String, Option<Base64Image>) {
+fn get_steam_user() -> (String, Option<crate::Base64Image>) {
 	steam!().client_wait();
 	let user = steam!().fetch_user(steam!().client().steam_id);
 	(user.name, user.avatar)

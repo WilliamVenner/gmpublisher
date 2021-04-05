@@ -344,3 +344,8 @@ impl AddonSizeAnalyzer {
 		master_treemap
 	}
 }
+
+#[tauri::command]
+fn free_addon_size_analyzer() {
+	crate::ADDON_SIZE_ANALYZER.free();
+}

@@ -54,6 +54,20 @@ macro_rules! json {
 	};
 }
 
+#[macro_export]
+macro_rules! mutex_wait {
+	( $mutex:expr, $loop:block ) => {
+		loop {
+			if let Some(lock) = $mutex.try_lock() {
+				if lock.is_some() {
+					break;
+				}
+			}
+			$loop
+		}
+	}
+}
+
 pub mod path {
 	use serde::{de::Visitor, Deserialize, Serialize};
 	use std::{fmt::Debug, path::PathBuf};

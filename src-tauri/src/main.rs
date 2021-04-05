@@ -41,6 +41,7 @@ pub mod search;
 pub mod webview;
 
 use tauri::WebviewBuilderExt;
+mod commands;
 
 fn main() {
 	globals::init_globals();
@@ -128,20 +129,7 @@ fn main() {
 		.unwrap()
 		.setup(|mgr| webview!().init(mgr))
 		.plugin(appdata::Plugin)
-		.invoke_handler(tauri::generate_handler![
-			transactions::cancel_transaction,
-			appdata::update_settings,
-			appdata::clean_app_data,
-			game_addons::installed_addons,
-			steam::is_steam_connected,
-			steam::get_steam_user,
-			free_caches,
-		])
+		.invoke_handler(commands::invoke_handler())
 		.build(tauri::generate_context!())
 		.run();
-}
-
-#[tauri::command]
-fn free_caches() {
-	ADDON_SIZE_ANALYZER.free();
 }

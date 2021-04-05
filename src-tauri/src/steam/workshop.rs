@@ -10,11 +10,11 @@ use std::{
 
 use steamworks::{PublishedFileId, QueryResult, QueryResults, SteamError, SteamId};
 
-use atomic_refcell::AtomicRefCell;
+use parking_lot::Mutex;
 
 use super::{users::SteamUser, Steam};
 
-use crate::{main_thread_forbidden, webview_emit};
+use crate::{GMOD_APP_ID, main_thread_forbidden, webview_emit};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -336,7 +336,7 @@ impl Steam {
 	pub fn fetch_collection_items(&'static self, collection: PublishedFileId) -> Option<Vec<PublishedFileId>> {
 		main_thread_forbidden!();
 
-		let response = Arc::new(AtomicRefCell::new(None));
+		let response = Arc::new(Mutex::new(None));
 		{
 			let response = response.clone();
 			self.client()
@@ -349,50 +349,81 @@ impl Steam {
 						if let Some(result) = results.get(0) {
 							if matches!(result.file_type, steamworks::FileType::Collection) {
 								if let Some(children) = results.get_children(0) {
-									*response.borrow_mut() = Some(Some(children));
+									*response.lock() = Some(Some(children));
 									return;
 								}
 							}
 						}
 					}
-					*response.borrow_mut() = Some(None);
+					*response.lock() = Some(None);
 				});
 		}
 
-		loop {
-			if let Ok(response) = response.try_borrow() {
-				if response.is_some() {
-					break;
-				}
-			}
+		mutex_wait!(response, {
 			self.run_callbacks();
-		}
+		});
 
-		let children = Arc::try_unwrap(response).unwrap().into_inner().unwrap();
-
-		if children.is_some() {
-			let children = Some(children.clone().unwrap());
-			self.collections.write(move |mut collections| {
-				collections.insert(collection, children);
-			});
-		}
-
-		children
+		Arc::try_unwrap(response).unwrap().into_inner().unwrap()
 	}
 
 	pub fn fetch_collection_items_async<F>(&'static self, collection: PublishedFileId, f: F)
 	where
 		F: FnOnce(&Option<Vec<PublishedFileId>>) + 'static + Send,
 	{
-		match self.collections.read().get(&collection) {
-			Some(cached) => f(cached),
-			None => {
-				if self.collections.task(collection, f) {
-					rayon::spawn(move || {
-						steam!().collections.execute(&collection, self.fetch_collection_items(collection));
-					});
-				}
-			}
-		}
+		rayon::spawn(move || f(&self.fetch_collection_items(collection)));
 	}
+
+	pub fn browse_my_workshop(&'static self, page: u32) -> Option<(u32, Vec<WorkshopItem>)> {
+		let results = Arc::new(Mutex::new(None));
+
+		{
+			let results = results.clone();
+			let client = self.client(); client
+			.ugc()
+			.query_user(
+				client.steam_id.account_id(),
+				steamworks::UserList::Published,
+				steamworks::UGCType::ItemsReadyToUse,
+				steamworks::UserListOrder::LastUpdatedDesc,
+				steamworks::AppIDs::ConsumerAppId(GMOD_APP_ID),
+				page,
+			)
+			.ok()?
+			.exclude_tag("dupe")
+			.fetch(move |result: Result<QueryResults<'_>, SteamError>| {
+				if let Ok(data) = result {
+					*results.lock() = Some(Some((
+						data.total_results(),
+						data.iter()
+							.enumerate()
+							.map(|(i, x)| {
+								let mut item: WorkshopItem = x.unwrap().into();
+								item.preview_url = data.preview_url(i as u32);
+								item.subscriptions = data
+									.statistic(
+										i as u32,
+										steamworks::UGCStatisticType::Subscriptions,
+									)
+									.unwrap_or(0);
+								item
+							})
+							.collect::<Vec<WorkshopItem>>(),
+					)));
+				} else {
+					*results.lock() = Some(None);
+				}
+			});
+		}
+
+		mutex_wait!(results, {
+			self.run_callbacks();
+		});
+
+		Arc::try_unwrap(results).unwrap().into_inner().unwrap()
+	}
+}
+
+#[tauri::command]
+pub fn browse_my_workshop(page: u32) -> Option<(u32, Vec<crate::WorkshopItem>)> {
+	rayon::scope(|_| steam!().browse_my_workshop(page))
 }

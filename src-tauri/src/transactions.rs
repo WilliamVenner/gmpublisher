@@ -182,16 +182,16 @@ pub fn new() -> Transaction {
 	transaction
 }
 
-#[tauri::command]
-fn cancel_transaction(id: usize) {
-	if let Some(transaction) = TRANSACTIONS.find(id) {
-		transaction.cancel();
-	}
-}
-
 #[macro_export]
 macro_rules! transaction {
 	() => {
 		crate::transactions::new()
 	};
+}
+
+#[tauri::command]
+fn cancel_transaction(id: usize) {
+	if let Some(transaction) = TRANSACTIONS.find(id) {
+		transaction.cancel();
+	}
 }

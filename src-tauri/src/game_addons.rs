@@ -167,7 +167,7 @@ impl GameAddons {
 		self.discovered.store(true, Ordering::Release);
 
 		// Download the first page from Steam
-		installed_addons(1);
+		browse_game_addons(1);
 	}
 
 	pub fn discover_addons(&self) {
@@ -201,15 +201,15 @@ impl serde::Serialize for InstalledAddonsPage {
 }
 
 #[tauri::command]
-pub fn installed_addons(page: u32) -> InstalledAddonsPage {
+pub fn browse_game_addons(page: u32) -> InstalledAddonsPage {
 	game_addons!().discover_addons();
 
-	let start = ((page.max(1) - 1) as usize) * RESULTS_PER_PAGE;
+	let start = ((page.max(1) - 1) as usize) * crate::steam::RESULTS_PER_PAGE;
 	InstalledAddonsPage(RwLockReadGuard::map(game_addons!().pages.read(), |read| {
 		if page != 1 {
 			// The first page is already downloaded during initialization.
-			steam!().fetch_workshop_items(read.iter().skip(start).take(RESULTS_PER_PAGE).filter_map(|x| x.id).collect());
+			steam!().fetch_workshop_items(read.iter().skip(start).take(crate::steam::RESULTS_PER_PAGE).filter_map(|x| x.id).collect());
 		}
-		&(&*read)[start..(start + RESULTS_PER_PAGE)]
+		&(&*read)[start..(start + crate::steam::RESULTS_PER_PAGE)]
 	}))
 }
