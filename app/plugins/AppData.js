@@ -44,26 +44,45 @@ class AppSettings {
 }
 
 window.__GMPUBLISHER__ = () => {
-	const AppDataPtr = {};
-	window.AppData = new Proxy(AppDataPtr, {
-		get: function(_, key) { return _._[key]; }
-	});
+	{
+		const AppDataPtr = {};
+		window.AppData = new Proxy(AppDataPtr, {
+			get: function(_, key) { return _._[key]; }
+		});
 
-	function updateAppData(newAppData) {
-		console.log('UpdateAppData');
-		console.log(newAppData);
+		function updateAppData(newAppData) {
+			console.log('UpdateAppData');
+			console.log(newAppData);
 
-		const settings = AppSettings.init(newAppData.settings);
-		window.AppSettings = settings;
+			const settings = AppSettings.init(newAppData.settings);
+			window.AppSettings = settings;
 
-		delete newAppData.settings;
-		AppDataPtr._ = Object.freeze(newAppData);
+			delete newAppData.settings;
+			AppDataPtr._ = Object.freeze(newAppData);
 
-		window.PATH_SEPARATOR = newAppData.path_separator;
+			window.PATH_SEPARATOR = newAppData.path_separator;
+		}
+
+		updateAppData(JSON.parse('{$_APP_DATA_$}'));
+		__TAURI__.event.listen('UpdateAppData', ({ payload }) => updateAppData(payload));
 	}
 
-	updateAppData(JSON.parse('{$_APP_DATA_$}'));
-	__TAURI__.event.listen('UpdateAppData', ({ payload }) => updateAppData(payload));
+	{
+		__TAURI__.event.listen('tauri://file-drop', ({ payload: path }) => {
+			document.body.classList.remove('file-drop');
+			console.log('File Drop', path);
+		});
+
+		__TAURI__.event.listen('tauri://file-drop-hover', ({ payload: path }) => {
+			document.body.classList.add('file-drop');
+			console.log('File Drop Hover', path);
+		});
+
+		__TAURI__.event.listen('tauri://file-drop-cancelled', ({ payload: path }) => {
+			document.body.classList.remove('file-drop');
+			console.log('File Drop Cancelled', path);
+		});
+	}
 };
 
 window.__WS_DEAD__ = JSON.parse('{$_WS_DEAD_$}');

@@ -8,6 +8,7 @@
 	import AddonSizeAnalyzer from './pages/AddonSizeAnalyzer.svelte';
 	import Tasks from './modals/Tasks.svelte';
 	import WorkshopDownloader from './pages/WorkshopDownloader.svelte';
+	import { Download } from 'akar-icons-svelte';
 
 	const hours = new Date().getHours();
 
@@ -63,6 +64,10 @@
 
 	// TODO merge this into App.svelte
 </script>
+
+<div id="file-drop">
+	<Download/>
+</div>
 
 <main>
 
@@ -121,6 +126,30 @@
 </main>
 
 <style>
+	#file-drop {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		opacity: 0;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background-color: rgba(0,0,0,.4);
+		backdrop-filter: grayscale(0) blur(0px);
+		pointer-events: none;
+		transition: opacity .25s;
+		z-index: 9999;
+	}
+	:global(body.file-drop #file-drop) {
+		opacity: 1 !important;
+		backdrop-filter: grayscale(.5) blur(1px) !important;
+	}
+	#file-drop :global(.icon) {
+		width: min(50vw, 50vh);
+	}
+
 	main {
 		width: 100%;
 		height: 100%;

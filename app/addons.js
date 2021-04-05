@@ -24,11 +24,11 @@ class Addons {
 
 	browseWorkshop(page) {
 		if (page > 4294967295 || page <= 0) throw 'Page out of bounds';
-		
+
 		if (page in this.workshopCache) {
 			return Promise.resolve(this.workshopCache[page]);
 		} else {
-			return invoke({ cmd: 'workshopBrowser', page }).then(data => {
+			return invoke('workshopBrowser', { page }).then(data => {
 				this.workshopCache[page] = data;
 				return data;
 			});
@@ -41,7 +41,7 @@ class Addons {
 		if (page in this.gameAddonsCache) {
 			return Promise.resolve(this.gameAddonsCache[page]);
 		} else {
-			return invoke({ cmd: 'gameAddonsBrowser', page }).then(data => {
+			return invoke('gameAddonsBrowser', { page }).then(data => {
 				this.gameAddonsCache[page] = data;
 				return data;
 			});
@@ -53,10 +53,10 @@ class Addons {
 		if (next) {
 			const [[path, id], resolve, reject] = next;
 
-			invoke({ cmd: 'gmaMetadata', path, id })
+			invoke('gmaMetadata', { path, id })
 
 				.then(metadata => {
-					
+
 					this.gmaMetadataCache[path] = [true, metadata];
 
 					delete this.gmaMetadataQueue.waiting[path];
@@ -70,14 +70,14 @@ class Addons {
 					this.gmaMetadataCache[path] = [false, error];
 					return error;
 				})
-				
+
 				.then(resolve, reject);
 		}
 	}
 
 	getGMAMetadata(path, id) {
 		if (path in this.gmaMetadataCache) {
-			
+
 			return this.gmaMetadataCache[path][0] ?
 				Promise.resolve(this.gmaMetadataCache[path][1])
 				:
@@ -120,8 +120,8 @@ class Addons {
 
 	previewGMA(path, id) {
 		if (!(path in this.gmaPreviewCache))
-			this.gmaPreviewCache[path] = invoke({ cmd: 'previewGma', path, id });
-		
+			this.gmaPreviewCache[path] = invoke('previewGma', { path, id });
+
 		return this.gmaPreviewCache[path];
 	}
 }
@@ -165,7 +165,7 @@ function getFileIcon(extension) {
 
 		case 'pcf':
 			return 'wand.png';
-		
+
 		case 'vcd':
 			return 'comments.png';
 

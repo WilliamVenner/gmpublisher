@@ -134,7 +134,7 @@
 
 			const x = square.x + offsetX + (padding || 0);
 			const y = square.y + offsetY + (padding || 0);
-			
+
 			const halfW = square.w / 2;
 			const halfH = square.h / 2;
 
@@ -142,7 +142,7 @@
 			const centerY = y + halfH;
 
 			if (tag) {
-				
+
 				let padding = Math.ceil((Math.min(square.w, square.h) * 0.05)) / 2;
 
 				const tagColor = getTagColor(tag);
@@ -166,7 +166,7 @@
 					hanging,
 				};
 				drawTag(tag);
-				
+
 				if (Array.isArray(data)) {
 					processTreemap(data, x, y, padding, getTagId(tag));
 				}
@@ -243,7 +243,7 @@
 				tagsCtx.rotate(canvasRotation);
 			tagsCtx.translate(-x, -y);
 		}
-		
+
 		tagsCtx.font = textSize + 'px sans-serif';
 		tagsCtx.fillStyle = '#fff';
 		tagsCtx.strokeStyle = '#000';
@@ -317,7 +317,7 @@
 	onDestroy(() => {
 		clearTimeout(resizedTimeout);
 		transaction?.cancel();
-		invoke({ cmd: 'freeAddonSizeAnalyzer' });
+		invoke('freeAddonSizeAnalyzer');
 	});
 
 	let popper;
@@ -347,7 +347,7 @@
 
 			popperName.textContent = addon.gma.name ?? addon.gma.extracted_name;
 			popperSize.textContent = filesize(Number(addon.gma.size));
-			
+
 			const tagName = lookupTagName(addon.tagId);
 			updateTagCanvas(tagName);
 			popperType.setAttribute('class', 'tag ' + tagName);
@@ -363,7 +363,7 @@
 			popper._tippy.show();
 
 		}
-		
+
 		return addon;
 	}
 
@@ -509,7 +509,8 @@
 	#progress {
 		display: inline-block;
 		position: relative;
-		width: 15%;
+		width: 100%;
+		max-width: 250px;
 		background-color: rgba(0,0,0,.4);
 		z-index: 1;
 		color: #fff;
