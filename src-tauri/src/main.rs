@@ -115,6 +115,8 @@ fn main() {
 						.width(settings.window_size.0)
 						.height(settings.window_size.1)
 						.maximized(settings.window_maximized)
+						.min_width(800.)
+						.min_height(600.)
 				}
 
 				#[cfg(debug_assertions)]
@@ -123,6 +125,8 @@ fn main() {
 						.resizable(true)
 						.width(settings.window_size.0)
 						.height(settings.window_size.1)
+						.min_width(800.)
+						.min_height(600.)
 				}
 			})
 		})
