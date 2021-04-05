@@ -5,7 +5,7 @@ use std::sync::{atomic::AtomicBool, Arc};
 
 use steamworks::{ItemState, PublishedFileId};
 
-use crate::{steamworks, transaction, transactions::Transaction, webview_emit, GMOD_APP_ID};
+use crate::{transaction, transactions::Transaction, webview_emit, GMOD_APP_ID};
 
 lazy_static! {
 	pub static ref DOWNLOADS: Downloads = Downloads::init();
@@ -97,7 +97,7 @@ impl Downloads {
 		loop {
 			DOWNLOADS.watchdog.wait(&mut DOWNLOADS.downloading.lock());
 
-			let ugc = steamworks!().client().ugc();
+			let ugc = steam!().client().ugc();
 
 			loop {
 				let mut downloading = std::mem::take(&mut *DOWNLOADS.downloading.lock());
@@ -111,14 +111,14 @@ impl Downloads {
 				let downloading = Arc::new(Mutex::new(downloading));
 
 				let downloading_ref = downloading.clone();
-				let _cb = steamworks!().register_callback(move |result: steamworks::DownloadItemResult| {
+				let _cb = steam!().register_callback(move |result: steamworks::DownloadItemResult| {
 					if result.app_id == GMOD_APP_ID {
 						let mut downloading = downloading_ref.lock();
 						if let Ok(pos) = downloading.binary_search_by_key(&result.published_file_id.0, |download| download.0) {
 							let download = downloading.remove(pos);
 							if let Some(error) = result.error {
 								download.transaction.error(("ERR_STEAM_ERROR", format!("{}", error)));
-							} else if let Some(info) = steamworks!().client().ugc().item_install_info(result.published_file_id) {
+							} else if let Some(info) = steam!().client().ugc().item_install_info(result.published_file_id) {
 								download.transaction.finished(Some(info.folder));
 							} else {
 								download.transaction.error("ERR_DOWNLOAD_FAILED");

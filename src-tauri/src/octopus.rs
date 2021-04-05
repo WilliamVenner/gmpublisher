@@ -1,27 +1,20 @@
 // Utility library for shared concurrency between JS and Rust.
 
-pub mod gma;
-pub mod steamworks;
-pub mod game_addons;
-
-use std::{collections::HashMap, hash::Hash, rc::Rc, sync::{
+use std::{
+	collections::HashMap,
+	hash::Hash,
+	sync::{
 		atomic::{AtomicBool, Ordering},
-		mpsc::{self, Receiver, Sender},
 		Arc,
-	}};
+	},
+};
 
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut, BorrowMutError};
-use lazy_static::lazy_static;
+use crossbeam::channel::{Receiver, Sender};
+
 use parking_lot::RwLock;
-use rayon::{ThreadPool, ThreadPoolBuilder};
 
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-
-pub use self::{gma::GMA, steamworks::Steamworks, game_addons::GameAddons};
-
-lazy_static! {
-	pub static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
-}
 
 pub enum VariableSingleton<T> {
 	Singleton(T),
@@ -98,7 +91,7 @@ pub struct AtomicRefSome<'a, V> {
 impl<V> std::ops::Deref for AtomicRefSome<'_, V> {
 	type Target = V;
 	fn deref(&self) -> &Self::Target {
-		debug_assert!(self.inner.as_ref().is_some(), "Steamworks has not connected yet");
+		debug_assert!(self.inner.as_ref().is_some(), "Steam has not connected yet");
 		self.inner.as_ref().unwrap()
 	}
 }
@@ -108,7 +101,7 @@ impl<'a, V> From<AtomicRef<'a, Option<V>>> for AtomicRefSome<'a, V> {
 	}
 }
 pub struct AtomicRefMutSome<'a, V> {
-	inner: AtomicRefMut<'a, Option<V>>,
+	pub inner: AtomicRefMut<'a, Option<V>>,
 }
 impl<V> std::ops::Deref for AtomicRefMutSome<'_, V> {
 	type Target = V;
@@ -142,7 +135,7 @@ impl<V: Default + Send + Sync + 'static> RelaxedRwLock<V> {
 		let (tx, rx): (
 			Sender<Box<dyn FnOnce(AtomicRefMutSome<V>) + 'static + Send + Sync>>,
 			Receiver<Box<dyn FnOnce(AtomicRefMutSome<V>) + 'static + Send + Sync>>,
-		) = mpsc::channel();
+		) = crossbeam::channel::unbounded();
 		let begin = Arc::new(AtomicBool::new(false));
 		let r = Arc::new(AtomicRefCell::new(v));
 		let w = Arc::new(AtomicRefCell::new(None));
@@ -150,20 +143,22 @@ impl<V: Default + Send + Sync + 'static> RelaxedRwLock<V> {
 			let begin_ref = begin.clone();
 			let w_ref = w.clone();
 			let r_ref = r.clone();
-			std::thread::spawn(move || loop { // TODO use a static vec of weak rc relaxedrwlocks and a single worker thread
+			std::thread::spawn(move || loop {
+				// TODO use a static vec of weak rc relaxedrwlocks and a single worker thread
 				let f = match rx.try_recv() {
 					Ok(f) => f,
-					Err(err) => {
-						if let mpsc::TryRecvError::Empty = err {
+					Err(error) => match error {
+						crossbeam::channel::TryRecvError::Empty => {
 							if !begin_ref.load(Ordering::Acquire) && AtomicRefCell::borrow(&w_ref).is_some() {
 								if let Ok(mut r) = r_ref.try_borrow_mut() {
 									drop(std::mem::replace(&mut *r, w_ref.borrow_mut().take().unwrap()));
 								}
 							}
+							std::thread::sleep(std::time::Duration::from_millis(10));
+							continue;
 						}
-						std::thread::sleep(std::time::Duration::from_millis(10));
-						continue;
-					}
+						crossbeam::channel::TryRecvError::Disconnected => break,
+					},
 				};
 
 				if AtomicRefCell::borrow(&w_ref).is_none() {
@@ -205,7 +200,7 @@ impl<V: Default + Send + Sync + 'static> RelaxedRwLock<V> {
 
 	pub fn try_take_inner<F, U: Default>(&self, map: F) -> Result<U, BorrowMutError>
 	where
-		F: FnOnce(&mut AtomicRefMut<'_, V>) -> *mut U + 'static
+		F: FnOnce(&mut AtomicRefMut<'_, V>) -> *mut U + 'static,
 	{
 		let mut borrow = self.r.try_borrow_mut()?;
 		let inner = map(&mut borrow);

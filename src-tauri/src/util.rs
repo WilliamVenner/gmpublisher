@@ -1,4 +1,8 @@
-use std::{collections::HashSet, hash::Hash, io::{BufRead, BufReader, BufWriter, ErrorKind, Read, Seek, SeekFrom, Write}};
+use std::{
+	collections::HashSet,
+	hash::Hash,
+	io::{BufRead, BufReader, BufWriter, ErrorKind, Read, Seek, SeekFrom, Write},
+};
 
 #[macro_export]
 macro_rules! ignore {
@@ -47,7 +51,7 @@ macro_rules! main_thread_forbidden {
 macro_rules! json {
 	( $x:expr ) => {
 		serde_json::to_value($x).unwrap()
-	}
+	};
 }
 
 pub mod path {
@@ -153,24 +157,24 @@ pub mod path {
 #[derive(derive_more::Deref, derive_more::DerefMut, Debug, PartialEq, PartialOrd, Ord, Eq)]
 pub struct AsVec<T>(Vec<T>);
 impl<T> From<Vec<T>> for AsVec<T> {
-    fn from(x: Vec<T>) -> Self {
-        AsVec(x)
-    }
+	fn from(x: Vec<T>) -> Self {
+		AsVec(x)
+	}
 }
 impl<T> From<T> for AsVec<T> {
-    fn from(x: T) -> Self {
-        AsVec(vec![x])
-    }
+	fn from(x: T) -> Self {
+		AsVec(vec![x])
+	}
 }
 impl<T: Clone> From<&[T]> for AsVec<T> {
-    fn from(x: &[T]) -> Self {
-        AsVec(x.to_vec())
-    }
+	fn from(x: &[T]) -> Self {
+		AsVec(x.to_vec())
+	}
 }
-impl <T> Into<Vec<T>> for AsVec<T> {
-    fn into(self) -> Vec<T> {
-        self.0
-    }
+impl<T> Into<Vec<T>> for AsVec<T> {
+	fn into(self) -> Vec<T> {
+		self.0
+	}
 }
 
 // cursed
@@ -247,7 +251,7 @@ pub fn escape_single_quoted_json<S: Into<String>>(str: S) -> String {
 			BACKSLASH_BYTE | SINGLE_QUOTE_BYTE => {
 				bytes.insert(i, BACKSLASH_BYTE);
 				i += 1;
-			},
+			}
 			_ => {}
 		}
 		i += 1;
@@ -258,7 +262,9 @@ pub fn escape_single_quoted_json<S: Into<String>>(str: S) -> String {
 
 #[test]
 fn test_escape_single_quoted_json() {
-	let dangerous_json = String::from(r#"{"test":"don\\🚀🐱‍👤\\'t forget to escape me!🚀🐱‍👤","te🚀🐱‍👤st2":"don't forget to escape me!","test3":"\\🚀🐱‍👤\\\\'''\\\\🚀🐱‍👤\\\\🚀🐱‍👤\\'''''"}"#);
+	let dangerous_json = String::from(
+		r#"{"test":"don\\🚀🐱‍👤\\'t forget to escape me!🚀🐱‍👤","te🚀🐱‍👤st2":"don't forget to escape me!","test3":"\\🚀🐱‍👤\\\\'''\\\\🚀🐱‍👤\\\\🚀🐱‍👤\\'''''"}"#,
+	);
 
 	let definitely_escaped_dangerous_json = dangerous_json.clone().replace('\\', "\\\\").replace('\'', "\\'");
 	let escape_single_quoted_json_test = escape_single_quoted_json(dangerous_json);

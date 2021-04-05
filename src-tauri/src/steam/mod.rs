@@ -1,18 +1,21 @@
-use std::{collections::{HashMap, HashSet}, mem::MaybeUninit, sync::{atomic::AtomicBool, Arc}};
+use std::{
+	collections::{HashMap, HashSet},
+	mem::MaybeUninit,
+	sync::{atomic::AtomicBool, Arc},
+};
 
-use parking_lot::RwLock;
 use steamworks::{
-	AccountId, Callback, CallbackHandle, Client, ClientManager, PublishedFileId, SingleClient, SteamId, SteamServerConnectFailure,
-	SteamServersConnected, SteamServersDisconnected,
+	Callback, CallbackHandle, Client, ClientManager, PublishedFileId, SingleClient, SteamId, SteamServerConnectFailure, SteamServersConnected,
+	SteamServersDisconnected,
 };
 
 use atomic_refcell::AtomicRefCell;
 
-use self::{downloads::Downloads, users::SteamUser, workshop::WorkshopItem};
+use self::{downloads::Downloads, users::SteamUser};
 
-use super::{AtomicRefSome, PromiseCache, PromiseHashCache, RelaxedRwLock, THREAD_POOL};
+use crate::octopus::{AtomicRefSome, PromiseCache, PromiseHashCache, RelaxedRwLock};
 
-use crate::{Base64Image, steamworks, webview_emit};
+use crate::{webview_emit, Base64Image};
 
 pub mod downloads;
 pub mod publishing;
@@ -84,7 +87,7 @@ impl From<(Client, SingleClient)> for Interface {
 	}
 }
 
-pub struct Steamworks {
+pub struct Steam {
 	connected: AtomicBool,
 
 	interface: AtomicRefCell<Option<Interface>>,
@@ -95,13 +98,13 @@ pub struct Steamworks {
 	workshop: RelaxedRwLock<(HashSet<PublishedFileId>, Vec<PublishedFileId>)>,
 }
 
-unsafe impl Sync for Steamworks {}
-unsafe impl Send for Steamworks {}
+unsafe impl Sync for Steam {}
+unsafe impl Send for Steam {}
 
-impl Steamworks {
-	pub fn init() -> Steamworks {
-		std::thread::spawn(Steamworks::connect);
-		Steamworks {
+impl Steam {
+	pub fn init() -> Steam {
+		std::thread::spawn(Steam::connect);
+		Steam {
 			connected: AtomicBool::new(false),
 			interface: AtomicRefCell::new(None),
 			users: PromiseCache::new(HashMap::new()),
@@ -113,28 +116,28 @@ impl Steamworks {
 
 	fn watchdog() {
 		#[cfg(debug_assertions)]
-		std::mem::forget(steamworks!().register_callback(|c: SteamServerConnectFailure| {
-			println!("[Steamworks] SteamServerConnectFailure {:#?}", c);
+		std::mem::forget(steam!().register_callback(|c: SteamServerConnectFailure| {
+			println!("[Steam] SteamServerConnectFailure {:#?}", c);
 		}));
 
-		std::mem::forget(steamworks!().register_callback(|_: SteamServersConnected| {
-			steamworks!().set_connected(true);
-			println!("[Steamworks] Connected");
+		std::mem::forget(steam!().register_callback(|_: SteamServersConnected| {
+			steam!().set_connected(true);
+			println!("[Steam] Connected");
 		}));
 
-		std::mem::forget(steamworks!().register_callback(|c: SteamServersDisconnected| {
-			steamworks!().set_connected(false);
-			println!("[Steamworks] SteamServersDisconnected {:#?}", c);
+		std::mem::forget(steam!().register_callback(|c: SteamServersDisconnected| {
+			steam!().set_connected(false);
+			println!("[Steam] SteamServersDisconnected {:#?}", c);
 		}));
 
 		loop {
-			steamworks!().run_callbacks();
+			steam!().run_callbacks();
 		}
 	}
 
 	fn on_initialized() {
-		std::thread::spawn(Steamworks::watchdog);
-		std::thread::spawn(Steamworks::workshop_fetcher);
+		std::thread::spawn(Steam::watchdog);
+		std::thread::spawn(Steam::workshop_fetcher);
 
 		lazy_static::initialize(&DOWNLOADS);
 		std::thread::spawn(Downloads::watchdog);
@@ -143,18 +146,18 @@ impl Steamworks {
 	pub fn connect() {
 		loop {
 			if let Ok(connection) = Client::init() {
-				println!("[Steamworks] Client initialized");
+				println!("[Steam] Client initialized");
 
 				loop {
-					if let Ok(mut interface) = steamworks!().interface.try_borrow_mut() {
+					if let Ok(mut interface) = steam!().interface.try_borrow_mut() {
 						*interface = Some(connection.into());
 						break;
 					}
 				}
 
-				steamworks!().set_connected(true);
+				steam!().set_connected(true);
 
-				Steamworks::on_initialized();
+				Steam::on_initialized();
 
 				break;
 			}
@@ -279,12 +282,12 @@ impl Steamworks {
 
 #[tauri::command]
 fn is_steam_connected() -> bool {
-	steamworks!().connected()
+	steam!().connected()
 }
 
 #[tauri::command]
-fn get_user_info() -> (String, Option<Base64Image>) {
-	steamworks!().client_wait();
-	let user = steamworks!().fetch_user(steamworks!().client().steam_id);
+fn get_steam_user() -> (String, Option<Base64Image>) {
+	steam!().client_wait();
+	let user = steam!().fetch_user(steam!().client().steam_id);
 	(user.name, user.avatar)
 }

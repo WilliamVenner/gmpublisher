@@ -5,9 +5,9 @@ use std::{
 	sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::{app_data, transactions::Transaction, whitelist};
+use crate::{app_data, transactions::Transaction};
 
-use super::{GMAEntry, GMAError, GMAFile, GMAMetadata};
+use super::{whitelist, GMAEntry, GMAError, GMAFile, GMAMetadata};
 
 use lazy_static::lazy_static;
 use rayon::{

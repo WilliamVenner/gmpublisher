@@ -1,6 +1,10 @@
-use std::{fs::File, io::{BufReader, BufWriter}, path::PathBuf};
+use std::{
+	fs::File,
+	io::{BufReader, BufWriter},
+	path::PathBuf,
+};
 
-use crate::{octopus::game_addons, webview_emit};
+use crate::webview_emit;
 
 use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
@@ -96,9 +100,11 @@ impl AppData {
 			}
 		}
 
-		if !steamworks!().connected() { return None };
+		if !steam!().connected() {
+			return None;
+		};
 
-		let gmod: PathBuf = steamworks!().client().apps().app_install_dir(GMOD_APP_ID).into();
+		let gmod: PathBuf = steam!().client().apps().app_install_dir(GMOD_APP_ID).into();
 		if gmod.is_dir() && gmod.exists() {
 			Some(gmod)
 		} else {
@@ -111,7 +117,7 @@ impl AppData {
 pub fn update_settings(mut settings: Settings) {
 	if settings.sanitize() {
 		ignore! { settings.save() };
-		
+
 		let rediscover_addons = crate::APP_DATA.settings.read().gmod != settings.gmod;
 
 		*crate::APP_DATA.settings.write() = settings;
@@ -139,7 +145,9 @@ impl<Application: tauri::ApplicationExt + 'static> tauri::plugin::Plugin<Applica
 				)
 				.replace(
 					"{$_WS_DEAD_$}",
-					&crate::escape_single_quoted_json(serde_json::ser::to_string(&crate::WorkshopItem::from(steamworks::PublishedFileId(0))).unwrap()),
+					&crate::escape_single_quoted_json(
+						serde_json::ser::to_string(&crate::WorkshopItem::from(steamworks::PublishedFileId(0))).unwrap(),
+					),
 				),
 		)
 	}

@@ -5,9 +5,7 @@ use serde::Serialize;
 
 use steamworks::{Friend, SteamId};
 
-use super::{Steamworks, THREAD_POOL};
-
-use crate::{main_thread_forbidden, steamworks};
+use super::Steam;
 
 lazy_static! {
 	static ref PERSONACHANGE_USER_INFO: steamworks::PersonaChange = steamworks::PersonaChange::NAME | steamworks::PersonaChange::AVATAR;
@@ -34,7 +32,7 @@ impl<Manager: steamworks::Manager> From<Friend<Manager>> for SteamUser {
 	}
 }
 
-impl Steamworks {
+impl Steam {
 	// Users //
 
 	pub fn fetch_user(&'static self, steamid: SteamId) -> SteamUser {
@@ -51,7 +49,7 @@ impl Steamworks {
 
 		{
 			let user = user.clone();
-			steamworks!().users.write(move |mut users| {
+			steam!().users.write(move |mut users| {
 				users.insert(user.steamid, user);
 			});
 		}
@@ -79,11 +77,11 @@ impl Steamworks {
 			None => {
 				if self.users.task(steamid, f) {
 					if self.client().friends().request_user_information(steamid, false) {
-						THREAD_POOL.spawn(move || {
-							steamworks!().users.execute(&steamid, steamworks!().fetch_user(steamid));
+						rayon::spawn(move || {
+							steam!().users.execute(&steamid, steam!().fetch_user(steamid));
 						});
 					} else {
-						steamworks!().users.execute(&steamid, steamworks!().fetch_user(steamid));
+						steam!().users.execute(&steamid, steam!().fetch_user(steamid));
 					}
 				}
 			}
@@ -94,6 +92,6 @@ impl Steamworks {
 	where
 		F: FnOnce(Vec<SteamUser>) + 'static + Send,
 	{
-		THREAD_POOL.spawn(move || f(self.fetch_users(steamids)));
+		rayon::spawn(move || f(self.fetch_users(steamids)));
 	}
 }

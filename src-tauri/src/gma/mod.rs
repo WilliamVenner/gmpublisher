@@ -74,27 +74,28 @@ impl GMAMetadata {
 		match &self {
 			GMAMetadata::Standard { title, .. } => title,
 			GMAMetadata::Legacy { title, .. } => title,
-		}.as_str()
+		}
+		.as_str()
 	}
 
 	pub fn addon_type(&self) -> Option<&str> {
 		match &self {
 			GMAMetadata::Standard { addon_type, .. } => Some(addon_type.as_str()),
-			_ => None
+			_ => None,
 		}
 	}
 
 	pub fn tags(&self) -> Option<&Vec<String>> {
 		match &self {
 			GMAMetadata::Standard { tags, .. } => Some(tags),
-			_ => None
+			_ => None,
 		}
 	}
 
 	pub fn ignore(&self) -> Option<&Vec<String>> {
 		match &self {
 			GMAMetadata::Standard { ignore, .. } => Some(ignore),
-			_ => None
+			_ => None,
 		}
 	}
 }
@@ -187,7 +188,7 @@ impl GMAFile {
 			pointers: GMAFilePointers::default(),
 			version: 0,
 			extracted_name: String::new(),
-			modified: None
+			modified: None,
 		};
 
 		if gma.size == 0 {
@@ -231,9 +232,7 @@ impl GMAFile {
 		{
 			let name = match self.metadata {
 				Some(ref metadata) => match metadata {
-					GMAMetadata::Legacy { title, .. } | GMAMetadata::Standard { title, .. } => {
-						title.to_lowercase()
-					}
+					GMAMetadata::Legacy { title, .. } | GMAMetadata::Standard { title, .. } => title.to_lowercase(),
 				},
 				None => match self.path.file_name() {
 					Some(file_name) => file_name.to_string_lossy().to_lowercase(),
@@ -292,7 +291,17 @@ impl GMAFile {
 	}
 }
 
-pub mod extract;
-pub mod read;
 pub mod whitelist;
+pub use whitelist::*;
+
+pub mod extract;
+pub use extract::*;
+
+pub mod read;
+pub use read::*;
+
 pub mod write;
+pub use write::*;
+
+pub mod cache;
+pub use cache::*;

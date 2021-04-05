@@ -1,20 +1,28 @@
-use std::{collections::HashMap, path::{Path, PathBuf}};
+use std::{
+	collections::HashMap,
+	path::{Path, PathBuf},
+};
 
 use steamworks::PublishedFileId;
 
-use crate::{GMAMetadata, gma::{GMAError, GMAFile}, transactions::Transaction};
+use crate::{
+	gma::{GMAError, GMAFile},
+	transactions::Transaction,
+	GMAMetadata,
+};
 
-use super::{THREAD_POOL, PromiseCache};
+use crate::octopus::PromiseCache;
 
-pub struct GMA {
+#[derive(derive_more::Deref)]
+pub struct GMACache {
 	cache: PromiseCache<HashMap<PathBuf, GMAFile>, PathBuf, Result<GMAFile, GMAError>>,
 }
 
-unsafe impl Sync for GMA {}
-unsafe impl Send for GMA {}
+unsafe impl Sync for GMACache {}
+unsafe impl Send for GMACache {}
 
-impl GMA {
-	pub fn init() -> GMA {
+impl GMACache {
+	pub fn init() -> GMACache {
 		Self {
 			cache: PromiseCache::new(HashMap::new()),
 		}
@@ -57,9 +65,9 @@ impl GMA {
 			None => {
 				let path = path.to_path_buf();
 				if self.cache.task(path.clone(), f) {
-					THREAD_POOL.spawn(move || {
+					rayon::spawn(move || {
 						let v = self.get(&path, id);
-						crate::GMA.cache.execute(&path, v);
+						gma_cache!().execute(&path, v);
 					});
 				}
 			}
@@ -74,6 +82,6 @@ impl GMA {
 	where
 		F: FnOnce(&Result<Transaction, GMAError>) + 'static + Send,
 	{
-		THREAD_POOL.spawn(move || f(&self.create(src_path, dest_path, data)));
+		rayon::spawn(move || f(&self.create(src_path, dest_path, data)));
 	}
 }

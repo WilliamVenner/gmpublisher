@@ -1,11 +1,19 @@
-use std::{collections::{BinaryHeap, HashMap}, fs::DirEntry, path::{Path, PathBuf}, sync::{Arc, atomic::{AtomicBool, Ordering}, mpsc}};
+use std::{
+	collections::{BinaryHeap, HashMap},
+	fs::DirEntry,
+	path::{Path, PathBuf},
+	sync::{
+		atomic::{AtomicBool, Ordering},
+		mpsc, Arc,
+	},
+};
 
 use lazy_static::lazy_static;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use steamworks::PublishedFileId;
 
-use crate::{steamworks, app_data, game_addons, GMAFile};
+use crate::{game_addons, GMAFile};
 
 lazy_static! {
 	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
@@ -32,18 +40,24 @@ impl GameAddons {
 
 	fn gma_check(entry: Result<DirEntry, std::io::Error>) -> Option<(PathBuf, String)> {
 		let path = entry.ok()?.path();
-		if !path.is_file() { return None; }
+		if !path.is_file() {
+			return None;
+		}
 
 		let extension = path.extension()?.to_string_lossy().to_lowercase();
-		if extension != "gma" { return None; }
+		if extension != "gma" {
+			return None;
+		}
 
 		let file_name = path.file_name()?.to_string_lossy().to_string();
 
-		Some((path, (&file_name[..(file_name.len()-4)]).to_owned()))
+		Some((path, (&file_name[..(file_name.len() - 4)]).to_owned()))
 	}
 
 	pub fn refresh(&self) {
-		let mut gmod = if let Some(gmod) = app_data!().gmod() { gmod } else {
+		let mut gmod = if let Some(gmod) = app_data!().gmod() {
+			gmod
+		} else {
 			*self.paths.write() = HashMap::new();
 			*self.pages.write() = Vec::new();
 			return;
@@ -61,7 +75,7 @@ impl GameAddons {
 		DISCOVERY_POOL.spawn(move || {
 			let addons = match addons_dir.read_dir() {
 				Ok(addons) => addons,
-				Err(_) => return
+				Err(_) => return,
 			};
 
 			'paths: for (path, file_name) in addons.filter_map(GameAddons::gma_check) {
@@ -79,17 +93,14 @@ impl GameAddons {
 						None => continue 'paths,
 						Some(id_op) => match 10_u64.checked_mul(id_op) {
 							None => continue 'paths,
-							Some(id_op) => id = id_op
+							Some(id_op) => id = id_op,
 						},
 					}
 				}
 
-				tx_addons_metadata.send((
-					path,
-					if id == 0 { None } else {
-						Some(PublishedFileId(id / 10))
-					}
-				)).unwrap();
+				tx_addons_metadata
+					.send((path, if id == 0 { None } else { Some(PublishedFileId(id / 10)) }))
+					.unwrap();
 			}
 		});
 
@@ -97,7 +108,7 @@ impl GameAddons {
 		DISCOVERY_POOL.spawn(move || {
 			let cache = match cache_dir.read_dir() {
 				Ok(cache) => cache,
-				Err(_) => return
+				Err(_) => return,
 			};
 
 			for (path, file_name) in cache.filter_map(GameAddons::gma_check) {
@@ -114,10 +125,12 @@ impl GameAddons {
 			while let Ok((path, id)) = rx_metadata.recv() {
 				let mut gma = match GMAFile::open(&path) {
 					Ok(gma) => gma,
-					Err(_) => continue
+					Err(_) => continue,
 				};
 
-				if let Some(id) = id { gma.set_ws_id(id); }
+				if let Some(id) = id {
+					gma.set_ws_id(id);
+				}
 
 				ignore! { gma.metadata() };
 
@@ -135,7 +148,11 @@ impl GameAddons {
 			let mut pages_heap = BinaryHeap::new();
 
 			while let Ok(mut gma) = rx.recv() {
-				let modified = gma.path.metadata().and_then(|metadata| metadata.modified().map(|x| Some(x))).unwrap_or(None);
+				let modified = gma
+					.path
+					.metadata()
+					.and_then(|metadata| metadata.modified().map(|x| Some(x)))
+					.unwrap_or(None);
 				gma.modified = modified;
 
 				let gma = Arc::new(gma);
@@ -177,7 +194,7 @@ pub struct InstalledAddonsPage(MappedRwLockReadGuard<'static, [Arc<GMAFile>]>);
 impl serde::Serialize for InstalledAddonsPage {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
-		S: serde::Serializer
+		S: serde::Serializer,
 	{
 		self.as_ref().serialize(serializer)
 	}
@@ -189,7 +206,10 @@ pub fn installed_addons(page: u32) -> InstalledAddonsPage {
 
 	let start = ((page.max(1) - 1) as usize) * RESULTS_PER_PAGE;
 	InstalledAddonsPage(RwLockReadGuard::map(game_addons!().pages.read(), |read| {
-		steamworks!().fetch_workshop_items(read.iter().skip(start).take(RESULTS_PER_PAGE).filter_map(|x| x.id).collect());
+		if page != 1 {
+			// The first page is already downloaded during initialization.
+			steam!().fetch_workshop_items(read.iter().skip(start).take(RESULTS_PER_PAGE).filter_map(|x| x.id).collect());
+		}
 		&(&*read)[start..(start + RESULTS_PER_PAGE)]
 	}))
 }

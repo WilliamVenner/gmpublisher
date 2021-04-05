@@ -13,7 +13,9 @@ use std::{
 use path_slash::PathExt;
 use walkdir::WalkDir;
 
-use crate::{transactions::Transaction, whitelist, GMAError, GMAMetadata};
+use crate::transactions::Transaction;
+
+use super::{whitelist, GMAError, GMAMetadata};
 
 use super::GMA_HEADER;
 

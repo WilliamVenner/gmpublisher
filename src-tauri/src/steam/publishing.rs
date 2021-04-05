@@ -5,7 +5,7 @@ use parking_lot::RwLock;
 use std::{fs::File, io::BufReader, mem::MaybeUninit, path::PathBuf, sync::Arc};
 use steamworks::PublishedFileId;
 
-use super::Steamworks;
+use super::Steam;
 pub struct ContentPath(PathBuf);
 impl std::ops::Deref for ContentPath {
 	type Target = PathBuf;
@@ -139,7 +139,7 @@ pub enum WorkshopUpdateType {
 	Update(WorkshopUpdateDetails),
 }
 
-impl Steamworks {
+impl Steam {
 	pub fn update(&self, details: WorkshopUpdateType) -> Result<(PublishedFileId, bool), anyhow::Error> {
 		use WorkshopUpdateType::*;
 
@@ -147,8 +147,7 @@ impl Steamworks {
 		let result_ref = result.clone();
 		match details {
 			Creation(details) => {
-				self
-					.client()
+				self.client()
 					.ugc()
 					.start_item_update(GMOD_APP_ID, details.id)
 					.content_path(&details.path)
@@ -193,8 +192,7 @@ impl Steamworks {
 
 		let published = Arc::new(RwLock::new(None));
 		let published_ref = published.clone();
-		self
-			.client()
+		self.client()
 			.ugc()
 			.create_item(GMOD_APP_ID, steamworks::FileType::Community, move |result| {
 				match result {
@@ -217,7 +215,11 @@ impl Steamworks {
 			self.run_callbacks();
 		}
 
-		let id = Arc::try_unwrap(published).unwrap().into_inner().unwrap().ok_or(anyhow!("ERR_PUBLISH_FAILED"))?;
+		let id = Arc::try_unwrap(published)
+			.unwrap()
+			.into_inner()
+			.unwrap()
+			.ok_or(anyhow!("ERR_PUBLISH_FAILED"))?;
 
 		self.update(WorkshopUpdateType::Creation(WorkshopCreationDetails { id, title, preview, path }))
 	}

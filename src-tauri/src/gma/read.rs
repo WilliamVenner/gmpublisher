@@ -84,13 +84,11 @@ impl GMAFile {
 						}
 					}
 					metadata
-				},
-				Err(_) => {
-					GMAMetadata::Legacy {
-						title: embedded_title,
-						description: embedded_description
-					}
 				}
+				Err(_) => GMAMetadata::Legacy {
+					title: embedded_title,
+					description: embedded_description,
+				},
 			});
 
 			safe_read!(handle.skip_nt_string())?; // author [unused]

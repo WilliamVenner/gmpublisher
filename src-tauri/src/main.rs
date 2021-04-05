@@ -1,128 +1,72 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
-pub const GMOD_APP_ID: AppId = AppId(4000);
-
-use gma::extract::ExtractDestination;
-use octopus::steamworks::publishing;
-use std::path::PathBuf;
-use tauri::WebviewBuilderExt;
-
-use lazy_static::lazy_static;
-use steamworks::{AppId, PublishedFileId};
-
+#[macro_use]
+extern crate lazy_static;
 #[macro_use]
 extern crate turbonone;
 
-pub mod transactions;
+#[macro_use]
+pub mod globals;
+pub use globals::*;
 
 #[macro_use]
 pub mod util;
 pub use util::*;
 
-pub mod gma;
-pub use gma::*;
-
 pub mod base64_image;
 pub use base64_image::Base64Image;
 
-pub mod addon_size_analyzer;
-
-pub mod octopus;
-pub use octopus::steamworks::{users::SteamUser, workshop::WorkshopItem};
-lazy_static! {
-	pub static ref STEAMWORKS: octopus::Steamworks = octopus::Steamworks::init();
-	pub static ref GMA: octopus::GMA = octopus::GMA::init();
-	pub static ref GAME_ADDONS: octopus::GameAddons = octopus::GameAddons::init();
-	pub static ref ADDON_SIZE_ANALYZER: addon_size_analyzer::AddonSizeAnalyzer = addon_size_analyzer::AddonSizeAnalyzer::init();
-}
-#[macro_export]
-macro_rules! steamworks {
-	() => {
-		&crate::STEAMWORKS
-	};
-}
-#[macro_export]
-macro_rules! downloads {
-	() => {
-		&crate::octopus::steamworks::DOWNLOADS
-	};
-}
-#[macro_export]
-macro_rules! gma {
-	() => {
-		&crate::GMA
-	};
-}
-#[macro_export]
-macro_rules! game_addons {
-	() => {
-		&crate::GAME_ADDONS
-	};
-}
-
 pub mod appdata;
 pub use appdata::AppData;
-lazy_static! {
-	pub static ref APP_DATA: AppData = AppData::init();
-}
-#[macro_export]
-macro_rules! app_data {
-	() => {
-		&crate::APP_DATA
-	};
-}
 
-#[macro_use]
-mod webview;
-pub use webview::WEBVIEW;
-#[macro_export]
-macro_rules! webview {
-	() => {
-		&crate::WEBVIEW
-	};
-}
-#[macro_export]
-macro_rules! webview_emit {
-	( $event:expr, $data:expr ) => {
-		crate::webview!().emit($event, Some($data)).unwrap()
-	};
+pub mod game_addons;
+pub use game_addons::GameAddons;
 
-	( $event:expr ) => {
-		crate::webview!().emit($event, turbonone!()).unwrap()
-	};
-}
+pub mod addon_size_analyzer;
+pub use addon_size_analyzer::AddonSizeAnalyzer;
+
+pub mod gma;
+pub use gma::{GMAError, GMAFile, GMAMetadata};
+
+pub mod steam;
+pub use steam::workshop::WorkshopItem;
+
+pub mod octopus;
+pub use octopus::*;
+
+pub mod transactions;
+pub use transactions::Transaction;
+
+pub mod search;
+pub mod webview;
+
+use tauri::WebviewBuilderExt;
 
 fn main() {
-	lazy_static::initialize(&STEAMWORKS);
+	globals::init_globals();
 
 	std::thread::spawn(move || {
-		steamworks!().client_wait();
+		steam!().client_wait();
 		downloads!().download(vec![
-			PublishedFileId(2439258443),
-			PublishedFileId(2439806441),
-			PublishedFileId(2440241937),
+			steamworks::PublishedFileId(2439258443),
+			steamworks::PublishedFileId(2439806441),
+			steamworks::PublishedFileId(2440241937),
 		]);
 	});
 
 	std::thread::spawn(move || {
-		steamworks!().client_wait();
+		steam!().client_wait();
 		lazy_static::initialize(&GAME_ADDONS);
-		let now = std::time::Instant::now();
+		let _now = std::time::Instant::now();
 		game_addons!().discover_addons();
-		println!("Game addons {:?}ms", now.elapsed().as_millis());
-
-		ADDON_SIZE_ANALYZER.compute(1920., 1080.);
-
-		let now = std::time::Instant::now();
-		println!("Treemapping {:?}ms", now.elapsed().as_millis());
 	});
 
 	std::thread::spawn(move || {
 		std::thread::sleep(std::time::Duration::from_secs(2));
 		let now = std::time::Instant::now();
 
-		let src_path = PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\jerma_sus_playermodel_npc_2349955985"#);
-		let dest_path = PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\publish_test\sneed.gma"#);
+		let src_path = std::path::PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\jerma_sus_playermodel_npc_2349955985"#);
+		let dest_path = std::path::PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\publish_test\sneed.gma"#);
 
 		println!("=================================================================");
 
@@ -143,17 +87,19 @@ fn main() {
 		let now = std::time::Instant::now();
 
 		let transaction = transaction!();
-		GMAFile::open(&dest_path).unwrap().extract(ExtractDestination::Temp, transaction).unwrap();
+		GMAFile::open(&dest_path)
+			.unwrap()
+			.extract(gma::ExtractDestination::Temp, transaction)
+			.unwrap();
 
 		println!("{:?}ms", now.elapsed().as_millis());
-		use crate::publishing::{WorkshopUpdateType, WorkshopUpdateDetails};
 
-		//println!("{:#?}", steamworks!().publish(dest_path.with_file_name(""), "gmpublisher".to_string(), PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\publish_test\imdeadbru.gif"#)));
-		/*println!("{:#?}", steamworks!().update(WorkshopUpdateType::Update(WorkshopUpdateDetails {
-		    id: PublishedFileId(2446913281),
-		    path: dest_path.with_file_name(""),
-		    preview: None,
-		    changes: None,
+		//println!("{:#?}", steam!().publish(dest_path.with_file_name(""), "gmpublisher".to_string(), std::path::PathBuf::from(r#"C:\Users\billy\AppData\Local\Temp\gmpublisher\publish_test\imdeadbru.gif"#)));
+		/*println!("{:#?}", steam!().update(WorkshopUpdateType::Update(WorkshopUpdateDetails {
+			id: steamworks::PublishedFileId(2446913281),
+			path: dest_path.with_file_name(""),
+			preview: None,
+			changes: None,
 		})));*/
 	});
 
@@ -180,14 +126,22 @@ fn main() {
 			})
 		})
 		.unwrap()
-		.setup(|mgr| crate::WEBVIEW.init(mgr))
+		.setup(|mgr| webview!().init(mgr))
 		.plugin(appdata::Plugin)
-		.invoke_handler(tauri::generate_handler![transactions::cancel_transaction, appdata::update_settings])
+		.invoke_handler(tauri::generate_handler![
+			transactions::cancel_transaction,
+			appdata::update_settings,
+			appdata::clean_app_data,
+			game_addons::installed_addons,
+			steam::is_steam_connected,
+			steam::get_steam_user,
+			free_caches,
+		])
 		.build(tauri::generate_context!())
 		.run();
 }
 
 #[tauri::command]
 fn free_caches() {
-	// TODO
+	ADDON_SIZE_ANALYZER.free();
 }
