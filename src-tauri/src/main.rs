@@ -33,6 +33,7 @@ lazy_static! {
 	pub static ref STEAMWORKS: octopus::Steamworks = octopus::Steamworks::init();
 	pub static ref GMA: octopus::GMA = octopus::GMA::init();
 	pub static ref GAME_ADDONS: octopus::GameAddons = octopus::GameAddons::init();
+	pub static ref ADDON_SIZE_ANALYZER: addon_size_analyzer::AddonSizeAnalyzer = addon_size_analyzer::AddonSizeAnalyzer::init();
 }
 #[macro_export]
 macro_rules! steamworks {
@@ -109,6 +110,11 @@ fn main() {
 		let now = std::time::Instant::now();
 		game_addons!().discover_addons();
 		println!("Game addons {:?}ms", now.elapsed().as_millis());
+
+		ADDON_SIZE_ANALYZER.compute(1920., 1080.);
+
+		let now = std::time::Instant::now();
+		println!("Treemapping {:?}ms", now.elapsed().as_millis());
 	});
 
 	std::thread::spawn(move || {

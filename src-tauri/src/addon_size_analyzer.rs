@@ -1,33 +1,31 @@
-/*
-use std::{collections::{hash_map::Entry, HashMap}, path::PathBuf, sync::{Arc, Mutex, atomic::AtomicU64, mpsc::{self, Receiver, Sender, SyncSender}}, thread::JoinHandle};
+use std::{collections::{BinaryHeap, HashMap, hash_map::Entry}, path::PathBuf, sync::{Arc, atomic::AtomicU64, mpsc::{self, Receiver, Sender, SyncSender}}, thread::JoinHandle};
 
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
-use parking_lot::RwLockReadGuard;
-use rayon::{ThreadPool, ThreadPoolBuilder, iter::{IntoParallelRefIterator, ParallelIterator}};
+use parking_lot::Mutex;
+use rayon::{ThreadPool, ThreadPoolBuilder, iter::{IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator}};
 use steamworks::PublishedFileId;
 
 use serde::Serialize;
 
-use crate::{steamworks, WorkshopItem, game_addons, gma::GMAFile, transaction, transactions::Transaction};
+use crate::{steamworks, WorkshopItem, game_addons, gma::{GMAMetadata, GMAFile}, transaction, transactions::Transaction};
 
 lazy_static! {
 	static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(4).build().unwrap();
 	static ref ANALYZER_THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
 }
 
-#[derive(Debug, Serialize, Clone)]
-pub(crate) struct AnalyzedAddon {
-	gma: GMAFile,
-	preview_url: Option<String>,
+#[derive(Debug, Serialize, Clone, PartialEq, Eq, derive_more::Deref)]
+struct AnalyzedAddon(Arc<GMAFile>);
+impl PartialOrd for AnalyzedAddon {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.size.partial_cmp(&other.0.size)
+    }
 }
-impl From<GMAFile> for AnalyzedAddon {
-	fn from(gma: GMAFile) -> Self {
-		Self {
-			gma,
-			preview_url: None,
-		}
-	}
+impl Ord for AnalyzedAddon {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.id.cmp(&other.0.id)
+    }
 }
 
 // https://www.win.tue.nl/~vanwijk/stm.pdf
@@ -168,26 +166,24 @@ mod treemap {
 	}
 }
 
-pub(super) struct AddonSizeAnalyzer {
+pub struct AddonSizeAnalyzer {
 	analyzed: Mutex<Option<TreeMap>>,
 	total_size: AtomicU64,
 }
 impl AddonSizeAnalyzer {
-	pub(super) fn init() -> Self {
+	pub fn init() -> Self {
 		Self {
 			analyzed: Mutex::new(None),
 			total_size: AtomicU64::new(0)
 		}
 	}
 
-	pub(super) fn free(&self) {
-		*self.analyzed.lock().unwrap() = None;
+	pub fn free(&self) {
+		*self.analyzed.lock() = None;
 	}
 
-	pub(super) fn compute(
+	pub fn compute(
 		&'static self,
-		resolve: String,
-		reject: String,
 		w: f64,
 		h: f64,
 	) -> Result<Transaction, String> {
@@ -195,39 +191,37 @@ impl AddonSizeAnalyzer {
 		let transaction_ref = transaction.clone();
 
 		THREAD_POOL.spawn(move || {
-			let mut lock = self.analyzed.lock().unwrap();
-			let treemap = match lock.as_ref() {
-				Some(treemap) => treemap,
-				None => {
-					transaction.data("FS_ANALYZER_COMPUTING");
+			let mut lock = self.analyzed.lock();
 
-					let addons = game_addons!().get_addons();
-					if addons.len() == 0 {
-						transaction.error("ERR_NO_ADDONS_FOUND");
-						return;
-					}
+			if lock.is_none() {
+				
+				transaction.data("FS_ANALYZER_COMPUTING");
 
-					let total_size = self.count(&addons);
-
-					if transaction.aborted() {
-						return;
-					}
-
-					transaction.data("FS_ANALYZER_TAGGIFYING");
-
-					let treemap =
-						self.taggify(gma_files, w, h, total_size, transaction.clone());
-
-					if transaction.aborted() {
-						return;
-					}
-
-					transaction.data("FS_ANALYZER_CACHING");
-
-					*lock = Some(treemap);
-					lock.as_ref().unwrap()
+				let addons = game_addons!().get_addons().clone();
+				if addons.len() == 0 {
+					transaction.error("ERR_NO_ADDONS_FOUND");
+					return;
 				}
-			};
+
+				let (addons, total_size) = self.count(addons);
+
+				if transaction.aborted() {
+					return;
+				}
+
+				transaction.data("FS_ANALYZER_TAGGIFYING");
+
+				let treemap =
+					self.taggify(addons, w, h, total_size, transaction.clone());
+
+				if transaction.aborted() {
+					return;
+				}
+
+				transaction.data("FS_ANALYZER_CACHING");
+
+				*lock = Some(treemap);
+			}
 
 			if transaction.aborted() {
 				return;
@@ -236,26 +230,34 @@ impl AddonSizeAnalyzer {
 			transaction.progress(1.);
 			transaction.data("FS_ANALYZER_SERIALIZING");
 
-			transaction.finished(Some(&treemap.squares));
+			let json = json!(&lock.as_ref().unwrap().squares);
+
+			println!("{}", json);
+
+			transaction.finished(Some(json));
 		});
 
 		Ok(transaction_ref)
 	}
 
-	fn count(&'static self, addons: &RwLockReadGuard<Vec<Arc<GMAFile>>>) -> u64 {
+	fn count(&'static self, addons: Vec<Arc<GMAFile>>) -> (Vec<AnalyzedAddon>, u64) {
 		let mut ids: Vec<PublishedFileId> = Vec::with_capacity(addons.len());
+		let mut sorted_addons: BinaryHeap<AnalyzedAddon> = BinaryHeap::with_capacity(addons.len());
 
 		self.total_size.store(0, std::sync::atomic::Ordering::Release);
-		addons.par_iter().for_each(|gma| {
+		for gma in addons {
+			self.total_size.fetch_add(gma.size, std::sync::atomic::Ordering::Relaxed);
+			
 			if let Some(ref id) = gma.id {
 				ids.push(*id);
 			}
-			self.total_size.fetch_add(gma.size, std::sync::atomic::Ordering::Relaxed);
-		});
 
-		steamworks!().fetch_and_send(ids);
+			sorted_addons.push(AnalyzedAddon(gma));
+		}
 
-		self.total_size.load(std::sync::atomic::Ordering::Acquire)
+		steamworks!().fetch_workshop_items(ids);
+
+		(sorted_addons.into(), self.total_size.load(std::sync::atomic::Ordering::Acquire))
 	}
 
 	fn taggify(
@@ -275,44 +277,39 @@ impl AddonSizeAnalyzer {
 		let mut tag_total_sizes: IndexMap<String, f64> = IndexMap::new();
 		let mut tag_sizes: IndexMap<String, Vec<f64>> = IndexMap::new();
 		let mut tag_data: IndexMap<String, Vec<TaggedTreeMapData>> = IndexMap::new();
-		for (i, gma_file) in gma_files.into_iter().enumerate() {
-			let tag = gma_file
-				.gma
-				.metadata
-				.as_ref()
-				.unwrap()
-				.addon_type
-				.clone()
+		for (i, gma) in gma_files.into_iter().enumerate() {
+			let metadata = gma.metadata.as_ref().unwrap();
+			let tag = metadata.addon_type()
 				.or_else(|| {
-					if let Some(tags) = &gma_file.gma.metadata.as_ref().unwrap().tags {
+					if let Some(tags) = metadata.tags() {
 						if !tags.is_empty() {
-							return Some(tags.get(1).cloned().unwrap());
+							return Some(tags.get(1).unwrap());
 						}
 					}
 					None
 				})
-				.unwrap_or("addon".to_string())
+				.unwrap_or("addon")
 				.to_lowercase();
 
 			match tag_data.entry(tag.clone()) {
 				Occupied(mut o) => {
 					let total_tag_sizes = tag_total_sizes.get_mut(&tag).unwrap();
-					*total_tag_sizes = *total_tag_sizes + (gma_file.gma.size as f64);
+					*total_tag_sizes = *total_tag_sizes + (gma.size as f64);
 
 					tag_sizes
 						.get_mut(&tag)
 						.unwrap()
-						.push(gma_file.gma.size as f64);
+						.push(gma.size as f64);
 
 					let gma_files = o.get_mut();
-					gma_files.push(Some((Some(Box::new(gma_file)), None)));
+					gma_files.push(Some((Some(Box::new(gma)), None)));
 				}
 				Vacant(v) => {
-					tag_total_sizes.insert(tag.clone(), gma_file.gma.size as f64);
+					tag_total_sizes.insert(tag.clone(), gma.size as f64);
 
-					tag_sizes.insert(tag, vec![gma_file.gma.size as f64]);
+					tag_sizes.insert(tag, vec![gma.size as f64]);
 
-					v.insert(vec![Some((Some(Box::new(gma_file)), None))]);
+					v.insert(vec![Some((Some(Box::new(gma)), None))]);
 				}
 			}
 
@@ -328,7 +325,7 @@ impl AddonSizeAnalyzer {
 			total_size as f64,
 		);
 
-		crossbeam::scope(|scope| {
+		rayon::scope(|scope| {
 			let total_squares_i = master_treemap.squares.len(); // TODO is this = to something?
 			let total_squares_f = total_squares_i as f64; // TODO is this = to something?
 
@@ -364,62 +361,8 @@ impl AddonSizeAnalyzer {
 					transaction.progress(0.825 + (((i as f64) / total_squares_f) / 6.));
 				});
 			}
-		})
-		.unwrap();
+		});
 
 		master_treemap
 	}
-
-	pub(super) fn analyze(
-		&'static self,
-		transaction: Transaction,
-	) -> Result<(Vec<AnalyzedAddon>, Vec<Option<PublishedFileId>>, u64), ()> {
-		game_addons::cache_addon_paths();
-
-		let game_addons = crate::GAME_ADDONS.read();
-		let paths = &game_addons.gma_cache.as_ref().unwrap().installed_gmas;
-		let total_paths = paths.len();
-
-		if total_paths == 0 {
-			return Err(());
-		}
-
-		let (tx, rx) = mpsc::channel();
-
-		let mut total_size: u64 = 0;
-		let mut sorted_gmas: Vec<AnalyzedAddon> = Vec::with_capacity(total_paths);
-		let mut sorted_ids: Vec<Option<PublishedFileId>> = Vec::with_capacity(total_paths);
-		let total_paths = total_paths as f64;
-
-		let mut i = 0 as f64;
-		while i < total_paths {
-			i += 1.;
-
-			match rx.recv() {
-				Ok(gma) => {
-					if transaction.aborted() {
-						break;
-					}
-
-					total_size = total_size + gma.size;
-
-					let pos = match sorted_gmas
-						.binary_search_by(|gma_cmp| gma.size.cmp(&gma_cmp.gma.size))
-					{
-						Ok(pos) => pos,
-						Err(pos) => pos,
-					};
-
-					sorted_ids.insert(pos, gma.id.clone());
-					sorted_gmas.insert(pos, gma.into());
-
-					transaction.progress((i / total_paths) / 3.);
-				}
-				Err(_) => break,
-			}
-		}
-
-		Ok((sorted_gmas, sorted_ids, total_size))
-	}
 }
-*/

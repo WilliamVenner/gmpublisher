@@ -44,7 +44,7 @@ impl<Application: ApplicationExt + 'static> WrappedWebview<Application> {
 		&self,
 		event: &'static str,
 		payload: Option<D>,
-	) -> Result<(), SendError<(&'static str, Option<Box<dyn erased_serde::Serialize + Send>>)>> {
+	) -> Result<(), SendError<(&'static str, Option<Box<dyn erased_serde::Serialize + Send + 'static>>)>> {
 		self.tx.send((
 			event,
 			match payload {

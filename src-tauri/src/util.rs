@@ -43,6 +43,13 @@ macro_rules! main_thread_forbidden {
 	};
 }
 
+#[macro_export]
+macro_rules! json {
+	( $x:expr ) => {
+		serde_json::to_value($x).unwrap()
+	}
+}
+
 pub mod path {
 	use serde::{de::Visitor, Deserialize, Serialize};
 	use std::{fmt::Debug, path::PathBuf};

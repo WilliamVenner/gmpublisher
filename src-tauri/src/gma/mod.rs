@@ -69,6 +69,35 @@ pub enum GMAMetadata {
 		description: String,
 	},
 }
+impl GMAMetadata {
+	pub fn title(&self) -> &str {
+		match &self {
+			GMAMetadata::Standard { title, .. } => title,
+			GMAMetadata::Legacy { title, .. } => title,
+		}.as_str()
+	}
+
+	pub fn addon_type(&self) -> Option<&str> {
+		match &self {
+			GMAMetadata::Standard { addon_type, .. } => Some(addon_type.as_str()),
+			_ => None
+		}
+	}
+
+	pub fn tags(&self) -> Option<&Vec<String>> {
+		match &self {
+			GMAMetadata::Standard { tags, .. } => Some(tags),
+			_ => None
+		}
+	}
+
+	pub fn ignore(&self) -> Option<&Vec<String>> {
+		match &self {
+			GMAMetadata::Standard { ignore, .. } => Some(ignore),
+			_ => None
+		}
+	}
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct GMAEntry {
