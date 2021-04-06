@@ -91,3 +91,21 @@ delete window.__WS_DEAD__.id;
 delete window.__WS_DEAD__.title;
 delete window.__WS_DEAD__.searchTitle;
 delete window.__WS_DEAD__.localFile;
+
+let resizeTimeout;
+
+function isMaximized() {
+	return window.innerWidth - window.outerWidth === 0 && window.innerHeight - window.outerHeight === 0;
+}
+function resized(e) {
+	console.log(e);
+	/*window.__TAURI__.invoke("windowResize", {
+		maximized: isMaximized(),
+		width: window.outerWidth,
+		height: window.outerHeight
+	});*/
+}
+window.addEventListener('resize', e => {
+	clearTimeout(resizeTimeout);
+	resizeTimeout = setTimeout(resized, 100, e);
+});

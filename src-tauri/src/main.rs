@@ -1,5 +1,7 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
+use tauri::{Manager, Attributes};
+
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
@@ -40,7 +42,6 @@ pub use transactions::Transaction;
 pub mod search;
 pub mod webview;
 
-use tauri::WebviewBuilderExt;
 mod commands;
 
 fn main() {
@@ -104,36 +105,29 @@ fn main() {
 		})));*/
 	});
 
-	tauri::AppBuilder::default()
-		.create_webview("gmpublisher".to_string(), tauri::WindowUrl::App, |args| {
-			let settings = APP_DATA.settings.read();
-			Ok({
-				#[cfg(not(debug_assertions))]
-				{
-					args.title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
-						.resizable(true)
-						.width(settings.window_size.0)
-						.height(settings.window_size.1)
-						.maximized(settings.window_maximized)
-						.min_width(800.)
-						.min_height(600.)
-				}
+	tauri::Builder::default()
 
-				#[cfg(debug_assertions)]
-				{
-					args.title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
-						.resizable(true)
-						.width(settings.window_size.0)
-						.height(settings.window_size.1)
-						.min_width(800.)
-						.min_height(600.)
-				}
-			})
+		.create_window("gmpublisher".to_string(), tauri::WindowUrl::default(), |args| {
+			let settings = APP_DATA.settings.read();
+			args.title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
+				.maximized(!cfg!(debug_assertions) && settings.window_maximized)
+				.resizable(true)
+				.width(settings.window_size.0)
+				.height(settings.window_size.1)
+				.min_width(800.)
+				.min_height(600.)
 		})
-		.unwrap()
-		.setup(|mgr| webview!().init(mgr))
+
+		.setup(|app| {
+			let window = app.get_window(&"gmpublisher".to_string()).unwrap();
+			webview!().init(window);
+			Ok(())
+		})
+
 		.plugin(appdata::Plugin)
+
 		.invoke_handler(commands::invoke_handler())
-		.build(tauri::generate_context!())
-		.run();
+
+		.run(tauri::generate_context!())
+		.unwrap();
 }

@@ -6,7 +6,7 @@ lazy_static! {
 	pub static ref GAME_ADDONS: crate::game_addons::GameAddons = crate::game_addons::GameAddons::init();
 	pub static ref ADDON_SIZE_ANALYZER: crate::addon_size_analyzer::AddonSizeAnalyzer = crate::addon_size_analyzer::AddonSizeAnalyzer::init();
 	pub static ref APP_DATA: crate::appdata::AppData = crate::appdata::AppData::init();
-	pub static ref WEBVIEW: crate::webview::WrappedWebview<tauri::flavors::Wry> = crate::webview::WrappedWebview::pending();
+	pub static ref WEBVIEW: crate::webview::WrappedWebview<tauri::runtime::WindowManager<String, String, tauri::api::assets::EmbeddedAssets, tauri::runtime::flavor::wry::Wry>> = crate::webview::WrappedWebview::pending();
 }
 
 #[macro_export]

@@ -10,6 +10,7 @@ use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
+use tauri::Params;
 
 const APP_INFO: app_dirs::AppInfo = app_dirs::AppInfo {
 	name: "gmpublisher",
@@ -116,8 +117,9 @@ impl AppData {
 }
 
 pub struct Plugin;
-impl<Application: tauri::ApplicationExt + 'static> tauri::plugin::Plugin<Application> for Plugin {
+impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 	fn initialization_script(&self) -> Option<String> {
+		println!("initialization_script");
 		Some(
 			include_str!("../../app/plugins/AppData.js")
 				.replace(

@@ -1,8 +1,8 @@
-use tauri::{InvokeMessage, WebviewManager, ApplicationExt};
+use tauri::{InvokeMessage, Params, api::assets::Assets, runtime::{Runtime, Tag}};
 
-pub fn invoke_handler<A>() -> impl Fn(WebviewManager<A>, InvokeMessage<A>) + Send + 'static
+pub fn invoke_handler<M>() -> impl Fn(InvokeMessage<M>) + Send + Sync + 'static
 where
-	A: ApplicationExt + 'static
+	M: Params
 {
 	tauri::generate_handler![
 		crate::transactions::cancel_transaction,

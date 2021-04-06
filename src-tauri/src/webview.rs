@@ -1,46 +1,45 @@
-use crossbeam::channel::{Receiver, SendError, Sender};
-
+use crossbeam::channel::{SendError, Sender};
 use serde::Serialize;
-use tauri::{ApplicationExt, WebviewDispatcher, WebviewManager};
+use tauri::{Params, Window, runtime::Manager};
 
 pub type WebviewEmit = (&'static str, Option<Box<dyn erased_serde::Serialize + Send>>);
 
-pub struct WrappedWebview<Application: ApplicationExt + 'static> {
-	pub tx: Sender<WebviewEmit>,
-	tx_webview: Sender<WebviewDispatcher<Application::Dispatcher>>,
+pub struct WrappedWebview<M: Params<Event = String, Label = String> + Send + 'static> {
+	pub tx_emit: Sender<WebviewEmit>,
+	tx_window: Sender<Window<M>>,
 }
-unsafe impl<Application: ApplicationExt + 'static> Send for WrappedWebview<Application> {}
-unsafe impl<Application: ApplicationExt + 'static> Sync for WrappedWebview<Application> {}
-impl<Application: ApplicationExt + 'static> WrappedWebview<Application> {
+unsafe impl<M: Params<Event = String, Label = String> + Send + 'static> Send for WrappedWebview<M> {}
+unsafe impl<M: Params<Event = String, Label = String> + Send + 'static> Sync for WrappedWebview<M> {}
+impl<M: Params<Event = String, Label = String> + Send + 'static> WrappedWebview<M> {
 	pub fn pending() -> Self {
-		let (tx_webview, tx) = WrappedWebview::<Application>::channel();
-		Self { tx_webview, tx }
+		let (tx_window, tx_emit) = WrappedWebview::<M>::channel();
+		Self { tx_window, tx_emit }
 	}
 
-	fn channel() -> (Sender<WebviewDispatcher<Application::Dispatcher>>, Sender<WebviewEmit>) {
-		let (tx, rx): (Sender<WebviewEmit>, Receiver<WebviewEmit>) = crossbeam::channel::bounded(1);
-		let (tx_webview, rx_webview) = crossbeam::channel::unbounded();
+	fn channel() -> (Sender<Window<M>>, Sender<WebviewEmit>) {
+		let (tx, rx) = crossbeam::channel::bounded::<WebviewEmit>(1);
+		let (tx_window, rx_window) = crossbeam::channel::unbounded::<Window<M>>();
 		std::thread::spawn(move || {
-			let webview: WebviewDispatcher<Application::Dispatcher> = rx_webview.recv().unwrap();
+			let window = rx_window.recv().unwrap();
 			loop {
 				let (event, payload) = rx.recv().unwrap();
-				ignore! { webview.emit(event, payload) };
+				ignore! { window.emit(&event.to_string(), payload) };
 			}
 		});
 
-		(tx_webview, tx)
+		(tx_window, tx)
 	}
 
-	pub fn init(&self, webview: WebviewManager<Application>) {
-		ignore! { self.tx_webview.send(webview.current_webview().unwrap()) };
+	pub fn init(&self, window: Window<M>) {
+		ignore! { self.tx_window.send(window) };
 	}
 
 	pub fn emit<D: Serialize + Send + 'static>(
 		&self,
 		event: &'static str,
 		payload: Option<D>,
-	) -> Result<(), SendError<(&'static str, Option<Box<dyn erased_serde::Serialize + Send + 'static>>)>> {
-		self.tx.send((
+	) -> Result<(), SendError<WebviewEmit>> {
+		self.tx_emit.send((
 			event,
 			match payload {
 				Some(payload) => Some(Box::new(payload)),

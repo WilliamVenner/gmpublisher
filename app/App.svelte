@@ -1,14 +1,9 @@
 <script>
-	import { tippy } from './tippy.js';
 	import { _ } from 'svelte-i18n';
-	import { modals, clearModals } from './modals.js';
-	import WorkshopBrowser from './pages/WorkshopBrowser.svelte';
-	import GameAddonsBrowser from './pages/GameAddonsBrowser.svelte';
-	//import FileSystemAddonsBrowser from './pages/FileSystemAddonsBrowser.svelte';
-	import AddonSizeAnalyzer from './pages/AddonSizeAnalyzer.svelte';
-	import Tasks from './modals/Tasks.svelte';
-	import WorkshopDownloader from './pages/WorkshopDownloader.svelte';
-	import { Download } from 'akar-icons-svelte';
+	import TasksOverlay from './components/TasksOverlay.svelte';
+	import FileDrop from './components/FileDrop.svelte';
+	import Navbar from './components/Navbar.svelte';
+	import Sidebar, { pages, activePage } from './components/Sidebar.svelte';
 
 	const hours = new Date().getHours();
 
@@ -24,103 +19,27 @@
 			timeOfDay = 'evening';
 		}
 	}
-
-	const sources = [
-		{
-			name: 'my_workshop',
-			component: WorkshopBrowser,
-			props: {}
-		},
-		{
-			name: 'game',
-			component: GameAddonsBrowser,
-			props: {}
-		},
-		/*{
-			name: 'filesystem',
-			component: null,//FileSystemAddonsBrowser,
-			props: {}
-		},*/
-		{
-			name: 'size_analyzer',
-			component: AddonSizeAnalyzer,
-			props: {}
-		},
-		{
-			name: 'downloader',
-			component: WorkshopDownloader,
-			props: {},
-			persist: true,
-			/* created: true */
-		},
-	];
-
-	let activeSource = sources[0];
-
-	function chooseSource(e) {
-		sources[e.target.dataset.choice].created = true;
-		activeSource = sources[e.target.dataset.choice];
-	}
-
-	// TODO merge this into App.svelte
 </script>
 
-<div id="file-drop">
-	<Download/>
-</div>
+<FileDrop/>
 
 <main>
 
-	<Tasks/>
+	<TasksOverlay/>
 
-	<div id="modals" class:active={$modals.length > 0} on:click={clearModals}>
-		{#each $modals as modal}
-			<svelte:component this={modal.component} {...modal.props}/>
-		{/each}
-	</div>
+	<Navbar/>
 
-	<div id="ribbon">
-		<!--
-		<a href="https://steamcommunity.com/profiles/{AppData.user.steamid64}" target="_blank">
-			<img use:tippy={AppData.user.name} id="avatar" src={AppData.user.avatar ? ('data:image/png;base64,' + AppData.user.avatar) : '/img/steam_anonymous.jpg'} alt="Avatar"/>
-		</a>
-		<span id="greeting">
-			{#if AppData.user?.name}
-				{$_('greetings.' + timeOfDay, { values: { name: AppData.user.name } })}
-			{:else}
-				{$_('greetings.' + timeOfDay + '.anon')}
-			{/if}
-		</span>
-		-->
-	</div>
-
-	<div id="sidebar">
-		<div>
-			{#each sources as choice, i}
-				<div class:active={ activeSource.name === choice.name } on:click={chooseSource} data-choice={i}>{$_(choice.name)}</div>
-			{/each}
-		</div>
-
-		<div id="credits">
-			<img src="/img/logo.svg" alt="Logo" id="logo" /><br>
-			gmpublisher v{AppData.version} by Billy<br>
-			<a href="https://github.com/WilliamVenner/gmpublisher/stargazers" target="_blank">{$_('github_star')}</a>&nbsp;🤩
-		</div>
-	</div>
+	<Sidebar/>
 
 	<div id="content">
-		<div id="sources">
-			<div>
-				{#if !activeSource.persist}
-					<svelte:component this={activeSource.component} {...activeSource.props}/>
-				{/if}
-				{#each sources as source}
-					{#if source.persist && source.created}
-						<div class="persist" class:active={activeSource == source}><svelte:component this={source.component} {...source.props}/></div>
-					{/if}
-				{/each}
-			</div>
-		</div>
+		{#if !activePage.persist}
+			<svelte:component this={activePage.component}/>
+		{/if}
+		{#each pages as page}
+			{#if page.persist && page.created}
+				<div class="persist" class:active={activePage == page}><svelte:component this={page.component}/></div>
+			{/if}
+		{/each}
 	</div>
 
 </main>

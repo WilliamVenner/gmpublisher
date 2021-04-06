@@ -113,17 +113,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async-trait"
-version = "0.1.48"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36ea56748e10732c49404c153638a15ec3d6211ec5ff35d9bb20e13b93576adf"
-dependencies = [
- "proc-macro2",
- "quote 1.0.9",
- "syn 1.0.65",
-]
-
-[[package]]
 name = "atk"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -248,10 +237,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "blake3"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9ff35b701f3914bdb8fad3368d822c766ef2858b2583198e41639b936f09d3f"
+dependencies = [
+ "arrayref",
+ "arrayvec",
+ "cc",
+ "cfg-if 0.1.10",
+ "constant_time_eq",
+ "crypto-mac",
+ "digest",
+ "rayon",
+]
+
+[[package]]
 name = "block"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
+
+[[package]]
+name = "bstr"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a40b47ad93e1a5404e6c18dec46b628214fee441c70f4ab5d6942142cc268a3d"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "bumpalo"
@@ -751,6 +765,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "crypto-mac"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b584a330336237c1eecd3e94266efb216c56ed91225d634cb2991c5f3fd1aeab"
+dependencies = [
+ "generic-array",
+ "subtle",
+]
+
+[[package]]
 name = "darling"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -816,6 +840,15 @@ dependencies = [
  "proc-macro2",
  "quote 1.0.9",
  "syn 1.0.65",
+]
+
+[[package]]
+name = "digest"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3dd60d1080a57a05ab032377049e0591415d2b31afd7028356dbf3cc6dcb066"
+dependencies = [
+ "generic-array",
 ]
 
 [[package]]
@@ -1213,6 +1246,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "generic-array"
+version = "0.14.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "501466ecc8a30d1d3b7fc9229b122b2ce8ed6e9d9223f1138d4babb253e51817"
+dependencies = [
+ "typenum",
+ "version_check",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1328,6 +1371,19 @@ name = "glob"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
+
+[[package]]
+name = "globset"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c152169ef1e421390738366d2f796655fec62621dabbd0fd476f905934061e4a"
+dependencies = [
+ "aho-corasick",
+ "bstr",
+ "fnv",
+ "log",
+ "regex",
+]
 
 [[package]]
 name = "gmpublisher"
@@ -1557,6 +1613,24 @@ dependencies = [
  "matches",
  "unicode-bidi",
  "unicode-normalization",
+]
+
+[[package]]
+name = "ignore"
+version = "0.4.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b287fb45c60bb826a0dc68ff08742b9d88a2fea13d6e0c286b3172065aaf878c"
+dependencies = [
+ "crossbeam-utils 0.8.3",
+ "globset",
+ "lazy_static",
+ "log",
+ "memchr",
+ "regex",
+ "same-file",
+ "thread_local",
+ "walkdir",
+ "winapi-util",
 ]
 
 [[package]]
@@ -1825,6 +1899,12 @@ dependencies = [
  "mime",
  "unicase",
 ]
+
+[[package]]
+name = "minisign-verify"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db0507fe8e3c68cd62961cf9f87f6c2b21d884d3515a7150a4a3fa9d014e5c12"
 
 [[package]]
 name = "miniz_oxide"
@@ -3071,6 +3151,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "subtle"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e81da0851ada1f3e9d4312c704aa4f8806f0f9d69faaf8df2f3464b4a9437c2"
+
+[[package]]
 name = "syn"
 version = "0.11.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3161,8 +3247,8 @@ dependencies = [
 [[package]]
 name = "tauri"
 version = "0.11.1"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
 dependencies = [
- "async-trait",
  "base64",
  "cfg_aliases",
  "futures",
@@ -3170,8 +3256,9 @@ dependencies = [
  "rand 0.8.3",
  "serde",
  "serde_json",
- "tauri-api 0.7.5",
+ "tauri-api",
  "tauri-macros",
+ "tauri-updater",
  "thiserror",
  "tokio",
  "uuid",
@@ -3181,12 +3268,14 @@ dependencies = [
 [[package]]
 name = "tauri-api"
 version = "0.7.5"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
 dependencies = [
  "bytes",
  "dirs-next",
  "either",
  "flate2",
  "http",
+ "ignore",
  "notify-rust",
  "once_cell",
  "open",
@@ -3201,37 +3290,7 @@ dependencies = [
  "shared_child",
  "tar",
  "tauri-hotkey",
- "tauri-utils 0.5.1",
- "tempfile",
- "thiserror",
- "tinyfiledialogs",
- "tokio",
- "zip",
-]
-
-[[package]]
-name = "tauri-api"
-version = "0.7.5"
-source = "git+https://github.com/tauri-apps/tauri?branch=dev#2ea56cf21d61ed2bc2039efe194a3145043c6871"
-dependencies = [
- "bytes",
- "dirs-next",
- "either",
- "flate2",
- "http",
- "once_cell",
- "open",
- "os_pipe",
- "rand 0.8.3",
- "reqwest",
- "rfd",
- "semver",
- "serde",
- "serde_json",
- "serde_repr",
- "shared_child",
- "tar",
- "tauri-utils 0.5.1 (git+https://github.com/tauri-apps/tauri?branch=dev)",
+ "tauri-utils",
  "tempfile",
  "thiserror",
  "tinyfiledialogs",
@@ -3242,39 +3301,26 @@ dependencies = [
 [[package]]
 name = "tauri-build"
 version = "0.1.0"
-source = "git+https://github.com/tauri-apps/tauri?branch=dev#2ea56cf21d61ed2bc2039efe194a3145043c6871"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
 dependencies = [
  "anyhow",
  "proc-macro2",
  "quote 1.0.9",
- "tauri-codegen 0.1.0 (git+https://github.com/tauri-apps/tauri?branch=dev)",
+ "tauri-codegen",
  "winres",
 ]
 
 [[package]]
 name = "tauri-codegen"
 version = "0.1.0"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
 dependencies = [
+ "blake3",
  "proc-macro2",
  "quote 1.0.9",
  "serde",
  "serde_json",
- "tauri-api 0.7.5",
- "thiserror",
- "walkdir",
- "zstd",
-]
-
-[[package]]
-name = "tauri-codegen"
-version = "0.1.0"
-source = "git+https://github.com/tauri-apps/tauri?branch=dev#2ea56cf21d61ed2bc2039efe194a3145043c6871"
-dependencies = [
- "proc-macro2",
- "quote 1.0.9",
- "serde",
- "serde_json",
- "tauri-api 0.7.5 (git+https://github.com/tauri-apps/tauri?branch=dev)",
+ "tauri-api",
  "thiserror",
  "walkdir",
  "zstd",
@@ -3308,16 +3354,35 @@ dependencies = [
 [[package]]
 name = "tauri-macros"
 version = "0.1.0"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
 dependencies = [
  "proc-macro2",
  "quote 1.0.9",
  "syn 1.0.65",
- "tauri-codegen 0.1.0",
+ "tauri-codegen",
+]
+
+[[package]]
+name = "tauri-updater"
+version = "0.4.2"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
+dependencies = [
+ "base64",
+ "minisign-verify",
+ "reqwest",
+ "semver",
+ "serde",
+ "serde_json",
+ "tauri-api",
+ "tauri-utils",
+ "tempfile",
+ "thiserror",
 ]
 
 [[package]]
 name = "tauri-utils"
 version = "0.5.1"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
 dependencies = [
  "phf",
  "proc-macro2",
@@ -3326,21 +3391,7 @@ dependencies = [
  "serde_json",
  "sysinfo 0.10.5",
  "thiserror",
- "zstd",
-]
-
-[[package]]
-name = "tauri-utils"
-version = "0.5.1"
-source = "git+https://github.com/tauri-apps/tauri?branch=dev#2ea56cf21d61ed2bc2039efe194a3145043c6871"
-dependencies = [
- "phf",
- "proc-macro2",
- "quote 1.0.9",
- "serde",
- "serde_json",
- "sysinfo 0.10.5",
- "thiserror",
+ "url",
  "zstd",
 ]
 
@@ -3426,6 +3477,15 @@ dependencies = [
  "proc-macro2",
  "quote 1.0.9",
  "syn 1.0.65",
+]
+
+[[package]]
+name = "thread_local"
+version = "1.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8018d24e04c95ac8790716a5987d0fec4f8b27249ffa0f7d33f1369bdfb88cbd"
+dependencies = [
+ "once_cell",
 ]
 
 [[package]]
@@ -3567,6 +3627,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01236f5515b91109a145c6ec132b9a0d4b5518017d63795441eea7e819d35b32"
 
 [[package]]
+name = "typenum"
+version = "1.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "879f6906492a7cd215bfa4cf595b600146ccfac0c79bcbd1f3000162af5e8b06"
+
+[[package]]
 name = "ucd-trie"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3633,6 +3699,7 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+ "serde",
 ]
 
 [[package]]
@@ -4062,9 +4129,9 @@ dependencies = [
 
 [[package]]
 name = "wry"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13aef0e08a7be78d18e22ffbd70de6bc25bedfb31aaf8b630720d540aab6305c"
+checksum = "49dd14356859e2cff237866eef772d86334c6e6beb2c5fad65a6277168557e68"
 dependencies = [
  "async-channel",
  "cairo-rs",
@@ -4203,18 +4270,18 @@ dependencies = [
 
 [[package]]
 name = "zstd"
-version = "0.6.1+zstd.1.4.9"
+version = "0.7.0+zstd.1.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5de55e77f798f205d8561b8fe2ef57abfb6e0ff2abe7fd3c089e119cdb5631a3"
+checksum = "9428752481d8372e15b1bf779ea518a179ad6c771cca2d2c60e4fbff3cc2cd52"
 dependencies = [
  "zstd-safe",
 ]
 
 [[package]]
 name = "zstd-safe"
-version = "3.0.1+zstd.1.4.9"
+version = "3.1.0+zstd.1.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1387cabcd938127b30ce78c4bf00b30387dddf704e3f0881dbc4ff62b5566f8c"
+checksum = "5aa1926623ad7fe406e090555387daf73db555b948134b4d73eac5eb08fb666d"
 dependencies = [
  "libc",
  "zstd-sys",
@@ -4222,9 +4289,9 @@ dependencies = [
 
 [[package]]
 name = "zstd-sys"
-version = "1.4.20+zstd.1.4.9"
+version = "1.5.0+zstd.1.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebd5b733d7cf2d9447e2c3e76a5589b4f5e5ae065c22a2bc0b023cbc331b6c8e"
+checksum = "4e6c094340240369025fc6b731b054ee2a834328fa584310ac96aa4baebdc465"
 dependencies = [
  "cc",
  "libc",

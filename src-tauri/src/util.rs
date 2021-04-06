@@ -284,12 +284,6 @@ fn test_escape_single_quoted_json() {
 	let escape_single_quoted_json_test = escape_single_quoted_json(dangerous_json);
 
 	let result = r#"{"test":"don\\\\🚀🐱‍👤\\\\\'t forget to escape me!🚀🐱‍👤","te🚀🐱‍👤st2":"don\'t forget to escape me!","test3":"\\\\🚀🐱‍👤\\\\\\\\\'\'\'\\\\\\\\🚀🐱‍👤\\\\\\\\🚀🐱‍👤\\\\\'\'\'\'\'"}"#;
-
-	println!("{}", escape_single_quoted_json_test);
-	println!("==");
-	println!("{}", result);
-
-	println!("{}", definitely_escaped_dangerous_json);
 	assert_eq!(definitely_escaped_dangerous_json, result);
 	assert_eq!(escape_single_quoted_json_test, result);
 }
