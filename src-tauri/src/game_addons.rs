@@ -1,19 +1,12 @@
-use std::{
-	collections::{BinaryHeap, HashMap},
-	fs::DirEntry,
-	path::{Path, PathBuf},
-	sync::{
-		atomic::{AtomicBool, Ordering},
-		mpsc, Arc,
-	},
-};
+use std::{collections::{BinaryHeap, HashMap}, fs::DirEntry, path::{Path, PathBuf}, sync::{Arc, atomic::{AtomicBool, Ordering}, mpsc}};
 
 use lazy_static::lazy_static;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use rayon::{ThreadPool, ThreadPoolBuilder};
+use serde::ser::SerializeTuple;
 use steamworks::PublishedFileId;
 
-use crate::{game_addons, GMAFile};
+use crate::{GMAFile, game_addons, webview::Addon};
 
 lazy_static! {
 	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
@@ -22,8 +15,8 @@ lazy_static! {
 #[derive(Debug)]
 pub struct GameAddons {
 	discovered: AtomicBool,
-	paths: RwLock<HashMap<PathBuf, Arc<GMAFile>>>,
-	pages: RwLock<Vec<Arc<GMAFile>>>,
+	paths: RwLock<HashMap<PathBuf, Arc<Addon>>>,
+	pages: RwLock<Vec<Arc<Addon>>>,
 }
 
 unsafe impl Sync for GameAddons {}
@@ -155,10 +148,11 @@ impl GameAddons {
 					.unwrap_or(None);
 				gma.modified = modified;
 
-				let gma = Arc::new(gma);
+				let path = gma.path.to_owned();
+				let gma: Arc<Addon> = Arc::new(gma.into());
 
 				pages_heap.push(gma.clone());
-				paths.insert(gma.path.clone(), gma);
+				paths.insert(path, gma);
 			}
 
 			*pages = pages_heap.into_sorted_vec();
@@ -167,7 +161,7 @@ impl GameAddons {
 		self.discovered.store(true, Ordering::Release);
 
 		// Download the first page from Steam
-		browse_game_addons(1);
+		browse_installed_addons(1);
 	}
 
 	pub fn discover_addons(&self) {
@@ -176,12 +170,12 @@ impl GameAddons {
 		}
 	}
 
-	pub fn from_path<P: AsRef<Path>>(&self, path: P) -> Option<Arc<GMAFile>> {
+	pub fn from_path<P: AsRef<Path>>(&self, path: P) -> Option<Arc<Addon>> {
 		self.discover_addons();
 		self.paths.read().get(path.as_ref()).cloned()
 	}
 
-	pub fn get_addons(&self) -> RwLockReadGuard<Vec<Arc<GMAFile>>> {
+	pub fn get_addons(&self) -> RwLockReadGuard<Vec<Arc<Addon>>> {
 		self.discover_addons();
 		self.pages.read()
 	}
@@ -189,27 +183,30 @@ impl GameAddons {
 
 const RESULTS_PER_PAGE: usize = steamworks::RESULTS_PER_PAGE as usize;
 
-#[derive(derive_more::Deref, derive_more::DerefMut, Debug)]
-pub struct InstalledAddonsPage(MappedRwLockReadGuard<'static, [Arc<GMAFile>]>);
+#[derive(Debug)]
+pub struct InstalledAddonsPage(usize, MappedRwLockReadGuard<'static, [Arc<Addon>]>);
 impl serde::Serialize for InstalledAddonsPage {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
 		S: serde::Serializer,
 	{
-		self.as_ref().serialize(serializer)
+		let mut tup = serializer.serialize_tuple(2)?;
+		tup.serialize_element(&self.0)?;
+		tup.serialize_element(self.1.as_ref())?;
+		tup.end()
 	}
 }
 
 #[tauri::command]
-pub fn browse_game_addons(page: u32) -> InstalledAddonsPage {
+pub fn browse_installed_addons(page: u32) -> InstalledAddonsPage {
 	game_addons!().discover_addons();
 
 	let start = ((page.max(1) - 1) as usize) * crate::steam::RESULTS_PER_PAGE;
-	InstalledAddonsPage(RwLockReadGuard::map(game_addons!().pages.read(), |read| {
-		if page != 1 {
-			// The first page is already downloaded during initialization.
-			steam!().fetch_workshop_items(read.iter().skip(start).take(crate::steam::RESULTS_PER_PAGE).filter_map(|x| x.id).collect());
-		}
-		&(&*read)[start..(start + crate::steam::RESULTS_PER_PAGE)]
-	}))
+	InstalledAddonsPage(
+		game_addons!().paths.read().len(),
+		RwLockReadGuard::map(game_addons!().pages.read(), |read| {
+			steam!().fetch_workshop_items(read.iter().skip(start).take(crate::steam::RESULTS_PER_PAGE).filter_map(|x| x.installed().id).collect());
+			&(&*read)[start..(start + crate::steam::RESULTS_PER_PAGE)]
+		})
+	)
 }

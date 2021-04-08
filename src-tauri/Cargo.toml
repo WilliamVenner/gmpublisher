@@ -13,29 +13,29 @@ build = "src/build.rs"
 #tauri-build = { git = "https://github.com/tauri-apps/tauri", features = ["codegen"], branch = "dev" }
 tauri-build = { git = "https://github.com/williamvenner/tauri", features = [ "codegen" ], branch = "personal" }
 
-bindgen = "0.58.0"
+bindgen = "0.58.1"
 
 [dependencies]
-#tauri = { path = "../../tauri/tauri", features =["api-all"]}
-tauri = { git = "https://github.com/williamvenner/tauri", features =["api-all"], branch = "personal" }
+tauri = { path = "../../tauri/tauri", features =["api-all"]}
+#tauri = { git = "https://github.com/williamvenner/tauri", features =["api-all"], branch = "personal" }
 #tauri = { git = "https://github.com/tauri-apps/tauri", features =["api-all"], branch = "dev" }
 
 steamworks = { git = "https://github.com/WilliamVenner/steamworks-rs.git", branch = "master", features = [ "serde" ] }
 #steamworks = { path = "../../steamworks-rs", features = [ "serde" ] }
 
 turbonone = "0.2.1"
-serde_json = "1.0"
-serde = { version = "1.0", features = [ "derive", "rc" ] }
+serde_json = "1.0.64"
+serde = { version = "1.0.125", features = [ "derive", "rc" ] }
 rayon = "1.5.0"
-parking_lot = { version = "0.11", features = [ "serde" ] }
+parking_lot = { version = "0.11.1", features = [ "serde", "deadlock_detection" ] }
 xz2 = "0.1.6"
 indexmap = "1.6.2"
 dunce = "1.0.1"
-sysinfo = "0.16.4"
+sysinfo = "0.16.5"
 lazy_static = "1.4.0"
 dirs = "3.0.1"
-anyhow = "1.0.38"
-image = "0.23.13"
+anyhow = "1.0.40"
+image = "0.23.14"
 base64 = "0.13.0"
 rfd = "0.2.2"
 atomic_refcell = "0.1.7"
@@ -47,8 +47,9 @@ walkdir = "2.3.2"
 crc32fast = "1.2.1"
 path-slash = "0.1.4"
 erased-serde = "0.3.13"
-derive_more = "0"
+derive_more = "0.99.13"
 crossbeam = "0.8.0"
+backtrace = "0.3.56"
 
 [features]
 default = [ "custom-protocol" ]

@@ -4,21 +4,6 @@
 	import FileDrop from './components/FileDrop.svelte';
 	import Navbar from './components/Navbar.svelte';
 	import Sidebar, { pages, activePage } from './components/Sidebar.svelte';
-
-	const hours = new Date().getHours();
-
-	// morning   = 04:00 - 11:59
-	// afternoon = 12:00 - 16:59
-	// evening   = 17:00 - 03:59
-
-	let timeOfDay = 'morning';
-	if (hours >= 12 || hours < 4) {
-		if (hours >= 12 && hours <= 16) {
-			timeOfDay = 'afternoon';
-		} else {
-			timeOfDay = 'evening';
-		}
-	}
 </script>
 
 <FileDrop/>
@@ -32,12 +17,12 @@
 	<Sidebar/>
 
 	<div id="content">
-		{#if !activePage.persist}
-			<svelte:component this={activePage.component}/>
+		{#if !$activePage.persist}
+			<svelte:component this={$activePage.component}/>
 		{/if}
 		{#each pages as page}
 			{#if page.persist && page.created}
-				<div class="persist" class:active={activePage == page}><svelte:component this={page.component}/></div>
+				<div class="persist" class:active={$activePage == page}><svelte:component this={page.component}/></div>
 			{/if}
 		{/each}
 	</div>
@@ -112,37 +97,6 @@
 		padding-left: min(26.04%, 250px);
 	}
 
-	#sidebar {
-		position: fixed;
-		padding: 1.5rem;
-		padding-right: 0;
-		width: 26.04%;
-		max-width: 250px;
-		height: calc(100% - 70px);
-		top: 70px;
-		left: 0;
-		display: flex;
-		flex-direction: column;
-	}
-	#sidebar > div:first-child {
-		flex: 1;
-		overflow-y: auto;
-		overflow-x: hidden;
-	}
-	#sidebar > div:first-child > div {
-		padding: .5rem;
-		padding-left: .7rem;
-		padding-right: .7rem;
-		cursor: pointer;
-		border-radius: 4px;
-	}
-	#sidebar > div:first-child > div.active {
-		background-color: #2A2A2A;
-	}
-	#sidebar > div:first-child > div:not(:last-child) {
-		margin-bottom: .5rem;
-	}
-
 	#sources, #sources > div {
 		height: 100%;
 	}
@@ -155,25 +109,6 @@
 	}
 	#sources > div > .persist:not(.active) {
 		display: none;
-	}
-
-	#credits {
-		text-align: center;
-		font-size: .8rem;
-		padding-top: 1rem;
-		padding-bottom: 1rem;
-		line-height: 1.8em;
-	}
-	#credits a {
-		color: #636363;
-		transition: color .25s;
-	}
-	#credits a:hover {
-		color: #fff;
-	}
-	#logo {
-		margin-bottom: .5rem;
-		width: min(calc(100% - 1rem), 50px);
 	}
 
 	#modals {

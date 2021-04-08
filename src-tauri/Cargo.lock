@@ -9,6 +9,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9fe5e32de01730eb1f6b7f5b51c17e03e2325bf40a74f754f04f130043affff"
 
 [[package]]
+name = "addr2line"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a55f82cfe485775d02112886f4169bde0c5894d75e79ead7eafe7e40a25e45f7"
+dependencies = [
+ "gimli",
+]
+
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -162,6 +171,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
+name = "backtrace"
+version = "0.3.56"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d117600f438b1707d4e4ae15d3595657288f8235a0eb593e80ecc98ab34e1bc"
+dependencies = [
+ "addr2line",
+ "cfg-if 1.0.0",
+ "libc",
+ "miniz_oxide 0.4.4",
+ "object",
+ "rustc-demangle",
+]
+
+[[package]]
 name = "base64"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -192,9 +215,9 @@ dependencies = [
 
 [[package]]
 name = "bindgen"
-version = "0.58.0"
+version = "0.58.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5d2549a1ca679efa833b9d88a424955109722c9fd95418b95414c19fd6f4bda"
+checksum = "0f8523b410d7187a43085e7e064416ea32ded16bd0a4e6fc025e21616d01258f"
 dependencies = [
  "bitflags 1.2.1",
  "cexpr",
@@ -1031,6 +1054,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "fixedbitset"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
+
+[[package]]
 name = "flate2"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1288,6 +1317,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "gimli"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6503fe142514ca4799d4c26297c4248239fe8838d827db6bd6065c6ed29a6ce"
+
+[[package]]
 name = "gio"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1392,8 +1427,9 @@ dependencies = [
  "anyhow",
  "app_dirs",
  "atomic_refcell",
+ "backtrace",
  "base64",
- "bindgen 0.58.0",
+ "bindgen 0.58.1",
  "byteorder",
  "chardetng",
  "crc32fast",
@@ -2216,6 +2252,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "object"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9a7ab5d64814df0fe4a4b5ead45ed6c5f181ee3ff04ba344313a6c80446c5d4"
+
+[[package]]
 name = "ole32-sys"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2343,11 +2385,14 @@ version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa7a782938e745763fe6907fc6ba86946d72f49fe7e21de074e08128a99fb018"
 dependencies = [
+ "backtrace",
  "cfg-if 1.0.0",
  "instant",
  "libc",
+ "petgraph",
  "redox_syscall 0.2.5",
  "smallvec",
+ "thread-id",
  "winapi 0.3.9",
 ]
 
@@ -2376,6 +2421,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10f4872ae94d7b90ae48754df22fd42ad52ce740b8f370b03da4835417403e53"
 dependencies = [
  "ucd-trie",
+]
+
+[[package]]
+name = "petgraph"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "467d164a6de56270bd7c4d070df81d07beace25012d5103ced4e9ff08d6afdb7"
+dependencies = [
+ "fixedbitset",
+ "indexmap",
 ]
 
 [[package]]
@@ -2819,6 +2874,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustc-demangle"
+version = "0.1.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e3bad0ee36814ca07d7968269dd4b7ec89ec2da10c4bb613928d3077083c232"
+
+[[package]]
 name = "rustc-hash"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3247,7 +3308,6 @@ dependencies = [
 [[package]]
 name = "tauri"
 version = "0.11.1"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
 dependencies = [
  "base64",
  "cfg_aliases",
@@ -3256,7 +3316,7 @@ dependencies = [
  "rand 0.8.3",
  "serde",
  "serde_json",
- "tauri-api",
+ "tauri-api 0.7.5",
  "tauri-macros",
  "tauri-updater",
  "thiserror",
@@ -3268,7 +3328,6 @@ dependencies = [
 [[package]]
 name = "tauri-api"
 version = "0.7.5"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
 dependencies = [
  "bytes",
  "dirs-next",
@@ -3290,7 +3349,38 @@ dependencies = [
  "shared_child",
  "tar",
  "tauri-hotkey",
- "tauri-utils",
+ "tauri-utils 0.5.1",
+ "tempfile",
+ "thiserror",
+ "tinyfiledialogs",
+ "tokio",
+ "zip",
+]
+
+[[package]]
+name = "tauri-api"
+version = "0.7.5"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
+dependencies = [
+ "bytes",
+ "dirs-next",
+ "either",
+ "flate2",
+ "http",
+ "ignore",
+ "once_cell",
+ "open",
+ "os_pipe",
+ "rand 0.8.3",
+ "reqwest",
+ "rfd",
+ "semver",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "shared_child",
+ "tar",
+ "tauri-utils 0.5.1 (git+https://github.com/williamvenner/tauri?branch=personal)",
  "tempfile",
  "thiserror",
  "tinyfiledialogs",
@@ -3306,8 +3396,23 @@ dependencies = [
  "anyhow",
  "proc-macro2",
  "quote 1.0.9",
- "tauri-codegen",
+ "tauri-codegen 0.1.0 (git+https://github.com/williamvenner/tauri?branch=personal)",
  "winres",
+]
+
+[[package]]
+name = "tauri-codegen"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "proc-macro2",
+ "quote 1.0.9",
+ "serde",
+ "serde_json",
+ "tauri-api 0.7.5",
+ "thiserror",
+ "walkdir",
+ "zstd",
 ]
 
 [[package]]
@@ -3320,7 +3425,7 @@ dependencies = [
  "quote 1.0.9",
  "serde",
  "serde_json",
- "tauri-api",
+ "tauri-api 0.7.5 (git+https://github.com/williamvenner/tauri?branch=personal)",
  "thiserror",
  "walkdir",
  "zstd",
@@ -3354,18 +3459,16 @@ dependencies = [
 [[package]]
 name = "tauri-macros"
 version = "0.1.0"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
 dependencies = [
  "proc-macro2",
  "quote 1.0.9",
  "syn 1.0.65",
- "tauri-codegen",
+ "tauri-codegen 0.1.0",
 ]
 
 [[package]]
 name = "tauri-updater"
 version = "0.4.2"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#33479030b41ce6e61ac23df7ff666ca90f33e6f8"
 dependencies = [
  "base64",
  "minisign-verify",
@@ -3373,10 +3476,25 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "tauri-api",
- "tauri-utils",
+ "tauri-api 0.7.5",
+ "tauri-utils 0.5.1",
  "tempfile",
  "thiserror",
+]
+
+[[package]]
+name = "tauri-utils"
+version = "0.5.1"
+dependencies = [
+ "phf",
+ "proc-macro2",
+ "quote 1.0.9",
+ "serde",
+ "serde_json",
+ "sysinfo 0.10.5",
+ "thiserror",
+ "url",
+ "zstd",
 ]
 
 [[package]]
@@ -3477,6 +3595,17 @@ dependencies = [
  "proc-macro2",
  "quote 1.0.9",
  "syn 1.0.65",
+]
+
+[[package]]
+name = "thread-id"
+version = "3.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7fbf4c9d56b320106cd64fd024dadfa0be7cb4706725fc44a7d7ce952d820c1"
+dependencies = [
+ "libc",
+ "redox_syscall 0.1.57",
+ "winapi 0.3.9",
 ]
 
 [[package]]

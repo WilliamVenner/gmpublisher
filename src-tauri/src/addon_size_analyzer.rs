@@ -11,7 +11,7 @@ use steamworks::PublishedFileId;
 
 use serde::Serialize;
 
-use crate::{game_addons, gma::GMAFile, transaction, transactions::Transaction};
+use crate::{game_addons, transaction, transactions::Transaction, webview::Addon};
 
 lazy_static! {
 	static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(4).build().unwrap();
@@ -19,15 +19,15 @@ lazy_static! {
 }
 
 #[derive(Debug, Serialize, Clone, PartialEq, Eq, derive_more::Deref)]
-struct AnalyzedAddon(Arc<GMAFile>);
+struct AnalyzedAddon(Arc<Addon>);
 impl PartialOrd for AnalyzedAddon {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-		self.0.size.partial_cmp(&other.0.size)
+		self.0.installed().size.partial_cmp(&other.0.installed().size)
 	}
 }
 impl Ord for AnalyzedAddon {
 	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-		self.0.id.cmp(&other.0.id)
+		self.0.installed().id.cmp(&other.0.installed().id)
 	}
 }
 
@@ -231,15 +231,15 @@ impl AddonSizeAnalyzer {
 		Ok(transaction_ref)
 	}
 
-	fn count(&'static self, addons: Vec<Arc<GMAFile>>) -> (Vec<AnalyzedAddon>, u64) {
+	fn count(&'static self, addons: Vec<Arc<Addon>>) -> (Vec<AnalyzedAddon>, u64) {
 		let mut ids: Vec<PublishedFileId> = Vec::with_capacity(addons.len());
 		let mut sorted_addons: BinaryHeap<AnalyzedAddon> = BinaryHeap::with_capacity(addons.len());
 
 		self.total_size.store(0, std::sync::atomic::Ordering::Release);
 		for gma in addons {
-			self.total_size.fetch_add(gma.size, std::sync::atomic::Ordering::Relaxed);
+			self.total_size.fetch_add(gma.installed().size, std::sync::atomic::Ordering::Relaxed);
 
-			if let Some(ref id) = gma.id {
+			if let Some(ref id) = gma.installed().id {
 				ids.push(*id);
 			}
 
@@ -262,7 +262,7 @@ impl AddonSizeAnalyzer {
 		let mut tag_sizes: IndexMap<String, Vec<f64>> = IndexMap::new();
 		let mut tag_data: IndexMap<String, Vec<TaggedTreeMapData>> = IndexMap::new();
 		for (i, gma) in gma_files.into_iter().enumerate() {
-			let metadata = gma.metadata.as_ref().unwrap();
+			let metadata = gma.installed().metadata.as_ref().unwrap();
 			let tag = metadata
 				.addon_type()
 				.or_else(|| {
@@ -279,17 +279,17 @@ impl AddonSizeAnalyzer {
 			match tag_data.entry(tag.clone()) {
 				Occupied(mut o) => {
 					let total_tag_sizes = tag_total_sizes.get_mut(&tag).unwrap();
-					*total_tag_sizes = *total_tag_sizes + (gma.size as f64);
+					*total_tag_sizes = *total_tag_sizes + (gma.installed().size as f64);
 
-					tag_sizes.get_mut(&tag).unwrap().push(gma.size as f64);
+					tag_sizes.get_mut(&tag).unwrap().push(gma.installed().size as f64);
 
 					let gma_files = o.get_mut();
 					gma_files.push(Some((Some(Box::new(gma)), None)));
 				}
 				Vacant(v) => {
-					tag_total_sizes.insert(tag.clone(), gma.size as f64);
+					tag_total_sizes.insert(tag.clone(), gma.installed().size as f64);
 
-					tag_sizes.insert(tag, vec![gma.size as f64]);
+					tag_sizes.insert(tag, vec![gma.installed().size as f64]);
 
 					v.insert(vec![Some((Some(Box::new(gma)), None))]);
 				}

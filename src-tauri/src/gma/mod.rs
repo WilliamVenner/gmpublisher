@@ -132,6 +132,7 @@ impl Serialize for GMAEntriesMap {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GMAFile {
 	pub path: PathBuf,
 	pub size: u64,

@@ -1,128 +1,45 @@
 import { invoke } from '@tauri-apps/api/tauri'
-import { Transaction } from './transactions.js'
+import { listen } from '@tauri-apps/api/event';
 
 class Addons {
 	constructor() {
-		this.workshopCache = [];
-		this.gameAddonsCache = [];
+		this.Addons = {};
+		this.Workshop = {};
 
-		this.gmaMetadataCache = {};
-		this.gmaMetadataQueue = {
-			queue: [],
-			waiting: {}
-		};
+		this.MyWorkshop = [];
+		this.InstalledAddons = [];
 
-		this.gmaPreviewCache = {};
-
-		this.workshopMetadataCache = {};
-		this.workshopUploaderCache = {};
+		listen("WorkshopItem", ({ payload: workshopItem }) => {
+			this.Workshop[workshopItem.id] = Promise.resolve(workshopItem);
+		});
 	}
 
-	clearCache(cacheName) {
-		this[cacheName + 'Cache'] = [];
-	}
-
-	browseWorkshop(page) {
-		if (page > 4294967295 || page <= 0) throw 'Page out of bounds';
-
-		if (page in this.workshopCache) {
-			return Promise.resolve(this.workshopCache[page]);
-		} else {
-			return invoke('workshopBrowser', { page }).then(data => {
-				this.workshopCache[page] = data;
-				return data;
-			});
+	getMyWorkshop(page) {
+		if (this.MyWorkshop[page] == null) {
+			this.MyWorkshop[page] = invoke("browse_my_workshop", { page });
 		}
+		return this.MyWorkshop[page];
 	}
 
-	browseGame(page) {
-		if (page > 4294967295 || page <= 0) throw 'Page out of bounds';
-
-		if (page in this.gameAddonsCache) {
-			return Promise.resolve(this.gameAddonsCache[page]);
-		} else {
-			return invoke('gameAddonsBrowser', { page }).then(data => {
-				this.gameAddonsCache[page] = data;
-				return data;
-			});
+	getInstalledAddons(page) {
+		if (this.InstalledAddons[page] == null) {
+			this.InstalledAddons[page] = invoke("browse_installed_addons", { page });
 		}
+		return this.InstalledAddons[page];
 	}
 
-	checkGMAQueue() {
-		const next = this.gmaMetadataQueue.queue[0];
-		if (next) {
-			const [[path, id], resolve, reject] = next;
-
-			invoke('gmaMetadata', { path, id })
-
-				.then(metadata => {
-
-					this.gmaMetadataCache[path] = [true, metadata];
-
-					delete this.gmaMetadataQueue.waiting[path];
-					this.gmaMetadataQueue.queue.splice(0, 1);
-
-					window.setTimeout(this.checkGMAQueue.bind(this), 0); // prevents stack overflow
-
-					return metadata;
-
-				}, error => {
-					this.gmaMetadataCache[path] = [false, error];
-					return error;
-				})
-
-				.then(resolve, reject);
+	getAddon(path) {
+		if (this.Addons[path] == null) {
+			this.Addons[path] = invoke("get_installed_addon", { path });
 		}
+		return this.Addons[path];
 	}
 
-	getGMAMetadata(path, id) {
-		if (path in this.gmaMetadataCache) {
-
-			return this.gmaMetadataCache[path][0] ?
-				Promise.resolve(this.gmaMetadataCache[path][1])
-				:
-				Promise.reject(this.gmaMetadataCache[path][1])
-
-		} else {
-
-			if (!(path in this.gmaMetadataQueue.waiting)) {
-				this.gmaMetadataQueue.waiting[path] = new Promise((resolve, reject) => {
-					if (this.gmaMetadataQueue.queue.push([[path, id], resolve, reject]) === 1) {
-						this.checkGMAQueue();
-					}
-				});
-			}
-
-			return this.gmaMetadataQueue.waiting[path];
-
+	getWorkshopAddon(id) {
+		if (this.Workshop[id] == null) {
+			this.Workshop[id] = invoke("get_workshop_addon", { id });
 		}
-	}
-
-	getWorkshopMetadata(id) {
-		if (!(id in this.workshopMetadataCache)) {
-			this.workshopMetadataCache[id] = invoke({
-				cmd: 'getWorkshopMetadata',
-				id
-			});
-		}
-		return this.workshopMetadataCache[id];
-	}
-
-	getWorkshopUploader(id) {
-		if (!(id in this.workshopUploaderCache)) {
-			this.workshopUploaderCache[id] = invoke({
-				cmd: 'getWorkshopUploader',
-				id
-			});
-		}
-		return this.workshopUploaderCache[id];
-	}
-
-	previewGMA(path, id) {
-		if (!(path in this.gmaPreviewCache))
-			this.gmaPreviewCache[path] = invoke('previewGma', { path, id });
-
-		return this.gmaPreviewCache[path];
+		return this.Workshop[id];
 	}
 }
 

@@ -58,13 +58,14 @@ impl Steam {
 	}
 
 	pub fn fetch_users(&'static self, steamids: Vec<SteamId>) -> Vec<SteamUser> {
-		self.users.begin();
+		// TODO
+		//self.users.begin();
 		let mut users = Vec::with_capacity(steamids.len());
 		steamids
 			.into_par_iter()
 			.map(|steamid| self.fetch_user(steamid))
 			.collect_into_vec(&mut users);
-		self.users.commit();
+		//self.users.commit();
 		users
 	}
 

@@ -119,7 +119,6 @@ impl AppData {
 pub struct Plugin;
 impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 	fn initialization_script(&self) -> Option<String> {
-		println!("initialization_script");
 		Some(
 			include_str!("../../app/plugins/AppData.js")
 				.replace(

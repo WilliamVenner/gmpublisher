@@ -1,12 +1,8 @@
 use serde::Serialize;
-use std::{
-	collections::VecDeque,
-	path::PathBuf,
-	sync::{
+use std::{cell::{RefCell, UnsafeCell}, collections::VecDeque, ops::DerefMut, path::PathBuf, sync::{
 		atomic::{AtomicBool, Ordering},
 		Arc,
-	},
-};
+	}};
 
 use steamworks::{PublishedFileId, QueryResult, QueryResults, SteamError, SteamId};
 
@@ -14,7 +10,7 @@ use parking_lot::Mutex;
 
 use super::{users::SteamUser, Steam};
 
-use crate::{GMOD_APP_ID, main_thread_forbidden, webview_emit};
+use crate::{GMOD_APP_ID, main_thread_forbidden, webview::Addon, webview_emit};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -81,52 +77,114 @@ impl From<PublishedFileId> for WorkshopItem {
 		}
 	}
 }
+impl PartialEq for WorkshopItem {
+    fn eq(&self, other: &Self) -> bool {
+		if self.time_created == 0 {
+			if self.time_updated == 0 {
+				self.id.eq(&other.id)
+			} else {
+				self.time_updated.eq(&other.time_updated)
+			}
+		} else {
+			if other.time_created == 0 {
+				self.id.eq(&other.id)
+			} else {
+				self.time_created.eq(&other.time_created)
+			}
+		}
+    }
+}
+impl Eq for WorkshopItem {}
+impl PartialOrd for WorkshopItem {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+		if self.time_created == 0 {
+			if self.time_updated == 0 {
+				self.id.partial_cmp(&other.id)
+			} else {
+				self.time_updated.partial_cmp(&other.time_updated)
+			}
+		} else {
+			if other.time_created == 0 {
+				self.id.partial_cmp(&other.id)
+			} else {
+				self.time_created.partial_cmp(&other.time_created)
+			}
+		}
+    }
+}
+impl Ord for WorkshopItem {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+		if self.time_created == 0 {
+			if self.time_updated == 0 {
+				self.id.cmp(&other.id)
+			} else {
+				self.time_updated.cmp(&other.time_updated)
+			}
+		} else {
+			if other.time_created == 0 {
+				self.id.cmp(&other.id)
+			} else {
+				self.time_created.cmp(&other.time_created)
+			}
+		}
+    }
+}
 
+#[derive(derive_more::Deref)]
+struct FetcherBacklog(RefCell<VecDeque<PublishedFileId>>);
+unsafe impl Sync for FetcherBacklog {}
+lazy_static! {
+	static ref FETCHER_BACKLOG: FetcherBacklog = FetcherBacklog(RefCell::new(VecDeque::new()));
+	static ref FETCHER_NEXT: AtomicBool = AtomicBool::new(false);
+}
 impl Steam {
-	pub fn workshop_fetcher() {
-		let mut backlog = VecDeque::new();
-		loop {
-			backlog.append(
-				&mut loop {
-					if let Ok(pending) = steam!().workshop.try_take_inner(|set| &mut set.1 as *mut Vec<PublishedFileId>) {
-						if !pending.is_empty() {
-							break pending;
-						}
-					}
-					sleep_ms!(100);
-					continue;
-				}
-				.into(),
-			);
+	pub fn workshop_fetcher() { loop {
+		steam!().workshop.write(|workshop| {
+			if workshop.1.is_empty() {
+				FETCHER_NEXT.store(true, Ordering::Release);
+				return;
+			}
+
+			let mut backlog = FETCHER_BACKLOG.borrow_mut();
+
+			backlog.reserve(workshop.1.len());
+			for id in workshop.1.drain(..).into_iter() { backlog.push_back(id); }
+
+			drop(workshop);
 
 			while !backlog.is_empty() {
-				let mut pending = backlog;
-				backlog = pending.split_off((steamworks::RESULTS_PER_PAGE as usize).min(pending.len()));
+				let backlog_len = backlog.len();
+				let mut queue = backlog.split_off((steamworks::RESULTS_PER_PAGE as usize).min(backlog_len));
+				std::mem::swap(&mut queue, &mut *backlog);
+
+				let queue: Vec<PublishedFileId> = queue.into();
 
 				let next = Arc::new(AtomicBool::new(false));
 				let next_ref = next.clone();
 
-				steam!().client().ugc().query_items(pending.to_owned().into()).unwrap().fetch(
+				steam!().client().ugc().query_items(queue.to_owned()).unwrap().fetch(
 					move |results: Result<QueryResults<'_>, SteamError>| {
 						if let Ok(results) = results {
 							let mut i = 0;
 							for item in results.iter() {
 								webview_emit!(
 									"WorkshopItem",
-									if let Some(item) = item {
-										let mut item: WorkshopItem = item.into();
-										item.preview_url = results.preview_url(0);
-										item.subscriptions = results.statistic(0, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
-										item
-									} else {
-										WorkshopItem::from(pending[i])
-									}
+									Addon::from(
+										if let Some(item) = item {
+											let mut item: WorkshopItem = item.into();
+											item.preview_url = results.preview_url(0);
+											item.subscriptions = results.statistic(0, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+											item
+										} else {
+											WorkshopItem::from(queue[i])
+										}
+									)
 								);
 								i += 1;
 							}
 						} else {
-							steam!().workshop.write(|mut workshop| {
-								for id in pending {
+							steam!().workshop.write(move |workshop| {
+								for id in queue.into_iter() {
 									workshop.0.remove(&id);
 								}
 							});
@@ -139,12 +197,16 @@ impl Steam {
 					steam!().run_callbacks();
 				}
 			}
-		}
-	}
+
+			FETCHER_NEXT.store(true, Ordering::Release);
+		});
+
+		while !FETCHER_NEXT.load(Ordering::Acquire) { sleep_ms!(50); }
+	}}
 
 	pub fn fetch_workshop_items(&'static self, ids: Vec<PublishedFileId>) {
-		self.workshop.write(|mut workshop| {
-			let (cache, queue) = workshop.inner.as_mut().unwrap();
+		self.workshop.write(|workshop| {
+			let (cache, queue) = workshop.deref_mut();
 			queue.reserve(ids.len());
 			for id in ids.into_iter().filter(|id| cache.insert(*id)) {
 				queue.push(id);
@@ -373,47 +435,45 @@ impl Steam {
 		rayon::spawn(move || f(&self.fetch_collection_items(collection)));
 	}
 
-	pub fn browse_my_workshop(&'static self, page: u32) -> Option<(u32, Vec<WorkshopItem>)> {
+	pub fn browse_my_workshop(&'static self, page: u32) -> Option<(u32, Vec<Addon>)> {
 		let results = Arc::new(Mutex::new(None));
 
-		{
-			let results = results.clone();
-			let client = self.client(); client
-			.ugc()
-			.query_user(
-				client.steam_id.account_id(),
-				steamworks::UserList::Published,
-				steamworks::UGCType::ItemsReadyToUse,
-				steamworks::UserListOrder::LastUpdatedDesc,
-				steamworks::AppIDs::ConsumerAppId(GMOD_APP_ID),
-				page,
-			)
-			.ok()?
-			.exclude_tag("dupe")
-			.fetch(move |result: Result<QueryResults<'_>, SteamError>| {
-				if let Ok(data) = result {
-					*results.lock() = Some(Some((
-						data.total_results(),
-						data.iter()
-							.enumerate()
-							.map(|(i, x)| {
-								let mut item: WorkshopItem = x.unwrap().into();
-								item.preview_url = data.preview_url(i as u32);
-								item.subscriptions = data
-									.statistic(
-										i as u32,
-										steamworks::UGCStatisticType::Subscriptions,
-									)
-									.unwrap_or(0);
-								item
-							})
-							.collect::<Vec<WorkshopItem>>(),
-					)));
-				} else {
-					*results.lock() = Some(None);
-				}
-			});
-		}
+		let results_ref = results.clone();
+		let client = self.client(); client
+		.ugc()
+		.query_user(
+			client.steam_id.account_id(),
+			steamworks::UserList::Published,
+			steamworks::UGCType::ItemsReadyToUse,
+			steamworks::UserListOrder::LastUpdatedDesc,
+			steamworks::AppIDs::ConsumerAppId(GMOD_APP_ID),
+			page,
+		)
+		.ok()?
+		.exclude_tag("dupe")
+		.fetch(move |result: Result<QueryResults<'_>, SteamError>| {
+			if let Ok(data) = result {
+				*results_ref.lock() = Some(Some((
+					data.total_results(),
+					data.iter()
+						.enumerate()
+						.map(|(i, x)| {
+							let mut item: WorkshopItem = x.unwrap().into();
+							item.preview_url = data.preview_url(i as u32);
+							item.subscriptions = data
+								.statistic(
+									i as u32,
+									steamworks::UGCStatisticType::Subscriptions,
+								)
+								.unwrap_or(0);
+							item.into()
+						})
+						.collect::<Vec<Addon>>(),
+				)));
+			} else {
+				*results_ref.lock() = Some(None);
+			}
+		});
 
 		mutex_wait!(results, {
 			self.run_callbacks();
@@ -424,6 +484,6 @@ impl Steam {
 }
 
 #[tauri::command]
-pub fn browse_my_workshop(page: u32) -> Option<(u32, Vec<crate::WorkshopItem>)> {
+pub fn browse_my_workshop(page: u32) -> Option<(u32, Vec<Addon>)> {
 	rayon::scope(|_| steam!().browse_my_workshop(page))
 }

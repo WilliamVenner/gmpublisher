@@ -1,18 +1,11 @@
 // Utility library for shared concurrency between JS and Rust.
 
-use std::{
-	collections::HashMap,
-	hash::Hash,
-	sync::{
-		atomic::{AtomicBool, Ordering},
-		Arc,
-	},
-};
+use std::{any::Any, collections::{HashMap, LinkedList, VecDeque}, fmt::Debug, hash::Hash, sync::{Arc, atomic::{AtomicBool, Ordering}, mpsc}};
 
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut, BorrowMutError};
 use crossbeam::channel::{Receiver, Sender};
 
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
 
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 
@@ -120,105 +113,64 @@ impl<'a, V> From<AtomicRefMut<'a, Option<V>>> for AtomicRefMutSome<'a, V> {
 	}
 }
 
-pub struct RelaxedRwLock<V: Default + Send + Sync + 'static> {
-	r: Arc<AtomicRefCell<V>>,
-	w: Arc<AtomicRefCell<Option<V>>>,
-	tx: Sender<Box<dyn FnOnce(AtomicRefMutSome<V>) + 'static + Send + Sync>>,
-	begin: Arc<AtomicBool>,
+pub type RelaxedRwLockFn<V> = dyn FnOnce(&mut RwLockWriteGuard<'_, V>) + 'static + Send + Sync;
+
+/*
+#[derive(derive_more::Deref)]
+struct RelaxedRwLocks(Mutex<LinkedList<*const RelaxedRwLock<dyn Any + Send + Sync + 'static>>>);
+unsafe impl Sync for RelaxedRwLocks {}
+lazy_static! {
+	static ref RELAXED_RW_LOCKS: RelaxedRwLocks = RelaxedRwLocks(Mutex::new(LinkedList::new()));
 }
+*/
 
-unsafe impl<V: Default + Send + Sync + 'static> Send for RelaxedRwLock<V> {}
-unsafe impl<V: Default + Send + Sync + 'static> Sync for RelaxedRwLock<V> {}
+#[derive(derive_more::Deref, Clone)]
+pub struct RelaxedRwLock<V: Send + Sync + 'static> {
+	#[deref]
+	inner: Arc<RwLock<V>>,
+	queue: Arc<Mutex<VecDeque<Box<RelaxedRwLockFn<V>>>>>,
+}
+impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
+	pub fn new(inner: V) -> Self {
+		let inner = Arc::new(RwLock::new(inner));
+		let queue: Arc<Mutex<VecDeque<Box<RelaxedRwLockFn<V>>>>> = Arc::new(Mutex::new(VecDeque::new()));
 
-impl<V: Default + Send + Sync + 'static> RelaxedRwLock<V> {
-	pub fn new(v: V) -> RelaxedRwLock<V> {
-		let (tx, rx): (
-			Sender<Box<dyn FnOnce(AtomicRefMutSome<V>) + 'static + Send + Sync>>,
-			Receiver<Box<dyn FnOnce(AtomicRefMutSome<V>) + 'static + Send + Sync>>,
-		) = crossbeam::channel::unbounded();
-		let begin = Arc::new(AtomicBool::new(false));
-		let r = Arc::new(AtomicRefCell::new(v));
-		let w = Arc::new(AtomicRefCell::new(None));
 		{
-			let begin_ref = begin.clone();
-			let w_ref = w.clone();
-			let r_ref = r.clone();
+			let inner = inner.clone();
+			let queue = queue.clone();
 			std::thread::spawn(move || loop {
-				// TODO use a static vec of weak rc relaxedrwlocks and a single worker thread
-				let f = match rx.try_recv() {
-					Ok(f) => f,
-					Err(error) => match error {
-						crossbeam::channel::TryRecvError::Empty => {
-							if !begin_ref.load(Ordering::Acquire) && AtomicRefCell::borrow(&w_ref).is_some() {
-								if let Ok(mut r) = r_ref.try_borrow_mut() {
-									drop(std::mem::replace(&mut *r, w_ref.borrow_mut().take().unwrap()));
-								}
+				if let Some(mut queue) = queue.try_lock() {
+					if !queue.is_empty() {
+						if let Some(mut inner) = inner.try_write() {
+							for f in queue.drain(..) {
+								f(&mut inner);
 							}
-							std::thread::sleep(std::time::Duration::from_millis(10));
-							continue;
 						}
-						crossbeam::channel::TryRecvError::Disconnected => break,
-					},
-				};
-
-				if AtomicRefCell::borrow(&w_ref).is_none() {
-					loop {
-						match r_ref.try_borrow_mut() {
-							Ok(_r) => unsafe { *w_ref.borrow_mut() = Some(std::ptr::read(r_ref.as_ptr())) },
-							Err(_) => continue,
-						}
-						break;
 					}
 				}
-				f(w_ref.borrow_mut().into());
+				sleep_ms!(1000);
 			});
 		}
 
-		RelaxedRwLock { r, w, tx, begin }
-	}
-
-	pub fn read(&self) -> AtomicRef<V> {
-		loop {
-			if let Ok(r) = self.r.try_borrow() {
-				return r;
-			}
+		Self {
+			inner,
+			queue,
 		}
 	}
 
-	pub fn take(&self) -> V {
-		loop {
-			if let Ok(_r) = self.r.try_borrow_mut() {
-				break unsafe { std::mem::take(&mut *self.r.as_ptr()) };
-			}
+	pub fn write<F>(&'static self, f: F)
+	where
+		F: FnOnce(&mut RwLockWriteGuard<'_, V>) + 'static + Send + Sync
+	{
+		if let Some(mut lock) = self.inner.try_write() {
+			f(&mut lock);
+		} else {
+			self.queue.lock().push_back(Box::new(f));
 		}
 	}
-
-	pub fn try_take(&self) -> Result<V, BorrowMutError> {
-		let _r = self.r.try_borrow_mut()?;
-		Ok(std::mem::take(unsafe { &mut *self.r.as_ptr() }))
-	}
-
-	pub fn try_take_inner<F, U: Default>(&self, map: F) -> Result<U, BorrowMutError>
-	where
-		F: FnOnce(&mut AtomicRefMut<'_, V>) -> *mut U + 'static,
-	{
-		let mut borrow = self.r.try_borrow_mut()?;
-		let inner = map(&mut borrow);
-		Ok(std::mem::take(unsafe { &mut *inner }))
-	}
-
-	pub fn write<F>(&self, callback: F) -> &Self
-	where
-		F: FnOnce(AtomicRefMutSome<V>) + 'static + Send + Sync,
-	{
-		self.tx.send(Box::new(callback)).unwrap();
-		self
-	}
-
-	pub fn begin(&self) {
-		self.begin.store(true, Ordering::Release);
-	}
-	pub fn commit(&self) {
-		self.begin.store(false, Ordering::Release);
-	}
+}
+impl<V: Send + Sync + 'static> Drop for RelaxedRwLock<V> {
+    fn drop(&mut self) {
+        debug_assert!(false, "A RelaxedRwLock should never be dropped");
+    }
 }

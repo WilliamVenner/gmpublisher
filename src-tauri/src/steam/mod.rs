@@ -162,7 +162,7 @@ impl Steam {
 				break;
 			}
 
-			std::thread::sleep(std::time::Duration::from_millis(50));
+			sleep_ms!(50);
 		}
 	}
 
@@ -217,7 +217,7 @@ impl Steam {
 
 		if timeout == 0 {
 			while Arc::strong_count(&data) > 1 {
-				std::thread::sleep(std::time::Duration::from_millis(25));
+				self.run_callbacks();
 			}
 		} else {
 			let timeout = timeout as u64;
@@ -226,7 +226,7 @@ impl Steam {
 				if timeout > 0 && started.elapsed().as_secs() >= timeout {
 					return None;
 				}
-				std::thread::sleep(std::time::Duration::from_millis(25));
+				self.run_callbacks();
 			}
 		}
 
@@ -250,7 +250,7 @@ impl Steam {
 
 		if timeout == 0 {
 			while !received.load(std::sync::atomic::Ordering::Acquire) {
-				std::thread::sleep(std::time::Duration::from_millis(25));
+				self.run_callbacks();
 			}
 		} else {
 			let timeout = timeout as u64;
@@ -259,7 +259,7 @@ impl Steam {
 				if started.elapsed().as_secs() >= timeout {
 					return false;
 				}
-				std::thread::sleep(std::time::Duration::from_millis(25));
+				self.run_callbacks();
 			}
 		}
 
@@ -276,7 +276,7 @@ impl Steam {
 
 	pub fn run_callbacks(&self) {
 		self.client().single.run_callbacks();
-		std::thread::sleep(std::time::Duration::from_millis(50));
+		sleep_ms!(50);
 	}
 }
 

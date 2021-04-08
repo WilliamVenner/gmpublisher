@@ -4,7 +4,7 @@
 
 	let page = 0;
 	function next() {
-		return Addons.getMyWorkshop(++page);
+		return Addons.getInstalledAddons(++page);
 	}
 </script>
 

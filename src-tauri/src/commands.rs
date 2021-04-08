@@ -10,10 +10,11 @@ where
 		crate::appdata::update_settings,
 		crate::appdata::clean_app_data,
 
-		crate::game_addons::browse_game_addons,
+		crate::game_addons::browse_installed_addons,
 
 		crate::steam::is_steam_connected,
 		crate::steam::get_steam_user,
+		crate::steam::workshop::browse_my_workshop,
 
 		crate::addon_size_analyzer::free_addon_size_analyzer,
 	]
