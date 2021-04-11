@@ -31,7 +31,7 @@ parking_lot = { version = "0.11.1", features = [ "serde", "deadlock_detection" ]
 xz2 = "0.1.6"
 indexmap = "1.6.2"
 dunce = "1.0.1"
-sysinfo = "0.16.5"
+sysinfo = "0.17.0"
 lazy_static = "1.4.0"
 dirs = "3.0.1"
 anyhow = "1.0.40"

@@ -1,4 +1,5 @@
 <script>
+	import { tippy } from '../tippy';
 	import { _ } from 'svelte-i18n';
 	import { Rss, TriangleAlert } from 'akar-icons-svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
@@ -55,9 +56,9 @@
 	<Search/>
 
 	{#if steamConnected}
-		<TriangleAlert id="steam-connection" class="error" size="1.25rem"/>
+		<span use:tippy={'✔ ' + $_('steam_connected')}><Rss id="steam-connection" size="1.25rem"/></span>
 	{:else}
-		<Rss id="steam-connection" size="1.25rem"/>
+		<span use:tippy={'❌ ' + $_('steam_disconnected')}><TriangleAlert id="steam-connection" class="error" size="1.25rem"/></span>
 	{/if}
 </nav>
 
@@ -69,6 +70,7 @@
 		min-height: 70px;
 		max-height: 70px;
 		padding: .8rem;
+		padding-right: 1.5rem;
 		background-color: #323232;
 		box-shadow: 0px 0px 10px rgba(0,0,0,0.4);
 		overflow: hidden;
@@ -85,10 +87,8 @@
 		height: 100%;
 	}
 
-	:global(#steam-connection) {
-		color: red;
-	}
 	:global(#steam-connection.error) {
+		color: red;
 		animation: steam-connection-error 1.5s infinite alternate;
 	}
 

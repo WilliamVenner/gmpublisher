@@ -3,6 +3,7 @@ use std::{cell::{RefCell, UnsafeCell}, collections::VecDeque, ops::DerefMut, pat
 		atomic::{AtomicBool, Ordering},
 		Arc,
 	}};
+use std::collections::{HashMap, HashSet};
 
 use steamworks::{PublishedFileId, QueryResult, QueryResults, SteamError, SteamId};
 
@@ -172,11 +173,11 @@ impl Steam {
 									Addon::from(
 										if let Some(item) = item {
 											let mut item: WorkshopItem = item.into();
-											item.preview_url = results.preview_url(0);
-											item.subscriptions = results.statistic(0, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+											item.preview_url = results.preview_url(i);
+											item.subscriptions = results.statistic(i, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
 											item
 										} else {
-											WorkshopItem::from(queue[i])
+											WorkshopItem::from(queue[i as usize])
 										}
 									)
 								);
@@ -193,7 +194,7 @@ impl Steam {
 					},
 				);
 
-				while next.load(Ordering::Acquire) {
+				while !next.load(Ordering::Acquire) {
 					steam!().run_callbacks();
 				}
 			}
@@ -485,5 +486,12 @@ impl Steam {
 
 #[tauri::command]
 pub fn browse_my_workshop(page: u32) -> Option<(u32, Vec<Addon>)> {
+	steam!().client_wait();
 	rayon::scope(|_| steam!().browse_my_workshop(page))
+}
+
+pub fn free_caches() {
+	use parking_lot::lock_api::RawMutex;
+	*steam!().users.lock() = PromiseCache::new(HashMap::new());
+	*steam!().workshop.lock() = (HashSet::new(), Vec::new());
 }

@@ -9,7 +9,7 @@ class Addons {
 		this.MyWorkshop = [];
 		this.InstalledAddons = [];
 
-		listen("WorkshopItem", ({ payload: workshopItem }) => {
+		listen("WorkshopItem", ({ payload: { workshop: workshopItem } }) => {
 			this.Workshop[workshopItem.id] = Promise.resolve(workshopItem);
 		});
 	}
@@ -37,8 +37,10 @@ class Addons {
 
 	getWorkshopAddon(id) {
 		if (this.Workshop[id] == null) {
+			console.log('get_workshop_addon');
 			this.Workshop[id] = invoke("get_workshop_addon", { id });
 		}
+		console.log('shit nugget', this.Workshop[id]);
 		return this.Workshop[id];
 	}
 }

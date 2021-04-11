@@ -2,7 +2,7 @@ const updateSettings = () => {
 	__TAURI__.tauri.invoke({
 		cmd: 'updateSettings',
 		settings: JSON.stringify(window.AppSettings)
-	});
+	}); // TODO
 
 	console.log('updateSettings');
 };
@@ -44,6 +44,8 @@ class AppSettings {
 }
 
 window.__GMPUBLISHER__ = () => {
+	__TAURI__.tauri.invoke('free_caches');
+
 	{
 		const AppDataPtr = {};
 		window.AppData = new Proxy(AppDataPtr, {

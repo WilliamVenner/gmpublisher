@@ -1,4 +1,10 @@
-<main></main>
+<script>
+
+</script>
+
+<main>
+
+</main>
 
 <style>
 	main {

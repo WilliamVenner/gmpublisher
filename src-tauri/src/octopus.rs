@@ -9,6 +9,8 @@ use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
 
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 
+use parking_lot::lock_api::RawMutex;
+
 pub enum VariableSingleton<T> {
 	Singleton(T),
 	Variable(Vec<T>),
@@ -17,20 +19,11 @@ pub enum VariableSingleton<T> {
 pub type PromiseHashCache<K, V> = PromiseCache<HashMap<K, V>, K, V>;
 pub type PromiseHashNullableCache<K, V> = PromiseCache<HashMap<K, V>, K, Option<V>>;
 
+#[derive(derive_more::Deref)]
 pub struct PromiseCache<Cache: Default + Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> {
+	#[deref]
 	cache: RelaxedRwLock<Cache>,
 	promises: RwLock<HashMap<K, VariableSingleton<Box<dyn FnOnce(&Args) + Send + 'static>>>>,
-}
-impl<Cache: Default + Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> std::ops::Deref for PromiseCache<Cache, K, Args> {
-	type Target = RelaxedRwLock<Cache>;
-	fn deref(&self) -> &Self::Target {
-		&self.cache
-	}
-}
-impl<Cache: Default + Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> std::ops::DerefMut for PromiseCache<Cache, K, Args> {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.cache
-	}
 }
 impl<Cache: Default + Send + Sync + 'static, K: Hash + Eq + Clone, Args: Clone + Sync + Send> PromiseCache<Cache, K, Args> {
 	pub fn new(cache: Cache) -> PromiseCache<Cache, K, Args> {

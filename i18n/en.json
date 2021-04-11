@@ -106,5 +106,8 @@
 	"time_just_now": "Just Now",
 	"click_to_open": "Click to open!",
 	"content_generator": "Content Generator",
-	"installed_addons": "Installed Addons"
+	"installed_addons": "Installed Addons",
+
+	"steam_disconnected": "Disconnected from Steam Servers",
+	"steam_connected": "Connected to Steam Servers"
 }

@@ -14,11 +14,20 @@
 			installed = Promise.reject().catch(() => {});
 		}
 	} else if (installed && !workshop) {
-		if (installed.id) {
-			workshop = Addons.getWorkshopAddon(installed.id);
-		} else {
-			workshop = Promise.reject().catch(() => {});
-		}
+		workshop = new Promise((resolve, reject) => {
+			installed.then(installed => {
+				if (installed.id) {
+					console.log('ye');
+					Addons.getWorkshopAddon(installed.id).then(item => {
+						console.log('2');
+						item.dead ? reject() : resolve(item);
+					});
+				} else {
+					reject();
+				}
+				return installed;
+			}, reject);
+		});
 	}
 </script>
 
@@ -30,7 +39,7 @@
 				{#await workshop}
 					0
 				{:then workshop}
-					{workshop.subscriptions}
+					{workshop.subscriptions ?? 0}
 				{/await}
 				&nbsp;
 			</span>
@@ -40,44 +49,34 @@
 				<img use:tippyFollow={(Math.round((((workshop.score ?? 0) * 100) + Number.EPSILON) * 100) / 100) + '%'} id="score" src="/img/{Math.round(((workshop.score ?? 0) * 10) / 2)}-star.png"/>
 			{/await}
 		</div>
-		<div id="preview">
-			{#await workshop}
-				<Loading size="2rem"/>
-			{:then workshop}
-				{#if workshop.previewUrl}
-					<img id="preview" src={workshop.previewUrl} alt="Preview"/>
-				{:else}
-					<Dead/>
-				{/if}
-			{:catch}
-				<Dead/>
-			{/await}
-		</div>
+
+		{#await workshop}
+			<div id="preview" class="dead"><Loading size="2rem"/></div>
+		{:then workshop}
+			{#if workshop.previewUrl}
+				<img id="preview" src={workshop.previewUrl} alt="Preview"/>
+			{:else}
+				<div id="preview" class="dead"><Dead/></div>
+			{/if}
+		{:catch}
+			<div id="preview" class="dead"><Dead/></div>
+		{/await}
+
 		{#await workshop}
 			{#await installed}
 				<div id="title">¯\_(ツ)_/¯</div>
 			{:then installed}
-				<div id="title">{installed.metadata?.name ?? installed.extractedName}</div>
+				<div id="title">{installed.name ?? installed.extractedName}</div>
 			{:catch}
 				<div id="title">¯\_(ツ)_/¯</div>
 			{/await}
 		{:then workshop}
-			{#if workshop.dead}
-				{#await installed}
-					<div id="title">¯\_(ツ)_/¯</div>
-				{:then installed}
-					<div id="title">{installed.metadata?.name ?? installed.extractedName}</div>
-				{:catch}
-					<div id="title">¯\_(ツ)_/¯</div>
-				{/await}
-			{:else}
-				<div id="title">{workshop.title}</div>
-			{/if}
+			<div id="title">{workshop.title}</div>
 		{:catch}
 			{#await installed}
 				<div id="title">¯\_(ツ)_/¯</div>
 			{:then installed}
-				<div id="title">{installed.metadata?.name ?? installed.extractedName}</div>
+				<div id="title">{installed.name ?? installed.extractedName}</div>
 			{:catch}
 				<div id="title">¯\_(ツ)_/¯</div>
 			{/await}

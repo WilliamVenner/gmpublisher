@@ -8,6 +8,4 @@
 	}
 </script>
 
-<main>
-	<AddonScroller next={next}/>
-</main>
+<AddonScroller next={next}/>

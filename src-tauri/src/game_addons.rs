@@ -1,4 +1,4 @@
-use std::{collections::{BinaryHeap, HashMap}, fs::DirEntry, path::{Path, PathBuf}, sync::{Arc, atomic::{AtomicBool, Ordering}, mpsc}};
+use std::{collections::{BinaryHeap, HashMap}, fs::{DirEntry, File}, path::{Path, PathBuf}, rc::Rc, sync::{Arc, atomic::{AtomicBool, Ordering}, mpsc}};
 
 use lazy_static::lazy_static;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
@@ -18,9 +18,6 @@ pub struct GameAddons {
 	paths: RwLock<HashMap<PathBuf, Arc<Addon>>>,
 	pages: RwLock<Vec<Arc<Addon>>>,
 }
-
-unsafe impl Sync for GameAddons {}
-unsafe impl Send for GameAddons {}
 
 impl GameAddons {
 	pub fn init() -> GameAddons {
@@ -209,4 +206,17 @@ pub fn browse_installed_addons(page: u32) -> InstalledAddonsPage {
 			&(&*read)[start..(start + crate::steam::RESULTS_PER_PAGE)]
 		})
 	)
+}
+
+#[tauri::command]
+pub fn get_installed_addon(path: PathBuf) -> Option<Arc<Addon>> {
+	game_addons!().paths.read().get(&path).cloned()
+}
+
+pub fn free_caches() {
+	let mut paths = crate::game_addons!().paths.write();
+	let mut pages = crate::game_addons!().pages.write();
+	*paths = HashMap::new();
+	*pages = Vec::new();
+	crate::game_addons!().discovered.store(false, Ordering::Release);
 }
