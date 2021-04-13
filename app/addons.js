@@ -1,6 +1,36 @@
 import { invoke } from '@tauri-apps/api/tauri'
 import { listen } from '@tauri-apps/api/event';
 
+class DeferredPromise {
+	constructor() {
+		this._promise = new Promise((resolve, reject) => {
+			this.resolve = resolve;
+			this.reject = reject;
+		});
+		this.then = this._promise.then.bind(this._promise);
+		this.catch = this._promise.catch.bind(this._promise);
+		this[Symbol.toStringTag] = 'Promise';
+	}
+
+	static wrap(innerPromise) {
+		const promise = new DeferredPromise();
+		innerPromise.then(promise.resolve, promise.reject);
+		return promise;
+	}
+
+	static resolve(data) {
+		const promise = new DeferredPromise();
+		promise.resolve(data);
+		return promise;
+	}
+
+	static reject(data) {
+		const promise = new DeferredPromise();
+		promise.reject(data);
+		return promise;
+	}
+}
+
 class Addons {
 	constructor() {
 		this.Addons = {};
@@ -10,37 +40,39 @@ class Addons {
 		this.InstalledAddons = [];
 
 		listen("WorkshopItem", ({ payload: { workshop: workshopItem } }) => {
-			this.Workshop[workshopItem.id] = Promise.resolve(workshopItem);
+			if (workshopItem.id in this.Workshop) {
+				this.Workshop[workshopItem.id].resolve(workshopItem);
+			} else {
+				this.Workshop[workshopItem.id] = DeferredPromise.resolve(workshopItem);
+			}
 		});
 	}
 
 	getMyWorkshop(page) {
 		if (this.MyWorkshop[page] == null) {
-			this.MyWorkshop[page] = invoke("browse_my_workshop", { page });
+			this.MyWorkshop[page] = DeferredPromise.wrap(invoke("browse_my_workshop", { page }));
 		}
 		return this.MyWorkshop[page];
 	}
 
 	getInstalledAddons(page) {
 		if (this.InstalledAddons[page] == null) {
-			this.InstalledAddons[page] = invoke("browse_installed_addons", { page });
+			this.InstalledAddons[page] = DeferredPromise.wrap(invoke("browse_installed_addons", { page }));
 		}
 		return this.InstalledAddons[page];
 	}
 
 	getAddon(path) {
 		if (this.Addons[path] == null) {
-			this.Addons[path] = invoke("get_installed_addon", { path });
+			this.Addons[path] = DeferredPromise.wrap(invoke("get_installed_addon", { path }));
 		}
 		return this.Addons[path];
 	}
 
 	getWorkshopAddon(id) {
 		if (this.Workshop[id] == null) {
-			console.log('get_workshop_addon');
-			this.Workshop[id] = invoke("get_workshop_addon", { id });
+			this.Workshop[id] = DeferredPromise.wrap(invoke("get_workshop_addon", { id }));
 		}
-		console.log('shit nugget', this.Workshop[id]);
 		return this.Workshop[id];
 	}
 }
@@ -157,4 +189,6 @@ function getFileTypeInfo(path) {
 }
 
 const addons = new Addons();
+window.__ADDONS__ = addons;
+
 export { addons as Addons, getFileTypeInfo, trimPath }

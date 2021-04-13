@@ -5,11 +5,9 @@ use std::{any::Any, collections::{HashMap, LinkedList, VecDeque}, fmt::Debug, ha
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut, BorrowMutError};
 use crossbeam::channel::{Receiver, Sender};
 
-use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
+use parking_lot::{Mutex, RwLock, RwLockWriteGuard, RwLockReadGuard, Condvar};
 
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-
-use parking_lot::lock_api::RawMutex;
 
 pub enum VariableSingleton<T> {
 	Singleton(T),
@@ -121,27 +119,27 @@ lazy_static! {
 pub struct RelaxedRwLock<V: Send + Sync + 'static> {
 	#[deref]
 	inner: Arc<RwLock<V>>,
-	queue: Arc<Mutex<VecDeque<Box<RelaxedRwLockFn<V>>>>>,
+	queue: Arc<(Mutex<VecDeque<Box<RelaxedRwLockFn<V>>>>, Condvar)>,
 }
 impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
 	pub fn new(inner: V) -> Self {
 		let inner = Arc::new(RwLock::new(inner));
-		let queue: Arc<Mutex<VecDeque<Box<RelaxedRwLockFn<V>>>>> = Arc::new(Mutex::new(VecDeque::new()));
+		let queue: Arc<(Mutex<VecDeque<Box<RelaxedRwLockFn<V>>>>, Condvar)> = Arc::new((Mutex::new(VecDeque::new()), Condvar::new()));
 
 		{
 			let inner = inner.clone();
 			let queue = queue.clone();
 			std::thread::spawn(move || loop {
-				if let Some(mut queue) = queue.try_lock() {
-					if !queue.is_empty() {
-						if let Some(mut inner) = inner.try_write() {
-							for f in queue.drain(..) {
-								f(&mut inner);
-							}
-						}
+				let (mutex, cvar) = &*queue;
+				cvar.wait(&mut mutex.lock());
+
+				let mut queue = mutex.lock();
+				if !queue.is_empty() {
+					let mut inner = inner.write();
+					for f in queue.drain(..) {
+						f(&mut inner);
 					}
 				}
-				sleep_ms!(1000);
 			});
 		}
 
@@ -158,12 +156,21 @@ impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
 		if let Some(mut lock) = self.inner.try_write() {
 			f(&mut lock);
 		} else {
-			self.queue.lock().push_back(Box::new(f));
+			self.queue.0.lock().push_back(Box::new(f));
+			self.queue.1.notify_all();
 		}
+	}
+
+	pub fn write_sync(&'static self) -> RwLockWriteGuard<'_, V> {
+		self.inner.write()
+	}
+
+	pub fn read_sync(&'static self) -> RwLockReadGuard<'_, V> {
+		self.inner.read()
 	}
 }
 impl<V: Send + Sync + 'static> Drop for RelaxedRwLock<V> {
-    fn drop(&mut self) {
-        debug_assert!(false, "A RelaxedRwLock should never be dropped");
-    }
+	fn drop(&mut self) {
+		debug_assert!(false, "A RelaxedRwLock should never be dropped");
+	}
 }

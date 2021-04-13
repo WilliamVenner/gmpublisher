@@ -13,6 +13,10 @@
 	.dead:not(.inline) {
 		display: block;
 		margin: auto;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
 	}
 	.dead, .dead + .label {
 		vertical-align: middle;

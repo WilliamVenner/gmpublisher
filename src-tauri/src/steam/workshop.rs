@@ -4,6 +4,7 @@ use std::{cell::{RefCell, UnsafeCell}, collections::VecDeque, ops::DerefMut, pat
 		Arc,
 	}};
 use std::collections::{HashMap, HashSet};
+use crate::PromiseCache;
 
 use steamworks::{PublishedFileId, QueryResult, QueryResults, SteamError, SteamId};
 
@@ -144,6 +145,8 @@ impl Steam {
 			if workshop.1.is_empty() {
 				FETCHER_NEXT.store(true, Ordering::Release);
 				return;
+			} else {
+				FETCHER_NEXT.store(false, Ordering::Release);
 			}
 
 			let mut backlog = FETCHER_BACKLOG.borrow_mut();
@@ -491,7 +494,6 @@ pub fn browse_my_workshop(page: u32) -> Option<(u32, Vec<Addon>)> {
 }
 
 pub fn free_caches() {
-	use parking_lot::lock_api::RawMutex;
-	*steam!().users.lock() = PromiseCache::new(HashMap::new());
-	*steam!().workshop.lock() = (HashSet::new(), Vec::new());
+	*steam!().users.write_sync() = HashMap::new();
+	*steam!().workshop.write_sync() = (HashSet::new(), Vec::new());
 }

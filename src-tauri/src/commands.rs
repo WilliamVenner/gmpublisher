@@ -26,4 +26,5 @@ where
 #[tauri::command]
 pub fn free_caches() {
 	crate::game_addons::free_caches();
+	crate::steam::workshop::free_caches();
 }

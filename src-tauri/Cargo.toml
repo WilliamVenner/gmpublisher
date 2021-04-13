@@ -57,4 +57,4 @@ custom-protocol = [ "tauri/custom-protocol" ]
 
 [profile.release]
 lto = true
-codegen_units = 1
+codegen-units = 1

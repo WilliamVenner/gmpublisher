@@ -29,6 +29,7 @@ fn settings_path() -> PathBuf {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Settings {
+	pub temp: Option<PathBuf>,
 	pub gmod: Option<PathBuf>,
 	pub window_size: (f64, f64),
 	pub window_maximized: bool,
@@ -38,6 +39,7 @@ pub struct Settings {
 impl Default for Settings {
 	fn default() -> Self {
 		Self {
+			temp: None,
 			gmod: None,
 			window_size: (800., 600.),
 			window_maximized: true,

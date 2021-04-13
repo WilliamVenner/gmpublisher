@@ -4,8 +4,11 @@
 	import Loading from './Loading.svelte';
 	import Dead from './Dead.svelte';
 
-	export let workshop = null;
-	export let installed = null;
+	export let workshopData = null;
+	export let installedData = null;
+
+	let workshop = workshopData;
+	let installed = installedData;
 
 	if (!installed && workshop) {
 		if (workshop.localFile) {
@@ -17,10 +20,9 @@
 		workshop = new Promise((resolve, reject) => {
 			installed.then(installed => {
 				if (installed.id) {
-					console.log('ye');
 					Addons.getWorkshopAddon(installed.id).then(item => {
-						console.log('2');
 						item.dead ? reject() : resolve(item);
+						return item;
 					});
 				} else {
 					reject();
@@ -29,24 +31,36 @@
 			}, reject);
 		});
 	}
+
+	if (!workshop && !installed) {
+		throw new Error("workshop && installed == null");
+	}
 </script>
 
 <main>
 	<div id="card">
 		<div id="stats">
-			<span id="subscriptions">
-				<img src="/img/download.png"/>
-				{#await workshop}
-					0
-				{:then workshop}
-					{workshop.subscriptions ?? 0}
-				{/await}
-				&nbsp;
-			</span>
 			{#await workshop}
+				<span id="subscriptions">
+					<img src="/img/download.png"/>
+					0
+					&nbsp;
+				</span>
 				<img use:tippyFollow={'0.00%'} id="score" src="/img/0-star.png"/>
 			{:then workshop}
+				<span id="subscriptions">
+					<img src="/img/download.png"/>
+					{workshop.subscriptions}
+					&nbsp;
+				</span>
 				<img use:tippyFollow={(Math.round((((workshop.score ?? 0) * 100) + Number.EPSILON) * 100) / 100) + '%'} id="score" src="/img/{Math.round(((workshop.score ?? 0) * 10) / 2)}-star.png"/>
+			{:catch}
+				<span id="subscriptions">
+					<img src="/img/download.png"/>
+					0
+					&nbsp;
+				</span>
+				<img use:tippyFollow={'0.00%'} id="score" src="/img/0-star.png"/>
 			{/await}
 		</div>
 
@@ -54,12 +68,15 @@
 			<div id="preview" class="dead"><Loading size="2rem"/></div>
 		{:then workshop}
 			{#if workshop.previewUrl}
-				<img id="preview" src={workshop.previewUrl} alt="Preview"/>
+				<div id="preview" class="loading">
+					<Loading size="2rem"/>
+					<img src={workshop.previewUrl} alt="Preview" onload="this.parentElement.classList.remove('loading')"/>
+				</div>
 			{:else}
-				<div id="preview" class="dead"><Dead/></div>
+				<div id="preview" class="dead"><Dead size="4rem"/></div>
 			{/if}
 		{:catch}
-			<div id="preview" class="dead"><Dead/></div>
+			<div id="preview" class="dead"><Dead size="4rem"/></div>
 		{/await}
 
 		{#await workshop}
@@ -123,21 +140,30 @@
 		margin-right: .1rem;
 	}
 	main #preview {
+		position: relative;
 		width: 100%;
 		flex: 0;
 		margin-top: .8rem;
 		box-shadow: 0 0 2px 1px rgba(0, 0, 0, .5);
-	}
-	main #preview.dead {
-		position: relative;
 		background-color: #0c0c0c;
 	}
-	main #preview.dead::after {
+	main #preview > img {
+		width: 100%;
+		display: block;
+	}
+	main #preview.loading > img {
+		position: absolute;
+		opacity: 0;
+	}
+	main #preview:not(.dead):not(.loading) > :global(svg) {
+		display: none;
+	}
+	main #preview.dead::after, main #preview.loading::after {
 		content: "";
 		display: block;
 		padding-bottom: 100%;
 	}
-	main #preview.dead :global(svg) {
+	main #preview.dead :global(svg), main #preview.loading :global(svg) {
 		position: absolute;
 		margin: auto;
 		left: 0;

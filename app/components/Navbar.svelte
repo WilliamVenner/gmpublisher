@@ -5,6 +5,8 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { listen } from '@tauri-apps/api/event';
 	import Search from './Search.svelte';
+	import Notifications from './Notifications.svelte';
+import Settings from './Settings.svelte';
 
 	let timeOfDay = 'morning';
 	{
@@ -56,10 +58,14 @@
 	<Search/>
 
 	{#if steamConnected}
-		<span use:tippy={'✔ ' + $_('steam_connected')}><Rss id="steam-connection" size="1.25rem"/></span>
+		<span class="nav-icon" use:tippy={'✔ ' + $_('steam_connected')}><Rss id="steam-connection" size="1.5rem" stroke-width="1.5"/></span>
 	{:else}
-		<span use:tippy={'❌ ' + $_('steam_disconnected')}><TriangleAlert id="steam-connection" class="error" size="1.25rem"/></span>
+		<span class="nav-icon" use:tippy={'❌ ' + $_('steam_disconnected')}><TriangleAlert class="error" id="steam-connection" size="1.5rem" stroke-width="1.5"/></span>
 	{/if}
+
+	<Notifications/>
+
+	<Settings/>
 </nav>
 
 <style>
@@ -90,6 +96,22 @@
 	:global(#steam-connection.error) {
 		color: red;
 		animation: steam-connection-error 1.5s infinite alternate;
+		opacity: 1 !important;
+	}
+
+	:global(nav .nav-icon:not(:last-child)) {
+		margin-right: 1rem;
+	}
+	:global(nav .nav-icon) {
+		opacity: .4;
+		transition: opacity .1s;
+	}
+	:global(nav .nav-icon:hover) {
+		opacity: 1;
+	}
+
+	:global(.nav-icon > #settings) {
+		cursor: pointer;
 	}
 
 	@keyframes steam-connection-error {

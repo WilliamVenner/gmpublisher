@@ -203,7 +203,7 @@ pub fn browse_installed_addons(page: u32) -> InstalledAddonsPage {
 		game_addons!().paths.read().len(),
 		RwLockReadGuard::map(game_addons!().pages.read(), |read| {
 			steam!().fetch_workshop_items(read.iter().skip(start).take(crate::steam::RESULTS_PER_PAGE).filter_map(|x| x.installed().id).collect());
-			&(&*read)[start..(start + crate::steam::RESULTS_PER_PAGE)]
+			&read[start..(start + crate::steam::RESULTS_PER_PAGE).min(read.len())]
 		})
 	)
 }
