@@ -20,7 +20,7 @@
 		{#if !$activePage.persist}
 			<svelte:component this={$activePage.component}/>
 		{/if}
-		{#each pages as page}
+		{#each $pages as page}
 			{#if page.persist && page.created}
 				<div class="persist" class:active={$activePage == page}><svelte:component this={page.component}/></div>
 			{/if}
@@ -30,6 +30,7 @@
 </main>
 
 <style>
+	/*
 	#file-drop {
 		position: absolute;
 		top: 0;
@@ -53,41 +54,11 @@
 	#file-drop :global(.icon) {
 		width: min(50vw, 50vh);
 	}
+	*/
 
 	main {
 		width: 100%;
 		height: 100%;
-	}
-	#ribbon {
-		position: fixed;
-		width: 100%;
-		height: 70px;
-		min-height: 70px;
-		max-height: 70px;
-		padding: .8rem;
-		background-color: #323232;
-		box-shadow: 0px 0px 10px rgba(0,0,0,0.4);
-		overflow: hidden;
-		top: 0;
-		left: 0;
-		display: flex;
-		align-items: center;
-		font-size: 1.1rem;
-		z-index: 998;
-	}
-	#ribbon a {
-		height: 100%;
-	}
-	#ribbon #avatar {
-		border-radius: 50%;
-		height: 100%;
-		margin-right: 1rem;
-	}
-	#ribbon span {
-		flex: 1;
-		overflow: hidden;
-		text-overflow: hidden;
-		white-space: nowrap;
 	}
 
 	#content {
@@ -96,42 +67,10 @@
 		padding-top: 70px;
 		padding-left: min(26.04%, 250px);
 	}
-
-	#sources, #sources > div {
+	#content .persist {
 		height: 100%;
 	}
-	#sources > div {
-		padding: 1.5rem;
-		padding-bottom: 0;
-	}
-	#sources > div > .persist {
-		height: 100%;
-	}
-	#sources > div > .persist:not(.active) {
+	#content .persist:not(.active) {
 		display: none;
-	}
-
-	#modals {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		z-index: 999;
-		pointer-events: none;
-
-		display: flex;
-		justify-content: center;
-		align-items: center;
-
-		transition: background-color .25s, backdrop-filter .25s;
-	}
-	#modals.active {
-		pointer-events: initial;
-		background-color: rgba(0,0,0,.5);
-		backdrop-filter: blur(2px);
-	}
-	#modals > :global(*) {
-		animation: modal .25s;
 	}
 </style>

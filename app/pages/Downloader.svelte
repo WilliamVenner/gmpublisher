@@ -1,3 +1,3 @@
-<main>
+<script></script>
 
-</main>
+<main></main>

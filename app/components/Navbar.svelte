@@ -6,7 +6,7 @@
 	import { listen } from '@tauri-apps/api/event';
 	import Search from './Search.svelte';
 	import Notifications from './Notifications.svelte';
-import Settings from './Settings.svelte';
+	import Settings from './Settings.svelte';
 
 	let timeOfDay = 'morning';
 	{

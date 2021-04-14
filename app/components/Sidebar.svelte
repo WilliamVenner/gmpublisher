@@ -1,6 +1,6 @@
 <script context="module">
 
-	export const pages = [
+	const pagesManifest = [
 		{
 			name: 'my_workshop',
 			component: MyWorkshop,
@@ -12,7 +12,7 @@
 		{
 			name: 'downloader',
 			component: Downloader,
-			persist: true,
+			persist: true
 		},
 		{
 			name: 'size_analyzer',
@@ -24,7 +24,9 @@
 		},
 	];
 
-	export let activePage = writable(pages[0]);
+	export const pages = writable(pagesManifest);
+
+	export const activePage = writable(pagesManifest[0]);
 
 </script>
 
@@ -40,14 +42,14 @@
 
 	function selectPage(e) {
 		const page = e.target.dataset.page;
-		pages[page].created = true;
-		$activePage = pages[page];
+		$pages[page].created = true;
+		$activePage = $pages[page];
 	}
 </script>
 
 <sidebar>
 	<div>
-		{#each pages as choice, i}
+		{#each $pages as choice, i}
 			<div class:active={ $activePage.name === choice.name } on:click={selectPage} data-page={i}>{$_(choice.name)}</div>
 		{/each}
 	</div>
