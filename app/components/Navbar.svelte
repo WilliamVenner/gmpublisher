@@ -60,7 +60,7 @@ import Settings from './Settings.svelte';
 	{#if steamConnected}
 		<span class="nav-icon" use:tippy={'✔ ' + $_('steam_connected')}><Rss id="steam-connection" size="1.5rem" stroke-width="1.5"/></span>
 	{:else}
-		<span class="nav-icon" use:tippy={'❌ ' + $_('steam_disconnected')}><TriangleAlert class="error" id="steam-connection" size="1.5rem" stroke-width="1.5"/></span>
+		<span class="nav-icon" use:tippy={'❌ ' + $_('steam_disconnected')}><TriangleAlert class="icon error" id="steam-connection" size="1.5rem" stroke-width="1.5"/></span>
 	{/if}
 
 	<Notifications/>
