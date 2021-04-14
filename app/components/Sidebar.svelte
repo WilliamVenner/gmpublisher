@@ -12,7 +12,7 @@
 		{
 			name: 'downloader',
 			component: Downloader,
-			persist: true
+			background: true
 		},
 		{
 			name: 'size_analyzer',

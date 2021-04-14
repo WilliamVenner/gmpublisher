@@ -17,11 +17,11 @@
 	<Sidebar/>
 
 	<div id="content">
-		{#if !$activePage.persist}
+		{#if !$activePage.persist && !$activePage.background}
 			<svelte:component this={$activePage.component}/>
 		{/if}
 		{#each $pages as page}
-			{#if page.persist && page.created}
+			{#if page.background || (page.persist && page.created)}
 				<div class="persist" class:active={$activePage == page}><svelte:component this={page.component}/></div>
 			{/if}
 		{/each}
