@@ -117,6 +117,7 @@ impl Steam {
 	fn watchdog() {
 		#[cfg(debug_assertions)]
 		std::mem::forget(steam!().register_callback(|c: SteamServerConnectFailure| {
+			steam!().set_connected(false);
 			println!("[Steam] SteamServerConnectFailure {:#?}", c);
 		}));
 

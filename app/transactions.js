@@ -51,7 +51,7 @@ class Transaction {
 
 		if (TASK_statusTextFn)
 			tasks.update(tasks => { tasks.push([this, TASK_statusTextFn, null]); return tasks });
-		
+
 		if (id in orphanedTransactions) {
 			delete orphanedTransactions[id];
 			checkOrphanQueue(id);
@@ -93,7 +93,7 @@ class Transaction {
 		delete transactions[this.id];
 
 		if (!fromBackend) {
-			invoke('cancelTransaction', {
+			invoke('cancel_transaction', {
 				id: this.id
 			});
 		}
@@ -136,7 +136,8 @@ class Transaction {
 	setProgress(progress) {
 		if (progress !== this.progress) {
 			this.emit({ progress });
-			this.progress = progress;
+			this.progressInt = progress;
+			this.progress = progress / 100;
 		}
 
 		return this;
@@ -149,9 +150,8 @@ function fireTransactionEvent(event, data) {
 }
 function transactionEvent(event, callback) {
 	transactionEvents[event] = callback;
-	
-	listen('Transaction' + event, (data) => {
-		console.log(data);
+
+	listen('Transaction' + event, ({ payload: data }) => {
 		const id = data[0];
 		const transaction = Transaction.get(id);
 		if (transaction) {
@@ -165,8 +165,7 @@ function transactionEvent(event, callback) {
 
 transactionEvent('Progress', ([ id, progress ]) => {
 	const transaction = Transaction.get(id);
-	var progress = Math.floor((progress + Number.EPSILON) * 10000) / 100;
-	if (transaction && progress !== transaction.progress) transaction.setProgress(progress);
+	if (transaction && progress !== transaction.progressInt) transaction.setProgress(progress);
 });
 
 transactionEvent('Cancelled', id => {
@@ -187,9 +186,9 @@ transactionEvent('Error', ([ id, [ msg, data ] ]) => {
 	if (transaction) transaction.error(msg, data);
 });
 
-transactionEvent('ProgressMsg', ([ id, msg ]) => {
+transactionEvent('Status', ([ id, msg ]) => {
 	const transaction = Transaction.get(id);
-	console.log('transactionProgressMsg', transaction, msg);
+	console.log('transactionStatus', transaction, msg);
 	if (transaction) transaction.setStatus(msg);
 });
 

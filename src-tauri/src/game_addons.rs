@@ -178,8 +178,6 @@ impl GameAddons {
 	}
 }
 
-const RESULTS_PER_PAGE: usize = steamworks::RESULTS_PER_PAGE as usize;
-
 #[derive(Debug)]
 pub struct InstalledAddonsPage(usize, MappedRwLockReadGuard<'static, [Arc<Addon>]>);
 impl serde::Serialize for InstalledAddonsPage {

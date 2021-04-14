@@ -179,7 +179,7 @@ impl AddonSizeAnalyzer {
 		*self.analyzed.lock() = None;
 	}
 
-	pub fn compute(&'static self, w: f64, h: f64) -> Result<Transaction, String> {
+	pub fn compute(&'static self, w: f64, h: f64) -> Transaction {
 		let transaction = transaction!();
 		let transaction_ref = transaction.clone();
 
@@ -187,7 +187,7 @@ impl AddonSizeAnalyzer {
 			let mut lock = self.analyzed.lock();
 
 			if lock.is_none() {
-				transaction.data("FS_ANALYZER_COMPUTING");
+				transaction.status("FS_ANALYZER_COMPUTING");
 
 				let addons = game_addons!().get_addons().clone();
 				if addons.len() == 0 {
@@ -201,7 +201,7 @@ impl AddonSizeAnalyzer {
 					return;
 				}
 
-				transaction.data("FS_ANALYZER_TAGGIFYING");
+				transaction.status("FS_ANALYZER_TAGGIFYING");
 
 				let treemap = self.taggify(addons, w, h, total_size, transaction.clone());
 
@@ -209,7 +209,7 @@ impl AddonSizeAnalyzer {
 					return;
 				}
 
-				transaction.data("FS_ANALYZER_CACHING");
+				transaction.status("FS_ANALYZER_CACHING");
 
 				*lock = Some(treemap);
 			}
@@ -219,16 +219,14 @@ impl AddonSizeAnalyzer {
 			}
 
 			transaction.progress(1.);
-			transaction.data("FS_ANALYZER_SERIALIZING");
+			transaction.status("FS_ANALYZER_SERIALIZING");
 
 			let json = json!(&lock.as_ref().unwrap().squares);
-
-			println!("{}", json);
 
 			transaction.finished(Some(json));
 		});
 
-		Ok(transaction_ref)
+		transaction_ref
 	}
 
 	fn count(&'static self, addons: Vec<Arc<Addon>>) -> (Vec<AnalyzedAddon>, u64) {
@@ -243,7 +241,7 @@ impl AddonSizeAnalyzer {
 				ids.push(*id);
 			}
 
-			sorted_addons.push(AnalyzedAddon(gma));
+			sorted_addons.push(AnalyzedAddon(gma.clone()));
 		}
 
 		steam!().fetch_workshop_items(ids);
@@ -346,6 +344,11 @@ impl AddonSizeAnalyzer {
 }
 
 #[tauri::command]
-fn free_addon_size_analyzer() {
+pub fn free_addon_size_analyzer() {
 	crate::ADDON_SIZE_ANALYZER.free();
+}
+
+#[tauri::command]
+fn addon_size_analyzer(w: f64, h: f64) -> Transaction {
+	crate::ADDON_SIZE_ANALYZER.compute(w, h)
 }

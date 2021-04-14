@@ -63,7 +63,7 @@
 		treemapBounds[0] = container.clientWidth;
 		treemapBounds[1] = container.clientHeight;
 
-		invoke('addonSizeAnalyzer', {
+		invoke('addon_size_analyzer', {
 
 			w: treemapBounds[0],
 			h: treemapBounds[1]
@@ -185,7 +185,7 @@
 				} else {
 
 					addonsCtx.globalCompositeOperation = 'destination-over';
-						const size = square.w * .25;
+						const size = Math.min(square.w, square.h) * .4;
 						const halfSize = size / 2;
 						addonsCtx.drawImage(DeadSVG, centerX - halfSize, centerY - halfSize, size, size);
 
@@ -314,7 +314,7 @@
 	onDestroy(() => {
 		clearTimeout(resizedTimeout);
 		transaction?.cancel();
-		invoke({ cmd: 'freeAddonSizeAnalyzer' });
+		invoke('free_addon_size_analyzer');
 	});
 
 	let popper;
@@ -342,8 +342,8 @@
 
 		} else {
 
-			popperName.textContent = addon.gma.name ?? addon.gma.extracted_name;
-			popperSize.textContent = filesize(Number(addon.gma.size));
+			popperName.textContent = addon.installed.name ?? addon.installed.extractedName;
+			popperSize.textContent = filesize(Number(addon.installed.size));
 
 			const tagName = lookupTagName(addon.tagId);
 			updateTagCanvas(tagName);
