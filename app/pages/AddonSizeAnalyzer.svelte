@@ -389,7 +389,7 @@
 	function selectHoveredSquare(addon) {
 		if (!addon) {
 
-			if (popper._tippy.state.isShown) {
+			if (popper._tippy.state.isVisible) {
 				updateTagCanvas();
 
 				const top = parseFloat(popper.style.top ?? 0) ?? 0;
@@ -397,8 +397,8 @@
 				const width = parseFloat(popper.style.width ?? 0) ?? 0;
 				const height = parseFloat(popper.style.height ?? 0) ?? 0;
 
-				popper.style.top = (top + (width / 2)) + 'px';
-				popper.style.left = (left + (height / 2)) + 'px';
+				popper.style.top = (top + (height / 2)) + 'px';
+				popper.style.left = (left + (width / 2)) + 'px';
 				popper.style.width = '0';
 				popper.style.height = '0';
 				popper._tippy.hide();
@@ -408,7 +408,7 @@
 
 			let workshopData = workshopDataPromises[workshopDataIDIndex[addon.installed.id ?? -1] ?? -1];
 
-			popperName.textContent = workshopData?.title ?? addon.installed.name ?? addon.installed.extractedName;
+			popperName.textContent = (!workshopData?.dead ? workshopData.title : (addon.installed.name ?? addon.installed.extractedName)) ?? addon.installed.id;
 			popperSize.textContent = filesize(Number(addon.installed.size));
 
 			const tagName = lookupTagName(addon.tagId);
@@ -489,7 +489,7 @@
 	</table>
 </div>
 
-<main>
+<main on:mouseout={() => selectHoveredSquare()}>
 	<div bind:this={sizeRef} id="size-ref"></div>
 
 	<script src="/js/lib/k-d-tree.min.js"></script>
