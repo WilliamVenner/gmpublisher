@@ -8,6 +8,18 @@
 	import filesize from 'filesize';
 	import Loading from '../components/Loading.svelte';
 	import Dead from '../components/Dead.svelte';
+	import { Addons } from '../addons';
+
+	let workshopDataIndex = [];
+	let workshopDataIDIndex = [];
+	let workshopDataPromises = {};
+	let workshopDataReceived = false;
+	onMount(() => {
+		workshopDataIndex = [];
+		workshopDataIDIndex = [];
+		workshopDataPromises = {};
+		workshopDataReceived = false;
+	});
 
 	const tagCache = {}; let tagCacheId = 0;
 	function getTagId(tag) {
@@ -40,7 +52,7 @@
 		return tagColors[tag];
 	}
 
-	let container;
+	let sizeRef;
 
 	let addonsCanvas; let addonsCtx;
 	let tagsCanvas; let tagsCtx;
@@ -60,8 +72,8 @@
 	function analyze() {
 		transaction?.cancel();
 
-		treemapBounds[0] = container.clientWidth;
-		treemapBounds[1] = container.clientHeight;
+		treemapBounds[0] = sizeRef.clientWidth;
+		treemapBounds[1] = sizeRef.clientHeight;
 
 		invoke('addon_size_analyzer', {
 
@@ -84,15 +96,19 @@
 					$progressMsg = transaction.status;
 					transaction = transaction;
 				});
-			});
+			}).then(updateCanvas);
 		});
 	}
 
 	let resizedTimeout;
 	function resized() {
-		if (treemapBounds[0] !== container.clientWidth || treemapBounds[1] !== container.clientHeight) {
+		if (!sizeRef) return;
+		if (treemapBounds[0] !== sizeRef.clientWidth || treemapBounds[1] !== sizeRef.clientHeight) {
 			clearTimeout(resizedTimeout);
-			resizedTimeout = setTimeout(analyze, 1000);
+			resizedTimeout = setTimeout(() => {
+				transaction?.cancel();
+				analyze();
+			}, 1000);
 		}
 	}
 
@@ -172,17 +188,37 @@
 
 			} else {
 
-				if (data.preview_url) {
+				while (true) {
+					if (!workshopDataReceived) {
 
-					const image = new Image(square.w, square.h);
-					image.onload = () => {
-						addonsCtx.globalCompositeOperation = 'destination-over';
-							addonsCtx.drawImage(image, x, y, square.w, square.h);
-						addonsCtx.globalCompositeOperation = 'source-over';
+						const index = workshopDataIndex.push(
+							!!data.installed.id ?
+							Addons.getWorkshopAddon(data.installed.id)
+							: Promise.resolve(null)
+						) - 1;
+
+						workshopDataPromises[index] = data.installed.id;
+						workshopDataIDIndex[data.installed.id] = index;
+
+					} else if (!!data.installed.id) {
+
+						let workshopData = workshopDataPromises[workshopDataIDIndex[data.installed.id] ?? -1];
+
+						if (workshopData?.previewUrl) {
+
+							const image = new Image(square.w, square.h);
+							image.onload = () => {
+								addonsCtx.globalCompositeOperation = 'destination-over';
+									addonsCtx.drawImage(image, x, y, square.w, square.h);
+								addonsCtx.globalCompositeOperation = 'source-over';
+							}
+							image.src = workshopData.previewUrl;
+
+							break;
+
+						}
+
 					}
-					image.src = data.preview_url;
-
-				} else {
 
 					addonsCtx.globalCompositeOperation = 'destination-over';
 						const size = Math.min(square.w, square.h) * .4;
@@ -193,6 +229,7 @@
 						addonsCtx.fillRect(x, y, square.w, square.h);
 					addonsCtx.globalCompositeOperation = 'source-over';
 
+					break;
 				}
 
 			}
@@ -268,13 +305,14 @@
 
 	function updateCanvas() {
 		if (!bgCanvas || !tagsCanvas || !treemap) return;
+
 		addonsKdTree = null;
 		addonsKdTreePoints = [];
 		addonsKdMaxDist = 0;
 
 		const scale = window.devicePixelRatio;
-		const width = container.clientWidth * scale;
-		const height = container.clientHeight * scale;
+		const width = sizeRef.clientWidth * scale;
+		const height = sizeRef.clientHeight * scale;
 
 		bgCanvas.width = Math.floor(width);
 		bgCanvas.height = Math.floor(height);
@@ -302,19 +340,36 @@
 
 		processTreemap(treemap, 0, 0);
 
-		treemap = null;
-
 		addonsKdTree = new kdTree(addonsKdTreePoints, (a, b) => {
 			return ((a.x - b.x) ** 2) + ((a.y - b.y) ** 2);
 		}, ['x', 'y']);
+
+		if (workshopDataIndex != false && !workshopDataReceived) {
+			workshopDataReceived = true;
+			Promise.allSettled(workshopDataIndex).then(values => {
+				for (let i = 0; i < values.length; i++) {
+					workshopDataPromises[i] = values[i]?.value ?? null;
+				}
+				updateCanvas();
+				treemap = null;
+			});
+		}
 	}
 
 	onMount(analyze);
-	afterUpdate(updateCanvas);
 	onDestroy(() => {
 		clearTimeout(resizedTimeout);
 		transaction?.cancel();
 		invoke('free_addon_size_analyzer');
+	});
+
+	let canvasesBinded = false;
+	afterUpdate(() => {
+		let _canvasesBinded = !bgCanvas || !tagsCanvas || !treemap;
+		if (canvasesBinded !== _canvasesBinded) {
+			updateCanvas();
+			canvasesBinded = _canvasesBinded;
+		}
 	});
 
 	let popper;
@@ -334,15 +389,26 @@
 	function selectHoveredSquare(addon) {
 		if (!addon) {
 
-			updateTagCanvas();
+			if (popper._tippy.state.isShown) {
+				updateTagCanvas();
 
-			popper.style.width = '0';
-			popper.style.height = '0';
-			popper._tippy.hide();
+				const top = parseFloat(popper.style.top ?? 0) ?? 0;
+				const left = parseFloat(popper.style.left ?? 0) ?? 0;
+				const width = parseFloat(popper.style.width ?? 0) ?? 0;
+				const height = parseFloat(popper.style.height ?? 0) ?? 0;
+
+				popper.style.top = (top + (width / 2)) + 'px';
+				popper.style.left = (left + (height / 2)) + 'px';
+				popper.style.width = '0';
+				popper.style.height = '0';
+				popper._tippy.hide();
+			}
 
 		} else {
 
-			popperName.textContent = addon.installed.name ?? addon.installed.extractedName;
+			let workshopData = workshopDataPromises[workshopDataIDIndex[addon.installed.id ?? -1] ?? -1];
+
+			popperName.textContent = workshopData?.title ?? addon.installed.name ?? addon.installed.extractedName;
 			popperSize.textContent = filesize(Number(addon.installed.size));
 
 			const tagName = lookupTagName(addon.tagId);
@@ -423,7 +489,9 @@
 	</table>
 </div>
 
-<main bind:this={container}>
+<main>
+	<div bind:this={sizeRef} id="size-ref"></div>
+
 	<script src="/js/lib/k-d-tree.min.js"></script>
 	<div id="popper" bind:this={popper}></div>
 
@@ -454,19 +522,30 @@
 </main>
 
 <style>
+	#size-ref {
+		position: absolute;
+		grid-row: 1;
+		grid-column: 1;
+		width: calc(100% - 1.5rem);
+		height: calc(100% - 1.5rem);
+		pointer-events: none;
+		opacity: 0;
+	}
+
 	main {
 		background-color: #1a1a1a;
 		border-radius: .3rem;
 		box-shadow: 0 0 0 #000 inset;
 
 		width: 100%;
-		height: calc(100% - 1.5rem);
-		max-height: calc(100% - 1.5rem);
-		min-height: calc(100% - 1.5rem);
+		height: 100%;
+		max-height: 100%;
+		min-height: 100%;
+		padding: 1.5rem;
 
 		display: grid;
-		grid-template-columns: 1fr;
-		grid-template-rows: 1fr;
+		grid-template-columns: 100%;
+		grid-template-rows: 100%;
 
 		position: relative;
 	}
@@ -482,7 +561,12 @@
 		position: absolute;
 		width: 0;
 		height: 0;
+		left: 0;
+		top: 0;
 		pointer-events: none;
+
+		margin-left: 1.5rem;
+		margin-top: 1.5rem;
 
 		transition: width .1s, height .1s, top .1s, left .1s, right .1s, bottom .1s;
 	}
@@ -508,6 +592,8 @@
 		display: inline-block;
 		position: relative;
 		width: 15%;
+		min-width: 250px;
+		max-width: calc(100% - 2rem);
 		background-color: rgba(0,0,0,.4);
 		z-index: 1;
 		color: #fff;

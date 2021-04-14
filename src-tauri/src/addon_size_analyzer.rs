@@ -22,12 +22,12 @@ lazy_static! {
 struct AnalyzedAddon(Arc<Addon>);
 impl PartialOrd for AnalyzedAddon {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-		self.0.installed().size.partial_cmp(&other.0.installed().size)
+		self.0.installed().size.partial_cmp(&other.0.installed().size).map(|x| x.reverse())
 	}
 }
 impl Ord for AnalyzedAddon {
 	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-		self.0.installed().id.cmp(&other.0.installed().id)
+		self.0.installed().id.cmp(&other.0.installed().id).reverse()
 	}
 }
 
@@ -47,8 +47,8 @@ mod treemap {
 	}
 
 	pub(super) struct TreeMap {
-		pub(super) data: Vec<TaggedTreeMapData>,
 		pub(super) squares: Vec<Square>,
+		pub(super) data: Vec<TaggedTreeMapData>,
 		pub(super) x: f64,
 		pub(super) y: f64,
 		pub(super) w: f64,
@@ -163,20 +163,10 @@ mod treemap {
 	}
 }
 
-pub struct AddonSizeAnalyzer {
-	analyzed: Mutex<Option<TreeMap>>,
-	total_size: AtomicU64,
-}
+pub struct AddonSizeAnalyzer;
 impl AddonSizeAnalyzer {
 	pub fn init() -> Self {
-		Self {
-			analyzed: Mutex::new(None),
-			total_size: AtomicU64::new(0),
-		}
-	}
-
-	pub fn free(&self) {
-		*self.analyzed.lock() = None;
+		Self {}
 	}
 
 	pub fn compute(&'static self, w: f64, h: f64) -> Transaction {
@@ -184,72 +174,62 @@ impl AddonSizeAnalyzer {
 		let transaction_ref = transaction.clone();
 
 		THREAD_POOL.spawn(move || {
-			let mut lock = self.analyzed.lock();
+			transaction.status("FS_ANALYZER_DISCOVERING");
 
-			if lock.is_none() {
-				transaction.status("FS_ANALYZER_COMPUTING");
-
-				let addons = game_addons!().get_addons().clone();
-				if addons.len() == 0 {
-					transaction.error("ERR_NO_ADDONS_FOUND");
-					return;
-				}
-
-				let (addons, total_size) = self.count(addons);
-
-				if transaction.aborted() {
-					return;
-				}
-
-				transaction.status("FS_ANALYZER_TAGGIFYING");
-
-				let treemap = self.taggify(addons, w, h, total_size, transaction.clone());
-
-				if transaction.aborted() {
-					return;
-				}
-
-				transaction.status("FS_ANALYZER_CACHING");
-
-				*lock = Some(treemap);
+			let addons = game_addons!().get_addons().clone();
+			if addons.is_empty() {
+				transaction.error("ERR_NO_ADDONS_FOUND");
+				return;
 			}
+
+			transaction.status("FS_ANALYZER_COMPUTING");
+
+			let (addons, total_size) = self.count(addons, &transaction);
 
 			if transaction.aborted() {
 				return;
 			}
 
-			transaction.progress(1.);
+			transaction.status("FS_ANALYZER_TAGGIFYING");
+
+			let treemap = self.taggify(addons, w, h, total_size, &transaction);
+
+			if transaction.aborted() {
+				return;
+			}
+
 			transaction.status("FS_ANALYZER_SERIALIZING");
+			transaction.progress(1.);
 
-			let json = json!(&lock.as_ref().unwrap().squares);
-
-			transaction.finished(Some(json));
+			transaction.finished(Some(treemap.squares));
 		});
 
 		transaction_ref
 	}
 
-	fn count(&'static self, addons: Vec<Arc<Addon>>) -> (Vec<AnalyzedAddon>, u64) {
+	fn count(&'static self, addons: Vec<Arc<Addon>>, transaction: &Transaction) -> (Vec<AnalyzedAddon>, u64) {
 		let mut ids: Vec<PublishedFileId> = Vec::with_capacity(addons.len());
-		let mut sorted_addons: BinaryHeap<AnalyzedAddon> = BinaryHeap::with_capacity(addons.len());
+		let mut sorted_addons = BinaryHeap::with_capacity(addons.len());
 
-		self.total_size.store(0, std::sync::atomic::Ordering::Release);
-		for gma in addons {
-			self.total_size.fetch_add(gma.installed().size, std::sync::atomic::Ordering::Relaxed);
+		let mut total_size = 0;
+		let total = addons.len() as f64;
+		for (i, gma) in addons.into_iter().enumerate() {
+			total_size += gma.installed().size;
 
 			if let Some(ref id) = gma.installed().id {
 				ids.push(*id);
 			}
 
-			sorted_addons.push(AnalyzedAddon(gma.clone()));
+			sorted_addons.push(AnalyzedAddon(gma));
+			transaction.progress(((i as f64) / total) / 3.);
 		}
 
 		steam!().fetch_workshop_items(ids);
 
-		(sorted_addons.into(), self.total_size.load(std::sync::atomic::Ordering::Acquire))
+		(sorted_addons.into_sorted_vec(), total_size)
 	}
 
-	fn taggify(&self, gma_files: Vec<AnalyzedAddon>, w: f64, h: f64, total_size: u64, transaction: Transaction) -> TreeMap {
+	fn taggify(&self, gma_files: Vec<AnalyzedAddon>, w: f64, h: f64, total_size: u64, transaction: &Transaction) -> TreeMap {
 		use indexmap::map::Entry::{Occupied, Vacant};
 
 		let mut master_treemap = TreeMap::new(w, h);
@@ -293,7 +273,7 @@ impl AddonSizeAnalyzer {
 				}
 			}
 
-			transaction.progress(0.66 + (((i as f64) / total_files) / 6.));
+			transaction.progress(0.33 + (((i as f64) / total_files) / 3.));
 		}
 
 		for tag in tag_total_sizes.keys() {
@@ -334,18 +314,13 @@ impl AddonSizeAnalyzer {
 
 					square.data = Some((Some(Box::new(treemap.squares)), Some(tag.clone())));
 
-					transaction.progress(0.825 + (((i as f64) / total_squares_f) / 6.));
+					transaction.progress(0.66 + (((i as f64) / total_squares_f) / 3.));
 				});
 			}
 		});
 
 		master_treemap
 	}
-}
-
-#[tauri::command]
-pub fn free_addon_size_analyzer() {
-	crate::ADDON_SIZE_ANALYZER.free();
 }
 
 #[tauri::command]

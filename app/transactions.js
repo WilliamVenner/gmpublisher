@@ -165,7 +165,7 @@ function transactionEvent(event, callback) {
 
 transactionEvent('Progress', ([ id, progress ]) => {
 	const transaction = Transaction.get(id);
-	if (transaction && progress !== transaction.progressInt) transaction.setProgress(progress);
+	if (transaction && progress > (transaction.progressInt ?? 0)) transaction.setProgress(progress);
 });
 
 transactionEvent('Cancelled', id => {

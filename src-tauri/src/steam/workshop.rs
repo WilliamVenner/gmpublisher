@@ -166,7 +166,7 @@ impl Steam {
 				let next = Arc::new(AtomicBool::new(false));
 				let next_ref = next.clone();
 
-				steam!().client().ugc().query_items(queue.to_owned()).unwrap().fetch(
+				steam!().client().ugc().query_items(queue.to_owned()).unwrap().allow_cached_response(600).fetch(
 					move |results: Result<QueryResults<'_>, SteamError>| {
 						if let Ok(results) = results {
 							let mut i = 0;
@@ -455,6 +455,7 @@ impl Steam {
 		)
 		.ok()?
 		.exclude_tag("dupe")
+		.allow_cached_response(600)
 		.fetch(move |result: Result<QueryResults<'_>, SteamError>| {
 			if let Ok(data) = result {
 				*results_ref.lock() = Some(Some((

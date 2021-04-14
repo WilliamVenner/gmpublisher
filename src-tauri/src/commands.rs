@@ -19,7 +19,6 @@ where
 		crate::steam::get_steam_user,
 		crate::steam::workshop::browse_my_workshop,
 
-		crate::addon_size_analyzer::free_addon_size_analyzer,
 		crate::addon_size_analyzer::addon_size_analyzer,
 	]
 }
@@ -28,5 +27,4 @@ where
 pub fn free_caches() {
 	crate::game_addons::free_caches();
 	crate::steam::workshop::free_caches();
-	crate::addon_size_analyzer::free_addon_size_analyzer();
 }

@@ -97,11 +97,11 @@
 	"LOG_EXTRACT_FINISHED": "Extraction finished for {addon} in {time}",
 
 	"FS_ANALYZER_RENDERING": "Rendering...",
-	"FS_ANALYZER_CACHING": "Caching...",
 	"FS_ANALYZER_SERIALIZING": "Serializing...",
 	"FS_ANALYZER_STEAM": "Downloading Steam Data...",
 	"FS_ANALYZER_COMPUTING": "Computing...",
 	"FS_ANALYZER_TAGGIFYING": "Taggifying...",
+	"FS_ANALYZER_DISCOVERING": "Discovering...",
 
 	"time_just_now": "Just Now",
 	"click_to_open": "Click to open!",
