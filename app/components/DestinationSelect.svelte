@@ -24,11 +24,11 @@
 		const dest = click ? this.dataset.dest : null;
 		switch(this.dataset.dest) {
 			case 'tmp':
-				extractPath = [dest, trimPath(AppSettings.temp) + PATH_SEPARATOR + 'gmpublisher', AppSettings.create_folder_on_extract];
+				extractPath = [dest, trimPath(AppData.temp_dir) + PATH_SEPARATOR + 'gmpublisher', AppSettings.create_folder_on_extract];
 				break;
 
 			case 'addons':
-				extractPath = [dest, trimPath(AppSettings.gmod) + PATH_SEPARATOR + 'garrysmod' + PATH_SEPARATOR + 'addons', AppSettings.create_folder_on_extract];
+				extractPath = [dest, trimPath(AppData.gmod_dir) + PATH_SEPARATOR + 'garrysmod' + PATH_SEPARATOR + 'addons', AppSettings.create_folder_on_extract];
 				break;
 
 			case 'downloads':
@@ -138,12 +138,12 @@
 			<div>{$_('browse')}</div>
 		</div>
 
-		<div class="destination" class:disabled={!!!AppSettings.temp} class:active={extractPath[0] === 'tmp'} use:tippy={$_('extract_open_tip')} on:mouseover={extractDestHover} on:click={updateExtractDest} on:mouseleave={extractDestHoverLeave} data-dest="tmp">
+		<div class="destination" class:disabled={!!!AppData.temp_dir} class:active={extractPath[0] === 'tmp'} use:tippy={$_('extract_open_tip')} on:mouseover={extractDestHover} on:click={updateExtractDest} on:mouseleave={extractDestHoverLeave} data-dest="tmp">
 			<FolderAdd/>
 			<div>{$_('open')}</div>
 		</div>
 
-		<div class="destination" class:disabled={!!!AppSettings.gmod} class:active={extractPath[0] === 'addons'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="addons">
+		<div class="destination" class:disabled={!!!AppData.gmod_dir} class:active={extractPath[0] === 'addons'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="addons">
 			<img src="/img/gmod.svg"/>
 			<div>{$_('addons_folder')}</div>
 		</div>

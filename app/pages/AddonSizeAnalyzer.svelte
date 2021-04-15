@@ -346,12 +346,19 @@
 
 		if (workshopDataIndex != false && !workshopDataReceived) {
 			workshopDataReceived = true;
-			Promise.allSettled(workshopDataIndex).then(values => {
-				for (let i = 0; i < values.length; i++) {
-					workshopDataPromises[i] = values[i]?.value ?? null;
-				}
-				updateCanvas();
-				treemap = null;
+
+			for (let i = 0; i < workshopDataIndex.length; i += 50) {
+				const chunk = i;
+				Promise.allSettled(workshopDataIndex.slice(i, i + 50)).then(values => {
+					for (let i = 0; i < values.length; i++) {
+						workshopDataPromises[chunk + i] = values[i]?.value ?? null;
+					}
+					updateCanvas();
+				});
+			}
+
+			Promise.allSettled(workshopDataIndex, () => {
+				treemap = null
 			});
 		}
 	}
@@ -401,7 +408,7 @@
 				popper.style.left = (left + (width / 2)) + 'px';
 				popper.style.width = '0';
 				popper.style.height = '0';
-				//popper._tippy.hide();
+				popper._tippy.hide();
 			}
 
 		} else {

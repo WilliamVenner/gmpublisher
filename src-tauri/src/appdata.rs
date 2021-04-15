@@ -19,49 +19,27 @@ lazy_static! {
 		.join("settings.json");
 }
 
-fn serde_settings_gmod<S>(_: &Option<PathBuf>, serializer: S) -> Result<S::Ok, S::Error>
-where
-	S: serde::Serializer,
-{
-	match app_data!().gmod() {
-		Some(gmod) => serializer.serialize_some(&*gmod),
-		None => serializer.serialize_none()
-	}
-}
-
-fn serde_settings_temp<S>(_: &Option<PathBuf>, serializer: S) -> Result<S::Ok, S::Error>
-where
-	S: serde::Serializer,
-{
-	match app_data!().temp() {
-		Some(temp) => serializer.serialize_some(&*temp),
-		None => serializer.serialize_none()
-	}
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Settings {
-	#[serde(serialize_with = "serde_settings_temp")]
 	pub temp: Option<PathBuf>,
-	#[serde(serialize_with = "serde_settings_gmod")]
 	pub gmod: Option<PathBuf>,
+	pub user_data: Option<PathBuf>,
 
 	pub window_size: (f64, f64),
 	pub window_maximized: bool,
 	pub destinations: Vec<PathBuf>,
 	pub create_folder_on_extract: bool,
-	pub content_generator_history: Vec<PathBuf>,
 }
 impl Default for Settings {
 	fn default() -> Self {
 		Self {
 			temp: None,
 			gmod: None,
+			user_data: None,
 			window_size: (800., 600.),
 			window_maximized: true,
 			destinations: Vec::new(),
 			create_folder_on_extract: true,
-			content_generator_history: Vec::new(),
 		}
 	}
 }
@@ -102,14 +80,26 @@ impl Settings {
 pub struct AppData {
 	pub settings: RwLock<Settings>,
 	pub version: &'static str,
-	pub downloads_dir: Option<PathBuf>,
+
+	#[serde(serialize_with = "serde_temp_dir")]
+	temp_dir: PathBuf,
+	#[serde(serialize_with = "serde_gmod_dir")]
+	gmod_dir: Option<PathBuf>,
+	#[serde(serialize_with = "serde_user_data_dir")]
+	user_data_dir: PathBuf,
+	downloads_dir: Option<PathBuf>,
 }
 impl AppData {
 	pub fn init() -> Self {
+		let settings = Settings::init();
 		Self {
-			settings: RwLock::new(Settings::init()),
+			settings: RwLock::new(settings),
 			version: env!("CARGO_PKG_VERSION"),
+
 			downloads_dir: dirs::download_dir(),
+			temp_dir: PathBuf::new(),
+			gmod_dir: None,
+			user_data_dir: PathBuf::new(),
 		}
 	}
 
@@ -117,7 +107,7 @@ impl AppData {
 		webview_emit!("UpdateAppData", self);
 	}
 
-	pub fn gmod(&self) -> Option<PathBuf> {
+	pub fn gmod_dir(&self) -> Option<PathBuf> {
 		if let Some(ref gmod) = self.settings.read().gmod {
 			if gmod.is_dir() && gmod.exists() {
 				return Some(gmod.to_owned());
@@ -140,14 +130,28 @@ impl AppData {
 		}
 	}
 
-	pub fn temp(&self) -> Option<PathBuf> {
+	pub fn temp_dir(&self) -> PathBuf {
 		if let Some(ref temp) = self.settings.read().temp {
 			if temp.is_dir() && temp.exists() {
-				return Some(temp.to_owned());
+				return temp.to_owned();
 			}
 		}
 
-		Some(std::env::temp_dir())
+		std::env::temp_dir()
+	}
+
+	pub fn user_data_dir(&self) -> PathBuf {
+		if let Some(ref user_data) = self.settings.read().user_data {
+			if user_data.is_dir() && user_data.exists() {
+				return user_data.to_owned();
+			}
+		}
+
+		APP_DATA_DIR.to_owned()
+	}
+
+	pub fn downloads_dir(&self) -> Option<PathBuf> {
+		self.downloads_dir.to_owned()
 	}
 }
 
@@ -205,4 +209,25 @@ pub fn update_settings(mut settings: Settings) {
 pub fn clean_app_data() {
 	// TODO
 	// clean %temp%/gmpublisher
+}
+
+fn serde_gmod_dir<S>(_: &Option<PathBuf>, serializer: S) -> Result<S::Ok, S::Error>
+where
+	S: serde::Serializer,
+{
+	app_data!().gmod_dir().serialize(serializer)
+}
+
+fn serde_temp_dir<S>(_: &PathBuf, serializer: S) -> Result<S::Ok, S::Error>
+where
+	S: serde::Serializer,
+{
+	app_data!().temp_dir().serialize(serializer)
+}
+
+fn serde_user_data_dir<S>(_: &PathBuf, serializer: S) -> Result<S::Ok, S::Error>
+where
+	S: serde::Serializer,
+{
+	app_data!().user_data_dir().serialize(serializer)
 }

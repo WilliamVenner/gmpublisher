@@ -45,7 +45,7 @@ impl ExtractDestination {
 
 			Directory(path) => Some(path),
 
-			Addons => app_data!().gmod().and_then(|mut path| {
+			Addons => app_data!().gmod_dir().and_then(|mut path| {
 				path.push("garrysmod");
 				path.push("addons");
 				Some(path)

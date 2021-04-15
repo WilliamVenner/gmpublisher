@@ -45,7 +45,7 @@ impl GameAddons {
 	}
 
 	pub fn refresh(&self) {
-		let mut gmod = if let Some(gmod) = app_data!().gmod() {
+		let mut gmod = if let Some(gmod) = app_data!().gmod_dir() {
 			gmod
 		} else {
 			*self.paths.write() = HashMap::new();
@@ -153,6 +153,8 @@ impl GameAddons {
 			}
 
 			*pages = pages_heap.into_sorted_vec();
+
+			println!("Discovered {} addons", paths.len());
 		}
 
 		self.discovered.store(true, Ordering::Release);
