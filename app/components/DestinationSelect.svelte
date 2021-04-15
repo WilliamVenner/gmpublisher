@@ -12,8 +12,6 @@
 	export let gma = null;
 	export let forceCreateFolder = false;
 
-	// TODO make all img undraggable
-
 	let extractPath = [null, null, AppSettings.create_folder_on_extract];
 	let extractPathInput;
 
@@ -139,8 +137,6 @@
 			<Folder/>
 			<div>{$_('browse')}</div>
 		</div>
-
-		<!-- TODO disabled class -->
 
 		<div class="destination" class:disabled={!!!AppSettings.temp} class:active={extractPath[0] === 'tmp'} use:tippy={$_('extract_open_tip')} on:mouseover={extractDestHover} on:click={updateExtractDest} on:mouseleave={extractDestHoverLeave} data-dest="tmp">
 			<FolderAdd/>

@@ -13,8 +13,8 @@ const APP_INFO: app_dirs::AppInfo = app_dirs::AppInfo {
 	author: "WilliamVenner",
 };
 lazy_static! {
-	static ref APP_DATA_DIR: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO).unwrap();
-	static ref APP_SETTINGS_PATH: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO)
+	pub static ref APP_DATA_DIR: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO).unwrap();
+	pub static ref APP_SETTINGS_PATH: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO)
 		.unwrap()
 		.join("settings.json");
 }

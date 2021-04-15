@@ -68,6 +68,20 @@ macro_rules! mutex_wait {
 	}
 }
 
+#[macro_export]
+macro_rules! try_block {
+	( $code:block ) => {
+		(|| -> Result<(), anyhow::Error> {
+			$code
+			Ok(())
+		})()
+	};
+
+	( $code:block, $ty:ty ) => {
+		(|| -> Result<$ty, anyhow::Error> { $code })()
+	};
+}
+
 pub mod path {
 	use serde::{de::Visitor, Deserialize, Serialize};
 	use std::{fmt::Debug, path::PathBuf};

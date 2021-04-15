@@ -401,14 +401,14 @@
 				popper.style.left = (left + (width / 2)) + 'px';
 				popper.style.width = '0';
 				popper.style.height = '0';
-				popper._tippy.hide();
+				//popper._tippy.hide();
 			}
 
 		} else {
 
 			let workshopData = workshopDataPromises[workshopDataIDIndex[addon.installed.id ?? -1] ?? -1];
 
-			popperName.textContent = (!workshopData?.dead ? workshopData.title : (addon.installed.name ?? addon.installed.extractedName)) ?? addon.installed.id;
+			popperName.textContent = ((workshopData && typeof workshopData === 'object' ? workshopData.dead : true) ? (addon.installed.name ?? addon.installed.extractedName) : workshopData.title) ?? addon.installed.id;
 			popperSize.textContent = filesize(Number(addon.installed.size));
 
 			const tagName = lookupTagName(addon.tagId);
@@ -471,22 +471,16 @@
 <svelte:window on:resize={resized}/>
 
 <div id="popper-content" bind:this={popperContent}>
-	<table class="popper-content">
-		<tbody>
-			<tr>
-				<th>{$_('name')}</th>
-				<td bind:this={popperName}></td>
-			</tr>
-			<tr>
-				<th>{$_('addon_type')}</th>
-				<td><div bind:this={popperType}></div></td>
-			</tr>
-			<tr>
-				<th>{$_('size')}</th>
-				<td bind:this={popperSize}></td>
-			</tr>
-		</tbody>
-	</table>
+	<div class="popper-content">
+		<div>{$_('name')}</div>
+		<div bind:this={popperName}></div>
+
+		<div>{$_('addon_type')}</div>
+		<div><div bind:this={popperType}></div></div>
+
+		<div>{$_('size')}</div>
+		<div bind:this={popperSize}></div>
+	</div>
 </div>
 
 <main on:mouseout={() => selectHoveredSquare()}>
@@ -575,6 +569,14 @@
 	}
 	:global(.popper-content) {
 		text-align: left;
+		display: grid;
+		grid-gap: .5rem;
+		max-width: 100%;
+		word-break: break-word;
+		width: 100%;
+		min-width: 0;
+		grid-template-rows: auto auto auto;
+		grid-template-columns: max-content 1fr;
 	}
 
 	#loading {

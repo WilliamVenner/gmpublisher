@@ -40,6 +40,7 @@ pub mod transactions;
 pub use transactions::Transaction;
 
 pub mod search;
+pub mod content_generator;
 pub mod webview;
 
 mod commands;
