@@ -372,21 +372,6 @@
 								</td>
 							</tr>
 						{/each}
-						<!--
-						<tr class="default" style="height: 500px">
-							<td class="controls">
-								<Cross size="1rem"/>
-								<a href="#"><LinkChain size="1rem"/></a>
-							</td>
-							<td class="details"></td>
-							<td class="speed">1,000 GB/s</td>
-							<td class="total">1,000 GB</td>
-							<td class="progress">
-								<div class="progress" style="width: calc(100.00% - .6rem)"></div>
-								<div class="pct">100.00%</div>
-							</td>
-						</tr>
-						-->
 					</tbody>
 				</table>
 			</div>

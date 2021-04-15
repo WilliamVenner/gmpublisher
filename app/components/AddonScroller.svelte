@@ -45,11 +45,16 @@
 	{#await firstPage}
 		<Loading size="2rem"/>
 	{:then}
-		<div id="grid">
-			{#each addons as addon}
-				<Addon workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
-			{/each}
-		</div>
+		{#if addons.length === 0}
+			<Dead size="2rem"/>
+			<div id="error">{$_('no_addons_found')}</div>
+		{:else}
+			<div id="grid">
+				{#each addons as addon}
+					<Addon workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
+				{/each}
+			</div>
+		{/if}
 	{:catch reason}
 		<Dead size="2rem"/>
 		<div id="error">{JSON.stringify(reason)}</div>

@@ -1445,6 +1445,7 @@ dependencies = [
  "rfd",
  "serde",
  "serde_json",
+ "steamlocate",
  "steamworks",
  "sysinfo 0.17.0",
  "tauri",
@@ -2103,6 +2104,12 @@ dependencies = [
  "cfg-if 1.0.0",
  "libc",
 ]
+
+[[package]]
+name = "nom"
+version = "1.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5b8c256fd9471521bcb84c3cdba98921497f1a331cbc15b8030fc63b82050ce"
 
 [[package]]
 name = "nom"
@@ -3126,6 +3133,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "steamlocate"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18c40e098716a3749812d81f24837dfd526af6b8594977c92f3c8055f475bfe6"
+dependencies = [
+ "anyhow",
+ "dirs 3.0.1",
+ "lazy_static",
+ "regex",
+ "steamy-vdf",
+ "winreg",
+]
+
+[[package]]
 name = "steamworks"
 version = "0.7.0"
 source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#ee85a1b15e4b91877972d8a94d9e24519ae9e44f"
@@ -3143,6 +3164,15 @@ version = "0.7.0"
 source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#ee85a1b15e4b91877972d8a94d9e24519ae9e44f"
 dependencies = [
  "bindgen 0.57.0",
+]
+
+[[package]]
+name = "steamy-vdf"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "533127ad49314bfe71c3d3fd36b3ebac3d24f40618092e70e1cfe8362c7fac79"
+dependencies = [
+ "nom 1.2.4",
 ]
 
 [[package]]

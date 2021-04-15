@@ -40,6 +40,7 @@ impl ExtractDestination {
 		};
 
 		match self {
+
 			Temp => None,
 
 			Directory(path) => Some(path),
@@ -53,6 +54,7 @@ impl ExtractDestination {
 			Downloads => dirs::download_dir().and_then(push_extracted_name),
 
 			NamedDirectory(path) => push_extracted_name(path),
+
 		}
 		.unwrap_or_else(|| {
 			let mut path = std::env::temp_dir();

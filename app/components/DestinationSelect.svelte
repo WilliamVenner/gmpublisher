@@ -2,7 +2,6 @@
 	import { trimPath } from '../addons.js';
 	import { _ } from 'svelte-i18n';
 	import { tippy } from '../tippy.js';
-	import { writable } from 'svelte/store';
 	import { Folder, Download, FolderAdd } from 'akar-icons-svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
 
@@ -15,31 +14,31 @@
 
 	// TODO make all img undraggable
 
-	const extractPath = writable([null, null, AppSettings.create_folder_on_extract]);
+	let extractPath = [null, null, AppSettings.create_folder_on_extract];
 	let extractPathInput;
 
 	function computeExtractPath(click) {
 		if (!click) {
 			if (extractPathInput.value.length !== 0) return;
-			if ($extractPath[0]) return;
+			if (extractPath[0]) return;
 		}
 
 		const dest = click ? this.dataset.dest : null;
 		switch(this.dataset.dest) {
 			case 'tmp':
-				$extractPath = [dest, trimPath(AppData.tmp_dir) + PATH_SEPARATOR + 'gmpublisher', AppSettings.create_folder_on_extract];
+				extractPath = [dest, trimPath(AppSettings.temp) + PATH_SEPARATOR + 'gmpublisher', AppSettings.create_folder_on_extract];
 				break;
 
 			case 'addons':
-				$extractPath = [dest, trimPath(AppData.gmod) + PATH_SEPARATOR + 'garrysmod' + PATH_SEPARATOR + 'addons', AppSettings.create_folder_on_extract];
+				extractPath = [dest, trimPath(AppSettings.gmod) + PATH_SEPARATOR + 'garrysmod' + PATH_SEPARATOR + 'addons', AppSettings.create_folder_on_extract];
 				break;
 
 			case 'downloads':
-				$extractPath = [dest, trimPath(AppData.downloads_dir), AppSettings.create_folder_on_extract];
+				extractPath = [dest, trimPath(AppData.downloads_dir), AppSettings.create_folder_on_extract];
 				break;
 
 			default:
-				$extractPath = [null, null, AppSettings.create_folder_on_extract];
+				extractPath = [null, null, AppSettings.create_folder_on_extract];
 		}
 
 		extractPathInput.value = '';
@@ -47,45 +46,45 @@
 	function extractDestHover() {
 		if (this === extractPathInput) {
 			if (this.value.length === 0) {
-				$extractPath = [null, null, AppSettings.create_folder_on_extract];
+				extractPath = [null, null, AppSettings.create_folder_on_extract];
 			} else {
-				$extractPath = ['browse', trimPath(this.value), AppSettings.create_folder_on_extract];
+				extractPath = ['browse', trimPath(this.value), AppSettings.create_folder_on_extract];
 			}
 		} else {
 			computeExtractPath.call(this, false);
 		}
 	}
 	function extractDestInputted() {
-		if (this.value === "" || ($extractPath[0] !== null && $extractPath[0] !== 'browse')) return;
-		$extractPath = ['browse', trimPath(this.value), AppSettings.create_folder_on_extract];
+		if (this.value === "" || (extractPath[0] !== null && extractPath[0] !== 'browse')) return;
+		extractPath = ['browse', trimPath(this.value), AppSettings.create_folder_on_extract];
 		this.value = '';
 	}
 	function extractDestFocused() {
-		if (!!$extractPath[0]) {
-			this.value = $extractPath[1];
+		if (!!extractPath[0]) {
+			this.value = extractPath[1];
 		}
 	}
 	function extractDestLostFocus() {
-		if (this.value.length > 0 && !!$extractPath[1]) {
+		if (this.value.length > 0 && !!extractPath[1]) {
 			this.value = '';
 		}
 	}
 	function extractDestHoverLeave() {
 		if (extractPathInput.value.length !== 0) return;
-		if ($extractPath[0] === null) {
-			$extractPath = [null, null, AppSettings.create_folder_on_extract];
+		if (extractPath[0] === null) {
+			extractPath = [null, null, AppSettings.create_folder_on_extract];
 		}
 	}
 	function updateExtractDest() {
-		if (this.dataset.dest === $extractPath[0]) {
-			$extractPath = [null, null, AppSettings.create_folder_on_extract];
+		if (this.dataset.dest === extractPath[0]) {
+			extractPath = [null, null, AppSettings.create_folder_on_extract];
 		} else {
 			computeExtractPath.call(this, true);
 		}
 	}
 	function extractDestBrowse() {
-		if ('browse' === $extractPath[0]) {
-			$extractPath = [null, null, AppSettings.create_folder_on_extract];
+		if ('browse' === extractPath[0]) {
+			extractPath = [null, null, AppSettings.create_folder_on_extract];
 		} else {
 			invoke('prompt_path_dialog', {
 
@@ -96,21 +95,21 @@
 
 			}).then(path => {
 				if (!!path)
-					$extractPath = ['browse', trimPath(path[0]), AppSettings.create_folder_on_extract]
+					extractPath = ['browse', trimPath(path[0]), AppSettings.create_folder_on_extract]
 			});
 		}
 	}
 	function extractableHistoryPath() {
-		$extractPath = ['browse', trimPath(this.textContent), AppSettings.create_folder_on_extract];
+		extractPath = ['browse', trimPath(this.textContent), AppSettings.create_folder_on_extract];
 	}
 	function createFolderUpdated() {
 		AppSettings.create_folder_on_extract = this.checked;
-		$extractPath = [$extractPath[0], $extractPath[1], this.checked];
+		extractPath = [extractPath[0], extractPath[1], this.checked];
 	}
 
 	function doCallback() {
 		if (!this.classList.contains('disabled'))
-			callback($extractPath);
+			callback(extractPath);
 	}
 
 	let destinationModal;
@@ -124,9 +123,9 @@
 	<h1>{$_('extract_where_to')}</h1>
 	<h4>{$_('extract_overwrite_warning')}</h4>
 
-	<input type="text" name="path" on:input={extractDestHover} on:focus={extractDestFocused} on:blur={extractDestLostFocus} on:change={extractDestInputted} bind:this={extractPathInput} placeholder={$extractPath[0] ? ($extractPath[1] + ((forceCreateFolder || $extractPath[2]) ? (PATH_SEPARATOR + (gma?.extracted_name ?? 'addon_name')) : '')) : (gma?.extracted_name ?? 'addon_name')}/>
+	<input type="text" name="path" on:input={extractDestHover} on:focus={extractDestFocused} on:blur={extractDestLostFocus} on:change={extractDestInputted} bind:this={extractPathInput} placeholder={extractPath[0] ? (extractPath[1] + ((forceCreateFolder || extractPath[2]) ? (PATH_SEPARATOR + (gma?.extracted_name ?? 'addon_name')) : '')) : (gma?.extracted_name ?? 'addon_name')}/>
 
-	{#if $extractPath[0] === 'browse' && !forceCreateFolder}
+	{#if extractPath[0] === 'browse' && !forceCreateFolder}
 		<div id="checkbox">
 			<label>
 				<input type="checkbox" id="named" name="named" on:change={createFolderUpdated} checked={AppSettings.create_folder_on_extract}>
@@ -136,24 +135,24 @@
 	{/if}
 
 	<div id="destinations">
-		<div class="destination" class:active={$extractPath[0] === 'browse'} on:hover={extractDestHover} on:click={extractDestBrowse} data-dest="browse">
+		<div class="destination" class:active={extractPath[0] === 'browse'} on:hover={extractDestHover} on:click={extractDestBrowse} data-dest="browse">
 			<Folder/>
 			<div>{$_('browse')}</div>
 		</div>
 
 		<!-- TODO disabled class -->
 
-		<div class="destination" class:disabled={!!!AppData.tmp_dir} class:active={$extractPath[0] === 'tmp'} use:tippy={$_('extract_open_tip')} on:mouseover={extractDestHover} on:click={updateExtractDest} on:mouseleave={extractDestHoverLeave} data-dest="tmp">
+		<div class="destination" class:disabled={!!!AppSettings.temp} class:active={extractPath[0] === 'tmp'} use:tippy={$_('extract_open_tip')} on:mouseover={extractDestHover} on:click={updateExtractDest} on:mouseleave={extractDestHoverLeave} data-dest="tmp">
 			<FolderAdd/>
 			<div>{$_('open')}</div>
 		</div>
 
-		<div class="destination" class:disabled={!!!AppData.gmod} class:active={$extractPath[0] === 'addons'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="addons">
+		<div class="destination" class:disabled={!!!AppSettings.gmod} class:active={extractPath[0] === 'addons'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="addons">
 			<img src="/img/gmod.svg"/>
 			<div>{$_('addons_folder')}</div>
 		</div>
 
-		<div class="destination" class:disabled={!!!AppData.downloads_dir} class:active={$extractPath[0] === 'downloads'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="downloads">
+		<div class="destination" class:disabled={!!!AppData.downloads_dir} class:active={extractPath[0] === 'downloads'} on:mouseover={extractDestHover} on:mouseleave={extractDestHoverLeave} on:click={updateExtractDest} data-dest="downloads">
 			<Download/>
 			<div>{$_('downloads_folder')}</div>
 		</div>
@@ -162,12 +161,12 @@
 	{#if AppSettings.destinations.length > 0}
 		<div id="history" class="hide-scroll">
 			{#each AppSettings.destinations as path}
-				<div on:click={extractableHistoryPath} class:active={$extractPath[0] === 'browse' && $extractPath[1] === path}>{path}</div>
+				<div on:click={extractableHistoryPath} class:active={extractPath[0] === 'browse' && extractPath[1] === path}>{path}</div>
 			{/each}
 		</div>
 	{/if}
 
-	<div class="extract-btn" on:click={doCallback} class:disabled={!$extractPath[0]}>{text}</div>
+	<div class="extract-btn" on:click={doCallback} class:disabled={!extractPath[0]}>{text}</div>
 </div></main>
 
 <style>
@@ -244,6 +243,11 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
+	}
+	#destinations .destination.disabled {
+		cursor: default !important;
+		pointer-events: none !important;
+		filter: brightness(0.5) grayscale(1);
 	}
 	#destinations .destination:active,
 	#destinations .destination.active {

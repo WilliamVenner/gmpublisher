@@ -61,8 +61,6 @@ window.__GMPUBLISHER__ = () => {
 
 			delete newAppData.settings;
 			AppDataPtr._ = Object.freeze(newAppData);
-
-			window.PATH_SEPARATOR = newAppData.path_separator;
 		}
 
 		updateAppData(JSON.parse('{$_APP_DATA_$}'));
@@ -93,6 +91,8 @@ delete window.__WS_DEAD__.id;
 delete window.__WS_DEAD__.title;
 delete window.__WS_DEAD__.searchTitle;
 delete window.__WS_DEAD__.localFile;
+
+window.PATH_SEPARATOR = {$_PATH_SEPARATOR_$};
 
 let resizeTimeout;
 
