@@ -5,6 +5,7 @@
 	import Loading from "./Loading.svelte";
 
 	export let next;
+	export let newAddon = false;
 
 	let loading = true;
 	let total = 0;
@@ -42,23 +43,38 @@
 		</h2>
 	{/if}
 
-	{#await firstPage}
-		<Loading size="2rem"/>
-	{:then}
-		{#if addons.length === 0}
+	{#if newAddon}
+		<div id="grid">
+			<Addon newAddon={true}/>
+			{#each addons as addon}
+				<Addon workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
+			{/each}
+			{#await firstPage}
+				<Loading size="2rem"/>
+			{:catch reason}
+				<Dead size="2rem"/>
+				<div id="error">{JSON.stringify(reason)}</div>
+			{/await}
+		</div>
+	{:else}
+		{#await firstPage}
+			<Loading size="2rem"/>
+		{:then}
+			{#if addons.length === 0}
+				<Dead size="2rem"/>
+				<div id="error">{$_('no_addons_found')}</div>
+			{:else}
+				<div id="grid">
+					{#each addons as addon}
+						<Addon workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
+					{/each}
+				</div>
+			{/if}
+		{:catch reason}
 			<Dead size="2rem"/>
-			<div id="error">{$_('no_addons_found')}</div>
-		{:else}
-			<div id="grid">
-				{#each addons as addon}
-					<Addon workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
-				{/each}
-			</div>
-		{/if}
-	{:catch reason}
-		<Dead size="2rem"/>
-		<div id="error">{JSON.stringify(reason)}</div>
-	{/await}
+			<div id="error">{JSON.stringify(reason)}</div>
+		{/await}
+	{/if}
 </main>
 
 <style>

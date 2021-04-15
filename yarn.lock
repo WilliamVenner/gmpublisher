@@ -156,10 +156,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tauri-apps/api@file:../tauri/api::locator=gmpublisher%40workspace%3A.":
-  version: 0.1.0
-  resolution: "@tauri-apps/api@file:../tauri/api#../tauri/api::hash=4efedc&locator=gmpublisher%40workspace%3A."
-  checksum: 81e9b3ccf5bee4b58794d84db523fb8f20eb6326b00fd7ac8a63a180f5b6d22e519a08bb91a6448528d3bfd0ff9efe69591107b9f96a5fd96cb2305486b0ffc7
+"@tauri-apps/api@file:../tauri/tooling/api::locator=gmpublisher%40workspace%3A.":
+  version: 1.0.0-beta-rc.1
+  resolution: "@tauri-apps/api@file:../tauri/tooling/api#../tauri/tooling/api::hash=744081&locator=gmpublisher%40workspace%3A."
+  checksum: 9686a09932883d1b669ff9f997e66be78bd43efce7c5a20dedf81355caaf2eacd410a2222b12f4dbdb64f70c01b855c43d77b3e30238736b6ae47da7e2ac9405
   languageName: node
   linkType: hard
 
@@ -763,7 +763,7 @@ fsevents@~2.3.1:
     "@rollup/plugin-json": ^4.1.0
     "@rollup/plugin-node-resolve": ^11.0.0
     "@rollup/plugin-replace": ^2.4.1
-    "@tauri-apps/api": ../tauri/api
+    "@tauri-apps/api": ../tauri/tooling/api
     akar-icons-svelte: ^1.1.1
     filesize: ^6.1.0
     luxon: ^1.26.0

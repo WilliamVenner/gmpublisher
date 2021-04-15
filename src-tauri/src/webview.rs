@@ -1,6 +1,6 @@
 use crossbeam::channel::{SendError, Sender};
 use serde::Serialize;
-use tauri::{Params, Window, runtime::Manager};
+use tauri::{Params, Window};
 
 use crate::{GMAFile, WorkshopItem};
 

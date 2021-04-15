@@ -112,5 +112,6 @@
 	"steam_connected": "Connected to Steam Servers",
 
 	"no_notifications": "No Notifications",
-	"no_addons_found": "No Addons Found"
+	"no_addons_found": "No Addons Found",
+	"publish_new": "Publish New..."
 }

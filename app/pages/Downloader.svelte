@@ -3,13 +3,13 @@
 	import { DateTime } from 'luxon';
 	import { _ } from 'svelte-i18n';
 	import { invoke } from '@tauri-apps/api/tauri';
+	import { listen } from '@tauri-apps/api/event';
 	import { Addons } from '../addons';
 	import DestinationSelect from '../components/DestinationSelect.svelte';
 	import { Transaction } from '../transactions';
 	import Dead from '../components/Dead.svelte';
 	import Loading from '../components/Loading.svelte';
 	import filesize from 'filesize';
-	import { listen } from '@tauri-apps/api/event';
 	//import Destination from '../modals/Destination.svelte';
 
 	const RE_FILE_NAME = /(?:\\|\/|^)([^\/\\]+?)$/m;

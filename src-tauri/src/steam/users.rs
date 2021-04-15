@@ -49,7 +49,7 @@ impl Steam {
 
 		{
 			let user = user.clone();
-			steam!().users.write(move |mut users| {
+			steam!().users.write(move |users| {
 				users.insert(user.steamid, user);
 			});
 		}

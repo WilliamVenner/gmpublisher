@@ -12,12 +12,13 @@ build = "src/build.rs"
 [build-dependencies]
 #tauri-build = { git = "https://github.com/tauri-apps/tauri", features = ["codegen"], branch = "dev" }
 tauri-build = { git = "https://github.com/williamvenner/tauri", features = [ "codegen" ], branch = "personal" }
+#tauri-build = { path = "../../tauri/core/tauri-build", features = [ "codegen" ] }
 
 bindgen = "0.58.1"
 
 [dependencies]
-tauri = { path = "../../tauri/tauri", features =["api-all"]}
-#tauri = { git = "https://github.com/williamvenner/tauri", features =["api-all"], branch = "personal" }
+#tauri = { path = "../../tauri/core/tauri", features =["api-all"]}
+tauri = { git = "https://github.com/williamvenner/tauri", features =["api-all"], branch = "personal" }
 #tauri = { git = "https://github.com/tauri-apps/tauri", features =["api-all"], branch = "dev" }
 
 steamworks = { git = "https://github.com/WilliamVenner/steamworks-rs.git", branch = "master", features = [ "serde" ] }

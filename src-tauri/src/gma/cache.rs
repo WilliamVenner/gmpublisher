@@ -43,7 +43,7 @@ impl GMACache {
 		{
 			let path = path.to_path_buf();
 			let gma = gma.clone();
-			self.cache.write(move |mut cache| {
+			self.cache.write(move |cache| {
 				cache.insert(path, gma);
 			});
 		}

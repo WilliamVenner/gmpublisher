@@ -26,7 +26,7 @@ fn main() {
 	}
 
 	let steam_api_dest = out.join(steam_api_lib.file_name().unwrap());
-	fs::copy(steam_api_src, steam_api_dest).unwrap();
+	fs::copy(steam_api_src, steam_api_dest).ok();
 
 	tauri_build::build()
 }

@@ -350,6 +350,7 @@
 			for (let i = 0; i < workshopDataIndex.length; i += 50) {
 				const chunk = i;
 				Promise.allSettled(workshopDataIndex.slice(i, i + 50)).then(values => {
+					console.log("chunk"); // for some reason, it doesn't update the canvas unless you do a console log. lol
 					for (let i = 0; i < values.length; i++) {
 						workshopDataPromises[chunk + i] = values[i]?.value ?? null;
 					}

@@ -20,7 +20,7 @@
     "svelte": "^3.0.0"
   },
   "dependencies": {
-    "@tauri-apps/api": "../tauri/api",
+    "@tauri-apps/api": "../tauri/tooling/api",
     "akar-icons-svelte": "^1.1.1",
     "filesize": "^6.1.0",
     "luxon": "^1.26.0",
