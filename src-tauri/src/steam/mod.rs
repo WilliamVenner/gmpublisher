@@ -15,7 +15,7 @@ use self::{downloads::Downloads, users::SteamUser};
 
 use crate::octopus::{AtomicRefSome, PromiseCache, PromiseHashCache, RelaxedRwLock};
 
-use crate::{webview_emit, Base64Image};
+use crate::webview_emit;
 
 pub mod downloads;
 pub mod publishing;

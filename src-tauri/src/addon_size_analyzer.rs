@@ -1,11 +1,10 @@
 use std::{
 	collections::BinaryHeap,
-	sync::{atomic::AtomicU64, Arc},
+	sync::Arc,
 };
 
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
-use parking_lot::Mutex;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use steamworks::PublishedFileId;
 

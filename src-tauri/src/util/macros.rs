@@ -1,9 +1,3 @@
-use std::{
-	collections::HashSet,
-	hash::Hash,
-	io::{BufRead, BufReader, BufWriter, ErrorKind, Read, Seek, SeekFrom, Write},
-};
-
 #[macro_export]
 macro_rules! ignore {
 	( $x:expr ) => {

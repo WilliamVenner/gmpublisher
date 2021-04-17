@@ -1,9 +1,9 @@
-use std::{collections::BinaryHeap, fs::File, io::{BufReader, BufWriter}, path::PathBuf};
+use std::{fs::File, io::{BufReader, BufWriter}, path::PathBuf};
 
 use chrono::Utc;
 use steamworks::PublishedFileId;
 use serde::{Serialize, Deserialize};
-use parking_lot::{MappedMutexGuard, Mutex, MutexGuard};
+use parking_lot::Mutex;
 
 #[derive(Serialize, Deserialize)]
 struct AddWorkshopEntry {

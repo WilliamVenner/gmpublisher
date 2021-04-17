@@ -1,10 +1,9 @@
 use serde::Serialize;
-use std::{cell::{RefCell, UnsafeCell}, collections::VecDeque, ops::DerefMut, path::PathBuf, sync::{
+use std::{cell::RefCell, collections::VecDeque, ops::DerefMut, path::PathBuf, sync::{
 		atomic::{AtomicBool, Ordering},
 		Arc,
 	}};
 use std::collections::{HashMap, HashSet};
-use crate::PromiseCache;
 
 use steamworks::{PublishedFileId, QueryResult, QueryResults, SteamError, SteamId};
 

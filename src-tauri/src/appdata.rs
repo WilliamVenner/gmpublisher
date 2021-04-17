@@ -1,10 +1,10 @@
-use std::{borrow::Cow, fs::File, io::{BufReader, BufWriter}, path::PathBuf};
+use std::{fs::File, io::{BufReader, BufWriter}, path::PathBuf};
 
 use crate::{RwLockCow, webview_emit};
 
 use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
-use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
+use parking_lot::{RwLock, RwLockReadGuard};
 use serde::{Deserialize, Serialize};
 use tauri::Params;
 

@@ -1,9 +1,8 @@
 // Utility library for shared concurrency between JS and Rust.
 
-use std::{any::Any, collections::{HashMap, LinkedList, VecDeque}, fmt::Debug, hash::Hash, sync::{Arc, atomic::{AtomicBool, Ordering}, mpsc}};
+use std::{collections::{HashMap, VecDeque}, hash::Hash, sync::Arc};
 
-use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut, BorrowMutError};
-use crossbeam::channel::{Receiver, Sender};
+use atomic_refcell::{AtomicRef, AtomicRefMut};
 
 use parking_lot::{Mutex, RwLock, RwLockWriteGuard, RwLockReadGuard, Condvar};
 
