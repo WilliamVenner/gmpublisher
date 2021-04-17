@@ -1,4 +1,5 @@
 <script>
+	export let id = null;
 	export let active = false;
 	export let cancel = null;
 
@@ -9,7 +10,7 @@
 	}
 </script>
 
-<modal on:click={doCancel} bind:this={modal} class:active={active}><div>
+<modal id={id} on:click={doCancel} bind:this={modal} class:active={active}><div class="hide-scroll">
 	<slot></slot>
 </div></modal>
 
@@ -31,7 +32,7 @@
 	modal.active {
 		pointer-events: all;
 
-		backdrop-filter: grayscale(1) blur(1px);
+		backdrop-filter: grayscale(.5) blur(1px);
 		background-color: rgba(0,0,0,.4);
 	}
 	modal.active > div {
@@ -48,7 +49,6 @@
 		right: 0;
 		margin: auto;
 
-		text-align: center;
 		padding: 1.5rem;
 		background-color: #1a1a1a;
 		border-radius: .3rem;
@@ -58,8 +58,5 @@
 		height: min-content;
 		max-width: 90%;
 		max-height: 90%;
-
-		display: flex;
-		flex-direction: column;
 	}
 </style>

@@ -2,7 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import TasksOverlay from './components/TasksOverlay.svelte';
 	import Navbar from './components/Navbar.svelte';
-	import Sidebar, { pages, activePage } from './components/Sidebar.svelte';
+	import NavSidebar, { pages, activeItem } from './components/NavSidebar.svelte';
 </script>
 
 <main>
@@ -11,15 +11,15 @@
 
 	<Navbar/>
 
-	<Sidebar/>
+	<NavSidebar/>
 
 	<div id="content">
-		{#if !$activePage.persist && !$activePage.background}
-			<svelte:component this={$activePage.component}/>
+		{#if !$pages[$activeItem].persist && !$pages[$activeItem].background}
+			<svelte:component this={$pages[$activeItem].component}/>
 		{/if}
-		{#each $pages as page}
+		{#each $pages as page, i}
 			{#if page.background || (page.persist && page.created)}
-				<div class="persist" class:active={$activePage == page}><svelte:component this={page.component}/></div>
+				<div class="persist" class:active={$activeItem == i}><svelte:component this={page.component}/></div>
 			{/if}
 		{/each}
 	</div>

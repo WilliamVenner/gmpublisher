@@ -112,7 +112,7 @@
 	}
 </script>
 
-<Modal cancel={cancel} active={active}>
+<Modal id="destination-select" cancel={cancel} active={active}>
 	<h1>{$_('extract_where_to')}</h1>
 	<h4>{$_('extract_overwrite_warning')}</h4>
 
@@ -161,6 +161,10 @@
 </Modal>
 
 <style>
+	:global(#destination-select) {
+		text-align: center;
+	}
+
 	h1 {
 		margin-top: 0;
 		margin-bottom: 0;

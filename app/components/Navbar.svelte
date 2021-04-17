@@ -46,13 +46,13 @@
 <nav>
 	{#await steamUser}
 		<img src="/img/steam_anonymous.jpg" id="avatar"/>
-		{$_('loading')}
+		<span id="greeting">{$_('loading')}</span>
 	{:then [name, avatar]}
 		<img src="data:image/png;base64,{avatar}" id="avatar"/>
-		{$_('greetings.' + timeOfDay, { values: { name } })}
+		<span id="greeting">{$_('greetings.' + timeOfDay, { values: { name } })}</span>
 	{:catch}
 		<img src="/img/steam_anonymous.jpg" id="avatar"/>
-		{$_('greetings.' + timeOfDay + '.anon')}
+		<span id="greeting">{$_('greetings.' + timeOfDay + '.anon')}</span>
 	{/await}
 
 	<Search/>
@@ -84,7 +84,6 @@
 		left: 0;
 		display: flex;
 		align-items: center;
-		font-size: 1.1rem;
 		z-index: 998;
 	}
 	#avatar {
@@ -112,6 +111,10 @@
 
 	:global(.nav-icon > #settings) {
 		cursor: pointer;
+	}
+
+	#greeting {
+		font-size: 1.2em;
 	}
 
 	@keyframes steam-connection-error {
