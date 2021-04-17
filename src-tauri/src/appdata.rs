@@ -1,10 +1,10 @@
 use std::{borrow::Cow, fs::File, io::{BufReader, BufWriter}, path::PathBuf};
 
-use crate::webview_emit;
+use crate::{RwLockCow, webview_emit};
 
 use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
-use parking_lot::RwLock;
+use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use serde::{Deserialize, Serialize};
 use tauri::Params;
 
@@ -13,10 +13,11 @@ const APP_INFO: app_dirs::AppInfo = app_dirs::AppInfo {
 	author: "WilliamVenner",
 };
 lazy_static! {
-	pub static ref APP_DATA_DIR: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO).unwrap();
-	pub static ref APP_SETTINGS_PATH: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO)
+	static ref APP_DATA_DIR: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO).unwrap();
+	static ref APP_SETTINGS_PATH: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO)
 		.unwrap()
 		.join("settings.json");
+	static ref TEMP_DIR: PathBuf = std::env::temp_dir();
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -130,28 +131,30 @@ impl AppData {
 		}
 	}
 
-	pub fn temp_dir(&self) -> PathBuf {
-		if let Some(ref temp) = self.settings.read().temp {
+	pub fn temp_dir(&self) -> RwLockCow<'_, PathBuf> {
+		let lock = self.settings.read();
+		if let Some(ref temp) = lock.temp {
 			if temp.is_dir() && temp.exists() {
-				return temp.to_owned();
+				return RwLockCow::Locked(RwLockReadGuard::map(lock, |s| s.temp.as_ref().unwrap()));
 			}
 		}
 
-		std::env::temp_dir()
+		RwLockCow::Borrowed(&*TEMP_DIR)
 	}
 
-	pub fn user_data_dir(&self) -> PathBuf {
-		if let Some(ref user_data) = self.settings.read().user_data {
+	pub fn user_data_dir(&self) -> RwLockCow<'_, PathBuf> {
+		let lock = self.settings.read();
+		if let Some(ref user_data) = lock.user_data {
 			if user_data.is_dir() && user_data.exists() {
-				return user_data.to_owned();
+				return RwLockCow::Locked(RwLockReadGuard::map(lock, |s| s.user_data.as_ref().unwrap()));
 			}
 		}
 
-		APP_DATA_DIR.to_owned()
+		RwLockCow::Borrowed(&*APP_DATA_DIR)
 	}
 
-	pub fn downloads_dir(&self) -> Option<PathBuf> {
-		self.downloads_dir.to_owned()
+	pub fn downloads_dir(&self) -> Option<&PathBuf> {
+		self.downloads_dir.as_ref()
 	}
 }
 

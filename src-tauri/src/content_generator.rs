@@ -5,8 +5,6 @@ use steamworks::PublishedFileId;
 use serde::{Serialize, Deserialize};
 use parking_lot::{MappedMutexGuard, Mutex, MutexGuard};
 
-use crate::appdata::APP_DATA_DIR;
-
 #[derive(Serialize, Deserialize)]
 struct AddWorkshopEntry {
 	id: PublishedFileId,
@@ -48,9 +46,9 @@ impl ContentGenerator {
 		let mut saved = Vec::new();
 		let mut id = 0;
 
-		std::fs::create_dir_all(&*MANIFESTS_PATH).expect("Failed to create content generator manifests directory");
+		std::fs::create_dir_all(&*manifests_path()).expect("Failed to create content generator manifests directory");
 
-		if let Ok(dir) = MANIFESTS_PATH.read_dir() {
+		if let Ok(dir) = manifests_path().read_dir() {
 			for entry in dir {
 				(|| -> Option<()> {
 					let entry = entry.ok()?;
@@ -76,12 +74,14 @@ impl ContentGenerator {
 
 lazy_static! {
 	pub static ref CONTENT_GENERATOR: Mutex<ContentGenerator> = Mutex::new(ContentGenerator::init());
-	pub static ref MANIFESTS_PATH: PathBuf = APP_DATA_DIR.join("content_generator");
+}
+
+fn manifests_path() -> PathBuf {
+	app_data!().user_data_dir().join("content_generator")
 }
 
 #[tauri::command]
 fn get_content_generator_manifests() -> &'static Vec<AddWorkshopManifest> {
-	println!("{:?}", &*MANIFESTS_PATH);
 	unsafe { &*(&CONTENT_GENERATOR.lock().saved as *const _) }
 }
 
@@ -91,7 +91,7 @@ fn update_content_generator_manifest(manifest: AddWorkshopManifest) -> bool {
 
 		let mut content_generator = CONTENT_GENERATOR.lock();
 
-		let f = File::create(MANIFESTS_PATH.join(manifest.id.to_string()))?;
+		let f = File::create(manifests_path().join(manifest.id.to_string()))?;
 		bincode::serialize_into(BufWriter::new(f), &manifest)?;
 
 		match content_generator.saved.binary_search(&manifest) {
