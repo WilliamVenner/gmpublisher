@@ -1,12 +1,9 @@
 <script>
 	import { _ } from 'svelte-i18n';
 	import TasksOverlay from './components/TasksOverlay.svelte';
-	import FileDrop from './components/FileDrop.svelte';
 	import Navbar from './components/Navbar.svelte';
 	import Sidebar, { pages, activePage } from './components/Sidebar.svelte';
 </script>
-
-<FileDrop/>
 
 <main>
 

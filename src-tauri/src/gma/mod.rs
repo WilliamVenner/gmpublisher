@@ -168,7 +168,7 @@ impl PartialOrd for GMAFile {
 }
 impl Ord for GMAFile {
 	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-		self.modified.cmp(&other.modified).reverse()
+		self.modified.cmp(&other.modified)
 	}
 }
 

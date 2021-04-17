@@ -82,6 +82,18 @@ window.__GMPUBLISHER__ = () => {
 			document.body.classList.remove('file-drop');
 			console.log('File Drop Cancelled', path);
 		});
+
+		window.addEventListener('drop', e => {
+			console.log('JS File Drop (drop)', e);
+		});
+
+		window.addEventListener('dragstart', e => {
+			console.log('JS File Drop Hover (dragstart)', e);
+		});
+
+		window.addEventListener('dragend', e => {
+			console.log('JS File Drop Cancelled (dragend)', e);
+		});
 	}
 };
 

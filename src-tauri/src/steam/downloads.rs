@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use parking_lot::{Condvar, Mutex};
 
-use std::sync::{atomic::AtomicBool, Arc};
+use std::{path::PathBuf, sync::{atomic::AtomicBool, Arc}};
 
 use steamworks::{ItemState, PublishedFileId};
 

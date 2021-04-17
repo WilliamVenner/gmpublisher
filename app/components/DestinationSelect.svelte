@@ -4,6 +4,7 @@
 	import { tippy } from '../tippy.js';
 	import { Folder, Download, FolderAdd } from 'akar-icons-svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
+	import Modal from './Modal.svelte';
 
 	export let active;
 	export let text;
@@ -109,15 +110,9 @@
 		if (!this.classList.contains('disabled'))
 			callback(extractPath);
 	}
-
-	let destinationModal;
-	function doCancel(e) {
-		if (cancel && e.target === destinationModal)
-			cancel();
-	}
 </script>
 
-<main on:click={doCancel} bind:this={destinationModal} class:active={active}><div>
+<Modal cancel={cancel} active={active}>
 	<h1>{$_('extract_where_to')}</h1>
 	<h4>{$_('extract_overwrite_warning')}</h4>
 
@@ -163,59 +158,14 @@
 	{/if}
 
 	<div class="extract-btn" on:click={doCallback} class:disabled={!extractPath[0]}>{text}</div>
-</div></main>
+</Modal>
 
 <style>
-	main {
-		pointer-events: none;
-
-		transition: backdrop-filter .25s, background-color .25s;
-		background-color: rgba(0,0,0,0);
-
-		z-index: 4;
-		position: relative;
-		width: 100%;
-		height: 100%;
-	}
-	main.active {
-		pointer-events: all;
-
-		backdrop-filter: grayscale(1) blur(1px);
-		background-color: rgba(0,0,0,.4);
-	}
-	main.active > div {
-		transform: scale(1, 1);
-	}
-	main > div {
-		transition: transform .25s;
-		transform: scale(0, 0);
-
-		position: absolute;
-		top: 0;
-		left: 0;
-		bottom: 0;
-		right: 0;
-		margin: auto;
-
-		text-align: center;
-		padding: 1.5rem;
-		background-color: #1a1a1a;
-		border-radius: .3rem;
-		box-shadow: 0 0 10px rgba(0, 0, 0, .25);
-
-		width: min-content;
-		height: min-content;
-		max-width: 90%;
-		max-height: 90%;
-
-		display: flex;
-		flex-direction: column;
-	}
-	main > div > h1 {
+	h1 {
 		margin-top: 0;
 		margin-bottom: 0;
 	}
-	main > div > h4 {
+	h4 {
 		margin-top: .8rem;
 		margin-bottom: 1.5rem;
 	}
@@ -256,7 +206,7 @@
 	#destinations .destination > div {
 		white-space: nowrap;
 	}
-	main input[type='text'] {
+	input[type='text'] {
 		appearance: none;
 		border: none;
 		border-radius: 0;
@@ -270,10 +220,10 @@
 		color: #fff;
 		font-size: .9em;
 	}
-	main input[type='text']:focus {
+	input[type='text']:focus {
 		outline: none;
 	}
-	main input[type='text']:placeholder-shown {
+	input[type='text']:placeholder-shown {
 		text-align: center;
 	}
 	#history {
@@ -299,19 +249,19 @@
 	#history > div.active {
 		background-color: #0e0e0e;
 	}
-	main #checkbox {
+	#checkbox {
 		margin-bottom: 1rem;
 		display: inline-flex;
 		justify-content: center;
 		align-items: center;
 	}
-	main #checkbox label {
+	#checkbox label {
 		cursor: pointer;
 	}
-	main #checkbox label > * {
+	#checkbox label > * {
 		vertical-align: middle;
 	}
-	main .extract-btn {
+	.extract-btn {
 		margin-top: 1rem;
 	}
 

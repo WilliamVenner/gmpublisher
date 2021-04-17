@@ -519,7 +519,8 @@
 			on:click={openHoveredAddon}
 		></canvas>
 	{:catch}
-		<Dead/>
+		<Dead size="2rem"/>
+		<div id="error">{$_('no_addons_found')}</div>
 	{/await}
 </main>
 

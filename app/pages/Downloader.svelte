@@ -10,6 +10,7 @@
 	import Dead from '../components/Dead.svelte';
 	import Loading from '../components/Loading.svelte';
 	import filesize from 'filesize';
+	import { NOTIFICATION_ERROR, NOTIFICATION_SUCCESS, NOTIFICATION_ALERT, pushNotification } from '../notifications';
 	//import Destination from '../modals/Destination.svelte';
 
 	const RE_FILE_NAME = /(?:\\|\/|^)([^\/\\]+?)$/m;
@@ -299,6 +300,27 @@
 			transaction: new Transaction(transaction_id)
 		});
 	});
+
+	listen('DownloadStarted', ({ payload: transaction_id }) => {
+		const transaction = new Transaction(transaction_id);
+
+		transaction.listen(event => {
+			if (event.finished) {
+				pushNotification({
+					type: NOTIFICATION_SUCCESS
+				})
+			} else if (event.error) {
+				pushNotification({
+					type: NOTIFICATION_ERROR
+				})
+			}
+		});
+
+		pushNotification({
+			transaction,
+			type: NOTIFICATION_ALERT
+		});
+	});
 </script>
 
 <main class="hide-scroll">
@@ -434,24 +456,10 @@
 		</div>
 	</div>
 
-	<div id="destination" class:active={destinationModal}>
-		<DestinationSelect text={$_('set_destination')} active={destinationModal} callback={setDestination} cancel={cancelDestination} forceCreateFolder={true}/>
-	</div>
+	<DestinationSelect text={$_('set_destination')} active={destinationModal} callback={setDestination} cancel={cancelDestination} forceCreateFolder={true}/>
 </main>
 
 <style>
-	#destination {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		z-index: 100;
-		top: 0;
-		left: 0;
-	}
-	#destination:not(.active) {
-		pointer-events: none;
-	}
-
 	main {
 		display: flex;
 		flex-direction: column;
