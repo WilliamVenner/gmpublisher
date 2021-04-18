@@ -1,48 +1,3 @@
-const updateSettings = () => {
-	__TAURI__.tauri.invoke({
-		cmd: 'updateSettings',
-		settings: JSON.stringify(window.AppSettings)
-	}); // TODO
-
-	console.log('updateSettings');
-};
-
-const AppSettingsProxy = {
-	set(data, key, val) {
-		data[key] = val;
-		if (window.__SETTINGS_TRANSACTION__) return true;
-
-		updateSettings();
-
-		return true;
-	}
-};
-
-class AppSettings {
-	static init(data) {
-		return new Proxy(new AppSettings(data), AppSettingsProxy);
-	}
-
-	constructor(data) {
-		for (const [key, val] of Object.entries(data)) {
-			if (val && (val.constructor === Array || val.constructor === Object)) {
-				this[key] = new Proxy(val, AppSettingsProxy);
-			} else {
-				this[key] = val;
-			}
-		}
-	}
-
-	begin() {
-		window.__SETTINGS_TRANSACTION__ = true;
-	}
-
-	commit() {
-		delete window.__SETTINGS_TRANSACTION__;
-		updateSettings();
-	}
-}
-
 window.__GMPUBLISHER__ = appDataCallback => {
 	__TAURI__.tauri.invoke('free_caches');
 
@@ -84,9 +39,9 @@ window.__GMPUBLISHER__ = appDataCallback => {
 		function updateAppData(newAppData) {
 			console.log('UpdateAppData');
 			console.log(newAppData);
+			console.log(newAppData.settings);
 
-			const settings = AppSettings.init(newAppData.settings);
-			window.AppSettings = settings;
+			window.AppSettings = newAppData.settings;
 
 			delete newAppData.settings;
 			AppDataPtr._ = Object.freeze(newAppData);

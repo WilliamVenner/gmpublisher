@@ -191,4 +191,8 @@ function getFileTypeInfo(path) {
 const addons = new Addons();
 window.__ADDONS__ = addons;
 
+listen('InstalledAddonsRefreshed', () => {
+	addons.InstalledAddons = [];
+});
+
 export { addons as Addons, getFileTypeInfo, trimPath }

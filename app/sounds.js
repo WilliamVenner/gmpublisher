@@ -6,6 +6,10 @@ const audio = {
 	'btn-off': new Audio('/sound/btn_off.ogg'),
 };
 
+for (let sound in audio) {
+	audio[sound].load();
+}
+
 export function playSound(sound) {
 	audio[sound].play();
 }

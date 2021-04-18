@@ -4,6 +4,7 @@
 	export let id;
 	export let value = false;
 	export let beforeChange = null;
+	export let afterChange = null;
 
 	let checked = value;
 
@@ -13,7 +14,6 @@
 		e.stopPropagation();
 
 		const newValue = !checked;
-		console.log('checked', checked, 'newValue', newValue);
 
 		if (beforeChange) {
 			const override = await beforeChange(newValue);
@@ -26,16 +26,14 @@
 		stopSound('btn-on');
 		stopSound('btn-off');
 		playSound(checked ? 'btn-on' : 'btn-off');
-	}
 
-	function onChange() {
-		checked = this.checked;
+		if (afterChange) afterChange.call(checkbox);
 	}
 </script>
 
 <span class="switch-container">
 	<span class="switch" on:click={toggle} class:checked={checked}>
-		<input type="checkbox" on:change={onChange} id={id} name={id} checked={value ? true : null} bind:this={checkbox}/>
+		<input type="checkbox" id={id} name={id} checked={value ? true : null} bind:this={checkbox}/>
 		<div class="circle"></div>
 	</span>
 	<label for={id}><slot></slot></label>

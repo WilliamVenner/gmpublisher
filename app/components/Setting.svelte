@@ -1,23 +1,79 @@
 <script>
 	import { Folder } from "akar-icons-svelte";
 	import Switch from "./Switch.svelte";
+	import * as dialog from '@tauri-apps/api/dialog';
+	import { invoke } from '@tauri-apps/api/tauri';
+	import { playSound } from "../sounds";
 
 	export let id;
 	export let type;
 	export let value;
 	export let initial = null;
 	export let beforeChange = null;
+	export let afterChange = null;
+
+	if (!beforeChange && type === 'directory') {
+		beforeChange = async (before, after) => {
+			if (after.trim().length > 0) {
+				if (!(await invoke('check_dir', { path: after }))) {
+					return before;
+				} else {
+					playSound('success');
+				}
+			}
+			return after;
+		};
+	}
+
+	let prevVal = '';
+
+	function browse() {
+		const input = this.parentNode.querySelector(':scope > input');
+
+		dialog.open({
+			defaultPath: input.value.trim().length > 0 ? input.value : (input.placeholder.length > 0 ? input.placeholder : null),
+			directory: true,
+		}).then(async path => {
+			if (path) {
+				if (input.value === path) return;
+				if (beforeChange) {
+					const checkedVal = await beforeChange(prevVal, path);
+					if (checkedVal === prevVal) {
+						playSound('error');
+						return;
+					} else {
+						input.value = checkedVal;
+						prevVal = input.value;
+					}
+				} else {
+					input.value = path;
+				}
+				if (afterChange) afterChange.call(input);
+			}
+		});
+	}
+
+	async function change() {
+		if (this.value === prevVal) return;
+		this.value = await beforeChange(prevVal, this.value);
+		if (this.value === prevVal) {
+			playSound('error');
+			return;
+		}
+		prevVal = this.value;
+		if (afterChange) afterChange.call(this);
+	}
 </script>
 
 <setting>
 	{#if type === 'bool'}
-		<div><Switch {id} {value} {beforeChange}><slot></slot></Switch></div>
+		<div><Switch {id} {value} {beforeChange} {afterChange}><slot></slot></Switch></div>
 	{:else}
 		<label class="name" for={id}><slot></slot></label>
-		{#if type === 'path'}
+		{#if type === 'directory'}
 			<div class="path-container">
-				<input type="text" {id} name={id} placeholder={initial} {value}/>
-				<div class="browse icon-button"><Folder size="1rem"/></div>
+				<input type="text" {id} name={id} placeholder={initial} {value} on:change={beforeChange ? change : null} required={initial == null ? true : null}/>
+				<div class="browse icon-button" on:click={browse}><Folder size="1rem"/></div>
 			</div>
 		{/if}
 	{/if}

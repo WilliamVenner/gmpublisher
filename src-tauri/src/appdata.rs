@@ -66,11 +66,12 @@ impl Settings {
 		Ok(serde_json::ser::to_writer(BufWriter::new(File::create(&*APP_SETTINGS_PATH)?), self)?)
 	}
 
-	pub fn sanitize(&mut self) -> bool {
+	pub fn sanitize(&mut self) {
 		// TODO replace with drain_filter when it's stable
 		let mut i = 0;
 		while i != self.destinations.len() {
-			if !self.destinations[i].exists() {
+			let destination = &self.destinations[i];
+			if !destination.exists() || !destination.is_dir() || !destination.is_absolute() {
 				self.destinations.remove(i);
 			} else {
 				i += 1;
@@ -78,8 +79,6 @@ impl Settings {
 		}
 
 		self.destinations.truncate(20);
-
-		true
 	}
 }
 
@@ -210,28 +209,27 @@ impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 
 #[tauri::command]
 pub fn update_settings(mut settings: Settings) {
-	if settings.sanitize() {
-		ignore! { settings.save() };
+	settings.sanitize();
 
-		let rediscover_addons = app_data!().settings.read().gmod != settings.gmod;
+	ignore! { settings.save() };
 
-		*app_data!().settings.write() = settings;
+	let rediscover_addons = app_data!().settings.read().gmod != settings.gmod;
 
-		if rediscover_addons {
-			game_addons!().refresh();
-		}
+	*app_data!().settings.write() = settings;
+
+	if rediscover_addons {
+		game_addons!().refresh();
+		webview_emit!("InstalledAddonsRefreshed");
 	}
+
+	webview_emit!("UpdateAppData", &*crate::APP_DATA);
 }
 
 #[tauri::command]
-pub fn clean_app_data() {
-	// TODO
-	// clean %temp%/gmpublisher
-}
-
-#[tauri::command]
-pub fn verify_directory(path: PathBuf) -> bool {
-	path.exists() && path.is_dir()
+pub fn validate_gmod(mut path: PathBuf) -> bool {
+	path.push("GarrysMod");
+	path.push("addons");
+	path.is_absolute() && path.exists() && path.is_dir()
 }
 
 #[tauri::command]

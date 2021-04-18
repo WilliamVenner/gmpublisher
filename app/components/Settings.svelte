@@ -10,6 +10,8 @@
 	import * as notification from '@tauri-apps/api/notification';
 	import { enabled as desktopNotificationsEnabled } from '../notifications';
 	import { playSound } from '../sounds';
+	import { invoke } from '@tauri-apps/api/tauri';
+	//import SavedToast from './SavedToast.svelte';
 
 	let active = false;
 	function toggle() {
@@ -18,13 +20,16 @@
 
 	let activeItem = writable('paths');
 
+	//let savedToast;
 	function saveSettings(e) {
 		e.preventDefault();
-		console.log(e);
+		//if (savedToast && document.querySelector('#saved-toast') != null) savedToast.$destroy();
+		//savedToast = new SavedToast({ target: document.querySelector('#settings > div') });
+		invoke('update_settings', { settings: AppSettings });
 	}
 
-	async function desktopNotificationsChange(val) {
-		if (val === true) {
+	async function desktopNotificationsChange(_before, after) {
+		if (after === true) {
 			const granted = await notification.isPermissionGranted();
 			if (granted) {
 				return true;
@@ -38,7 +43,31 @@
 			playSound('error');
 			return false;
 		}
-		return val;
+		return after;
+	}
+
+	async function validateGmod(before, after) {
+		if (after.trim().length > 0) {
+			if (!(await invoke('validate_gmod', { path: after }))) {
+				return before.trim().length > 0 ? before : null;
+			} else {
+				playSound('success');
+			}
+		}
+		return after;
+	}
+
+	let form;
+	function afterChange() {
+		if (this.type === 'checkbox') {
+			AppSettings[this.id] = this.checked;
+		} else if (typeof this.value === 'string') {
+			const trimmed = this.value.trim();
+			AppSettings[this.id] = trimmed.length > 0 ? trimmed : null;
+		} else {
+			AppSettings[this.id] = this.value;
+		}
+		form.requestSubmit();
 	}
 </script>
 
@@ -51,15 +80,15 @@
 
 	</Sidebar>
 
-	<form id="content" class="hide-scroll" on:submit={saveSettings}>
+	<form id="content" class="hide-scroll" on:submit={saveSettings} bind:this={form}>
 		{#if $activeItem === 'paths'}
-			<Setting id="gmod" type="path" initial={AppData.gmod_dir} value={AppSettings.gmod}>{$_('settings.paths.gmod')}</Setting>
-			<Setting id="downloads" type="path" initial={AppData.downloads_dir} value={AppSettings.downloads}>{$_('settings.paths.downloads')}</Setting>
-			<Setting id="user_data" type="path" initial={AppData.user_data_dir} value={AppSettings.user_data}>{$_('settings.paths.user_data')}</Setting>
-			<Setting id="temp" type="path" initial={AppData.temp_dir} value={AppSettings.temp}>{$_('settings.paths.temp')}</Setting>
+			<Setting {afterChange} id="gmod" type="directory" initial={AppData.gmod_dir} value={AppSettings.gmod} beforeChange={validateGmod}>{$_('settings.paths.gmod')}</Setting>
+			<Setting {afterChange} id="downloads" type="directory" initial={AppData.downloads_dir} value={AppSettings.downloads}>{$_('settings.paths.downloads')}</Setting>
+			<Setting {afterChange} id="user_data" type="directory" initial={AppData.user_data_dir} value={AppSettings.user_data}>{$_('settings.paths.user_data')}</Setting>
+			<Setting {afterChange} id="temp" type="directory" initial={AppData.temp_dir} value={AppSettings.temp}>{$_('settings.paths.temp')}</Setting>
 		{:else if $activeItem === 'notifications'}
-			<Setting id="notification_sounds" type="bool" value={AppSettings.notification_sounds}>{$_('settings.notifications.sounds')}</Setting>
-			<Setting id="desktop_notifications" type="bool" value={$desktopNotificationsEnabled} beforeChange={desktopNotificationsChange}>{$_('settings.notifications.desktop')}</Setting>
+			<Setting {afterChange} id="notification_sounds" type="bool" value={AppSettings.notification_sounds}>{$_('settings.notifications.sounds')}</Setting>
+			<Setting {afterChange} id="desktop_notifications" type="bool" value={$desktopNotificationsEnabled} beforeChange={desktopNotificationsChange}>{$_('settings.notifications.desktop')}</Setting>
 		{:else if $activeItem === 'resets'}
 			resets
 		{/if}
@@ -72,7 +101,6 @@
 	:global(#settings-sidebar) {
 		width: 200px;
 		background-color: rgb(0, 0, 0, .1);
-		box-shadow: 0 0 10px 0px rgba(0, 0, 0, .35);
 	}
 	:global(#settings > div) {
 		display: flex;
