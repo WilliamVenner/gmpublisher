@@ -8,16 +8,11 @@ use parking_lot::{RwLock, RwLockReadGuard};
 use serde::{Deserialize, Serialize};
 use tauri::Params;
 
-const APP_INFO: app_dirs::AppInfo = app_dirs::AppInfo {
-	name: "gmpublisher",
-	author: "WilliamVenner",
-};
 lazy_static! {
-	static ref APP_DATA_DIR: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO).unwrap();
-	static ref APP_SETTINGS_PATH: PathBuf = app_dirs::app_root(app_dirs::AppDataType::UserConfig, &APP_INFO)
-		.unwrap()
-		.join("settings.json");
-	static ref TEMP_DIR: PathBuf = std::env::temp_dir();
+	static ref USER_DATA_DIR: PathBuf = dirs_next::data_dir().unwrap_or_else(|| std::env::current_exe().unwrap_or_else(|_| std::env::temp_dir())).join("gmpublisher");
+	static ref APP_SETTINGS_PATH: PathBuf = dirs_next::config_dir().unwrap_or_else(|| dirs_next::data_dir().unwrap_or_else(|| std::env::current_exe().unwrap_or_else(|_| std::env::temp_dir()))).join("gmpublisher/settings.json");
+	static ref TEMP_DIR: PathBuf = std::env::temp_dir().join("gmpublisher");
+	static ref DOWNLOADS_DIR: Option<PathBuf> = dirs::download_dir();
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -25,9 +20,14 @@ pub struct Settings {
 	pub temp: Option<PathBuf>,
 	pub gmod: Option<PathBuf>,
 	pub user_data: Option<PathBuf>,
+	pub downloads: Option<PathBuf>,
+
+	pub notification_sounds: bool,
+	pub desktop_notifications: bool,
 
 	pub window_size: (f64, f64),
 	pub window_maximized: bool,
+
 	pub destinations: Vec<PathBuf>,
 	pub create_folder_on_extract: bool,
 }
@@ -37,8 +37,14 @@ impl Default for Settings {
 			temp: None,
 			gmod: None,
 			user_data: None,
+			downloads: None,
+
+			notification_sounds: true,
+			desktop_notifications: true,
+
 			window_size: (800., 600.),
 			window_maximized: true,
+
 			destinations: Vec::new(),
 			create_folder_on_extract: true,
 		}
@@ -88,6 +94,7 @@ pub struct AppData {
 	gmod_dir: Option<PathBuf>,
 	#[serde(serialize_with = "serde_user_data_dir")]
 	user_data_dir: PathBuf,
+	#[serde(serialize_with = "serde_downloads_dir")]
 	downloads_dir: Option<PathBuf>,
 }
 impl AppData {
@@ -97,10 +104,11 @@ impl AppData {
 			settings: RwLock::new(settings),
 			version: env!("CARGO_PKG_VERSION"),
 
-			downloads_dir: dirs::download_dir(),
+			// Placeholders
 			temp_dir: PathBuf::new(),
-			gmod_dir: None,
 			user_data_dir: PathBuf::new(),
+			gmod_dir: None,
+			downloads_dir: None,
 		}
 	}
 
@@ -150,11 +158,18 @@ impl AppData {
 			}
 		}
 
-		RwLockCow::Borrowed(&*APP_DATA_DIR)
+		RwLockCow::Borrowed(&*USER_DATA_DIR)
 	}
 
-	pub fn downloads_dir(&self) -> Option<&PathBuf> {
-		self.downloads_dir.as_ref()
+	pub fn downloads_dir(&self) -> RwLockCow<'_, Option<PathBuf>> {
+		let lock = self.settings.read();
+		if let Some(ref downloads) = lock.downloads {
+			if downloads.is_dir() && downloads.exists() {
+				return RwLockCow::Locked(RwLockReadGuard::map(lock, |s| &s.downloads));
+			}
+		}
+
+		RwLockCow::Borrowed(&*DOWNLOADS_DIR)
 	}
 }
 
@@ -214,6 +229,11 @@ pub fn clean_app_data() {
 	// clean %temp%/gmpublisher
 }
 
+#[tauri::command]
+pub fn verify_directory(path: PathBuf) -> bool {
+	path.exists() && path.is_dir()
+}
+
 fn serde_gmod_dir<S>(_: &Option<PathBuf>, serializer: S) -> Result<S::Ok, S::Error>
 where
 	S: serde::Serializer,
@@ -233,4 +253,11 @@ where
 	S: serde::Serializer,
 {
 	app_data!().user_data_dir().serialize(serializer)
+}
+
+fn serde_downloads_dir<S>(_: &Option<PathBuf>, serializer: S) -> Result<S::Ok, S::Error>
+where
+	S: serde::Serializer,
+{
+	app_data!().downloads_dir().serialize(serializer)
 }

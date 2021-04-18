@@ -43,29 +43,8 @@ class AppSettings {
 	}
 }
 
-window.__GMPUBLISHER__ = () => {
+window.__GMPUBLISHER__ = appDataCallback => {
 	__TAURI__.tauri.invoke('free_caches');
-
-	{
-		const AppDataPtr = {};
-		window.AppData = new Proxy(AppDataPtr, {
-			get: function(_, key) { return _._[key]; }
-		});
-
-		function updateAppData(newAppData) {
-			console.log('UpdateAppData');
-			console.log(newAppData);
-
-			const settings = AppSettings.init(newAppData.settings);
-			window.AppSettings = settings;
-
-			delete newAppData.settings;
-			AppDataPtr._ = Object.freeze(newAppData);
-		}
-
-		updateAppData(JSON.parse('{$_APP_DATA_$}'));
-		__TAURI__.event.listen('UpdateAppData', ({ payload }) => updateAppData(payload));
-	}
 
 	{
 		__TAURI__.event.listen('tauri://file-drop', ({ payload: path }) => {
@@ -94,6 +73,29 @@ window.__GMPUBLISHER__ = () => {
 		window.addEventListener('dragend', e => {
 			console.log('JS File Drop Cancelled (dragend)', e);
 		});
+	}
+
+	{
+		const AppDataPtr = {};
+		window.AppData = new Proxy(AppDataPtr, {
+			get: function(_, key) { return _._[key]; }
+		});
+
+		function updateAppData(newAppData) {
+			console.log('UpdateAppData');
+			console.log(newAppData);
+
+			const settings = AppSettings.init(newAppData.settings);
+			window.AppSettings = settings;
+
+			delete newAppData.settings;
+			AppDataPtr._ = Object.freeze(newAppData);
+
+			if (appDataCallback) appDataCallback();
+		}
+
+		updateAppData(JSON.parse('{$_APP_DATA_$}'));
+		__TAURI__.event.listen('UpdateAppData', ({ payload }) => updateAppData(payload));
 	}
 };
 

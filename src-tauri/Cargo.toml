@@ -11,7 +11,7 @@ build = "src/build.rs"
 
 [dependencies.tauri]
 git = "https://github.com/williamvenner/tauri"
-features = ["api-all"]
+features = ["api-all", "cli"]
 branch = "personal"
 
 [build-dependencies]
@@ -47,7 +47,6 @@ atomic_refcell = "0.1.7"
 thiserror = "1.0.24"
 chardetng = "0.1.10"
 byteorder = "1.4.3"
-app_dirs = "1.2.1"
 walkdir = "2.3.2"
 crc32fast = "1.2.1"
 path-slash = "0.1.4"
@@ -58,6 +57,7 @@ backtrace = "0.3.56"
 steamlocate = "0.1.3"
 chrono = { version = "0.4.19", features = [ "serde" ] }
 bincode = "1.3.3"
+dirs-next = "2.0.0"
 
 [features]
 default = [ "custom-protocol" ]
@@ -65,4 +65,4 @@ custom-protocol = [ "tauri/custom-protocol" ]
 
 [profile.release]
 lto = true
-codegen-units = 1
+#codegen-units = 1
