@@ -109,17 +109,11 @@ delete window.__WS_DEAD__.localFile;
 window.PATH_SEPARATOR = {$_PATH_SEPARATOR_$};
 
 let resizeTimeout;
-
-function isMaximized() {
-	return window.innerWidth - window.outerWidth === 0 && window.innerHeight - window.outerHeight === 0;
-}
 function resized(e) {
-	console.log(e);
-	/*window.__TAURI__.invoke("windowResize", {
-		maximized: isMaximized(),
+	window.__TAURI__.invoke("window_resized", {
 		width: window.outerWidth,
 		height: window.outerHeight
-	});*/
+	});
 }
 window.addEventListener('resize', e => {
 	clearTimeout(resizeTimeout);

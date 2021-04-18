@@ -63,7 +63,7 @@ impl Settings {
 	}
 
 	pub fn save(&self) -> Result<(), anyhow::Error> {
-		Ok(serde_json::ser::to_writer(BufWriter::new(File::open(&*APP_SETTINGS_PATH)?), self)?)
+		Ok(serde_json::ser::to_writer(BufWriter::new(File::create(&*APP_SETTINGS_PATH)?), self)?)
 	}
 
 	pub fn sanitize(&mut self) -> bool {
@@ -232,6 +232,12 @@ pub fn clean_app_data() {
 #[tauri::command]
 pub fn verify_directory(path: PathBuf) -> bool {
 	path.exists() && path.is_dir()
+}
+
+#[tauri::command]
+pub fn window_resized(width: f64, height: f64) {
+	app_data!().settings.write().window_size = (width, height);
+	ignore! { app_data!().settings.read().save() };
 }
 
 fn serde_gmod_dir<S>(_: &Option<PathBuf>, serializer: S) -> Result<S::Ok, S::Error>
