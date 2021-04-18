@@ -23,6 +23,14 @@ pub struct NormalizedPathBuf {
 	pub normalized: PathBuf,
 	path: PathBuf,
 }
+impl NormalizedPathBuf {
+	pub fn new() -> NormalizedPathBuf {
+		NormalizedPathBuf {
+			path: PathBuf::new(),
+			normalized: PathBuf::new()
+		}
+	}
+}
 impl std::ops::Deref for NormalizedPathBuf {
 	type Target = PathBuf;
 	fn deref(&self) -> &Self::Target {

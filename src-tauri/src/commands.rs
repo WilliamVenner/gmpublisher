@@ -11,6 +11,7 @@ where
 
 		crate::appdata::update_settings,
 		crate::appdata::clean_app_data,
+		crate::appdata::verify_directory,
 
 		crate::game_addons::browse_installed_addons,
 		crate::game_addons::get_installed_addon,
