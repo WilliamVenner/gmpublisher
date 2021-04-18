@@ -2,95 +2,88 @@
 	import { tippy } from '../tippy';
 	import { _ } from 'svelte-i18n';
 	import { Gear } from 'akar-icons-svelte';
+	import Modal from './Modal.svelte';
+	import Sidebar from './Sidebar.svelte';
+	import { writable } from 'svelte/store';
+	import SidebarItem from './SidebarItem.svelte';
+	import Setting from './Setting.svelte';
+	import * as notification from '@tauri-apps/api/notification';
+	import { enabled as desktopNotificationsEnabled } from '../notifications';
+	import { playSound } from '../sounds';
 
 	let active = false;
+	function toggle() {
+		active = !active;
+	}
 
-	const toggle = e => {
-		if (!e) {
-			active = !active;
-		} else if (e.target?.tagName === 'MODAL') {
-			active = false;
+	let activeItem = writable('paths');
+
+	function saveSettings(e) {
+		e.preventDefault();
+		console.log(e);
+	}
+
+	async function desktopNotificationsChange(val) {
+		if (val === true) {
+			const granted = await notification.isPermissionGranted();
+			if (granted) {
+				return true;
+			} else {
+				const request = await notification.requestPermission();
+				if (request === 'granted' || request === true) {
+					playSound('success');
+					return true;
+				}
+			}
+			playSound('error');
+			return false;
 		}
-	};
+		return val;
+	}
 </script>
 
-<modal class:active={active} on:click={toggle}>
-	<div class="content hide-scroll">
-		sneed
-	</div>
-</modal>
+<Modal id="settings" active={active} cancel={toggle}>
+	<Sidebar id="settings-sidebar">
 
-<span class="nav-icon" use:tippy={$_('settings')} on:click={() => toggle()}><Gear size="1.5rem" stroke-width="1.5" id="settings"/></span>
+		<SidebarItem {activeItem} id="paths">{$_('settings.paths.paths')}</SidebarItem>
+		<SidebarItem {activeItem} id="notifications">{$_('settings.notifications.notifications')}</SidebarItem>
+		<SidebarItem {activeItem} id="resets">{$_('settings.resets.resets')}</SidebarItem>
+
+	</Sidebar>
+
+	<form id="content" class="hide-scroll" on:submit={saveSettings}>
+		{#if $activeItem === 'paths'}
+			<Setting id="gmod" type="path" initial={AppData.gmod_dir} value={AppSettings.gmod}>{$_('settings.paths.gmod')}</Setting>
+			<Setting id="downloads" type="path" initial={AppData.downloads_dir} value={AppSettings.downloads}>{$_('settings.paths.downloads')}</Setting>
+			<Setting id="user_data" type="path" initial={AppData.user_data_dir} value={AppSettings.user_data}>{$_('settings.paths.user_data')}</Setting>
+			<Setting id="temp" type="path" initial={AppData.temp_dir} value={AppSettings.temp}>{$_('settings.paths.temp')}</Setting>
+		{:else if $activeItem === 'notifications'}
+			<Setting id="notification_sounds" type="bool" value={AppSettings.notification_sounds}>{$_('settings.notifications.sounds')}</Setting>
+			<Setting id="desktop_notifications" type="bool" value={$desktopNotificationsEnabled} beforeChange={desktopNotificationsChange}>{$_('settings.notifications.desktop')}</Setting>
+		{:else if $activeItem === 'resets'}
+			resets
+		{/if}
+	</form>
+</Modal>
+
+<span class="nav-icon" use:tippy={$_('settings.settings')} on:click={toggle}><Gear size="1.5rem" stroke-width="1.5" id="settings"/></span>
 
 <style>
-	modal {
-		position: fixed;
-		width: 100%;
-		height: 100%;
-		z-index: 999;
-		pointer-events: none;
-		top: 0;
-		left: 0;
-		transition: background-color .25s, backdrop-filter .25s;
+	:global(#settings-sidebar) {
+		width: 200px;
+		background-color: rgb(0, 0, 0, .1);
+		box-shadow: 0 0 10px 0px rgba(0, 0, 0, .35);
 	}
-	@media (max-width: 1000px), (max-height: 700px) {
-		modal {
-			width: 100%;
-			height: 100%;
-		}
+	:global(#settings > div) {
+		display: flex;
+		flex-direction: row;
+		width: 42rem;
+		height: 30rem;
 	}
-	modal > .content {
-		position: fixed;
-		max-width: 100%;
-   		max-height: 100%;
-		width: 1000px;
-		height: 700px;
-		margin: auto;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-	}
-
-	modal.active {
-		pointer-events: all;
-		background-color: rgba(0,0,0,.6);
-		backdrop-filter: blur(2px);
-		animation: modal .25s;
-	}
-
-	modal > .content {
-		background-color: #131313;
-		box-shadow: rgba(0, 0, 0, .24) 0px 3px 8px;
-		transition: transform .25s, opacity .25s;
-	}
-	modal:not(.active) > .content {
-		transform: scale(0, 0);
-		opacity: 0;
-	}
-	modal.active > .content {
-		transform: scale(1, 1);
-		opacity: 1;
-		animation: modal-content .25s;
-	}
-	@keyframes modal {
-		from {
-			background-color: rgba(0,0,0,0);
-			backdrop-filter: blur(0px);
-		}
-		to {
-			background-color: rgba(0,0,0,.6);
-			backdrop-filter: blur(2px);
-		}
-	}
-	@keyframes modal-content {
-		from {
-			transform: scale(0, 0);
-			opacity: 0;
-		}
-		to {
-			transform: scale(1, 1);
-			opacity: 1;
-		}
+	#content {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		padding: 1.5rem;
 	}
 </style>

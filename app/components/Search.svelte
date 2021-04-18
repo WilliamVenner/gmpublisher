@@ -53,6 +53,10 @@
 		color: #fff;
 		font-size: .85em;
 	}
+	#search:focus {
+		outline: none;
+		box-shadow: inset 0 0 0px 1.5px #127cff;
+	}
 	main :global(.icon) {
 		position: absolute;
 		top: calc(50% - .5rem);
@@ -64,10 +68,6 @@
 
 	main:focus-within > div {
 		width: 60%;
-	}
-	#search:focus {
-		outline: none;
-		box-shadow: inset 0 0 0px 1.5px #127cff;
 	}
 	#search:focus + :global(.icon) {
 		opacity: 1;

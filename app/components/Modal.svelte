@@ -2,6 +2,7 @@
 	export let id = null;
 	export let active = false;
 	export let cancel = null;
+	export let padding = null;
 
 	let modal;
 	function doCancel(e) {
@@ -10,7 +11,7 @@
 	}
 </script>
 
-<modal id={id} on:click={doCancel} bind:this={modal} class:active={active}><div class="hide-scroll">
+<modal id={id} on:click={doCancel} bind:this={modal} class:active={active}><div class="hide-scroll" style={padding ? ('padding:' + padding) : null}>
 	<slot></slot>
 </div></modal>
 
@@ -49,7 +50,6 @@
 		right: 0;
 		margin: auto;
 
-		padding: 1.5rem;
 		background-color: #1a1a1a;
 		border-radius: .3rem;
 		box-shadow: 0 0 10px rgba(0, 0, 0, .25);

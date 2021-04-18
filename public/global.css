@@ -134,6 +134,21 @@ body::-webkit-scrollbar, .hide-scroll::-webkit-scrollbar { /* WebKit */
 	margin-right: .4rem;
 }
 
+.icon-button {
+	cursor: pointer;
+	background: #313131;
+	box-shadow: 0px 0px 2px 0px rgb(0 0 0 / 40%);
+	border-radius: 4px;
+	padding: .9rem;
+}
+.icon-button > .icon {
+	opacity: .3;
+	transition: opacity .1s;
+}
+.icon-button:hover > .icon {
+	opacity: 1;
+}
+
 .tag.addon { color: #fff !important }
 .tag.addon::before { background-color: #006cc7 !important }
 .tag.addon::after { border-left-color: #006cc7 !important }

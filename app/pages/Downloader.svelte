@@ -325,7 +325,7 @@
 
 <main class="hide-scroll">
 	<div id="top-controls">
-		<div id="download">
+		<div id="download" class="icon-button">
 			<Folder size="1.2rem"/>
 		</div>
 		<div id="download-input-container">
@@ -675,16 +675,8 @@
 	#download-input:focus + :global(.icon) {
 		opacity: 1;
 	}
-	#top-controls #download :global(.icon) {
-		opacity: .3;
-	}
-	#top-controls #download {
-		cursor: pointer;
-		margin-right: 1rem;
-		background: #313131;
-		box-shadow: 0px 0px 2px 0px rgb(0 0 0 / 40%);
-		border-radius: 4px;
-		padding: .9rem;
+	#download {
+		margin-right: .75rem;
 	}
 
 	#layout .btn {

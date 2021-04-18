@@ -112,7 +112,7 @@
 	}
 </script>
 
-<Modal id="destination-select" cancel={cancel} active={active}>
+<Modal id="destination-select" cancel={cancel} active={active} padding="1.5rem">
 	<h1>{$_('extract_where_to')}</h1>
 	<h4>{$_('extract_overwrite_warning')}</h4>
 
