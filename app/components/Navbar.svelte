@@ -7,6 +7,7 @@
 	import Search from './Search.svelte';
 	import Notifications from './Notifications.svelte';
 	import Settings from './Settings.svelte';
+	import { playSound } from '../sounds';
 
 	let timeOfDay = 'morning';
 	{
@@ -26,16 +27,26 @@
 	}
 
 	let steamConnected = false;
+	let connectionLost = false;
 	{
 		invoke('is_steam_connected').then(connected => {
+			if (connected) connectionLost = false;
 			steamConnected = connected;
 		});
 
 		listen('SteamConnected', () => {
+			if (!steamConnected && connectionLost) {
+				playSound('success');
+				connectionLost = false;
+			}
 			steamConnected = true;
 		});
 
 		listen('SteamDisconnected', () => {
+			if (steamConnected) {
+				playSound('error');
+				connectionLost = true;
+			}
 			steamConnected = false;
 		});
 	}
