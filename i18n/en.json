@@ -1,6 +1,4 @@
 {
-	"settings": "Settings",
-	"reset_settings": "Reset Settings",
 	"my_workshop": "My Workshop",
 	"loading": "Loading...",
 	"gmod_dir": {
@@ -113,5 +111,30 @@
 
 	"no_notifications": "No Notifications",
 	"no_addons_found": "No Addons Found",
-	"publish_new": "Publish New..."
+	"publish_new": "Publish New...",
+
+	"settings": {
+		"settings": "Settings",
+
+		"paths": {
+			"paths": "Paths",
+			"user_data": "User Data Path",
+			"gmod": "Garry's Mod Installation Path",
+			"temp": "Temp Path",
+			"downloads": "Downloads Path"
+		},
+
+		"notifications": {
+			"notifications": "Notifications",
+			"sounds": "Sounds",
+			"desktop": "Desktop Notifications"
+		},
+
+		"resets": {
+			"resets": "Resets",
+			"settings": "Reset Settings",
+			"clear_temp": "Clear Temp Files",
+			"clear_user_data": "Clear User Data"
+		}
+	}
 }

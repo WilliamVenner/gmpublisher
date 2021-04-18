@@ -1,39 +1,56 @@
 import { writable } from 'svelte/store';
-
-export const notifications = writable([]);
+import { playSound, stopSound } from './sounds';
+import * as notification from '@tauri-apps/api/notification';
 
 export const NOTIFICATION_SILENT = -1;
 export const NOTIFICATION_ALERT = 0;
 export const NOTIFICATION_SUCCESS = 1;
 export const NOTIFICATION_ERROR = 2;
 
-function stop(audio) {
-	audio.pause();
-	audio.currentTime = 0;
-}
+export const notifications = writable([]);
+export const enabled = writable(null);
 
-export function pushNotification(notification) {
-	switch(notification.type ?? -1) {
+let enabled_ = null;
+enabled.subscribe(val => enabled_ = val);
+
+export function pushNotification(options) {
+	switch(options.type ?? -1) {
 		case NOTIFICATION_SILENT: break;
 
 		case NOTIFICATION_ALERT:
-			document.querySelector('#sound-alert').play();
+			playSound('alert');
 			break;
 
 		case NOTIFICATION_SUCCESS:
-			stop(document.querySelector('#sound-alert'));
-			document.querySelector('#sound-success').play();
+			stopSound('alert');
+			playSound('success');
 			break;
 
 		case NOTIFICATION_ERROR:
-			stop(document.querySelector('#sound-alert'));
-			stop(document.querySelector('#sound-success'));
-			document.querySelector('#sound-error').play();
+			stopSound('alert');
+			stopSound('success');
+			playSound('error');
 			break;
 	}
 
 	notifications.update(notifications => {
-		notifications.push(notification);
+		notifications.push(options);
 		return notifications;
 	});
+
+	if (enabled_) {
+		notification.sendNotification({
+			title: options.title,
+			body: options.body,
+			icon: options.icon
+		});
+	}
+}
+
+export function appSettingsCallback() {
+	if (AppSettings.desktop_notifications) {
+		notification.isPermissionGranted().then(granted => {
+			enabled.set(granted);
+		});
+	}
 }

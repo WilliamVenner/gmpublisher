@@ -45,7 +45,36 @@ pub mod webview;
 
 mod commands;
 
+fn write_tauri_settings() -> Option<()> {
+	// silly bypass for the pointless permissions system
+
+	use std::{collections::HashMap, fs::{self, File}, io::{BufReader, BufWriter}};
+	use serde_json::Value as JsonValue;
+
+	let mut settings_path = dirs_next::config_dir()?;
+	settings_path.push("gmpublisher");
+
+	fs::create_dir_all(&settings_path).ok()?;
+
+	settings_path.push(".tauri-settings.json");
+
+	if settings_path.exists() {
+		let stored = {
+			let mut stored: HashMap<String, JsonValue> = serde_json::from_reader(BufReader::new(File::open(&settings_path).ok()?)).ok()?;
+			stored.insert("allow_notification".to_string(), JsonValue::Bool(true));
+			stored
+		};
+		serde_json::to_writer(BufWriter::new(File::create(settings_path).ok()?), &stored).ok()?;
+	} else {
+		fs::write(settings_path, r#"{"allow_notification":true}"#).ok()?;
+	}
+
+	Some(())
+}
+
 fn main() {
+	ignore! { write_tauri_settings() };
+
 	globals::init_globals();
 
 	tauri::Builder::default()
