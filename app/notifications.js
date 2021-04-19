@@ -14,23 +14,25 @@ let enabled_ = null;
 enabled.subscribe(val => enabled_ = val);
 
 export function pushNotification(options) {
-	switch(options.type ?? -1) {
-		case NOTIFICATION_SILENT: break;
+	if (AppSettings && AppSettings.notification_sounds) {
+		switch(options.type ?? -1) {
+			case NOTIFICATION_SILENT: break;
 
-		case NOTIFICATION_ALERT:
-			playSound('alert');
-			break;
+			case NOTIFICATION_ALERT:
+				playSound('alert');
+				break;
 
-		case NOTIFICATION_SUCCESS:
-			stopSound('alert');
-			playSound('success');
-			break;
+			case NOTIFICATION_SUCCESS:
+				stopSound('alert');
+				playSound('success');
+				break;
 
-		case NOTIFICATION_ERROR:
-			stopSound('alert');
-			stopSound('success');
-			playSound('error');
-			break;
+			case NOTIFICATION_ERROR:
+				stopSound('alert');
+				stopSound('success');
+				playSound('error');
+				break;
+		}
 	}
 
 	notifications.update(notifications => {
@@ -38,7 +40,7 @@ export function pushNotification(options) {
 		return notifications;
 	});
 
-	if (enabled_) {
+	if (enabled_ && options.desktop != false && document.visibilityState !== 'visible') {
 		notification.sendNotification({
 			title: options.title,
 			body: options.body,
