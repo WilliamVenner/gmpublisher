@@ -78,7 +78,7 @@
 	"downloading": "Downloading",
 	"log": "Log",
 	"waiting": "Waiting",
-	"extraction_tip": "TIP: You can drag and drop GMA files onto this screen to directly extract them.",
+	"extraction_tip": "You can drag and drop GMA files onto this screen to directly extract them.",
 	"set_destination": "Set Destination",
 
 	"addon": "Addon",
@@ -110,6 +110,8 @@
 	"steam_connected": "Connected to Steam Servers",
 
 	"no_notifications": "No Notifications",
+	"notifications_count": "{count} Notifications",
+	"notifications_one": "1 Notification",
 	"no_addons_found": "No Addons Found",
 	"publish_new": "Publish New...",
 
@@ -137,5 +139,10 @@
 			"clear_temp": "Clear Temp Files",
 			"clear_user_data": "Clear User Data"
 		}
-	}
+	},
+
+	"gma_type_name": "Packed Garry's Mod Addon",
+	"downloading_tip": "You can drag Steam Workshop links onto this screen to download + extract them.",
+	"open_workshop": "Open Workshop",
+	"bulk_extract_gmas": "Bulk Extract GMAs"
 }

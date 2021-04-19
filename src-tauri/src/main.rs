@@ -15,6 +15,10 @@ pub use globals::*;
 pub mod util;
 pub use util::*;
 
+#[macro_use]
+pub mod transactions;
+pub use transactions::Transaction;
+
 pub mod base64_image;
 pub use base64_image::Base64Image;
 
@@ -35,9 +39,6 @@ pub use steam::workshop::WorkshopItem;
 
 pub mod octopus;
 pub use octopus::*;
-
-pub mod transactions;
-pub use transactions::Transaction;
 
 pub mod search;
 pub mod content_generator;

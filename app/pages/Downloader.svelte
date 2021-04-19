@@ -1,5 +1,5 @@
 <script>
-	import { Cross, Folder, LinkChain } from 'akar-icons-svelte';
+	import { CloudDownload, Cross, Folder, FolderAdd, LinkChain } from 'akar-icons-svelte';
 	import { DateTime } from 'luxon';
 	import { _ } from 'svelte-i18n';
 	import { invoke } from '@tauri-apps/api/tauri';
@@ -11,6 +11,9 @@
 	import Loading from '../components/Loading.svelte';
 	import filesize from 'filesize';
 	import { NOTIFICATION_ERROR, NOTIFICATION_SUCCESS, NOTIFICATION_ALERT, pushNotification } from '../notifications';
+	import * as dialog from '@tauri-apps/api/dialog';
+	import { tippyFollow } from '../tippy';
+	import { playSound } from '../sounds';
 	//import Destination from '../modals/Destination.svelte';
 
 	const RE_FILE_NAME = /(?:\\|\/|^)([^\/\\]+?)$/m;
@@ -25,19 +28,13 @@
 	const JOB_TYPE_DOWNLOAD = 0;
 	const JOB_TYPE_EXTRACT = 1;
 
-	let destination = {
-		named_dir: AppSettings.create_folder_on_extract,
-		path: null,
-		tmp: true,
-		addons: false,
-		downloads: false,
-	};
-
 	let jobLog = [];
 	let extractingJobs = [];
 	let downloadingJobs = [];
 
 	function pushLog(msg, msgData) {
+		// TODO pushNotification
+
 		const log = {
 			timestamp: new Date().getTime() / 1000,
 			type: msg,
@@ -79,106 +76,64 @@
 	function pushTransaction(jobType, args) {
 		const timestamp = new Date().getTime();
 
-		switch (jobType) {
-			case JOB_TYPE_DOWNLOAD: {
+		console.log('sneed');
 
-				const { transaction, ws_id } = args;
-				pushLog(LOG_DOWNLOAD_STARTED, { ws_id });
-
-				const job = downloadingJobs[downloadingJobs.push(args)-1];
-				job.timestamp = timestamp;
-
-				downloadingJobs = downloadingJobs;
-
+		switch(jobType) {
+			case JOB_TYPE_DOWNLOAD:
+				var [transaction] = args;
 				transaction.listen(event => {
 					if (event.finished) {
-
-						pushLog(LOG_DOWNLOAD_FINISHED, {
-							ws_id,
-							time: elapsedTime(timestamp),
-						});
-
-						pushTransaction(JOB_TYPE_EXTRACT, {
-							ws_id,
-							transaction: new Transaction(event.data)
-						});
-
-					} else if (event.error) {
-						pushLog(LOG_DOWNLOAD_FAILED, {
-							ws_id,
-							reason: event.error
-						});
-					} else {
-						if (event.stream) {
-							// Returns the total number of bytes
-							job.total = Number(event.data);
+						const index = downloadingJobs.find(elem => elem.transaction === transaction);
+						if (index) {
+							downloadingJobs.splice(index, 1);
+							downloadingJobs = downloadingJobs;
 						}
+						const path = event.data;
+						/*Addons.getWorkshopAddon()
+						pushNotification({
+							title: $_('download_complete'),
+							body:
+						});*/
+					} else if (event.stream) {
+						const [ws_id, size] = event.data;
+						downloadingJobs.push({
+							transaction,
+							timestamp,
+							size,
+							ws_id,
+						});
 						downloadingJobs = downloadingJobs;
-						return;
-					}
-
-					for (let i = 0; i < downloadingJobs.length; i++) {
-						if (downloadingJobs[i] === job) {
-							downloadingJobs.splice(i, 1);
-							break;
-						}
 					}
 				});
+				break;
 
-			} break;
-
-			case JOB_TYPE_EXTRACT: {
-
-				const { transaction, path, ws_id } = args;
-
-				const fileName = path ? (RE_FILE_NAME.exec(path)?.[1] ?? path) : undefined;
-
-				pushLog(LOG_EXTRACT_STARTED, { ws_id, fileName });
-
-				const job = extractingJobs[extractingJobs.push(args)-1];
-				job.timestamp = timestamp;
-
-				extractingJobs = extractingJobs;
-
+			case JOB_TYPE_EXTRACT:
+				var [transaction, fileName, ws_id] = args;
 				transaction.listen(event => {
 					if (event.finished) {
-						pushLog(LOG_EXTRACT_FINISHED, {
-							ws_id,
-							fileName,
-							path: event.data,
-							time: elapsedTime(timestamp),
-						});
-					} else if (event.error) {
-						pushLog(LOG_EXTRACT_FAILED, {
-							ws_id,
-							fileName,
-							reason: event.error
-						});
-					} else {
-						if (event.stream) {
-							const [total, gmaName] = event.data;
-							job.total = total;
-							job.fileName = gmaName;
+						const index = extractingJobs.find(elem => elem.transaction === transaction);
+						if (index) {
+							extractingJobs.splice(index, 1);
+							extractingJobs = extractingJobs;
 						}
+					} else if (event.stream) {
+						const size = event.data;
+						extractingJobs.push({
+							transaction,
+							timestamp,
+							size,
+							ws_id,
+							fileName,
+						});
 						extractingJobs = extractingJobs;
-						return;
 					}
-
-					for (let i = 0; i < extractingJobs.length; i++) {
-						if (extractingJobs[i] === job) {
-							extractingJobs.splice(i, 1);
-							break;
-						}
-					}
-					extractingJobs = extractingJobs;
 				});
-
-			} break;
+				break;
 		}
 	}
 
 	const RE_DELIMETERS = /(?:, *|\n+|\t+)/g;
-	const RE_WORKSHOP_ID = /^(\d+)|(?:https?:\/\/(?:www\.)?steamcommunity\.com\/sharedfiles\/filedetails\/\?id=(\d+).*)$/gmi;
+	const RE_WORKSHOP_ID = /^(\d+)|(?:https?:\/\/(?:www\.)?steamcommunity\.com\/sharedfiles\/filedetails\/?.*(?:\?|&)id=(\d+)(?=$|&))/gmi;
 	function parseInput(e) {
 		let input = this.value;
 		if (e.clipboardData) {
@@ -190,17 +145,18 @@
 			return;
 		}
 
-		let dedup = {};
+		var ids = {};
 		var result;
 		while ((result = RE_WORKSHOP_ID.exec(input)) !== null) {
 			const id = result[1] ?? result[2];
-			if (id in dedup) continue;
-			dedup[id] = true;
+			if (!id || id in ids || !parseInt(id)) continue;
+			ids[id] = true;
 		}
 
-		let ids = Object.keys(dedup);
+		var ids = Object.keys(ids);
 		if (ids.length !== input.split('\n').length) {
 			this.classList.add('error');
+			playSound('error');
 		} else {
 			if (e.clipboardData) {
 				e.preventDefault();
@@ -210,32 +166,7 @@
 			this.classList.remove('error');
 			this.value = '';
 
-			invoke('download_workshop', {
-				ids,
-				...destination,
-			}).then(([transactions, installed, failed]) => {
-
-				for (let i = 0; i < transactions.length; i++) {
-					const [transaction_id, ws_id] = transactions[i];
-					pushTransaction(JOB_TYPE_DOWNLOAD, {
-						ws_id,
-						transaction: new Transaction(transaction_id)
-					});
-				}
-
-				for (let i = 0; i < installed.length; i++) {
-					const [transaction_id, ws_id, path] = installed[i];
-					pushTransaction(JOB_TYPE_EXTRACT, {
-						path,
-						ws_id,
-						transaction: new Transaction(transaction_id)
-					});
-				}
-
-				for (let i = 0; i < failed.length; i++)
-					pushLog(LOG_DOWNLOAD_FAILED, { ws_id: failed[i] });
-
-			}, err => alert(err));
+			invoke('workshop_download', { ids: ids.map(id => parseInt(id)) });
 		}
 	}
 	function checkEmptyInput() {
@@ -249,12 +180,6 @@
 	function hideFocusTip() {
 		this.setAttribute('placeholder', $_('download-input'));
 		this.classList.remove('error');
-	}
-
-	function openExtractedGMA() {
-		invoke('open_file', {
-			path: this.dataset.path
-		});
 	}
 
 	function cancelJob() {
@@ -276,14 +201,25 @@
 	function setDestination(extractPath) {
 		destinationModal = false;
 
-		const dest = extractPath[0];
-		destination = {
-			named_dir: AppSettings.create_folder_on_extract,
-			path: dest === 'browse' ? extractPath[1] : null,
-			tmp: dest === 'tmp',
-			addons: dest === 'addons',
-			downloads: dest === 'downloads',
-		};
+		switch (extractPath[0]) {
+			case 'browse':
+				AppSettings.extract_destination = {'Directory': extractPath[1]};
+				break;
+
+			case 'tmp':
+				AppSettings.extract_destination = 'Temp';
+				break;
+
+			case 'addons':
+				AppSettings.extract_destination = 'Addons';
+				break;
+
+			case 'downloads':
+				AppSettings.extract_destination = 'Downloads';
+				break;
+		}
+
+		invoke('update_settings', { settings: AppSettings });
 	}
 	let destinationModal = false;
 	function openDestination() {
@@ -293,39 +229,32 @@
 		destinationModal = false;
 	}
 
-	listen('ExtractionStarted', ({ payload: [transaction_id, ws_id, path] }) => {
-		pushTransaction(JOB_TYPE_EXTRACT, {
-			path,
-			ws_id,
-			transaction: new Transaction(transaction_id)
-		});
+	listen('ExtractionStarted', ({ payload: [transaction_id, fileName, ws_id] }) => {
+		pushTransaction(JOB_TYPE_EXTRACT, [new Transaction(transaction_id), fileName, ws_id]);
 	});
 
 	listen('DownloadStarted', ({ payload: transaction_id }) => {
-		const transaction = new Transaction(transaction_id);
+		pushTransaction(JOB_TYPE_DOWNLOAD, [new Transaction(transaction_id)]);
+	});
 
-		transaction.listen(event => {
-			if (event.finished) {
-				pushNotification({
-					type: NOTIFICATION_SUCCESS
-				})
-			} else if (event.error) {
-				pushNotification({
-					type: NOTIFICATION_ERROR
-				})
+	function browseGMA() {
+		dialog.open({
+			multiple: true,
+			filters: [{
+				name: $_('gma_type_name'),
+				extensions: ['gma']
+			}]
+		}).then(files => {
+			if (files && files.length > 0) {
+				invoke('downloader_extract_gmas', { paths: files });
 			}
 		});
-
-		pushNotification({
-			transaction,
-			type: NOTIFICATION_ALERT
-		});
-	});
+	}
 </script>
 
 <main class="hide-scroll">
 	<div id="top-controls">
-		<div id="download" class="icon-button">
+		<div id="download" class="icon-button" on:click={browseGMA} use:tippyFollow={$_('bulk_extract_gmas')}>
 			<Folder size="1.2rem"/>
 		</div>
 		<div id="download-input-container">
@@ -335,8 +264,78 @@
 	</div>
 
 	<div id="layout">
+		<div id="downloading">
+			<h2>
+				<CloudDownload size="2rem"/>
+				{$_('downloading')}
+				{#if downloadingJobs.length > 0}
+					<img src="/img/dog.gif" class="working"/>
+				{/if}
+			</h2>
+			<div class="table hide-scroll">
+				<table class:idle={downloadingJobs.length === 0}>
+					<thead>
+						<tr>
+							<th class="controls"></th>
+							<th class="details">{$_('addon')}</th>
+							<th class="speed">{$_('speed')}</th>
+							<th class="total">{$_('total_filesize')}</th>
+							<th class="progress">{$_('progress')}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#if downloadingJobs.length === 0}
+							<tr class="idle">
+								<td colspan="5">
+									<div>
+										<div><img src="/img/dog_sleep.gif"/></div>
+										<div>{$_('waiting')}</div>
+										<div class="tip">{$_('downloading_tip')}</div>
+										<a href="https://steamcommunity.com/app/4000/workshop/" target="_blank"><div class="btn">{$_('open_workshop')}</div></a>
+									</div>
+								</td>
+							</tr>
+						{/if}
+						{#each downloadingJobs as job}
+							<tr>
+								<td class="controls">
+									<Cross size="1rem" on:click={cancelJob} data-transaction={job.transaction.id} data-downloading={true}/>
+									<a target="_blank" href="https://steamcommunity.com/sharedfiles/filedetails/?id={job.ws_id}"><LinkChain size="1rem"/></a>
+								</td>
+								<td class="details">
+									{#await Addons.getWorkshopAddon(job.ws_id)}
+										<Loading inline/>&nbsp;{job.ws_id}
+									{:then metadata}
+										{#if !metadata || metadata.dead}
+											<Dead inline/>&nbsp;{job.ws_id}
+										{:else}
+											{metadata.title}
+										{/if}
+									{:catch}
+										<Dead inline/>&nbsp;{job.ws_id}
+									{/await}
+								</td>
+								<td class="speed">{calculateSpeed(job.timestamp, job.transaction.progress, job.size ?? 0) + '/s'}</td>
+								<td class="total">{filesize(job.size ?? 0)}</td>
+								<td class="progress">
+									<div class="progress" style="width: calc({job.transaction.progress}% - .6rem)"></div>
+									<div class="pct">{job.transaction.progress}%</div>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</div>
+
 		<div id="extracting">
-			<h2>{$_('extracting')}{#if extractingJobs.length > 0}<img src="/img/dog.gif" class="working"/>{/if}</h2>
+			<h2>
+				<FolderAdd size="2rem"/>
+				{$_('extracting')}
+				{#if extractingJobs.length > 0}
+					<img src="/img/dog.gif" class="working"/>
+				{/if}
+			</h2>
 			<div class="table hide-scroll">
 				<table class:idle={extractingJobs.length === 0}>
 					<thead>
@@ -371,7 +370,7 @@
 								</td>
 								<td class="details">
 									{#if job.ws_id}
-										{#await Addons.getWorkshopMetadata(Number(job.ws_id))}
+										{#await Addons.getWorkshopAddon(job.ws_id)}
 											<Loading inline text={job.ws_id}/>
 										{:then metadata}
 											{#if !metadata || metadata.dead}
@@ -386,64 +385,8 @@
 										{job.fileName}
 									{/if}
 								</td>
-								<td class="speed">{calculateSpeed(job.timestamp, job.transaction.progress, job.total ?? 0) + '/s'}</td>
-								<td class="total">{filesize(job.total ?? 0)}</td>
-								<td class="progress">
-									<div class="progress" style="width: calc({job.transaction.progress}% - .6rem)"></div>
-									<div class="pct">{job.transaction.progress}%</div>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		</div>
-
-		<div id="downloading">
-			<h2>{$_('downloading')}{#if downloadingJobs.length > 0}<img src="/img/dog.gif" class="working"/>{/if}</h2>
-			<div class="table hide-scroll">
-				<table class:idle={downloadingJobs.length === 0}>
-					<thead>
-						<tr>
-							<th class="controls"></th>
-							<th class="details">{$_('addon')}</th>
-							<th class="speed">{$_('speed')}</th>
-							<th class="total">{$_('total_filesize')}</th>
-							<th class="progress">{$_('progress')}</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#if downloadingJobs.length === 0}
-							<tr class="idle">
-								<td colspan="5">
-									<div>
-										<div><img src="/img/dog_sleep.gif"/></div>
-										<div>{$_('waiting')}</div>
-									</div>
-								</td>
-							</tr>
-						{/if}
-						{#each downloadingJobs as job}
-							<tr>
-								<td class="controls">
-									<Cross size="1rem" on:click={cancelJob} data-transaction={job.transaction.id} data-downloading={true}/>
-									<a target="_blank" href="https://steamcommunity.com/sharedfiles/filedetails/?id={job.ws_id}"><LinkChain size="1rem"/></a>
-								</td>
-								<td class="details">
-									{#await Addons.getWorkshopMetadata(Number(job.ws_id))}
-										<Loading inline/>&nbsp;{job.ws_id}
-									{:then metadata}
-										{#if !metadata || metadata.dead}
-											<Dead inline/>&nbsp;{job.ws_id}
-										{:else}
-											{metadata.title}
-										{/if}
-									{:catch}
-										<Dead inline/>&nbsp;{job.ws_id}
-									{/await}
-								</td>
-								<td class="speed">{calculateSpeed(job.timestamp, job.transaction.progress, job.total ?? 0) + '/s'}</td>
-								<td class="total">{filesize(job.total ?? 0)}</td>
+								<td class="speed">{calculateSpeed(job.timestamp, job.transaction.progress, job.size ?? 0) + '/s'}</td>
+								<td class="total">{filesize(job.size ?? 0)}</td>
 								<td class="progress">
 									<div class="progress" style="width: calc({job.transaction.progress}% - .6rem)"></div>
 									<div class="pct">{job.transaction.progress}%</div>
@@ -467,6 +410,15 @@
 		padding: 1.5rem;
 	}
 
+	h2 {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	h2 > :global(.icon) {
+		margin-right: .5rem;
+	}
+
 	#layout {
 		flex: 1;
 		display: grid;
@@ -480,11 +432,11 @@
 			grid-template-rows: calc(50% - 0.75rem) calc(50% - 0.75rem);
 		}
 		#layout > #extracting {
-			grid-row: 1;
+			grid-row: 2;
 			grid-column: 1;
 		}
 		#layout > #downloading {
-			grid-row: 2;
+			grid-row: 1;
 			grid-column: 1;
 		}
 	}
@@ -495,11 +447,11 @@
 		}
 		#layout > #extracting {
 			grid-row: 1;
-			grid-column: 1;
+			grid-column: 2;
 		}
 		#layout > #downloading {
 			grid-row: 1;
-			grid-column: 2;
+			grid-column: 1;
 		}
 		#layout h2 {
 			text-align: center;
@@ -518,6 +470,7 @@
 		border: 1px solid #101010;
 		border-radius: .4rem;
 		height: 100%;
+		flex-basis: 0;
 	}
 	#layout .table > .hide-scroll {
 		min-height: 100%;
@@ -559,9 +512,9 @@
 		opacity: 0;
 	}
 	#layout .table table .speed, #layout .table table .total {
-		text-align: center;
+		text-align: right;
 		width: 10%;
-		min-width: 4rem;
+		min-width: 7rem;
 	}
 	#layout .table table .controls {
 		width: 1px;
@@ -621,7 +574,7 @@
 		text-align: center;
 		line-height: 1.6;
 		text-shadow: 0px 1px 0px rgb(0, 0, 0, .6);
-		max-width: calc(100% - 2rem);
+		max-width: min(calc(100% - 2rem), 16rem);
 	}
 	#layout .working {
 		vertical-align: middle;
@@ -700,74 +653,5 @@
 	}
 	#layout table td {
 		word-break: break-word;
-	}
-
-	#layout #log .table {
-		font-size: .9em;
-	}
-	#layout #log .row {
-		display: grid;
-		grid-template-rows: min-content 1fr;
-		grid-template-columns: min-content min-content 1fr;
-		grid-gap: 1rem;
-		padding: 1rem;
-	}
-	#layout #log .row > .icon-1 {
-		grid-row: 1 / 3;
-		grid-column: 1;
-		justify-self: center;
-		align-self: center;
-	}
-	#layout #log .row > .icon-2 {
-		grid-row: 1 / 3;
-		grid-column: 2;
-		justify-self: center;
-		align-self: center;
-	}
-	#layout #log .row > :global(.timestamp) {
-		grid-row: 1;
-		grid-column: 3;
-	}
-	#layout #log .row > .msg {
-		grid-row: 2;
-		grid-column: 3;
-	}
-	#layout #log .row.click {
-		cursor: pointer;
-	}
-
-	.click-to-open {
-		display: block;
-		margin-top: .5rem;
-		margin-bottom: 5px;
-	}
-
-	#layout #log .row.click, #layout #log .row.error {
-		position: relative;
-		z-index: 1;
-	}
-	#layout #log .row.click::after, #layout #log .row.error::after {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		animation: flash 5s forwards;
-		z-index: -1;
-	}
-	#layout #log .row.click::after {
-		background-color: green;
-	}
-	#layout #log .row.error::after {
-		background-color: red;
-	}
-	@keyframes flash {
-		from {
-			opacity: .5;
-		}
-		to {
-			opacity: 0;
-		}
 	}
 </style>

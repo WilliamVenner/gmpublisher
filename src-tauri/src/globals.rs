@@ -25,12 +25,6 @@ macro_rules! downloads {
 }
 
 #[macro_export]
-macro_rules! gma {
-	() => {
-		&crate::GMA
-	};
-}
-#[macro_export]
 macro_rules! gma_cache {
 	() => {
 		&crate::GMA_CACHE
@@ -70,4 +64,5 @@ macro_rules! webview_emit {
 
 pub(super) fn init_globals() {
 	lazy_static::initialize(&STEAMWORKS);
+	lazy_static::initialize(&APP_DATA);
 }

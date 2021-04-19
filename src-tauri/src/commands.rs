@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use tauri::{InvokeMessage, Params};
 
@@ -19,10 +19,12 @@ where
 
 		crate::game_addons::browse_installed_addons,
 		crate::game_addons::get_installed_addon,
+		crate::game_addons::downloader_extract_gmas,
 
 		crate::steam::is_steam_connected,
 		crate::steam::get_steam_user,
 		crate::steam::workshop::browse_my_workshop,
+		crate::steam::downloads::workshop_download,
 
 		crate::addon_size_analyzer::addon_size_analyzer,
 
@@ -39,7 +41,7 @@ pub fn free_caches() {
 
 #[tauri::command]
 pub fn check_file(path: PathBuf, extension: Option<String>) -> bool {
-	path.is_absolute() && path.exists() && path.is_file() && match extension {
+	path.is_absolute() && path.is_file() && match extension {
 		Some(extension) => {
 			if let Some(picked_extension) = path.extension() {
 				extension.eq_ignore_ascii_case(&picked_extension.to_string_lossy())
@@ -53,5 +55,5 @@ pub fn check_file(path: PathBuf, extension: Option<String>) -> bool {
 
 #[tauri::command]
 pub fn check_dir(path: PathBuf) -> bool {
-	path.is_absolute() && path.exists() && path.is_dir()
+	path.is_absolute() && path.is_dir()
 }

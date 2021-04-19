@@ -182,7 +182,7 @@ transactionEvent('Finished', ([ id, data ]) => {
 
 transactionEvent('Error', ([ id, [ msg, data ] ]) => {
 	const transaction = Transaction.get(id);
-	console.log('transactionError', transaction, data);
+	console.log('transactionError', transaction, msg, data);
 	if (transaction) transaction.error(msg, data);
 });
 

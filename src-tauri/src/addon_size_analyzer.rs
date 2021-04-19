@@ -177,7 +177,7 @@ impl AddonSizeAnalyzer {
 
 			let addons = game_addons!().get_addons().clone();
 			if addons.is_empty() {
-				transaction.error("ERR_NO_ADDONS_FOUND");
+				transaction.error("ERR_NO_ADDONS_FOUND", turbonone!());
 				return;
 			}
 

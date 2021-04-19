@@ -112,11 +112,11 @@
 	:global(nav .nav-icon:not(:last-child)) {
 		margin-right: 1rem;
 	}
-	:global(nav .nav-icon) {
+	:global(nav .nav-icon > .icon) {
 		opacity: .4;
 		transition: opacity .1s;
 	}
-	:global(nav .nav-icon:hover) {
+	:global(nav .nav-icon:hover > .icon) {
 		opacity: 1;
 	}
 

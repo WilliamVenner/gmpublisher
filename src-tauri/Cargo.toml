@@ -58,6 +58,7 @@ steamlocate = "0.1.3"
 chrono = { version = "0.4.19", features = [ "serde" ] }
 bincode = "1.3.3"
 dirs-next = "2.0.0"
+opener = "0.4.1"
 
 [features]
 default = [ "custom-protocol" ]

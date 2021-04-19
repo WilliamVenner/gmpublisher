@@ -6,7 +6,7 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::ser::SerializeTuple;
 use steamworks::PublishedFileId;
 
-use crate::{GMAFile, game_addons, webview::Addon};
+use crate::{GMAFile, Transaction, game_addons, gma::ExtractDestination, webview::Addon};
 
 lazy_static! {
 	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
@@ -211,6 +211,25 @@ pub fn browse_installed_addons(page: u32) -> InstalledAddonsPage {
 #[tauri::command]
 pub fn get_installed_addon(path: PathBuf) -> Option<Arc<Addon>> {
 	game_addons!().paths.read().get(&path).cloned()
+}
+
+#[tauri::command]
+pub fn downloader_extract_gmas(paths: Vec<PathBuf>) {
+	let open = paths.len() == 1;
+	let destination = &app_data!().settings.read().extract_destination;
+	for path in paths.into_iter() {
+		if path.is_file() && match path.extension() {
+			Some(extension) => extension.to_string_lossy().eq_ignore_ascii_case("gma"),
+			None => false,
+		} {
+			if let Ok(mut gma) = GMAFile::open(&path) {
+				let transaction = transaction!();
+				webview_emit!("ExtractionStarted", (transaction.id, path.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(), gma.id));
+				transaction.data(gma.size);
+				ignore! { gma.extract(destination.clone(), transaction, open) };
+			}
+		}
+	}
 }
 
 pub fn free_caches() {

@@ -1481,6 +1481,7 @@ dependencies = [
  "image",
  "indexmap",
  "lazy_static",
+ "opener",
  "parking_lot",
  "path-slash",
  "rayon",
@@ -2320,6 +2321,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7e9f1bdf15cd1f5a00cc9002a733a6ee6d0ff562491852d59652471c4a389f7"
 dependencies = [
  "which 4.1.0",
+ "winapi",
+]
+
+[[package]]
+name = "opener"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13117407ca9d0caf3a0e74f97b490a7e64c0ae3aa90a8b7085544d0c37b6f3ae"
+dependencies = [
  "winapi",
 ]
 
