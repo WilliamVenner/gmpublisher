@@ -1,6 +1,6 @@
 use std::{fs::File, io::{BufReader, BufWriter}, path::PathBuf};
 
-use crate::{RwLockCow, webview_emit};
+use crate::{RwLockCow, gma::ExtractDestination, webview_emit};
 
 use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
@@ -15,7 +15,8 @@ lazy_static! {
 	static ref DOWNLOADS_DIR: Option<PathBuf> = dirs::download_dir();
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
 pub struct Settings {
 	pub temp: Option<PathBuf>,
 	pub gmod: Option<PathBuf>,
@@ -28,6 +29,7 @@ pub struct Settings {
 	pub window_size: (f64, f64),
 	pub window_maximized: bool,
 
+	pub extract_destination: ExtractDestination,
 	pub destinations: Vec<PathBuf>,
 	pub create_folder_on_extract: bool,
 }
@@ -39,6 +41,7 @@ impl Default for Settings {
 			user_data: None,
 			downloads: None,
 
+			extract_destination: ExtractDestination::default(),
 			notification_sounds: true,
 			desktop_notifications: true,
 
@@ -52,14 +55,17 @@ impl Default for Settings {
 }
 impl Settings {
 	pub fn init() -> Settings {
-		match Settings::load() {
+		match Settings::load(false) {
 			Ok(settings) => settings,
 			Err(_) => Settings::default(),
 		}
 	}
 
-	fn load() -> Result<Settings, anyhow::Error> {
-		Ok(serde_json::de::from_reader(BufReader::new(File::open(&*APP_SETTINGS_PATH)?))?)
+	fn load(sanitize: bool) -> Result<Settings, anyhow::Error> {
+		let contents = std::fs::read_to_string(&*APP_SETTINGS_PATH)?;
+		let mut settings: Settings = serde_json::de::from_str(&contents)?;
+		if sanitize { settings.sanitize(); }
+		Ok(settings)
 	}
 
 	pub fn save(&self) -> Result<(), anyhow::Error> {
@@ -71,11 +77,35 @@ impl Settings {
 		let mut i = 0;
 		while i != self.destinations.len() {
 			let destination = &self.destinations[i];
-			if !destination.exists() || !destination.is_dir() || !destination.is_absolute() {
+			if !destination.is_absolute() || !destination.is_dir() {
 				self.destinations.remove(i);
 			} else {
 				i += 1;
 			}
+		}
+
+		match &self.extract_destination {
+			ExtractDestination::Directory(path) => {
+				if self.create_folder_on_extract || !path.is_dir() {
+					self.extract_destination = ExtractDestination::NamedDirectory(path.to_owned());
+				}
+			},
+			ExtractDestination::NamedDirectory(path) => {
+				if !self.create_folder_on_extract || !path.is_dir() {
+					self.extract_destination = ExtractDestination::Directory(path.to_owned());
+				}
+			},
+			ExtractDestination::Downloads => {
+				if app_data!().downloads_dir().is_none() {
+					self.extract_destination = ExtractDestination::default();
+				}
+			},
+			ExtractDestination::Addons => {
+				if app_data!().gmod_dir().is_none() {
+					self.extract_destination = ExtractDestination::default();
+				}
+			},
+			_ => {}
 		}
 
 		self.destinations.truncate(20);
@@ -117,7 +147,7 @@ impl AppData {
 
 	pub fn gmod_dir(&self) -> Option<PathBuf> {
 		if let Some(ref gmod) = self.settings.read().gmod {
-			if gmod.is_dir() && gmod.exists() {
+			if gmod.is_dir() {
 				return Some(gmod.to_owned());
 			}
 		}
@@ -131,7 +161,7 @@ impl AppData {
 		}
 
 		let gmod: PathBuf = steam!().client().apps().app_install_dir(GMOD_APP_ID).into();
-		if gmod.is_dir() && gmod.exists() {
+		if gmod.is_dir() {
 			Some(gmod)
 		} else {
 			None
@@ -141,7 +171,7 @@ impl AppData {
 	pub fn temp_dir(&self) -> RwLockCow<'_, PathBuf> {
 		let lock = self.settings.read();
 		if let Some(ref temp) = lock.temp {
-			if temp.is_dir() && temp.exists() {
+			if temp.is_dir() {
 				return RwLockCow::Locked(RwLockReadGuard::map(lock, |s| s.temp.as_ref().unwrap()));
 			}
 		}
@@ -152,7 +182,7 @@ impl AppData {
 	pub fn user_data_dir(&self) -> RwLockCow<'_, PathBuf> {
 		let lock = self.settings.read();
 		if let Some(ref user_data) = lock.user_data {
-			if user_data.is_dir() && user_data.exists() {
+			if user_data.is_dir() {
 				return RwLockCow::Locked(RwLockReadGuard::map(lock, |s| s.user_data.as_ref().unwrap()));
 			}
 		}
@@ -163,7 +193,7 @@ impl AppData {
 	pub fn downloads_dir(&self) -> RwLockCow<'_, Option<PathBuf>> {
 		let lock = self.settings.read();
 		if let Some(ref downloads) = lock.downloads {
-			if downloads.is_dir() && downloads.exists() {
+			if downloads.is_dir() {
 				return RwLockCow::Locked(RwLockReadGuard::map(lock, |s| &s.downloads));
 			}
 		}
@@ -180,6 +210,10 @@ const PATH_SEPARATOR: char = '/';
 pub struct Plugin;
 impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 	fn initialization_script(&self) -> Option<String> {
+		let mut sanitized = app_data!().settings.read().clone();
+		sanitized.sanitize();
+		*app_data!().settings.write() = sanitized;
+
 		Some(
 			include_str!("../../app/plugins/AppData.js")
 				.replacen(
@@ -229,7 +263,7 @@ pub fn update_settings(mut settings: Settings) {
 pub fn validate_gmod(mut path: PathBuf) -> bool {
 	path.push("GarrysMod");
 	path.push("addons");
-	path.is_absolute() && path.exists() && path.is_dir()
+	path.is_absolute() && path.is_dir()
 }
 
 #[tauri::command]

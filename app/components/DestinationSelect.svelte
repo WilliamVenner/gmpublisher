@@ -5,6 +5,7 @@
 	import { Folder, Download, FolderAdd } from 'akar-icons-svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import Modal from './Modal.svelte';
+	import * as dialog from '@tauri-apps/api/dialog';
 
 	export let active;
 	export let text;
@@ -85,16 +86,11 @@
 		if ('browse' === extractPath[0]) {
 			extractPath = [null, null, AppSettings.create_folder_on_extract];
 		} else {
-			invoke('prompt_path_dialog', {
-
-				directory: true,
-				multiple: false,
-				save: false,
+			dialog.open({
 				defaultPath: AppSettings.destinations[0],
-
+				directory: true,
 			}).then(path => {
-				if (!!path)
-					extractPath = ['browse', trimPath(path[0]), AppSettings.create_folder_on_extract]
+				if (!!path) extractPath = ['browse', trimPath(path), AppSettings.create_folder_on_extract]
 			});
 		}
 	}
@@ -104,6 +100,7 @@
 	function createFolderUpdated() {
 		AppSettings.create_folder_on_extract = this.checked;
 		extractPath = [extractPath[0], extractPath[1], this.checked];
+		invoke('update_settings', { settings: AppSettings });
 	}
 
 	function doCallback() {
