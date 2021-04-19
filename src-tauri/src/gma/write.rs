@@ -3,8 +3,8 @@ use lazy_static::lazy_static;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::{
 	collections::LinkedList,
-	fs,
-	io::{BufWriter, Seek, Write},
+	fs::{self, File},
+	io::{BufWriter, Write},
 	path::Path,
 	sync::mpsc,
 	time::SystemTime,
@@ -13,7 +13,7 @@ use std::{
 use path_slash::PathExt;
 use walkdir::WalkDir;
 
-use crate::transactions::Transaction;
+use crate::{GMAFile, NTStringWriter, transactions::Transaction};
 
 use super::{whitelist, GMAError, GMAMetadata};
 
@@ -23,17 +23,16 @@ lazy_static! {
 	static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
 }
 
-pub struct GMAWriteHandle<W: Write + Seek> {
-	pub inner: BufWriter<W>,
-}
-impl<W: Write + Seek + Send> GMAWriteHandle<W> {
-	pub fn write_nt_string(&mut self, str: &str) -> Result<(), std::io::Error> {
-		self.write(str.as_bytes())?;
-		self.write_u8(0)?;
-		Ok(())
+impl NTStringWriter for BufWriter<File> {}
+
+impl GMAFile {
+	pub fn write(&self) -> Result<BufWriter<File>, GMAError> {
+		Ok(BufWriter::new(File::open(&self.path)?))
 	}
 
-	pub(crate) fn create<P: AsRef<Path>>(mut self, src_path: P, data: &GMAMetadata, transaction: Transaction) -> Result<(), GMAError> {
+	pub fn create<P: AsRef<Path>>(&self, src_path: P, data: &GMAMetadata, transaction: Transaction) -> Result<(), GMAError> {
+		let mut f = self.write()?;
+
 		let src_path = src_path.as_ref();
 
 		let (title, addon_json) = match data {
@@ -41,34 +40,34 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 			GMAMetadata::Standard { title, .. } => (title.as_str(), Some(data)),
 		};
 
-		self.write(GMA_HEADER)?;
+		f.write(GMA_HEADER)?;
 
 		// steamid [unused]
-		self.write_u64::<LittleEndian>(0)?;
+		f.write_u64::<LittleEndian>(0)?;
 
 		// timestamp [unused]
-		self.write_u64::<LittleEndian>(match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+		f.write_u64::<LittleEndian>(match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
 			Ok(unix) => unix.as_secs(),
 			Err(_) => 0,
 		})?;
 
 		// required content [unused]
-		self.write_u8(0)?;
+		f.write_u8(0)?;
 
 		// addon name
-		self.write_nt_string(title)?;
+		f.write_nt_string(title)?;
 
 		// addon description
 		match addon_json {
-			Some(addon_json) => self.write_nt_string(serde_json::ser::to_string(addon_json).as_deref().unwrap())?,
-			None => self.write_nt_string("Description")?,
+			Some(addon_json) => f.write_nt_string(serde_json::ser::to_string(addon_json).as_deref().unwrap())?,
+			None => f.write_nt_string("Description")?,
 		};
 
 		// addon author [unused]
-		self.write_nt_string("Author Name")?;
+		f.write_nt_string("Author Name")?;
 
 		// addon version [unused]
-		self.write_i32::<LittleEndian>(1)?;
+		f.write_i32::<LittleEndian>(1)?;
 
 		// file list
 		let (rx, total) = {
@@ -132,42 +131,31 @@ impl<W: Write + Seek + Send> GMAWriteHandle<W> {
 		}
 
 		for (i, (path, size, crc32)) in entries_list_buf.into_iter().enumerate() {
-			self.write_u32::<LittleEndian>((i + 1) as u32)?;
-			self.write(&path)?;
-			self.write_u8(0)?;
-			self.write_i64::<LittleEndian>(size as i64)?;
-			self.write_u32::<LittleEndian>(crc32)?;
+			f.write_u32::<LittleEndian>((i + 1) as u32)?;
+			f.write(&path)?;
+			f.write_u8(0)?;
+			f.write_i64::<LittleEndian>(size as i64)?;
+			f.write_u32::<LittleEndian>(crc32)?;
 		}
 
-		self.write_u32::<LittleEndian>(0)?;
+		f.write_u32::<LittleEndian>(0)?;
 
 		for contents in entries_buf.into_iter() {
-			self.write(&contents)?;
-			self.write_u8(0)?;
+			f.write(&contents)?;
+			f.write_u8(0)?;
 		}
 
-		let written = self.buffer();
+		let written = f.buffer();
 
 		let mut crc32 = crc32fast::Hasher::new();
 		crc32.reset();
 		crc32.update(written);
 		let crc32 = crc32.finalize();
 
-		self.write_u32::<LittleEndian>(crc32)?;
+		f.write_u32::<LittleEndian>(crc32)?;
 
 		transaction.finished(turbonone!());
 
 		Ok(())
-	}
-}
-impl<W: Write + Seek> std::ops::Deref for GMAWriteHandle<W> {
-	type Target = BufWriter<W>;
-	fn deref(&self) -> &Self::Target {
-		&self.inner
-	}
-}
-impl<W: Write + Seek> std::ops::DerefMut for GMAWriteHandle<W> {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.inner
 	}
 }

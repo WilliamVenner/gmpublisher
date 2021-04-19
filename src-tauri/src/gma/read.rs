@@ -1,10 +1,8 @@
-use std::{
-	collections::HashMap,
-	fs::File,
-	io::{BufRead, BufReader, Read, Seek, SeekFrom},
-};
+use std::{collections::HashMap, fs::File, io::{BufReader, Cursor, SeekFrom}};
 
 use byteorder::{LittleEndian, ReadBytesExt};
+
+use crate::{ArcBytes, NTStringReader};
 
 use super::{GMAEntriesMap, GMAEntry, GMAError, GMAFile, GMAMetadata};
 
@@ -13,48 +11,42 @@ macro_rules! safe_read {
 		$x.map_err(|_| GMAError::FormatError)
 	};
 }
-pub struct GMAReadHandle<R: Read + Seek> {
-	pub inner: BufReader<R>,
-}
-impl<R: Read + Seek> GMAReadHandle<R> {
-	pub fn read_nt_string(&mut self) -> Result<String, std::io::Error> {
-		let mut buf = vec![];
-		let bytes_read = self.read_until(0, &mut buf)?;
-		let nt_string = &buf[0..bytes_read - 1];
 
-		Ok(match std::str::from_utf8(nt_string) {
-			Ok(str) => str.to_owned(),
-			Err(_) => {
-				// Some file paths aren't UTF-8 encoded, usually due to Windows NTFS
-				// This will simply guess the text encoding and decode it with that instead
-				let mut decoder = chardetng::EncodingDetector::new();
-				decoder.feed(nt_string, true);
-				let encoding = decoder.guess(None, false);
-				let (str, _, _) = encoding.decode(nt_string);
-				str.to_string()
-			}
-		})
-	}
+pub enum GMAReader {
+	MemBuffer(Cursor<ArcBytes>),
+	Disk(BufReader<File>)
+}
+impl std::ops::Deref for GMAReader {
+    type Target = dyn NTStringReader;
 
-	pub fn skip_nt_string(&mut self) -> Result<usize, std::io::Error> {
-		let mut buf = vec![];
-		self.read_until(0, &mut buf)
-	}
+    fn deref(&self) -> &Self::Target {
+        match self {
+			Self::MemBuffer(buf) => buf,
+			Self::Disk(buf) => buf
+		}
+    }
 }
-impl<R: Read + Seek> std::ops::Deref for GMAReadHandle<R> {
-	type Target = BufReader<R>;
-	fn deref(&self) -> &Self::Target {
-		&self.inner
-	}
+impl std::ops::DerefMut for GMAReader {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match self {
+			Self::MemBuffer(buf) => buf,
+			Self::Disk(buf) => buf
+		}
+    }
 }
-impl<R: Read + Seek> std::ops::DerefMut for GMAReadHandle<R> {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.inner
-	}
-}
+impl NTStringReader for Cursor<ArcBytes> {}
+impl NTStringReader for BufReader<File> {}
 
 impl GMAFile {
-	pub fn metadata(&mut self) -> Result<Option<GMAReadHandle<File>>, GMAError> {
+	pub fn read(&self) -> Result<GMAReader, GMAError> {
+		if let Some(ref membuffer) = self.membuffer {
+			Ok(GMAReader::MemBuffer(Cursor::new(membuffer.clone())))
+		} else {
+			Ok(GMAReader::Disk(BufReader::new(File::open(&self.path)?)))
+		}
+	}
+
+	pub fn metadata(&mut self) -> Result<Option<GMAReader>, GMAError> {
 		main_thread_forbidden!();
 
 		if self.metadata.is_some() {
@@ -102,7 +94,7 @@ impl GMAFile {
 		}
 	}
 
-	pub fn entries(&mut self) -> Result<Option<GMAReadHandle<File>>, GMAError> {
+	pub fn entries(&mut self) -> Result<Option<GMAReader>, GMAError> {
 		main_thread_forbidden!();
 
 		if self.entries.is_some() {
@@ -114,7 +106,7 @@ impl GMAFile {
 			};
 			handle.seek(SeekFrom::Start(self.pointers.entries_list))?;
 
-			let mut entries = GMAEntriesMap { inner: HashMap::new() };
+			let mut entries = GMAEntriesMap(HashMap::new());
 			let mut entry_cursor = 0;
 
 			while handle.read_u32::<LittleEndian>()? != 0 {

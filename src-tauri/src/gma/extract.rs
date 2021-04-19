@@ -1,13 +1,13 @@
 use std::{
 	fs::{self, File},
-	io::{BufReader, BufWriter, Cursor, Read, Seek, SeekFrom},
+	io::{BufReader, BufWriter, Cursor, SeekFrom},
 	path::{Path, PathBuf},
 	sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::{app_data, transactions::Transaction};
+use crate::{NTStringReader, app_data, transactions::Transaction};
 
-use super::{whitelist, GMAEntry, GMAError, GMAFile, GMAMetadata};
+use super::{GMAEntry, GMAError, GMAFile, GMAMetadata, GMAReader, whitelist};
 
 use lazy_static::lazy_static;
 use rayon::{
@@ -84,7 +84,7 @@ impl GMAFile {
 			.map_err(|_| GMAError::LZMA)?;
 
 		if let xz2::stream::Status::Ok = status {
-			Ok(GMAFile::read_header(Cursor::new(output), path)?)
+			Ok(GMAFile::read_header(GMAReader::MemBuffer(Cursor::new(output.into())), path)?)
 		} else {
 			Err(GMAError::LZMA)
 		}
@@ -95,8 +95,6 @@ impl GMAFile {
 
 		THREAD_POOL.install(move || {
 			self.entries()?;
-
-			println!("{:#?}", self.entries);
 
 			let mut dest_path = dest.into(&self.extracted_name);
 			let entries_start = self.pointers.entries;
@@ -160,13 +158,13 @@ impl GMAFile {
 		path.push(&self.extracted_name);
 		path.push(&entry_path);
 
-		GMAFile::stream_entry_bytes(&mut handle, self.pointers.entries, &path, entry)?;
+		GMAFile::stream_entry_bytes(&mut *handle, self.pointers.entries, &path, entry)?;
 
 		Ok(path)
 	}
 
-	fn stream_entry_bytes<R: Read + Seek>(
-		handle: &mut BufReader<R>,
+	fn stream_entry_bytes(
+		handle: &mut dyn NTStringReader,
 		entries_start: u64,
 		entry_path: &PathBuf,
 		entry: &GMAEntry,

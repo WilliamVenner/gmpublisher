@@ -4,7 +4,6 @@ pub const GMOD_APP_ID: steamworks::AppId = steamworks::AppId(4000);
 
 lazy_static! {
 	pub static ref STEAMWORKS: crate::steam::Steam = crate::steam::Steam::init();
-	pub static ref GMA_CACHE: crate::gma::cache::GMACache = crate::gma::cache::GMACache::init();
 	pub static ref GAME_ADDONS: crate::game_addons::GameAddons = crate::game_addons::GameAddons::init();
 	pub static ref ADDON_SIZE_ANALYZER: crate::addon_size_analyzer::AddonSizeAnalyzer = crate::addon_size_analyzer::AddonSizeAnalyzer::init();
 	pub static ref APP_DATA: crate::appdata::AppData = crate::appdata::AppData::init();
@@ -22,13 +21,6 @@ macro_rules! steam {
 macro_rules! downloads {
 	() => {
 		&crate::steam::DOWNLOADS
-	};
-}
-
-#[macro_export]
-macro_rules! gma_cache {
-	() => {
-		&crate::GMA_CACHE
 	};
 }
 

@@ -1,11 +1,4 @@
-use std::{
-	collections::HashMap,
-	fmt::Display,
-	fs::File,
-	io::{BufRead, BufReader, BufWriter, Read, Seek, SeekFrom},
-	path::{Path, PathBuf},
-	time::SystemTime,
-};
+use std::{collections::HashMap, fmt::Display, fs::File, io::{BufReader, SeekFrom}, path::{Path, PathBuf}, time::SystemTime};
 
 use byteorder::ReadBytesExt;
 
@@ -13,9 +6,7 @@ use serde::{Deserialize, Serialize};
 use steamworks::PublishedFileId;
 use thiserror::Error;
 
-use crate::{main_thread_forbidden, transaction, transactions::Transaction};
-
-use self::{read::GMAReadHandle, write::GMAWriteHandle};
+use crate::{ArcBytes, main_thread_forbidden};
 
 const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 
@@ -112,24 +103,11 @@ pub struct GMAEntry {
 	index: u64,
 }
 
-#[derive(Clone, Debug)]
-pub struct GMAEntriesMap {
-	inner: HashMap<String, GMAEntry>,
-}
-impl std::ops::Deref for GMAEntriesMap {
-	type Target = HashMap<String, GMAEntry>;
-	fn deref(&self) -> &Self::Target {
-		&self.inner
-	}
-}
-impl std::ops::DerefMut for GMAEntriesMap {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.inner
-	}
-}
+#[derive(Clone, Debug, derive_more::Deref, derive_more::DerefMut)]
+pub struct GMAEntriesMap(HashMap<String, GMAEntry>);
 impl Serialize for GMAEntriesMap {
 	fn serialize<S: serde::Serializer>(&self, serialize: S) -> Result<S::Ok, S::Error> {
-		serialize.collect_seq(self.inner.keys())
+		serialize.collect_seq(self.keys())
 	}
 }
 
@@ -156,6 +134,9 @@ pub struct GMAFile {
 
 	#[serde(skip)]
 	pub modified: Option<SystemTime>,
+
+	#[serde(skip)]
+	membuffer: Option<ArcBytes>,
 }
 impl PartialEq for GMAFile {
 	fn eq(&self, other: &Self) -> bool {
@@ -175,7 +156,7 @@ impl Ord for GMAFile {
 }
 
 impl GMAFile {
-	fn read_header<F: BufRead + Seek, P: AsRef<Path>>(mut f: F, path: P) -> Result<GMAFile, GMAError> {
+	fn read_header<P: AsRef<Path>>(mut f: GMAReader, path: P) -> Result<GMAFile, GMAError> {
 		let mut gma = GMAFile {
 			size: path.as_ref().metadata().and_then(|metadata| Ok(metadata.len())).unwrap_or(0),
 			path: path.as_ref().to_owned(),
@@ -186,10 +167,11 @@ impl GMAFile {
 			version: 0,
 			extracted_name: String::new(),
 			modified: None,
+			membuffer: None
 		};
 
 		if gma.size == 0 {
-			if let Ok(size) = crate::stream_len(&mut f) {
+			if let Ok(size) = crate::stream_len(&mut *f) {
 				gma.size = size;
 			}
 		}
@@ -206,12 +188,16 @@ impl GMAFile {
 
 		gma.compute_extracted_name();
 
+		if let GMAReader::MemBuffer(buf) = f {
+			gma.membuffer = Some(buf.into_inner());
+		}
+
 		Ok(gma)
 	}
 
 	pub fn open<P: AsRef<Path>>(path: P) -> Result<GMAFile, GMAError> {
 		main_thread_forbidden!();
-		GMAFile::read_header(BufReader::new(File::open(path.as_ref())?), path)
+		GMAFile::read_header(GMAReader::Disk(BufReader::new(File::open(path.as_ref())?)), path)
 	}
 
 	pub fn set_ws_id(&mut self, id: PublishedFileId) {
@@ -276,21 +262,6 @@ impl GMAFile {
 
 		self.extracted_name = extracted_name;
 	}
-
-	pub fn read(&self) -> Result<GMAReadHandle<File>, GMAError> {
-		Ok(GMAReadHandle {
-			inner: BufReader::new(File::open(&self.path)?),
-		})
-	}
-
-	pub fn write<P: AsRef<Path>>(src_path: P, dest_path: P, data: &GMAMetadata) -> Result<Transaction, GMAError> {
-		let transaction = transaction!();
-		GMAWriteHandle {
-			inner: BufWriter::new(File::create(dest_path.as_ref())?),
-		}
-		.create(src_path, data, transaction.clone())?;
-		Ok(transaction)
-	}
 }
 
 pub mod whitelist;
@@ -304,6 +275,3 @@ pub use read::*;
 
 pub mod write;
 pub use write::*;
-
-pub mod cache;
-pub use cache::*;

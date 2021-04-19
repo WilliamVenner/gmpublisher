@@ -14,7 +14,7 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::ser::SerializeTuple;
 use steamworks::PublishedFileId;
 
-use crate::{game_addons, gma::ExtractDestination, webview::Addon, GMAFile, Transaction};
+use crate::{game_addons, webview::Addon, GMAFile};
 
 lazy_static! {
 	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
