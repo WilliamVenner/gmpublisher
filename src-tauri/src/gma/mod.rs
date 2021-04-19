@@ -1,11 +1,4 @@
-use std::{
-	collections::HashMap,
-	fmt::Display,
-	fs::File,
-	io::{BufReader, BufWriter, Read, Seek, SeekFrom},
-	path::{Path, PathBuf},
-	time::SystemTime,
-};
+use std::{collections::HashMap, fmt::Display, fs::File, io::{BufRead, BufReader, BufWriter, Read, Seek, SeekFrom}, path::{Path, PathBuf}, time::SystemTime};
 
 use byteorder::ReadBytesExt;
 
@@ -25,6 +18,7 @@ pub enum GMAError {
 	FormatError,
 	InvalidHeader,
 	EntryNotFound,
+	LZMA,
 }
 impl Display for GMAError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -34,6 +28,7 @@ impl Display for GMAError {
 			FormatError => write!(f, "ERR_GMA_FORMAT_ERROR"),
 			InvalidHeader => write!(f, "ERR_GMA_INVALID_HEADER"),
 			EntryNotFound => write!(f, "ERR_GMA_ENTRY_NOT_FOUND"),
+			LZMA => write!(f, "ERR_LZMA"),
 		}
 	}
 }
@@ -173,16 +168,10 @@ impl Ord for GMAFile {
 }
 
 impl GMAFile {
-	pub fn open<P: AsRef<Path>>(path: P) -> Result<GMAFile, GMAError> {
-		main_thread_forbidden!();
-
-		let path = path.as_ref();
-
-		let mut f = BufReader::new(File::open(path)?);
-
+	fn read_header<F: BufRead + Seek, P: AsRef<Path>>(mut f: F, path: P) -> Result<GMAFile, GMAError> {
 		let mut gma = GMAFile {
-			size: path.metadata().and_then(|metadata| Ok(metadata.len())).unwrap_or(0),
-			path: path.to_path_buf(),
+			size: path.as_ref().metadata().and_then(|metadata| Ok(metadata.len())).unwrap_or(0),
+			path: path.as_ref().to_owned(),
 			id: None,
 			metadata: None,
 			entries: None,
@@ -211,6 +200,11 @@ impl GMAFile {
 		gma.compute_extracted_name();
 
 		Ok(gma)
+	}
+
+	pub fn open<P: AsRef<Path>>(path: P) -> Result<GMAFile, GMAError> {
+		main_thread_forbidden!();
+		GMAFile::read_header(BufReader::new(File::open(path.as_ref())?), path)
 	}
 
 	pub fn set_ws_id(&mut self, id: PublishedFileId) {
