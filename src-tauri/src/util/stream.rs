@@ -11,19 +11,24 @@ pub fn stream_len<F: Seek>(f: &mut F) -> Result<u64, std::io::Error> {
 }
 
 pub fn stream_bytes<R: Read, W: Write>(r: &mut BufReader<R>, w: &mut BufWriter<W>, mut bytes: usize) -> Result<(), std::io::Error> {
-	Ok(loop {
-		match r.fill_buf() {
-			Ok([]) => break,
-			Ok(data) if data.len() >= bytes => {
-				w.write_all(&data[..bytes])?;
-				break;
-			}
-			Ok(data) => {
-				w.write_all(data)?;
-				bytes -= data.len();
-			}
-			Err(e) if e.kind() == ErrorKind::Interrupted => {}
-			Err(e) => return Err(e),
-		}
+	Ok({
+		let consumed = loop {
+			let consumed = match r.fill_buf() {
+				Ok([]) => break 0,
+				Ok(data) if data.len() >= bytes => {
+					w.write_all(&data[..bytes])?;
+					break bytes;
+				}
+				Ok(data) => {
+					w.write_all(data)?;
+					bytes -= data.len();
+					data.len()
+				}
+				Err(e) if e.kind() == ErrorKind::Interrupted => 0,
+				Err(e) => return Err(e),
+			};
+			r.consume(consumed);
+		};
+		r.consume(consumed);
 	})
 }
