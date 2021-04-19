@@ -1,6 +1,6 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
-use tauri::{Manager, Attributes};
+use tauri::{Attributes, Manager};
 
 #[macro_use]
 extern crate lazy_static;
@@ -40,8 +40,8 @@ pub use steam::workshop::WorkshopItem;
 pub mod octopus;
 pub use octopus::*;
 
-pub mod search;
 pub mod content_generator;
+pub mod search;
 pub mod webview;
 
 mod commands;
@@ -49,8 +49,12 @@ mod commands;
 fn write_tauri_settings() -> Option<()> {
 	// silly bypass for the pointless permissions system
 
-	use std::{collections::HashMap, fs::{self, File}, io::{BufReader, BufWriter}};
 	use serde_json::Value as JsonValue;
+	use std::{
+		collections::HashMap,
+		fs::{self, File},
+		io::{BufReader, BufWriter},
+	};
 
 	let mut settings_path = dirs_next::config_dir()?;
 	settings_path.push("gmpublisher");
@@ -79,7 +83,6 @@ fn main() {
 	globals::init_globals();
 
 	tauri::Builder::default()
-
 		.create_window("gmpublisher".to_string(), tauri::WindowUrl::default(), |args| {
 			let settings = APP_DATA.settings.read();
 			args.title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
@@ -90,17 +93,13 @@ fn main() {
 				.min_width(800.)
 				.min_height(600.)
 		})
-
 		.setup(|app| {
 			let window = app.get_window(&"gmpublisher".to_string()).unwrap();
 			webview!().init(window);
 			Ok(())
 		})
-
 		.plugin(appdata::Plugin)
-
 		.invoke_handler(commands::invoke_handler())
-
 		.run(tauri::generate_context!())
 		.unwrap();
 }

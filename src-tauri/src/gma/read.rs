@@ -131,7 +131,7 @@ impl GMAFile {
 
 				entry_cursor = match entry_cursor.checked_add(size) {
 					None => return Err(GMAError::FormatError),
-					Some(entry_cursor) => entry_cursor
+					Some(entry_cursor) => entry_cursor,
 				};
 
 				entries.insert(path, entry);

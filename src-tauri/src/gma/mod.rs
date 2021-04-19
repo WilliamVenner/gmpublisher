@@ -1,4 +1,11 @@
-use std::{collections::HashMap, fmt::Display, fs::File, io::{BufRead, BufReader, BufWriter, Read, Seek, SeekFrom}, path::{Path, PathBuf}, time::SystemTime};
+use std::{
+	collections::HashMap,
+	fmt::Display,
+	fs::File,
+	io::{BufRead, BufReader, BufWriter, Read, Seek, SeekFrom},
+	path::{Path, PathBuf},
+	time::SystemTime,
+};
 
 use byteorder::ReadBytesExt;
 

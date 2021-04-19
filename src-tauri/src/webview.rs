@@ -36,11 +36,7 @@ impl<M: Params<Event = String, Label = String> + Send + 'static> WrappedWebview<
 		ignore! { self.tx_window.send(window) };
 	}
 
-	pub fn emit<D: Serialize + Send + 'static>(
-		&self,
-		event: &'static str,
-		payload: Option<D>,
-	) -> Result<(), SendError<WebviewEmit>> {
+	pub fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, payload: Option<D>) -> Result<(), SendError<WebviewEmit>> {
 		self.tx_emit.send((
 			event,
 			match payload {
@@ -61,84 +57,84 @@ impl Addon {
 	#[inline(always)]
 	pub fn installed(&self) -> &GMAFile {
 		match self {
-            Addon::Installed(addon) => addon,
-            Addon::Workshop(_) => unreachable!()
-        }
+			Addon::Installed(addon) => addon,
+			Addon::Workshop(_) => unreachable!(),
+		}
 	}
 	#[inline(always)]
 	pub fn workshop(&self) -> &WorkshopItem {
 		match self {
-            Addon::Installed(_) => unreachable!(),
-            Addon::Workshop(addon) => addon
-        }
+			Addon::Installed(_) => unreachable!(),
+			Addon::Workshop(addon) => addon,
+		}
 	}
 }
 impl Into<GMAFile> for Addon {
-    fn into(self) -> GMAFile {
-        match self {
-            Addon::Installed(addon) => addon,
-            Addon::Workshop(_) => unreachable!()
-        }
-    }
+	fn into(self) -> GMAFile {
+		match self {
+			Addon::Installed(addon) => addon,
+			Addon::Workshop(_) => unreachable!(),
+		}
+	}
 }
 impl Into<WorkshopItem> for Addon {
-    fn into(self) -> WorkshopItem {
-        match self {
-            Addon::Installed(_) => unreachable!(),
-            Addon::Workshop(addon) => addon
-        }
-    }
+	fn into(self) -> WorkshopItem {
+		match self {
+			Addon::Installed(_) => unreachable!(),
+			Addon::Workshop(addon) => addon,
+		}
+	}
 }
 impl From<GMAFile> for Addon {
-    fn from(installed: GMAFile) -> Self {
-        Addon::Installed(installed)
-    }
+	fn from(installed: GMAFile) -> Self {
+		Addon::Installed(installed)
+	}
 }
 impl From<WorkshopItem> for Addon {
-    fn from(item: WorkshopItem) -> Self {
-        Addon::Workshop(item)
-    }
+	fn from(item: WorkshopItem) -> Self {
+		Addon::Workshop(item)
+	}
 }
 impl PartialOrd for Addon {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        match self {
+	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+		match self {
 			Addon::Installed(addon) => match other {
 				Addon::Installed(other) => addon.partial_cmp(other),
-				_ => unreachable!()
-			}
+				_ => unreachable!(),
+			},
 			Addon::Workshop(addon) => match other {
 				Addon::Workshop(other) => addon.partial_cmp(other),
-				_ => unreachable!()
-			}
+				_ => unreachable!(),
+			},
 		}
-    }
+	}
 }
 impl Ord for Addon {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        match self {
+	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+		match self {
 			Addon::Installed(addon) => match other {
 				Addon::Installed(other) => addon.cmp(other),
-				_ => unreachable!()
-			}
+				_ => unreachable!(),
+			},
 			Addon::Workshop(addon) => match other {
 				Addon::Workshop(other) => addon.cmp(other),
-				_ => unreachable!()
-			}
+				_ => unreachable!(),
+			},
 		}
-    }
+	}
 }
 impl PartialEq for Addon {
-    fn eq(&self, other: &Self) -> bool {
-        match self {
+	fn eq(&self, other: &Self) -> bool {
+		match self {
 			Addon::Installed(addon) => match other {
 				Addon::Installed(other) => addon.eq(other),
-				_ => unreachable!()
-			}
+				_ => unreachable!(),
+			},
 			Addon::Workshop(addon) => match other {
 				Addon::Workshop(other) => addon.eq(other),
-				_ => unreachable!()
-			}
+				_ => unreachable!(),
+			},
 		}
-    }
+	}
 }
 impl Eq for Addon {}

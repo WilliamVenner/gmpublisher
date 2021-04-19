@@ -1,11 +1,14 @@
 use parking_lot::{Condvar, Mutex, MutexGuard};
-use rayon::{ThreadPoolBuilder, ThreadPool};
+use rayon::{ThreadPool, ThreadPoolBuilder};
 
-use std::{path::PathBuf, sync::{atomic::AtomicBool, Arc}};
+use std::{
+	path::PathBuf,
+	sync::{atomic::AtomicBool, Arc},
+};
 
-use steamworks::{UGC, ClientManager, QueryResults, ItemState, PublishedFileId};
+use steamworks::{ClientManager, ItemState, PublishedFileId, QueryResults, UGC};
 
-use crate::{transaction, transactions::Transaction, webview_emit, GMOD_APP_ID, GMAFile, gma::ExtractDestination};
+use crate::{gma::ExtractDestination, transaction, transactions::Transaction, webview_emit, GMAFile, GMOD_APP_ID};
 
 lazy_static! {
 	pub static ref DOWNLOADS: Downloads = Downloads::init();
@@ -73,16 +76,24 @@ impl Downloads {
 		THREAD_POOL.spawn(move || {
 			let transaction = transaction!();
 
-			webview_emit!("ExtractionStarted", (transaction.id, folder.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(), Some(item)));
+			webview_emit!(
+				"ExtractionStarted",
+				(
+					transaction.id,
+					folder.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(),
+					Some(item)
+				)
+			);
 
 			let mut gma = if folder.is_dir() {
-
 				let mut gma_path = None;
 
 				if let Ok(read_dir) = folder.read_dir() {
 					for entry in read_dir {
 						if let Ok(entry) = entry {
-							if !crate::path::has_extension(entry.path(), "gma") { continue; }
+							if !crate::path::has_extension(entry.path(), "gma") {
+								continue;
+							}
 							if gma_path.is_some() {
 								// TODO better handling here - just include the extra files in the addon
 								gma_path = None;
@@ -97,19 +108,16 @@ impl Downloads {
 				if let Some(path) = gma_path {
 					match GMAFile::open(path) {
 						Ok(gma) => gma,
-						Err(err) => return transaction.error(err.to_string(), turbonone!())
+						Err(err) => return transaction.error(err.to_string(), turbonone!()),
 					}
 				} else {
 					return transaction.error("ERR_DOWNLOAD_MISSING", turbonone!());
 				}
-
 			} else if folder.is_file() && crate::path::has_extension(&folder, "bin") {
-
 				match GMAFile::decompress(folder) {
 					Ok(gma) => gma,
-					Err(err) => return transaction.error(err.to_string(), turbonone!())
+					Err(err) => return transaction.error(err.to_string(), turbonone!()),
 				}
-
 			} else {
 				return transaction.error("ERR_DOWNLOAD_MISSING", turbonone!());
 			};
@@ -124,7 +132,12 @@ impl Downloads {
 		});
 	}
 
-	fn push_download(ugc: &UGC<ClientManager>, pending: &mut MutexGuard<Vec<Arc<DownloadInner>>>, extract_destination: &Arc<ExtractDestination>, item: PublishedFileId) {
+	fn push_download(
+		ugc: &UGC<ClientManager>,
+		pending: &mut MutexGuard<Vec<Arc<DownloadInner>>>,
+		extract_destination: &Arc<ExtractDestination>,
+		item: PublishedFileId,
+	) {
 		let state = ugc.item_state(item);
 		if state.intersects(ItemState::INSTALLED) && !state.intersects(ItemState::NEEDS_UPDATE) {
 			if let Some(info) = ugc.item_install_info(item) {
@@ -140,7 +153,7 @@ impl Downloads {
 				item,
 				sent_total: AtomicBool::new(false),
 				transaction: transaction!(),
-				extract_destination: (&**extract_destination).clone()
+				extract_destination: (&**extract_destination).clone(),
 			});
 
 			webview_emit!("DownloadStarted", download.transaction.id);
@@ -155,12 +168,17 @@ impl Downloads {
 		let possible_collections: Vec<PublishedFileId> = {
 			let workshop_cache = &steam!().workshop.read().0;
 			let mut possible_collections = Vec::with_capacity(ids.len());
-			ids = ids.into_iter().filter(|id| if workshop_cache.contains(id) {
-				true
-			} else {
-				possible_collections.push(*id);
-				false
-			}).collect();
+			ids = ids
+				.into_iter()
+				.filter(|id| {
+					if workshop_cache.contains(id) {
+						true
+					} else {
+						possible_collections.push(*id);
+						false
+					}
+				})
+				.collect();
 			possible_collections
 		};
 
@@ -171,35 +189,42 @@ impl Downloads {
 				let done = Arc::new(());
 
 				let done_ref = done.clone();
-				steam!().client().ugc().query_items(possible_collections).unwrap().include_children(true).fetch(move |results: Result<QueryResults<'_>, steamworks::SteamError>| {
-					if let Ok(results) = results {
+				steam!()
+					.client()
+					.ugc()
+					.query_items(possible_collections)
+					.unwrap()
+					.include_children(true)
+					.fetch(move |results: Result<QueryResults<'_>, steamworks::SteamError>| {
+						if let Ok(results) = results {
+							let mut pending = downloads!().pending.lock();
+							pending.reserve(results.returned_results() as usize);
 
-						let mut pending = downloads!().pending.lock();
-						pending.reserve(results.returned_results() as usize);
+							let mut not_collections = Vec::with_capacity(possible_collections_len);
 
-						let mut not_collections = Vec::with_capacity(possible_collections_len);
-
-						let ugc = steam!().client().ugc();
-						for (i, item) in results.iter().filter_map(|x| x).enumerate() {
-							if item.file_type == steamworks::FileType::Collection {
-								for item in results.get_children(i as u32).unwrap() {
-									Downloads::push_download(&ugc, &mut pending, &extract_destination, item);
+							let ugc = steam!().client().ugc();
+							for (i, item) in results.iter().filter_map(|x| x).enumerate() {
+								if item.file_type == steamworks::FileType::Collection {
+									for item in results.get_children(i as u32).unwrap() {
+										Downloads::push_download(&ugc, &mut pending, &extract_destination, item);
+									}
+								} else {
+									not_collections.push(item.published_file_id);
+									Downloads::push_download(&ugc, &mut pending, &extract_destination, item.published_file_id);
 								}
-							} else {
-								not_collections.push(item.published_file_id);
-								Downloads::push_download(&ugc, &mut pending, &extract_destination, item.published_file_id);
+							}
+
+							if !not_collections.is_empty() {
+								steam!().fetch_workshop_items(not_collections);
 							}
 						}
 
-						if !not_collections.is_empty() {
-							steam!().fetch_workshop_items(not_collections);
-						}
-					}
+						drop(done_ref);
+					});
 
-					drop(done_ref);
-				});
-
-				while Arc::strong_count(&done) > 1 { sleep_ms!(25); }
+				while Arc::strong_count(&done) > 1 {
+					sleep_ms!(25);
+				}
 			}
 		}
 
@@ -236,7 +261,11 @@ impl Downloads {
 						download.transaction.error("ERR_STEAM_ERROR", error);
 					} else if let Some(info) = steam!().client().ugc().item_install_info(result.published_file_id) {
 						download.transaction.finished(turbonone!());
-						Downloads::extract(PathBuf::from(info.folder), download.item, Arc::try_unwrap(download).unwrap().extract_destination);
+						Downloads::extract(
+							PathBuf::from(info.folder),
+							download.item,
+							Arc::try_unwrap(download).unwrap().extract_destination,
+						);
 					} else {
 						download.transaction.error("ERR_DOWNLOAD_MISSING", turbonone!());
 						println!("3");
@@ -260,7 +289,7 @@ impl Downloads {
 				for download in downloading {
 					let pos = match in_progress.binary_search_by_key(&download.item, |x| x.item) {
 						Ok(_) => continue,
-						Err(pos) => pos
+						Err(pos) => pos,
 					};
 
 					if !ugc.download_item(download.item, true) {
@@ -276,7 +305,9 @@ impl Downloads {
 
 			loop {
 				if let Some(in_progress) = in_progress.try_lock() {
-					if in_progress.is_empty() { break; }
+					if in_progress.is_empty() {
+						break;
+					}
 				}
 				steam!().run_callbacks();
 			}

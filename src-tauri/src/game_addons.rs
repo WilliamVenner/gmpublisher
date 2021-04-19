@@ -1,4 +1,12 @@
-use std::{collections::{BinaryHeap, HashMap}, fs::DirEntry, path::{Path, PathBuf}, sync::{Arc, atomic::{AtomicBool, Ordering}, mpsc}};
+use std::{
+	collections::{BinaryHeap, HashMap},
+	fs::DirEntry,
+	path::{Path, PathBuf},
+	sync::{
+		atomic::{AtomicBool, Ordering},
+		mpsc, Arc,
+	},
+};
 
 use lazy_static::lazy_static;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
@@ -6,7 +14,7 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::ser::SerializeTuple;
 use steamworks::PublishedFileId;
 
-use crate::{GMAFile, Transaction, game_addons, gma::ExtractDestination, webview::Addon};
+use crate::{game_addons, gma::ExtractDestination, webview::Addon, GMAFile, Transaction};
 
 lazy_static! {
 	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
@@ -202,9 +210,15 @@ pub fn browse_installed_addons(page: u32) -> InstalledAddonsPage {
 	InstalledAddonsPage(
 		game_addons!().paths.read().len(),
 		RwLockReadGuard::map(game_addons!().pages.read(), |read| {
-			steam!().fetch_workshop_items(read.iter().skip(start).take(crate::steam::RESULTS_PER_PAGE).filter_map(|x| x.installed().id).collect());
+			steam!().fetch_workshop_items(
+				read.iter()
+					.skip(start)
+					.take(crate::steam::RESULTS_PER_PAGE)
+					.filter_map(|x| x.installed().id)
+					.collect(),
+			);
 			&read[start..(start + crate::steam::RESULTS_PER_PAGE).min(read.len())]
-		})
+		}),
 	)
 }
 
@@ -218,13 +232,17 @@ pub fn downloader_extract_gmas(paths: Vec<PathBuf>) {
 	let open = paths.len() == 1;
 	let destination = &app_data!().settings.read().extract_destination;
 	for path in paths.into_iter() {
-		if path.is_file() && match path.extension() {
-			Some(extension) => extension.to_string_lossy().eq_ignore_ascii_case("gma"),
-			None => false,
-		} {
+		if path.is_file()
+			&& match path.extension() {
+				Some(extension) => extension.to_string_lossy().eq_ignore_ascii_case("gma"),
+				None => false,
+			} {
 			if let Ok(mut gma) = GMAFile::open(&path) {
 				let transaction = transaction!();
-				webview_emit!("ExtractionStarted", (transaction.id, path.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(), gma.id));
+				webview_emit!(
+					"ExtractionStarted",
+					(transaction.id, path.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(), gma.id)
+				);
 				transaction.data(gma.size);
 				ignore! { gma.extract(destination.clone(), transaction, open) };
 			}

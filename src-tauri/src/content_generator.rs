@@ -1,9 +1,13 @@
-use std::{fs::File, io::{BufReader, BufWriter}, path::PathBuf};
+use std::{
+	fs::File,
+	io::{BufReader, BufWriter},
+	path::PathBuf,
+};
 
 use chrono::Utc;
-use steamworks::PublishedFileId;
-use serde::{Serialize, Deserialize};
 use parking_lot::Mutex;
+use serde::{Deserialize, Serialize};
+use steamworks::PublishedFileId;
 
 #[derive(Serialize, Deserialize)]
 struct AddWorkshopEntry {
@@ -17,12 +21,12 @@ struct AddWorkshopManifest {
 	name: String,
 	date: chrono::DateTime<Utc>,
 	collection: Option<PublishedFileId>,
-	contents: Vec<AddWorkshopEntry>
+	contents: Vec<AddWorkshopEntry>,
 }
 impl PartialEq for AddWorkshopManifest {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
+	fn eq(&self, other: &Self) -> bool {
+		self.id == other.id
+	}
 }
 impl Eq for AddWorkshopManifest {}
 impl PartialOrd for AddWorkshopManifest {
@@ -39,7 +43,7 @@ impl Ord for AddWorkshopManifest {
 #[derive(Serialize, Deserialize)]
 pub struct ContentGenerator {
 	saved: Vec<AddWorkshopManifest>,
-	id: u16
+	id: u16,
 }
 impl ContentGenerator {
 	pub fn init() -> Self {
@@ -55,20 +59,20 @@ impl ContentGenerator {
 					let contents: AddWorkshopManifest = bincode::deserialize_from(BufReader::new(File::open(entry.path()).ok()?)).ok()?;
 					id = id.max(contents.id);
 
-					saved.insert(match saved.binary_search(&contents) {
-						Ok(pos) => pos,
-						Err(pos) => pos,
-					}, contents);
+					saved.insert(
+						match saved.binary_search(&contents) {
+							Ok(pos) => pos,
+							Err(pos) => pos,
+						},
+						contents,
+					);
 
 					Some(())
 				})();
 			}
 		}
 
-		Self {
-			saved,
-			id
-		}
+		Self { saved, id }
 	}
 }
 
@@ -88,7 +92,6 @@ fn get_content_generator_manifests() -> &'static Vec<AddWorkshopManifest> {
 #[tauri::command]
 fn update_content_generator_manifest(manifest: AddWorkshopManifest) -> bool {
 	try_block!({
-
 		let mut content_generator = CONTENT_GENERATOR.lock();
 
 		let f = File::create(manifests_path().join(manifest.id.to_string()))?;
@@ -96,8 +99,8 @@ fn update_content_generator_manifest(manifest: AddWorkshopManifest) -> bool {
 
 		match content_generator.saved.binary_search(&manifest) {
 			Ok(pos) => content_generator.saved[pos] = manifest,
-			Err(pos) => content_generator.saved.insert(pos, manifest)
+			Err(pos) => content_generator.saved.insert(pos, manifest),
 		}
-
-	}).is_ok()
+	})
+	.is_ok()
 }

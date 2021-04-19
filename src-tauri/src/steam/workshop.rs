@@ -1,9 +1,14 @@
 use serde::Serialize;
-use std::{cell::RefCell, collections::VecDeque, ops::DerefMut, path::PathBuf, sync::{
+use std::{
+	cell::RefCell,
+	collections::{HashMap, HashSet, VecDeque},
+	ops::DerefMut,
+	path::PathBuf,
+	sync::{
 		atomic::{AtomicBool, Ordering},
 		Arc,
-	}};
-use std::collections::{HashMap, HashSet};
+	},
+};
 
 use steamworks::{PublishedFileId, QueryResult, QueryResults, SteamError, SteamId};
 
@@ -11,7 +16,7 @@ use parking_lot::Mutex;
 
 use super::{users::SteamUser, Steam};
 
-use crate::{GMOD_APP_ID, main_thread_forbidden, webview::Addon, webview_emit};
+use crate::{main_thread_forbidden, webview::Addon, webview_emit, GMOD_APP_ID};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -79,7 +84,7 @@ impl From<PublishedFileId> for WorkshopItem {
 	}
 }
 impl PartialEq for WorkshopItem {
-    fn eq(&self, other: &Self) -> bool {
+	fn eq(&self, other: &Self) -> bool {
 		if self.time_created == 0 {
 			if self.time_updated == 0 {
 				self.id.eq(&other.id)
@@ -93,11 +98,11 @@ impl PartialEq for WorkshopItem {
 				self.time_created.eq(&other.time_created)
 			}
 		}
-    }
+	}
 }
 impl Eq for WorkshopItem {}
 impl PartialOrd for WorkshopItem {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
 		if self.time_created == 0 {
 			if self.time_updated == 0 {
 				self.id.partial_cmp(&other.id)
@@ -111,10 +116,10 @@ impl PartialOrd for WorkshopItem {
 				self.time_created.partial_cmp(&other.time_created)
 			}
 		}
-    }
+	}
 }
 impl Ord for WorkshopItem {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
 		if self.time_created == 0 {
 			if self.time_updated == 0 {
 				self.id.cmp(&other.id)
@@ -128,7 +133,7 @@ impl Ord for WorkshopItem {
 				self.time_created.cmp(&other.time_created)
 			}
 		}
-    }
+	}
 }
 
 #[derive(derive_more::Deref)]
@@ -139,73 +144,81 @@ lazy_static! {
 	static ref FETCHER_NEXT: AtomicBool = AtomicBool::new(false);
 }
 impl Steam {
-	pub fn workshop_fetcher() { loop {
-		steam!().workshop.write(|workshop| {
-			if workshop.1.is_empty() {
-				FETCHER_NEXT.store(true, Ordering::Release);
-				return;
-			} else {
-				FETCHER_NEXT.store(false, Ordering::Release);
-			}
+	pub fn workshop_fetcher() {
+		loop {
+			steam!().workshop.write(|workshop| {
+				if workshop.1.is_empty() {
+					FETCHER_NEXT.store(true, Ordering::Release);
+					return;
+				} else {
+					FETCHER_NEXT.store(false, Ordering::Release);
+				}
 
-			let mut backlog = FETCHER_BACKLOG.borrow_mut();
+				let mut backlog = FETCHER_BACKLOG.borrow_mut();
 
-			backlog.reserve(workshop.1.len());
-			for id in workshop.1.drain(..).into_iter() { backlog.push_back(id); }
+				backlog.reserve(workshop.1.len());
+				for id in workshop.1.drain(..).into_iter() {
+					backlog.push_back(id);
+				}
 
-			drop(workshop);
+				drop(workshop);
 
-			while !backlog.is_empty() {
-				let backlog_len = backlog.len();
-				let mut queue = backlog.split_off((steamworks::RESULTS_PER_PAGE as usize).min(backlog_len));
-				std::mem::swap(&mut queue, &mut *backlog);
+				while !backlog.is_empty() {
+					let backlog_len = backlog.len();
+					let mut queue = backlog.split_off((steamworks::RESULTS_PER_PAGE as usize).min(backlog_len));
+					std::mem::swap(&mut queue, &mut *backlog);
 
-				let queue: Vec<PublishedFileId> = queue.into();
+					let queue: Vec<PublishedFileId> = queue.into();
 
-				let next = Arc::new(AtomicBool::new(false));
-				let next_ref = next.clone();
+					let next = Arc::new(AtomicBool::new(false));
+					let next_ref = next.clone();
 
-				steam!().client().ugc().query_items(queue.to_owned()).unwrap().allow_cached_response(600).fetch(
-					move |results: Result<QueryResults<'_>, SteamError>| {
-						if let Ok(results) = results {
-							let mut i = 0;
-							for item in results.iter() {
-								webview_emit!(
-									"WorkshopItem",
-									Addon::from(
-										if let Some(item) = item {
+					steam!()
+						.client()
+						.ugc()
+						.query_items(queue.to_owned())
+						.unwrap()
+						.allow_cached_response(600)
+						.fetch(move |results: Result<QueryResults<'_>, SteamError>| {
+							if let Ok(results) = results {
+								let mut i = 0;
+								for item in results.iter() {
+									webview_emit!(
+										"WorkshopItem",
+										Addon::from(if let Some(item) = item {
 											let mut item: WorkshopItem = item.into();
 											item.preview_url = results.preview_url(i);
 											item.subscriptions = results.statistic(i, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
 											item
 										} else {
 											WorkshopItem::from(queue[i as usize])
-										}
-									)
-								);
-								i += 1;
-							}
-						} else {
-							steam!().workshop.write(move |workshop| {
-								for id in queue.into_iter() {
-									workshop.0.remove(&id);
+										})
+									);
+									i += 1;
 								}
-							});
-						}
-						next_ref.store(true, Ordering::Release);
-					},
-				);
+							} else {
+								steam!().workshop.write(move |workshop| {
+									for id in queue.into_iter() {
+										workshop.0.remove(&id);
+									}
+								});
+							}
+							next_ref.store(true, Ordering::Release);
+						});
 
-				while !next.load(Ordering::Acquire) {
-					steam!().run_callbacks();
+					while !next.load(Ordering::Acquire) {
+						steam!().run_callbacks();
+					}
 				}
+
+				FETCHER_NEXT.store(true, Ordering::Release);
+			});
+
+			while !FETCHER_NEXT.load(Ordering::Acquire) {
+				sleep_ms!(50);
 			}
-
-			FETCHER_NEXT.store(true, Ordering::Release);
-		});
-
-		while !FETCHER_NEXT.load(Ordering::Acquire) { sleep_ms!(50); }
-	}}
+		}
+	}
 
 	pub fn fetch_workshop_items(&'static self, ids: Vec<PublishedFileId>) {
 		self.workshop.write(|workshop| {
@@ -266,42 +279,38 @@ impl Steam {
 		let results = Arc::new(Mutex::new(None));
 
 		let results_ref = results.clone();
-		let client = self.client(); client
-		.ugc()
-		.query_user(
-			client.steam_id.account_id(),
-			steamworks::UserList::Published,
-			steamworks::UGCType::ItemsReadyToUse,
-			steamworks::UserListOrder::LastUpdatedDesc,
-			steamworks::AppIDs::ConsumerAppId(GMOD_APP_ID),
-			page,
-		)
-		.ok()?
-		.exclude_tag("dupe")
-		.allow_cached_response(600)
-		.fetch(move |result: Result<QueryResults<'_>, SteamError>| {
-			if let Ok(data) = result {
-				*results_ref.lock() = Some(Some((
-					data.total_results(),
-					data.iter()
-						.enumerate()
-						.map(|(i, x)| {
-							let mut item: WorkshopItem = x.unwrap().into();
-							item.preview_url = data.preview_url(i as u32);
-							item.subscriptions = data
-								.statistic(
-									i as u32,
-									steamworks::UGCStatisticType::Subscriptions,
-								)
-								.unwrap_or(0);
-							item.into()
-						})
-						.collect::<Vec<Addon>>(),
-				)));
-			} else {
-				*results_ref.lock() = Some(None);
-			}
-		});
+		let client = self.client();
+		client
+			.ugc()
+			.query_user(
+				client.steam_id.account_id(),
+				steamworks::UserList::Published,
+				steamworks::UGCType::ItemsReadyToUse,
+				steamworks::UserListOrder::LastUpdatedDesc,
+				steamworks::AppIDs::ConsumerAppId(GMOD_APP_ID),
+				page,
+			)
+			.ok()?
+			.exclude_tag("dupe")
+			.allow_cached_response(600)
+			.fetch(move |result: Result<QueryResults<'_>, SteamError>| {
+				if let Ok(data) = result {
+					*results_ref.lock() = Some(Some((
+						data.total_results(),
+						data.iter()
+							.enumerate()
+							.map(|(i, x)| {
+								let mut item: WorkshopItem = x.unwrap().into();
+								item.preview_url = data.preview_url(i as u32);
+								item.subscriptions = data.statistic(i as u32, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+								item.into()
+							})
+							.collect::<Vec<Addon>>(),
+					)));
+				} else {
+					*results_ref.lock() = Some(None);
+				}
+			});
 
 		mutex_wait!(results, {
 			self.run_callbacks();

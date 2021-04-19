@@ -1,6 +1,6 @@
-use std::{fs::File, io::{BufReader, BufWriter}, path::PathBuf};
+use std::{fs::File, io::BufWriter, path::PathBuf};
 
-use crate::{RwLockCow, gma::ExtractDestination, webview_emit};
+use crate::{gma::ExtractDestination, webview_emit, RwLockCow};
 
 use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
@@ -9,8 +9,12 @@ use serde::{Deserialize, Serialize};
 use tauri::Params;
 
 lazy_static! {
-	static ref USER_DATA_DIR: PathBuf = dirs_next::data_dir().unwrap_or_else(|| std::env::current_exe().unwrap_or_else(|_| std::env::temp_dir())).join("gmpublisher");
-	static ref APP_SETTINGS_PATH: PathBuf = dirs_next::config_dir().unwrap_or_else(|| dirs_next::data_dir().unwrap_or_else(|| std::env::current_exe().unwrap_or_else(|_| std::env::temp_dir()))).join("gmpublisher/settings.json");
+	static ref USER_DATA_DIR: PathBuf = dirs_next::data_dir()
+		.unwrap_or_else(|| std::env::current_exe().unwrap_or_else(|_| std::env::temp_dir()))
+		.join("gmpublisher");
+	static ref APP_SETTINGS_PATH: PathBuf = dirs_next::config_dir()
+		.unwrap_or_else(|| dirs_next::data_dir().unwrap_or_else(|| std::env::current_exe().unwrap_or_else(|_| std::env::temp_dir())))
+		.join("gmpublisher/settings.json");
 	static ref TEMP_DIR: PathBuf = std::env::temp_dir().join("gmpublisher");
 	static ref DOWNLOADS_DIR: Option<PathBuf> = dirs::download_dir();
 }
@@ -64,7 +68,9 @@ impl Settings {
 	fn load(sanitize: bool) -> Result<Settings, anyhow::Error> {
 		let contents = std::fs::read_to_string(&*APP_SETTINGS_PATH)?;
 		let mut settings: Settings = serde_json::de::from_str(&contents)?;
-		if sanitize { settings.sanitize(); }
+		if sanitize {
+			settings.sanitize();
+		}
 		Ok(settings)
 	}
 
@@ -89,22 +95,22 @@ impl Settings {
 				if self.create_folder_on_extract || !path.is_dir() {
 					self.extract_destination = ExtractDestination::NamedDirectory(path.to_owned());
 				}
-			},
+			}
 			ExtractDestination::NamedDirectory(path) => {
 				if !self.create_folder_on_extract || !path.is_dir() {
 					self.extract_destination = ExtractDestination::Directory(path.to_owned());
 				}
-			},
+			}
 			ExtractDestination::Downloads => {
 				if app_data!().downloads_dir().is_none() {
 					self.extract_destination = ExtractDestination::default();
 				}
-			},
+			}
 			ExtractDestination::Addons => {
 				if app_data!().gmod_dir().is_none() {
 					self.extract_destination = ExtractDestination::default();
 				}
-			},
+			}
 			_ => {}
 		}
 
@@ -153,11 +159,8 @@ impl AppData {
 		}
 
 		if !steam!().connected() {
-			return steamlocate::SteamDir::locate().and_then(|mut steam_dir| {
-				steam_dir.app(&GMOD_APP_ID.0).and_then(|steam_app| {
-					Some(steam_app.path.to_owned())
-				})
-			});
+			return steamlocate::SteamDir::locate()
+				.and_then(|mut steam_dir| steam_dir.app(&GMOD_APP_ID.0).and_then(|steam_app| Some(steam_app.path.to_owned())));
 		}
 
 		let gmod: PathBuf = steam!().client().apps().app_install_dir(GMOD_APP_ID).into();
@@ -219,20 +222,16 @@ impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 				.replacen(
 					"{$_APP_DATA_$}",
 					&crate::escape_single_quoted_json(serde_json::ser::to_string(&*crate::APP_DATA).unwrap()),
-					1
+					1,
 				)
 				.replacen(
 					"{$_WS_DEAD_$}",
 					&crate::escape_single_quoted_json(
 						serde_json::ser::to_string(&crate::WorkshopItem::from(steamworks::PublishedFileId(0))).unwrap(),
 					),
-					1
+					1,
 				)
-				.replacen(
-					"{$_PATH_SEPARATOR_$}",
-					&serde_json::ser::to_string(&PATH_SEPARATOR).unwrap(),
-					1
-				),
+				.replacen("{$_PATH_SEPARATOR_$}", &serde_json::ser::to_string(&PATH_SEPARATOR).unwrap(), 1),
 		)
 	}
 

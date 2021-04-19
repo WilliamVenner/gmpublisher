@@ -1,7 +1,4 @@
-use std::{
-	collections::BinaryHeap,
-	sync::Arc,
-};
+use std::{collections::BinaryHeap, sync::Arc};
 
 use indexmap::IndexMap;
 use lazy_static::lazy_static;

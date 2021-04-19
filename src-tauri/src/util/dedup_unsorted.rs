@@ -1,6 +1,5 @@
 // cursed
-use std::collections::HashSet;
-use std::hash::Hash;
+use std::{collections::HashSet, hash::Hash};
 
 pub fn dedup_unsorted<T: Hash + Eq>(vec: &mut Vec<T>) {
 	struct PtrCmp<T: Hash + Eq> {

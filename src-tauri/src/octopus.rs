@@ -1,10 +1,14 @@
 // Utility library for shared concurrency between JS and Rust.
 
-use std::{collections::{HashMap, VecDeque}, hash::Hash, sync::Arc};
+use std::{
+	collections::{HashMap, VecDeque},
+	hash::Hash,
+	sync::Arc,
+};
 
 use atomic_refcell::{AtomicRef, AtomicRefMut};
 
-use parking_lot::{Mutex, RwLock, RwLockWriteGuard, RwLockReadGuard, Condvar};
+use parking_lot::{Condvar, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 
@@ -142,15 +146,12 @@ impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
 			});
 		}
 
-		Self {
-			inner,
-			queue,
-		}
+		Self { inner, queue }
 	}
 
 	pub fn write<F>(&'static self, f: F)
 	where
-		F: FnOnce(&mut RwLockWriteGuard<'_, V>) + 'static + Send + Sync
+		F: FnOnce(&mut RwLockWriteGuard<'_, V>) + 'static + Send + Sync,
 	{
 		if let Some(mut lock) = self.inner.try_write() {
 			f(&mut lock);

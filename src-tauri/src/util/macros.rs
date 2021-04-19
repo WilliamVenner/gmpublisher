@@ -59,7 +59,7 @@ macro_rules! mutex_wait {
 			}
 			$loop
 		}
-	}
+	};
 }
 
 #[macro_export]

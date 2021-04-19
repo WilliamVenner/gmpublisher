@@ -1,4 +1,9 @@
-use std::{fs::{self, File}, io::{BufReader, BufWriter, Cursor, Read, Seek, SeekFrom}, path::{Path, PathBuf}, sync::atomic::{AtomicUsize, Ordering}};
+use std::{
+	fs::{self, File},
+	io::{BufReader, BufWriter, Cursor, Read, Seek, SeekFrom},
+	path::{Path, PathBuf},
+	sync::atomic::{AtomicUsize, Ordering},
+};
 
 use crate::{app_data, transactions::Transaction};
 
@@ -9,7 +14,7 @@ use rayon::{
 	iter::{IntoParallelRefIterator, ParallelIterator},
 	ThreadPool, ThreadPoolBuilder,
 };
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use sysinfo::SystemExt;
 
 lazy_static! {
@@ -36,7 +41,6 @@ impl ExtractDestination {
 		};
 
 		match self {
-
 			Temp => None,
 
 			Directory(path) => Some(path),
@@ -50,15 +54,14 @@ impl ExtractDestination {
 			Downloads => app_data!().downloads_dir().to_owned().and_then(push_extracted_name),
 
 			NamedDirectory(path) => push_extracted_name(path),
-
 		}
 		.unwrap_or_else(|| push_extracted_name(app_data!().temp_dir().to_owned()).unwrap())
 	}
 }
 impl Default for ExtractDestination {
-    fn default() -> Self {
-        ExtractDestination::Temp
-    }
+	fn default() -> Self {
+		ExtractDestination::Temp
+	}
 }
 
 impl GMAFile {
@@ -75,7 +78,10 @@ impl GMAFile {
 
 		let input = std::fs::read(path.as_ref()).map_err(|_| GMAError::IOError)?;
 		let mut output = Vec::with_capacity(input.len());
-		let status = xz2::stream::Stream::new_lzma_decoder(available_memory).map_err(|_| GMAError::LZMA)?.process_vec(&input, &mut output, xz2::stream::Action::Run).map_err(|_| GMAError::LZMA)?;
+		let status = xz2::stream::Stream::new_lzma_decoder(available_memory)
+			.map_err(|_| GMAError::LZMA)?
+			.process_vec(&input, &mut output, xz2::stream::Action::Run)
+			.map_err(|_| GMAError::LZMA)?;
 
 		if let xz2::stream::Status::Ok = status {
 			Ok(GMAFile::read_header(Cursor::new(output), path)?)

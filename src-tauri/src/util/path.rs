@@ -1,5 +1,8 @@
 use serde::{de::Visitor, Deserialize, Serialize};
-use std::{fmt::Debug, path::{Path, PathBuf}};
+use std::{
+	fmt::Debug,
+	path::{Path, PathBuf},
+};
 
 pub fn canonicalize(path: PathBuf) -> PathBuf {
 	dunce::canonicalize(path.clone()).unwrap_or(path)
@@ -27,7 +30,7 @@ impl NormalizedPathBuf {
 	pub fn new() -> NormalizedPathBuf {
 		NormalizedPathBuf {
 			path: PathBuf::new(),
-			normalized: PathBuf::new()
+			normalized: PathBuf::new(),
 		}
 	}
 }
@@ -106,7 +109,10 @@ impl<'de> Deserialize<'de> for NormalizedPathBuf {
 
 #[inline]
 pub fn has_extension<P: AsRef<Path>, S: AsRef<str>>(path: P, extension: S) -> bool {
-	path.as_ref().extension().and_then(|x| Some(x.to_str().and_then(|x| Some(x.eq_ignore_ascii_case(extension.as_ref()))).unwrap_or(false))).unwrap_or(false)
+	path.as_ref()
+		.extension()
+		.and_then(|x| Some(x.to_str().and_then(|x| Some(x.eq_ignore_ascii_case(extension.as_ref()))).unwrap_or(false)))
+		.unwrap_or(false)
 }
 
 pub fn open<P: AsRef<Path>>(path: P) -> Result<(), opener::OpenError> {
@@ -117,25 +123,14 @@ pub fn open_file_location<P: AsRef<Path>>(path: P) -> Result<std::process::Child
 	let path = path.as_ref().display();
 
 	#[cfg(target_os = "windows")]
-	return std::process::Command::new("explorer")
-		.arg(format!("/select,{}", path))
-		.spawn();
+	return std::process::Command::new("explorer").arg(format!("/select,{}", path)).spawn();
 
 	#[cfg(target_os = "macos")]
-	return std::process::Command::new("open")
-		.arg("-R")
-		.arg(path)
-		.spawn();
+	return std::process::Command::new("open").arg("-R").arg(path).spawn();
 
 	#[cfg(target_os = "linux")]
-	return std::process::Command::new("xdg-open")
-		.arg("--select")
-		.arg(path)
-		.spawn();
+	return std::process::Command::new("xdg-open").arg("--select").arg(path).spawn();
 
 	#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-	Err(std::io::Error::new(
-		std::io::ErrorKind::Other,
-		"Unsupported OS",
-	))
+	Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported OS"))
 }

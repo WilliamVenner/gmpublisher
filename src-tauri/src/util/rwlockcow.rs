@@ -1,5 +1,5 @@
-use std::borrow::Borrow;
 use parking_lot::MappedRwLockReadGuard;
+use std::borrow::Borrow;
 use RwLockCow::*;
 
 pub enum RwLockCow<'a, B: ?Sized + 'a>
@@ -16,13 +16,13 @@ where
 	Owned(<B as ToOwned>::Owned),
 }
 impl<B: ?Sized + ToOwned> std::ops::Deref for RwLockCow<'_, B> {
-    type Target = B;
+	type Target = B;
 
-    fn deref(&self) -> &B {
-        match *self {
-            Borrowed(borrowed) => borrowed,
-            Owned(ref owned) => owned.borrow(),
-            Locked(ref locked) => &*locked,
-        }
-    }
+	fn deref(&self) -> &B {
+		match *self {
+			Borrowed(borrowed) => borrowed,
+			Owned(ref owned) => owned.borrow(),
+			Locked(ref locked) => &*locked,
+		}
+	}
 }
