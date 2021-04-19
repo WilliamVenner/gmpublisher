@@ -1,9 +1,4 @@
-use std::{
-	fs::{self, File},
-	io::{BufReader, BufWriter, Read, Seek, SeekFrom},
-	path::PathBuf,
-	sync::atomic::{AtomicUsize, Ordering},
-};
+use std::{fs::{self, File}, io::{BufReader, BufWriter, Cursor, Read, Seek, SeekFrom}, path::{Path, PathBuf}, sync::atomic::{AtomicUsize, Ordering}};
 
 use crate::{app_data, transactions::Transaction};
 
@@ -14,13 +9,14 @@ use rayon::{
 	iter::{IntoParallelRefIterator, ParallelIterator},
 	ThreadPool, ThreadPoolBuilder,
 };
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
+use sysinfo::SystemExt;
 
 lazy_static! {
-	static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
+	pub static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExtractDestination {
 	Temp,
 	Downloads,
@@ -31,11 +27,11 @@ pub enum ExtractDestination {
 	NamedDirectory(PathBuf),
 }
 impl ExtractDestination {
-	fn into(self, extracted_name: &String) -> PathBuf {
+	fn into<S: AsRef<str>>(self, extracted_name: S) -> PathBuf {
 		use ExtractDestination::*;
 
 		let push_extracted_name = |mut path: PathBuf| {
-			path.push(extracted_name);
+			path.push(extracted_name.as_ref());
 			Some(path)
 		};
 
@@ -46,31 +42,56 @@ impl ExtractDestination {
 			Directory(path) => Some(path),
 
 			Addons => app_data!().gmod_dir().and_then(|mut path| {
-				path.push("garrysmod");
+				path.push("GarrysMod");
 				path.push("addons");
 				Some(path)
 			}),
 
-			Downloads => dirs::download_dir().and_then(push_extracted_name),
+			Downloads => app_data!().downloads_dir().to_owned().and_then(push_extracted_name),
 
 			NamedDirectory(path) => push_extracted_name(path),
 
 		}
-		.unwrap_or_else(|| {
-			let mut path = std::env::temp_dir();
-			path.push("gmpublisher");
-			push_extracted_name(path).unwrap()
-		})
+		.unwrap_or_else(|| push_extracted_name(app_data!().temp_dir().to_owned()).unwrap())
 	}
+}
+impl Default for ExtractDestination {
+    fn default() -> Self {
+        ExtractDestination::Temp
+    }
 }
 
 impl GMAFile {
-	pub fn extract(&mut self, dest: ExtractDestination, transaction: Transaction) -> Result<PathBuf, GMAError> {
+	pub fn decompress<P: AsRef<Path>>(path: P) -> Result<GMAFile, GMAError> {
 		main_thread_forbidden!();
 
-		self.entries()?;
+		let available_memory = ({
+			let mut sys = sysinfo::System::new();
+			sys.refresh_memory();
+			sys.get_available_memory()
+		} * 1000) - 1000000000;
+
+		// TODO somehow, in some really unsafe and stupid way, monitor the progress of decompression
+
+		let input = std::fs::read(path.as_ref()).map_err(|_| GMAError::IOError)?;
+		let mut output = Vec::with_capacity(input.len());
+		let status = xz2::stream::Stream::new_lzma_decoder(available_memory).map_err(|_| GMAError::LZMA)?.process_vec(&input, &mut output, xz2::stream::Action::Run).map_err(|_| GMAError::LZMA)?;
+
+		if let xz2::stream::Status::Ok = status {
+			Ok(GMAFile::read_header(Cursor::new(output), path)?)
+		} else {
+			Err(GMAError::LZMA)
+		}
+	}
+
+	pub fn extract(&mut self, dest: ExtractDestination, transaction: Transaction, open: bool) -> Result<PathBuf, GMAError> {
+		main_thread_forbidden!();
 
 		THREAD_POOL.install(move || {
+			self.entries()?;
+
+			println!("{:#?}", self.entries);
+
 			let mut dest_path = dest.into(&self.extracted_name);
 			let entries_start = self.pointers.entries;
 
@@ -83,28 +104,37 @@ impl GMAFile {
 				|handle, (entry_path, entry)| match handle {
 					Ok(handle) => {
 						if whitelist::check(entry_path) {
+							// FIXME count errors, check if errors == number of entries, return an error instead of finished
 							ignore! { GMAFile::stream_entry_bytes(handle, entries_start, &dest_path.join(entry_path), entry) };
 							transaction.progress(((i.fetch_add(1, Ordering::AcqRel) + 1) as f64) / entries_len);
 						} else {
-							transaction.data(("ERR_WHITELIST", entry_path.clone()));
+							transaction.error("ERR_WHITELIST", entry_path.clone());
 						}
 					}
-					Err(_) => transaction.error(("ERR_GMA_IO_ERROR", entry_path.clone())),
+					Err(_) => transaction.error("ERR_GMA_IO_ERROR", entry_path.clone()),
 				},
 			);
 
-			let metadata = self.metadata.as_ref().unwrap();
-			if let GMAMetadata::Standard { .. } = metadata {
-				if let Ok(json) = serde_json::ser::to_string_pretty(metadata) {
-					dest_path.push("addon.json");
-					ignore! { fs::write(&dest_path, json.as_bytes()) };
-					dest_path.pop();
+			if transaction.aborted() {
+				Err(GMAError::IOError)
+			} else {
+				let metadata = self.metadata.as_ref().unwrap();
+				if let GMAMetadata::Standard { .. } = metadata {
+					if let Ok(json) = serde_json::ser::to_string_pretty(metadata) {
+						dest_path.push("addon.json");
+						ignore! { fs::write(&dest_path, json.as_bytes()) };
+						dest_path.pop();
+					}
 				}
+
+				if open {
+					ignore! { crate::path::open(&dest_path) };
+				}
+
+				transaction.finished(Some(dest_path.to_owned()));
+
+				Ok(dest_path)
 			}
-
-			transaction.finished(turbonone!());
-
-			Ok(dest_path)
 		})
 	}
 
