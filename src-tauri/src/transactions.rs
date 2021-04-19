@@ -127,8 +127,9 @@ impl TransactionInner {
 		}
 	}
 
-	pub fn error<D: Serialize + Send + 'static>(&self, error: D) {
-		self.emit("TransactionError", error);
+	pub fn error<S: Into<String>, D: Serialize + Send + 'static>(&self, msg: S, error: D) {
+		self.abort();
+		self.emit("TransactionError", (msg.into(), error));
 	}
 
 	pub fn finished<D: Serialize + Send + 'static>(&self, data: Option<D>) {
@@ -148,8 +149,11 @@ impl TransactionInner {
 impl Drop for TransactionInner {
 	fn drop(&mut self) {
 		if !self.aborted() {
-			self.error("ERR_UNKNOWN");
+			self.error("ERR_UNKNOWN", turbonone!());
 			self.abort();
+
+			#[cfg(debug_assertions)]
+			println!("{:#?}", backtrace::Backtrace::new());
 		}
 	}
 }
