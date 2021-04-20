@@ -58,4 +58,5 @@ macro_rules! webview_emit {
 pub(super) fn init_globals() {
 	lazy_static::initialize(&STEAMWORKS);
 	lazy_static::initialize(&APP_DATA);
+	crate::transactions::init();
 }

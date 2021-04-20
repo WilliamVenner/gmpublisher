@@ -12,6 +12,7 @@ where
 		check_file,
 		open,
 		open_file_location,
+		crate::transactions::websocket,
 		crate::transactions::cancel_transaction,
 		crate::appdata::update_settings,
 		crate::appdata::validate_gmod,

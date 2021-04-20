@@ -1,13 +1,14 @@
+mod websocket;
+
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::Serialize;
-use std::sync::{
-	atomic::{AtomicBool, AtomicUsize, Ordering},
-	Arc, Weak,
-};
+use std::sync::{Arc, Weak, atomic::{AtomicBool, AtomicU32, Ordering}};
 
 use crate::{dprintln, main_thread_forbidden, webview_emit};
+
+use self::websocket::{TransactionMessage, TransactionServer};
 
 lazy_static! {
 	static ref TRANSACTIONS: Transactions = Transactions::init();
@@ -16,7 +17,8 @@ lazy_static! {
 
 pub struct Transactions {
 	inner: RwLock<Vec<TransactionRef>>,
-	id: AtomicUsize,
+	id: AtomicU32,
+	websocket: Option<TransactionServer>,
 }
 impl std::ops::Deref for Transactions {
 	type Target = RwLock<Vec<TransactionRef>>;
@@ -28,11 +30,12 @@ impl Transactions {
 	fn init() -> Transactions {
 		Transactions {
 			inner: RwLock::new(Vec::new()),
-			id: AtomicUsize::new(0),
+			id: AtomicU32::new(0),
+			websocket: TransactionServer::init().ok()
 		}
 	}
 
-	pub fn find(&self, transaction_id: usize) -> Option<Transaction> {
+	pub fn find(&self, transaction_id: u32) -> Option<Transaction> {
 		let transactions = self.inner.read();
 		if let Ok(pos) = transactions.binary_search_by_key(&transaction_id, |transaction| transaction.id) {
 			let transaction = transactions.get(pos).unwrap().upgrade();
@@ -49,7 +52,7 @@ impl Transactions {
 }
 
 pub struct TransactionRef {
-	pub id: usize,
+	pub id: u32,
 	ptr: Weak<TransactionInner>,
 }
 impl std::ops::Deref for TransactionRef {
@@ -83,12 +86,16 @@ fn progress_as_int(progress: f64) -> u16 {
 pub type Transaction = Arc<TransactionInner>;
 #[derive(Debug)]
 pub struct TransactionInner {
-	pub id: usize,
+	pub id: u32,
 	aborted: AtomicBool,
 }
 impl TransactionInner {
-	fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, data: D) {
-		webview_emit!(event, (self.id, data));
+	fn emit(&self, message: TransactionMessage) {
+		if let Some(ref websocket) = TRANSACTIONS.websocket {
+			websocket.send(message);
+		} else {
+			TransactionServer::send_tauri_event(message);
+		}
 	}
 
 	fn abort(&self) {
@@ -104,18 +111,18 @@ impl TransactionInner {
 	}
 
 	pub fn data<D: Serialize + Send + 'static>(&self, data: D) {
-		self.emit("TransactionData", data);
+		self.emit(TransactionMessage::Data(self.id, json!(data)));
 	}
 
-	pub fn status<S: AsRef<str> + Serialize + Send + 'static>(&self, status: S) {
-		self.emit("TransactionStatus", status)
+	pub fn status<S: Into<String>>(&self, status: S) {
+		self.emit(TransactionMessage::Status(self.id, status.into()))
 	}
 
 	pub fn progress(&self, progress: f64) {
 		if self.aborted() {
 			dprintln!("Tried to progress an aborted transaction!");
 		} else {
-			self.emit("TransactionProgress", progress_as_int(progress));
+			self.emit(TransactionMessage::Progress(self.id, progress_as_int(progress)));
 		}
 	}
 
@@ -123,19 +130,19 @@ impl TransactionInner {
 		if self.aborted() {
 			dprintln!("Tried to progress an aborted transaction!");
 		} else {
-			self.emit("TransactionIncrProgress", progress_as_int(progress));
+			self.emit(TransactionMessage::IncrProgress(self.id, progress_as_int(progress)));
 		}
 	}
 
-	pub fn error<S: Into<String>, D: Serialize + Send + 'static>(&self, msg: S, error: D) {
+	pub fn error<S: Into<String>, D: Serialize + Send + 'static>(&self, msg: S, data: D) {
 		self.abort();
-		self.emit("TransactionError", (msg.into(), error));
+		self.emit(TransactionMessage::Error(self.id, msg.into(), json!(data)));
 	}
 
-	pub fn finished<D: Serialize + Send + 'static>(&self, data: Option<D>) {
+	pub fn finished<D: Serialize + Send + 'static>(&self, data: D) {
 		debug_assert!(!self.aborted(), "Tried to finish an aborted transaction!");
 		self.abort();
-		self.emit("TransactionFinished", data);
+		self.emit(TransactionMessage::Finished(self.id, json!(data)));
 	}
 
 	pub fn cancel(&self) {
@@ -166,6 +173,10 @@ impl serde::Serialize for TransactionInner {
 	}
 }
 
+pub fn init() {
+	lazy_static::initialize(&TRANSACTIONS);
+}
+
 pub fn new() -> Transaction {
 	main_thread_forbidden!();
 
@@ -194,8 +205,13 @@ macro_rules! transaction {
 }
 
 #[tauri::command]
-fn cancel_transaction(id: usize) {
+fn cancel_transaction(id: u32) {
 	if let Some(transaction) = TRANSACTIONS.find(id) {
 		transaction.cancel();
 	}
+}
+
+#[tauri::command]
+fn websocket() -> Option<u16> {
+	TRANSACTIONS.websocket.as_ref().map(|socket| socket.port)
 }

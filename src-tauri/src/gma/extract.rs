@@ -122,11 +122,13 @@ impl GMAFile {
 			let finished = |mut dest_path: PathBuf| {
 				if i.fetch_add(1, Ordering::AcqRel) > entries_len_i { return; }
 
-				if open_after_extract {
-					ignore! { crate::path::open(&dest_path) };
-				}
+				if !transaction.aborted() {
+					if open_after_extract {
+						ignore! { crate::path::open(&dest_path) };
+					}
 
-				transaction.finished(Some(dest_path.to_owned()));
+					transaction.finished(Some(dest_path.to_owned()));
+				}
 
 				let metadata = self.metadata.as_ref().unwrap();
 				if let GMAMetadata::Standard { .. } = metadata {
@@ -143,6 +145,8 @@ impl GMAFile {
 					let mut handle = self.read()?;
 
 					if whitelist::check(entry_path) {
+						if transaction.aborted() { return Err(GMAError::Cancelled); }
+
 						// FIXME count errors, check if errors == number of entries, return an error instead of finished
 						ignore! { GMAFile::stream_entry_bytes(&mut handle, entries_start, &dest_path.join(entry_path), entry) };
 
@@ -153,7 +157,7 @@ impl GMAFile {
 							(finished)(dest_path.to_owned());
 						}
 					} else {
-						transaction.error("ERR_WHITELIST", entry_path.clone());
+						transaction.error("ERR_WHITELIST", entry_path.clone()); // TODO
 					}
 
 					Ok(())

@@ -68,6 +68,7 @@ pub trait NTStringWriter: Write {
 		Ok(())
 	}
 }
+impl NTStringWriter for Vec<u8> {}
 
 #[derive(derive_more::Deref, derive_more::DerefMut, Clone, Debug)]
 pub struct ArcBytes(Arc<Vec<u8>>);

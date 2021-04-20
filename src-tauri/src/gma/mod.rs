@@ -17,6 +17,7 @@ pub enum GMAError {
 	InvalidHeader,
 	EntryNotFound,
 	LZMA,
+	Cancelled,
 }
 impl Display for GMAError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -27,6 +28,7 @@ impl Display for GMAError {
 			InvalidHeader => write!(f, "ERR_GMA_INVALID_HEADER"),
 			EntryNotFound => write!(f, "ERR_GMA_ENTRY_NOT_FOUND"),
 			LZMA => write!(f, "ERR_LZMA"),
+			Cancelled => write!(f, "ERR_CANCELLED"),
 		}
 	}
 }

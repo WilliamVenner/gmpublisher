@@ -51,7 +51,6 @@
 		padding: .8rem;
 		padding-left: 2.5rem;
 		color: #fff;
-		font-size: .85em;
 	}
 	#search:focus {
 		outline: none;
