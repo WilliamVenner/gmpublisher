@@ -80,7 +80,8 @@ impl Downloads {
 				"ExtractionStarted",
 				(
 					transaction.id,
-					folder.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(),
+					turbonone!(),
+					turbonone!(),
 					Some(item)
 				)
 			);
@@ -129,7 +130,7 @@ impl Downloads {
 
 			gma.id = Some(item);
 
-			transaction.data(gma.size);
+			transaction.data((Some(gma.metadata.as_ref().map(|metadata| metadata.title().to_owned())), gma.size));
 
 			if let Err(err) = gma.extract(extract_destination, transaction.clone(), false) {
 				transaction.error(err.to_string(), turbonone!());

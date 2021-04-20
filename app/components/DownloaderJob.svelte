@@ -42,16 +42,28 @@
 	</td>
 	<td class="details">
 		{#if job.ws_id}
-			{#await Addons.getWorkshopAddon(job.ws_id, deadCallback)}
-				{job.ws_id}
+			{#await Addons.getWorkshopAddon(job.ws_id, job.type !== JOB_TYPE_EXTRACT ? deadCallback : undefined)}
+				{#if job.fileName}
+					{job.fileName}
+				{:else}
+					{job.ws_id}
+				{/if}
 			{:then metadata}
 				{#if !metadata || metadata.dead}
-					<Dead inline/>&nbsp;{job.ws_id}
+					{#if job.fileName}
+						<Dead inline/>&nbsp;{job.fileName}
+					{:else}
+						<Dead inline/>&nbsp;{job.ws_id}
+					{/if}
 				{:else}
 					{metadata.title}
 				{/if}
 			{:catch}
-				<Dead inline/>&nbsp;{job.ws_id}
+				{#if job.fileName}
+					<Dead inline/>&nbsp;{job.fileName}
+				{:else}
+					<Dead inline/>&nbsp;{job.ws_id}
+				{/if}
 			{/await}
 		{:else}
 			{job.fileName ?? '¯\\_(ツ)_/¯'}

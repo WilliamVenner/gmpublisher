@@ -25,6 +25,7 @@ pub struct GameAddons {
 	discovered: AtomicBool,
 	paths: RwLock<HashMap<PathBuf, Arc<Addon>>>,
 	pages: RwLock<Vec<Arc<Addon>>>,
+	external: RwLock<HashMap<PathBuf, Option<Arc<Addon>>>>,
 }
 
 impl GameAddons {
@@ -33,6 +34,7 @@ impl GameAddons {
 			discovered: AtomicBool::new(false),
 			paths: RwLock::new(HashMap::new()),
 			pages: RwLock::new(Vec::new()),
+			external: RwLock::new(HashMap::new()),
 		}
 	}
 
@@ -52,7 +54,46 @@ impl GameAddons {
 		Some((path, (&file_name[..(file_name.len() - 4)]).to_owned()))
 	}
 
+	fn get_ws_id<S: AsRef<str>>(_file_name: S) -> Option<PublishedFileId> {
+		let _file_name = _file_name.as_ref();
+		let file_name = _file_name.strip_prefix("ds_").unwrap_or(&_file_name);
+
+		if let Ok(id) = str::parse::<u64>(file_name) {
+			return Some(PublishedFileId(id));
+		}
+
+		let id = GameAddons::extract_suffix_ws_id(file_name);
+		if id == 0 {
+			None
+		} else {
+			Some(PublishedFileId(id))
+		}
+	}
+
+	fn extract_suffix_ws_id<S: AsRef<str>>(file_name: S) -> u64 {
+		let mut id = 0u64;
+		for char in file_name.as_ref()
+			.chars()
+			.rev() // Reverse iterator so we're looking at the suffix (the PublishedFileId)
+			.take_while(|c| c.is_digit(10))
+			.collect::<Vec<char>>()
+			.into_iter()
+			.rev()
+		{
+			match id.checked_add(char::to_digit(char, 10).unwrap() as u64) {
+				None => return 0,
+				Some(id_op) => match 10_u64.checked_mul(id_op) {
+					None => return 0,
+					Some(id_op) => id = id_op,
+				},
+			}
+		}
+		id
+	}
+
 	pub fn refresh(&self) {
+		self.discovered.store(true, Ordering::Release);
+
 		let mut gmod = if let Some(gmod) = app_data!().gmod_dir() {
 			gmod
 		} else {
@@ -76,25 +117,9 @@ impl GameAddons {
 				Err(_) => return,
 			};
 
-			'paths: for (path, file_name) in addons.filter_map(GameAddons::gma_check) {
-				let mut id = 0u64;
-
-				for char in file_name
-					.chars()
-					.rev() // Reverse iterator so we're looking at the suffix (the PublishedFileId)
-					.take_while(|c| c.is_digit(10))
-					.collect::<Vec<char>>()
-					.into_iter()
-					.rev()
-				{
-					match id.checked_add(char::to_digit(char, 10).unwrap() as u64) {
-						None => continue 'paths,
-						Some(id_op) => match 10_u64.checked_mul(id_op) {
-							None => continue 'paths,
-							Some(id_op) => id = id_op,
-						},
-					}
-				}
+			for (path, _file_name) in addons.filter_map(GameAddons::gma_check) {
+				let file_name = _file_name.strip_prefix("ds_").unwrap_or(&_file_name);
+				let id = GameAddons::extract_suffix_ws_id(file_name);
 
 				tx_addons_metadata
 					.send((path, if id == 0 { None } else { Some(PublishedFileId(id / 10)) }))
@@ -165,8 +190,6 @@ impl GameAddons {
 			println!("Discovered {} addons", paths.len());
 		}
 
-		self.discovered.store(true, Ordering::Release);
-
 		// Download the first page from Steam
 		browse_installed_addons(1);
 	}
@@ -224,7 +247,33 @@ pub fn browse_installed_addons(page: u32) -> InstalledAddonsPage {
 
 #[tauri::command]
 pub fn get_installed_addon(path: PathBuf) -> Option<Arc<Addon>> {
-	game_addons!().paths.read().get(&path).cloned()
+	game_addons!().discover_addons();
+
+	if let Some(cached) = game_addons!().external.read().get(&path) {
+		return cached.clone();
+	}
+
+	if path.is_absolute() && path.is_file() && crate::path::has_extension(&path, "gma") {
+		match GMAFile::open(&path) {
+			Ok(mut gma) => {
+				if let Some(id) = GameAddons::get_ws_id(path.file_name().unwrap().to_string_lossy()) {
+					gma.set_ws_id(id);
+				}
+
+				ignore! { gma.metadata() };
+
+				let gma = Arc::new(Addon::Installed(gma));
+				game_addons!().external.write().insert(path, Some(gma.clone()));
+				Some(gma)
+			},
+			Err(_) => {
+				game_addons!().external.write().insert(path, None);
+				None
+			}
+		}
+	} else {
+		None
+	}
 }
 
 #[tauri::command]
@@ -240,9 +289,9 @@ pub fn downloader_extract_gmas(paths: Vec<PathBuf>) {
 				let transaction = transaction!();
 				webview_emit!(
 					"ExtractionStarted",
-					(transaction.id, path.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(), gma.id)
+					(transaction.id, Some(path.clone()), path.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(), gma.id)
 				);
-				transaction.data(gma.size);
+				transaction.data((turbonone!(), path.metadata().map(|metadata| metadata.len()).unwrap_or(0)));
 				ignore! { gma.extract(destination.clone(), transaction, false) };
 			}
 		}
