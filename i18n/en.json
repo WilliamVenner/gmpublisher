@@ -146,6 +146,8 @@
 	"bulk_extract_gmas": "Bulk Extract GMAs",
 	"error": "Error",
 	"queued": "Queued",
+	"remove_all": "Remove All",
+	"open_all": "Open All",
 
 	"ERR_UNKNOWN": "Unknown Error",
 	"ERR_NO_ADDONS_FOUND": "No Addons Found",

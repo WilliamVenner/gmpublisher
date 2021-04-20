@@ -14,6 +14,7 @@
 	import { tippyFollow } from '../tippy';
 	import { playSound } from '../sounds';
 	import DownloaderJob from '../components/DownloaderJob.svelte';
+import { Addons } from '../addons';
 
 	let extractingJobs = [];
 	let downloadingJobs = [];
@@ -66,15 +67,18 @@
 			case JOB_TYPE_EXTRACT:
 				extractingWorkers++;
 
-				var [transaction, fileName, ws_id] = args;
+				var [transaction, srcPath, fileName, ws_id] = args;
+
 				var job = {
 					transaction,
 					timestamp,
 					ws_id,
+					srcPath,
 					fileName,
 					type: JOB_TYPE_EXTRACT,
 				};
 				extractingJobs.push(job);
+
 				transaction.listen(event => {
 					if (event.finished) {
 						if (incrWorkers) {
@@ -83,7 +87,24 @@
 						}
 						job.path = event.data;
 					} else if (event.stream) {
-						job.size = event.data;
+
+						const [gmaName, size] = event.data;
+
+						if (gmaName) {
+							job.fileName = gmaName;
+						} else if (srcPath) {
+							Addons.getAddon(srcPath).then(gma => {
+								if (gma?.installed?.title) {
+									console.log(job.ws_id, gma.installed.ws_id);
+									if (gma.installed.ws_id && !job.ws_id) job.ws_id = gma.installed.ws_id;
+									job.fileName = gma.installed.title;
+									extractingJobs = extractingJobs;
+								}
+							});
+						}
+
+						job.size = size;
+
 					} else if (event.error) {
 						if (incrWorkers) {
 							extractingWorkers--;
@@ -188,8 +209,8 @@
 		destinationModal = false;
 	}
 
-	listen('ExtractionStarted', ({ payload: [transaction_id, fileName, ws_id] }) => {
-		pushTransaction(JOB_TYPE_EXTRACT, [new Transaction(transaction_id), fileName, ws_id]);
+	listen('ExtractionStarted', ({ payload: [transaction_id, srcPath, fileName, ws_id] }) => {
+		pushTransaction(JOB_TYPE_EXTRACT, [new Transaction(transaction_id), srcPath, fileName, ws_id]);
 	});
 
 	listen('DownloadStarted', ({ payload: transaction_id }) => {
@@ -210,9 +231,24 @@
 		});
 	}
 
-	function updateOpenAfterExtract() {
-		AppSettings.open_gma_after_extract = this.checked;
-		invoke('update_settings', { settings: AppSettings });
+	function removeAll(jobs) {
+		while (jobs.length > 0) {
+			const job = jobs[0];
+			if (job.transaction.finished) {
+				job.transaction.emit({ cancelled: true });
+			} else {
+				job.transaction.cancel();
+			}
+		}
+	}
+
+	function openAll() {
+		for (let i = 0; i < extractingJobs.length; i++) {
+			const job = extractingJobs[i];
+			if (job.path) {
+				invoke('open', { path: job.path });
+			}
+		}
 	}
 </script>
 
@@ -278,6 +314,9 @@
 					</tbody>
 				</table>
 			</div>
+			<div class="buttons">
+				<div class="btn" on:click={() => removeAll(downloadingJobs)}>{$_('remove_all')}</div>
+			</div>
 		</div>
 
 		<div id="extracting">
@@ -329,6 +368,10 @@
 						{/each}
 					</tbody>
 				</table>
+			</div>
+			<div class="buttons">
+				<div class="btn" on:click={() => removeAll(extractingJobs)}>{$_('remove_all')}</div>
+				<div class="btn" on:click={openAll}>{$_('open_all')}</div>
 			</div>
 		</div>
 	</div>
@@ -552,6 +595,7 @@
 		margin-top: 1rem;
 		border: 1px solid #1a1a1a;
 		cursor: pointer;
+		text-align: center;
 	}
 	#layout .btn:active {
 		background-color: #1b1b1b;
@@ -566,5 +610,22 @@
 
 	table .tip {
 		margin-top: .5rem;
+	}
+
+	.buttons {
+		display: flex;
+	}
+	.buttons .btn {
+		flex: 1;
+		flex-basis: 0;
+		background-color: #292929 !important;
+		font-size: .9em;
+		padding: .7rem !important;
+	}
+	.buttons .btn:active {
+		background-color: #212121 !important;
+	}
+	.buttons .btn:not(:last-child) {
+		margin-right: 1rem;
 	}
 </style>
