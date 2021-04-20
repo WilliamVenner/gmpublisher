@@ -77,7 +77,31 @@ fn write_tauri_settings() -> Option<()> {
 	Some(())
 }
 
+#[cfg(debug_assertions)]
+fn deadlock_watchdog() {
+	std::thread::spawn(move || loop {
+		sleep!(10);
+
+		let deadlocks = parking_lot::deadlock::check_deadlock();
+		if deadlocks.is_empty() {
+			continue;
+		}
+
+		println!("{} deadlocks detected", deadlocks.len());
+		for (i, threads) in deadlocks.iter().enumerate() {
+			println!("Deadlock #{}", i);
+			for t in threads {
+				println!("Thread Id {:#?}", t.thread_id());
+				println!("{:#?}", t.backtrace());
+			}
+		}
+	});
+}
+
 fn main() {
+	#[cfg(debug_assertions)]
+	deadlock_watchdog();
+
 	ignore! { write_tauri_settings() };
 
 	globals::init_globals();
