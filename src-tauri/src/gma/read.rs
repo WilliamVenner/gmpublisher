@@ -94,6 +94,8 @@ impl GMAFile {
 		}
 	}
 
+	// https://steamcommunity.com/sharedfiles/filedetails/?id=1727993520
+
 	pub fn entries(&mut self) -> Result<Option<GMAReader>, GMAError> {
 		main_thread_forbidden!();
 

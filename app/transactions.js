@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/tauri';
 import { listen } from '@tauri-apps/api/event';
 import { writable } from 'svelte/store';
 
-let transactions = [];
+let transactions = {};
 
 const tasks = writable([]);
 const tasksNum = writable(0);
@@ -36,9 +36,17 @@ function checkOrphanQueue(id) {
 	}
 }
 
+const dedup = {};
+
 class Transaction {
 	constructor(id, TASK_statusTextFn) {
 		if (id === null || id == undefined) return;
+
+		if (id in dedup) {
+			console.log('DUPLICATE TRANSACTION ID: ' + id);
+		} else {
+			dedup[id] = true;
+		}
 
 		this.id = id;
 		this.callbacks = [];
@@ -101,7 +109,7 @@ class Transaction {
 		return this;
 	}
 
-	finish(data) {
+	setFinished(data) {
 		this.finished = true;
 		if (this.progress < 100) {
 			this.progress = 100;
@@ -113,7 +121,7 @@ class Transaction {
 		return this;
 	}
 
-	error(msg, data) {
+	setError(msg, data) {
 		this.error = [msg, data];
 		this.emit({ error: msg, data });
 		delete transactions[this.id];
@@ -121,7 +129,7 @@ class Transaction {
 		return this;
 	}
 
-	data(data) {
+	setData(data) {
 		this.emit({ stream: true, data });
 		return this;
 	};
@@ -170,32 +178,32 @@ transactionEvent('Progress', ([ id, progress ]) => {
 
 transactionEvent('Cancelled', id => {
 	const transaction = Transaction.get(id);
-	console.log('transactionCancelled', transaction);
+	//console.log('transactionCancelled', transaction);
 	if (transaction) transaction.cancel(true);
 });
 
 transactionEvent('Finished', ([ id, data ]) => {
 	const transaction = Transaction.get(id);
-	console.log('transactionFinished', transaction, data);
-	if (transaction) transaction.finish(data);
+	//console.log('transactionFinished', transaction, data);
+	if (transaction) transaction.setFinished(data);
 });
 
 transactionEvent('Error', ([ id, [ msg, data ] ]) => {
 	const transaction = Transaction.get(id);
-	console.log('transactionError', transaction, msg, data);
-	if (transaction) transaction.error(msg, data);
+	//console.log('transactionError', transaction, msg, data);
+	if (transaction) transaction.setError(msg, data);
 });
 
 transactionEvent('Status', ([ id, msg ]) => {
 	const transaction = Transaction.get(id);
-	console.log('transactionStatus', transaction, msg);
+	//console.log('transactionStatus', transaction, msg);
 	if (transaction) transaction.setStatus(msg);
 });
 
 transactionEvent('Data', ([ id, data ]) => {
 	const transaction = Transaction.get(id);
-	console.log('transactionData', data);
-	if (transaction) transaction.data(data);
+	//console.log('transactionData', data);
+	if (transaction) transaction.setData(data);
 });
 
 export { Transaction, tasks, taskHeight, tasksMax, tasksNum }

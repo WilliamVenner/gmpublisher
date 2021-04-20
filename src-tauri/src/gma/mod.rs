@@ -111,7 +111,7 @@ impl Serialize for GMAEntriesMap {
 	}
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GMAFile {
 	pub path: PathBuf,
@@ -137,6 +137,21 @@ pub struct GMAFile {
 
 	#[serde(skip)]
 	membuffer: Option<ArcBytes>,
+}
+impl std::fmt::Debug for GMAFile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GMAFile")
+		.field("path", &self.path)
+		.field("size", &self.size)
+		.field("id", &self.id)
+		.field("metadata", &self.metadata)
+		.field("entries", &self.entries)
+		.field("pointers", &self.pointers)
+		.field("version", &self.version)
+		.field("extracted_name", &self.extracted_name)
+		.field("modified", &self.modified)
+		.finish()
+    }
 }
 impl PartialEq for GMAFile {
 	fn eq(&self, other: &Self) -> bool {

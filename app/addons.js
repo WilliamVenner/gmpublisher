@@ -2,20 +2,18 @@ import { invoke } from '@tauri-apps/api/tauri'
 import { listen } from '@tauri-apps/api/event';
 
 class DeferredPromise {
-	constructor() {
+	constructor(wrapPromise) {
 		this._promise = new Promise((resolve, reject) => {
 			this.resolve = resolve;
 			this.reject = reject;
 		});
+
 		this.then = this._promise.then.bind(this._promise);
 		this.catch = this._promise.catch.bind(this._promise);
-		this[Symbol.toStringTag] = 'Promise';
-	}
 
-	static wrap(innerPromise) {
-		const promise = new DeferredPromise();
-		innerPromise.then(promise.resolve, promise.reject);
-		return promise;
+		this[Symbol.toStringTag] = 'Promise';
+
+		if (wrapPromise) wrapPromise.then(this.resolve, this.reject);
 	}
 
 	static resolve(data) {
@@ -50,28 +48,35 @@ class Addons {
 
 	getMyWorkshop(page) {
 		if (this.MyWorkshop[page] == null) {
-			this.MyWorkshop[page] = DeferredPromise.wrap(invoke("browse_my_workshop", { page }));
+			this.MyWorkshop[page] = new DeferredPromise(invoke("browse_my_workshop", { page }));
 		}
 		return this.MyWorkshop[page];
 	}
 
 	getInstalledAddons(page) {
 		if (this.InstalledAddons[page] == null) {
-			this.InstalledAddons[page] = DeferredPromise.wrap(invoke("browse_installed_addons", { page }));
+			this.InstalledAddons[page] = new DeferredPromise(invoke("browse_installed_addons", { page }));
 		}
 		return this.InstalledAddons[page];
 	}
 
 	getAddon(path) {
 		if (this.Addons[path] == null) {
-			this.Addons[path] = DeferredPromise.wrap(invoke("get_installed_addon", { path }));
+			this.Addons[path] = new DeferredPromise(invoke("get_installed_addon", { path }));
 		}
 		return this.Addons[path];
 	}
 
-	getWorkshopAddon(id) {
+	getWorkshopAddon(id, deadCallback) {
 		if (this.Workshop[id] == null) {
-			this.Workshop[id] = DeferredPromise.wrap(invoke("get_workshop_addon", { id }));
+			invoke("fetch_workshop_item", { item: id });
+			this.Workshop[id] = new DeferredPromise();
+		}
+		if (deadCallback) {
+			this.Workshop[id].then(item => {
+				if (item.dead) deadCallback(item);
+				return item;
+			});
 		}
 		return this.Workshop[id];
 	}

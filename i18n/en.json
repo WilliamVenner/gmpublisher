@@ -74,7 +74,7 @@
 
 	"downloader": "Downloader",
 	"download-input": "Paste Workshop IDs, links, collections in here...",
-	"download-input-tip": "TIP: You can paste comma delimeted or newline delimited stuff in here!",
+	"download-input-tip": "TIP: You can paste comma delimited or newline delimited stuff in here!",
 	"downloading": "Downloading",
 	"log": "Log",
 	"waiting": "Waiting",
@@ -112,7 +112,6 @@
 	"no_notifications": "No Notifications",
 	"notifications_count": "{count} Notifications",
 	"notifications_one": "1 Notification",
-	"no_addons_found": "No Addons Found",
 	"publish_new": "Publish New...",
 
 	"settings": {
@@ -144,5 +143,27 @@
 	"gma_type_name": "Packed Garry's Mod Addon",
 	"downloading_tip": "You can drag Steam Workshop links onto this screen to download + extract them.",
 	"open_workshop": "Open Workshop",
-	"bulk_extract_gmas": "Bulk Extract GMAs"
+	"bulk_extract_gmas": "Bulk Extract GMAs",
+	"error": "Error",
+	"queued": "Queued",
+
+	"ERR_UNKNOWN": "Unknown Error",
+	"ERR_NO_ADDONS_FOUND": "No Addons Found",
+	"ERR_STEAM_ERROR": "Steam Error: {error}",
+	"ERR_WHITELIST": "Whitelist check failed for entry",
+	"ERR_GMA_IO_ERROR": "I/O Error",
+	"ERR_GMA_FORMAT_ERROR": "Corrupted GMA file",
+	"ERR_GMA_INVALID_HEADER": "Invalid GMA file",
+	"ERR_GMA_ENTRY_NOT_FOUND": "Entry not found",
+	"ERR_DOWNLOAD_MISSING": "Downloaded, but files are missing",
+	"ERR_CONTENT_PATH_NOT_DIR": "Content path was not a directory",
+	"ERR_CONTENT_PATH_MULTIPLE_GMA": "Multiple GMA files found in this content path",
+	"ERR_ICON_TOO_LARGE": "Icon too large",
+	"ERR_ICON_TOO_SMALL": "Icon too small",
+	"ERR_ICON_INVALID_FORMAT": "Icon must be a JPG, PNG or GIF",
+	"ERR_PUBLISH_FAILED": "Publish Failed",
+	"ERR_LZMA": "LZMA Compression Error",
+	"ERR_DOWNLOAD_FAILED": "Download Failed",
+	"ERR_ITEM_NOT_FOUND": "Item Not Found",
+	"ERR_ITEM_INACCESSIBLE": "Item Inaccessible"
 }
