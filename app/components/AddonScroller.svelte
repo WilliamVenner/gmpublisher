@@ -62,7 +62,7 @@
 		{:then}
 			{#if addons.length === 0}
 				<Dead size="2rem"/>
-				<div id="error">{$_('no_addons_found')}</div>
+				<div id="error">{$_('ERR_NO_ADDONS_FOUND')}</div>
 			{:else}
 				<div id="grid">
 					{#each addons as addon}

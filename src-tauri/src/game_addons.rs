@@ -229,7 +229,6 @@ pub fn get_installed_addon(path: PathBuf) -> Option<Arc<Addon>> {
 
 #[tauri::command]
 pub fn downloader_extract_gmas(paths: Vec<PathBuf>) {
-	let open = paths.len() == 1;
 	let destination = &app_data!().settings.read().extract_destination;
 	for path in paths.into_iter() {
 		if path.is_file()
@@ -244,7 +243,7 @@ pub fn downloader_extract_gmas(paths: Vec<PathBuf>) {
 					(transaction.id, path.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(), gma.id)
 				);
 				transaction.data(gma.size);
-				ignore! { gma.extract(destination.clone(), transaction, open) };
+				ignore! { gma.extract(destination.clone(), transaction, false) };
 			}
 		}
 	}

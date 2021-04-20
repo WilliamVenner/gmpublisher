@@ -109,15 +109,6 @@ impl<'a, V> From<AtomicRefMut<'a, Option<V>>> for AtomicRefMutSome<'a, V> {
 
 pub type RelaxedRwLockFn<V> = dyn FnOnce(&mut RwLockWriteGuard<'_, V>) + 'static + Send + Sync;
 
-/*
-#[derive(derive_more::Deref)]
-struct RelaxedRwLocks(Mutex<LinkedList<*const RelaxedRwLock<dyn Any + Send + Sync + 'static>>>);
-unsafe impl Sync for RelaxedRwLocks {}
-lazy_static! {
-	static ref RELAXED_RW_LOCKS: RelaxedRwLocks = RelaxedRwLocks(Mutex::new(LinkedList::new()));
-}
-*/
-
 #[derive(derive_more::Deref, Clone)]
 pub struct RelaxedRwLock<V: Send + Sync + 'static> {
 	#[deref]

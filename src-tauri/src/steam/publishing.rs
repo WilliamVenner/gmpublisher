@@ -104,11 +104,6 @@ impl WorkshopIcon {
 			return Err(anyhow!("ERR_ICON_TOO_SMALL"));
 		}
 
-		/*let (w, h) = image::image_dimensions(&path)?;
-		if w != 512 || h != 512 {
-			return Err(anyhow!("ERR_ICON_INCORRECT_DIMENSIONS"));
-		}*/
-
 		let file_extension = path.extension().and_then(|x| x.to_str()).unwrap_or("jpg").to_ascii_lowercase();
 		let mut file_types = match file_extension.as_str() {
 			"png" => vec![ImageFormat::Png, ImageFormat::Jpeg, ImageFormat::Gif],

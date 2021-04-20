@@ -1,4 +1,4 @@
-use std::{io::{BufRead, BufReader, BufWriter, ErrorKind, Read, Seek, SeekFrom, Write}, sync::Arc};
+use std::{io::{BufRead, BufWriter, ErrorKind, Seek, SeekFrom, Write}, sync::Arc};
 
 use byteorder::WriteBytesExt;
 

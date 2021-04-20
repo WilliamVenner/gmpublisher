@@ -10,6 +10,8 @@ where
 		free_caches,
 		check_dir,
 		check_file,
+		open,
+		open_file_location,
 		crate::transactions::cancel_transaction,
 		crate::appdata::update_settings,
 		crate::appdata::validate_gmod,
@@ -19,6 +21,8 @@ where
 		crate::game_addons::downloader_extract_gmas,
 		crate::steam::is_steam_connected,
 		crate::steam::get_steam_user,
+		crate::steam::workshop::fetch_workshop_items,
+		crate::steam::workshop::fetch_workshop_item,
 		crate::steam::workshop::browse_my_workshop,
 		crate::steam::downloads::workshop_download,
 		crate::addon_size_analyzer::addon_size_analyzer,
@@ -52,4 +56,14 @@ pub fn check_file(path: PathBuf, extension: Option<String>) -> bool {
 #[tauri::command]
 pub fn check_dir(path: PathBuf) -> bool {
 	path.is_absolute() && path.is_dir()
+}
+
+#[tauri::command]
+fn open(path: PathBuf) {
+	ignore! { crate::path::open(path) };
+}
+
+#[tauri::command]
+fn open_file_location(path: PathBuf) {
+	ignore! { crate::path::open_file_location(path) };
 }

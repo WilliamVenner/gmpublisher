@@ -227,7 +227,6 @@ impl Steam {
 			for id in ids.into_iter().filter(|id| cache.insert(*id)) {
 				queue.push(id);
 			}
-			queue.shrink_to_fit();
 		});
 	}
 
@@ -324,6 +323,16 @@ impl Steam {
 pub fn browse_my_workshop(page: u32) -> Option<(u32, Vec<Addon>)> {
 	steam!().client_wait();
 	rayon::scope(|_| steam!().browse_my_workshop(page))
+}
+
+#[tauri::command]
+fn fetch_workshop_items(items: Vec<PublishedFileId>) {
+	steam!().fetch_workshop_items(items);
+}
+
+#[tauri::command]
+fn fetch_workshop_item(item: PublishedFileId) {
+	steam!().fetch_workshop_items(vec![item]);
 }
 
 pub fn free_caches() {
