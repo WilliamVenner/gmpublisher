@@ -7,11 +7,8 @@
 	import { writable } from 'svelte/store';
 	import SidebarItem from './SidebarItem.svelte';
 	import Setting from './Setting.svelte';
-	import * as notification from '@tauri-apps/api/notification';
-	import { enabled as desktopNotificationsEnabled } from '../notifications';
 	import { playSound } from '../sounds';
 	import { invoke } from '@tauri-apps/api/tauri';
-	//import SavedToast from './SavedToast.svelte';
 
 	let active = false;
 	function toggle() {
@@ -20,30 +17,9 @@
 
 	let activeItem = writable('paths');
 
-	//let savedToast;
 	function saveSettings(e) {
 		e.preventDefault();
-		//if (savedToast && document.querySelector('#saved-toast') != null) savedToast.$destroy();
-		//savedToast = new SavedToast({ target: document.querySelector('#settings > div') });
 		invoke('update_settings', { settings: AppSettings });
-	}
-
-	async function desktopNotificationsChange(_before, after) {
-		if (after === true) {
-			const granted = await notification.isPermissionGranted();
-			if (granted) {
-				return true;
-			} else {
-				const request = await notification.requestPermission();
-				if (request === 'granted' || request === true) {
-					playSound('success');
-					return true;
-				}
-			}
-			playSound('error');
-			return false;
-		}
-		return after;
 	}
 
 	async function validateGmod(before, after) {
@@ -75,7 +51,7 @@
 	<Sidebar id="settings-sidebar">
 
 		<SidebarItem {activeItem} id="paths">{$_('settings.paths.paths')}</SidebarItem>
-		<SidebarItem {activeItem} id="notifications">{$_('settings.notifications.notifications')}</SidebarItem>
+		<SidebarItem {activeItem} id="general">{$_('settings.general.general')}</SidebarItem>
 		<SidebarItem {activeItem} id="resets">{$_('settings.resets.resets')}</SidebarItem>
 
 	</Sidebar>
@@ -86,9 +62,8 @@
 			<Setting {afterChange} id="downloads" type="directory" initial={AppData.downloads_dir} value={AppSettings.downloads}>{$_('settings.paths.downloads')}</Setting>
 			<Setting {afterChange} id="user_data" type="directory" initial={AppData.user_data_dir} value={AppSettings.user_data}>{$_('settings.paths.user_data')}</Setting>
 			<Setting {afterChange} id="temp" type="directory" initial={AppData.temp_dir} value={AppSettings.temp}>{$_('settings.paths.temp')}</Setting>
-		{:else if $activeItem === 'notifications'}
-			<Setting {afterChange} id="notification_sounds" type="bool" value={AppSettings.notification_sounds}>{$_('settings.notifications.sounds')}</Setting>
-			<Setting {afterChange} id="desktop_notifications" type="bool" value={$desktopNotificationsEnabled} beforeChange={desktopNotificationsChange}>{$_('settings.notifications.desktop')}</Setting>
+		{:else if $activeItem === 'general'}
+			<Setting {afterChange} id="sounds" type="bool" value={AppSettings.sounds}>{$_('settings.general.sounds')}</Setting>
 		{:else if $activeItem === 'resets'}
 			resets
 		{/if}

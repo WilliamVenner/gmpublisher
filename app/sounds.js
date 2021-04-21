@@ -11,7 +11,9 @@ for (let sound in audio) {
 }
 
 export function playSound(sound) {
-	audio[sound].play();
+	if (AppSettings && AppSettings.sounds) {
+		audio[sound].play();
+	}
 }
 
 export function stopSound(sound) {

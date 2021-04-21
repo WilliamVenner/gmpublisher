@@ -27,8 +27,7 @@ pub struct Settings {
 	pub user_data: Option<PathBuf>,
 	pub downloads: Option<PathBuf>,
 
-	pub notification_sounds: bool,
-	pub desktop_notifications: bool,
+	pub sounds: bool,
 
 	pub window_size: (f64, f64),
 	pub window_maximized: bool,
@@ -46,8 +45,7 @@ impl Default for Settings {
 			downloads: None,
 
 			extract_destination: ExtractDestination::default(),
-			notification_sounds: true,
-			desktop_notifications: true,
+			sounds: true,
 
 			window_size: (800., 600.),
 			window_maximized: true,

@@ -109,9 +109,6 @@
 	"steam_disconnected": "Disconnected from Steam Servers",
 	"steam_connected": "Connected to Steam Servers",
 
-	"no_notifications": "No Notifications",
-	"notifications_count": "{count} Notifications",
-	"notifications_one": "1 Notification",
 	"publish_new": "Publish New...",
 
 	"settings": {
@@ -126,10 +123,9 @@
 			"downloads": "Downloads Path"
 		},
 
-		"notifications": {
-			"notifications": "Notifications",
-			"sounds": "Sounds",
-			"desktop": "Desktop Notifications"
+		"general": {
+			"general": "General",
+			"sounds": "Sounds"
 		},
 
 		"resets": {

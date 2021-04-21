@@ -1,8 +1,4 @@
-import { appSettingsCallback } from './notifications';
-
-__GMPUBLISHER__(() => {
-	appSettingsCallback();
-});
+__GMPUBLISHER__();
 
 import { default as i18n } from './i18n.js'; i18n();
 

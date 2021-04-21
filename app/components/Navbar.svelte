@@ -5,7 +5,6 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { listen } from '@tauri-apps/api/event';
 	import Search from './Search.svelte';
-	import Notifications from './Notifications.svelte';
 	import Settings from './Settings.svelte';
 	import { playSound } from '../sounds';
 
@@ -73,8 +72,6 @@
 	{:else}
 		<span class="nav-icon" use:tippy={'❌ ' + $_('steam_disconnected')}><TriangleAlert class="icon error" id="steam-connection" size="1.5rem" stroke-width="1.5"/></span>
 	{/if}
-
-	<Notifications/>
 
 	<Settings/>
 </nav>
