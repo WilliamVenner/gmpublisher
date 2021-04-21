@@ -15,8 +15,6 @@ fn main() {
 	#[cfg(all(target_os = "macos"))]
 	let steam_api_lib = PathBuf::from("osx/libsteam_api.dylib");
 
-	fs::write(out.join("steam_appid.txt"), "4000").unwrap();
-
 	let steam_api_src = src.join("lib/steam_api").join(&steam_api_lib);
 	if !steam_api_src.is_file() {
 		panic!(
