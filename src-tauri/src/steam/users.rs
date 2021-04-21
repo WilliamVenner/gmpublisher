@@ -96,3 +96,8 @@ impl Steam {
 		rayon::spawn(move || f(self.fetch_users(steamids)));
 	}
 }
+
+#[tauri::command]
+fn get_steam_user(steamid64: String) -> Option<SteamUser> {
+	Some(steam!().fetch_user(SteamId::from_raw(steamid64.parse::<u64>().ok()?)))
+}

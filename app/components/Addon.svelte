@@ -1,14 +1,17 @@
 <script>
 	import { _ } from 'svelte-i18n';
 	import { CirclePlus } from 'akar-icons-svelte';
-	import { Addons } from '../addons';
+	import { Steam } from '../steam';
 	import { tippyFollow } from '../tippy';
 	import Loading from './Loading.svelte';
 	import Dead from './Dead.svelte';
 
-	export let newAddon = null;
+	// TODO merge workshop and gma promises?
+
+	export let newAddon = false;
 	export let workshopData = null;
 	export let installedData = null;
+	export let onClick = null;
 
 	let workshop = workshopData;
 	let installed = installedData;
@@ -16,7 +19,7 @@
 	if (!newAddon) {
 		if (!installed && workshop) {
 			if (workshop.localFile) {
-				installed = Addons.getAddon(workshop.localFile);
+				installed = Steam.getAddon(workshop.localFile);
 			} else {
 				installed = Promise.reject().catch(() => {});
 			}
@@ -24,7 +27,7 @@
 			workshop = new Promise((resolve, reject) => {
 				installed.then(installed => {
 					if (installed.id) {
-						Addons.getWorkshopAddon(installed.id).then(item => {
+						Steam.getWorkshopAddon(installed.id).then(item => {
 							item.dead ? reject() : resolve(item);
 							return item;
 						});
@@ -40,13 +43,9 @@
 			throw new Error("workshop && installed == null");
 		}
 	}
-
-	function previewGMA() {
-
-	}
 </script>
 
-<main on:click={(newAddon ?? previewGMA)()}>
+<main on:click={e => onClick(e, workshop, installed)}>
 	<div id="card">
 		<div id="stats">
 			{#if newAddon}

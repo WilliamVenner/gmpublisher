@@ -29,10 +29,11 @@ class DeferredPromise {
 	}
 }
 
-class Addons {
+class Steam {
 	constructor() {
 		this.Addons = {};
 		this.Workshop = {};
+		this.SteamUsers = {};
 
 		this.MyWorkshop = [];
 		this.InstalledAddons = [];
@@ -79,6 +80,13 @@ class Addons {
 			});
 		}
 		return this.Workshop[id];
+	}
+
+	getSteamUser(steamid64) {
+		if (this.SteamUsers[steamid64] == null) {
+			this.SteamUsers[steamid64] = new DeferredPromise(invoke("get_steam_user", { steamid64 }));
+		}
+		return this.SteamUsers[steamid64];
 	}
 }
 
@@ -193,11 +201,10 @@ function getFileTypeInfo(path) {
 	return [getFileIcon(extension), getFileType(extension), extension];
 }
 
-const addons = new Addons();
-window.__ADDONS__ = addons;
+const steam = new Steam();
 
 listen('InstalledAddonsRefreshed', () => {
-	addons.InstalledAddons = [];
+	steam.InstalledAddons = [];
 });
 
-export { addons as Addons, getFileTypeInfo, trimPath }
+export { steam as Steam, getFileTypeInfo, trimPath }

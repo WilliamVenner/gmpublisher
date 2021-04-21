@@ -14,7 +14,7 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::ser::SerializeTuple;
 use steamworks::PublishedFileId;
 
-use crate::{game_addons, webview::Addon, GMAFile};
+use crate::{gma::extract::ExtractGMAMut, game_addons, webview::Addon, GMAFile};
 
 lazy_static! {
 	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
@@ -292,7 +292,7 @@ pub fn downloader_extract_gmas(paths: Vec<PathBuf>) {
 					(transaction.id, Some(path.clone()), path.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(), gma.id)
 				);
 				transaction.data((turbonone!(), path.metadata().map(|metadata| metadata.len()).unwrap_or(0)));
-				ignore! { gma.extract(destination.clone(), transaction, false) };
+				ignore! { gma.extract(destination.clone(), &transaction, false) };
 			}
 		}
 	}

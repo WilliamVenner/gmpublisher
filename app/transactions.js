@@ -188,7 +188,7 @@ transactionEvent('Finished', ([ transaction, data ]) => {
 	transaction.setFinished(data);
 });
 
-transactionEvent('Error', ([ transaction, [ msg, data ] ]) => {
+transactionEvent('Error', ([ transaction, msg, data ]) => {
 	//console.log('transactionError', transaction, msg, data);
 	transaction.setError(msg, data);
 });
@@ -214,7 +214,7 @@ invoke('websocket').then(port => {
 		for (i; i < view.byteLength; i++) {
 			const byte = view.getUint8(i);
 			if (byte === 0) {
-				i--;
+				i++;
 				break;
 			} else {
 				buffer.push(byte);

@@ -5,7 +5,8 @@
 	import Loading from "./Loading.svelte";
 
 	export let next;
-	export let newAddon = null;
+	export let onClick = null;
+	export let onNewAddonClick = null;
 
 	let loading = true;
 	let total = 0;
@@ -43,11 +44,11 @@
 		</h2>
 	{/if}
 
-	{#if newAddon}
+	{#if onNewAddonClick}
 		<div id="grid">
-			<Addon newAddon={newAddon}/>
+			<Addon newAddon={true} onClick={onNewAddonClick}/>
 			{#each addons as addon}
-				<Addon workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
+				<Addon {onClick} workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
 			{/each}
 			{#await firstPage}
 				<Loading size="2rem"/>
@@ -66,7 +67,7 @@
 			{:else}
 				<div id="grid">
 					{#each addons as addon}
-						<Addon workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
+						<Addon {onClick} workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
 					{/each}
 				</div>
 			{/if}

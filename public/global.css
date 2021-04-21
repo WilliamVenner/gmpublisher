@@ -90,15 +90,6 @@ body::-webkit-scrollbar, .hide-scroll::-webkit-scrollbar { /* WebKit */
 	white-space: pre-line;
 }
 
-@keyframes modal {
-	from {
-		transform: scale(0, 0);
-	}
-	to {
-		transform: scale(1, 1);
-	}
-}
-
 .tag {
 	position: relative;
 	color: black;

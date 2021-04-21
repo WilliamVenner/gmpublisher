@@ -22,7 +22,8 @@ where
 		crate::game_addons::get_installed_addon,
 		crate::game_addons::downloader_extract_gmas,
 		crate::steam::is_steam_connected,
-		crate::steam::get_steam_user,
+		crate::steam::get_current_user,
+		crate::steam::users::get_steam_user,
 		crate::steam::workshop::fetch_workshop_items,
 		crate::steam::workshop::fetch_workshop_item,
 		crate::steam::workshop::browse_my_workshop,
@@ -31,6 +32,9 @@ where
 		crate::addon_size_analyzer::addon_size_analyzer,
 		crate::content_generator::get_content_generator_manifests,
 		crate::content_generator::update_content_generator_manifest,
+		crate::gma::preview::preview_gma,
+		crate::gma::preview::extract_preview_entry,
+		crate::gma::preview::extract_preview_gma,
 	]
 }
 
@@ -63,12 +67,12 @@ pub fn check_dir(path: PathBuf) -> bool {
 
 #[tauri::command]
 fn open(path: PathBuf) {
-	ignore! { crate::path::open(path) };
+	crate::path::open(path);
 }
 
 #[tauri::command]
 fn open_file_location(path: PathBuf) {
-	ignore! { crate::path::open_file_location(path) };
+	crate::path::open_file_location(path);
 }
 
 #[tauri::command]

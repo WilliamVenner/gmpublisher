@@ -1,5 +1,5 @@
 <script>
-	import { trimPath } from '../addons.js';
+	import { trimPath } from '../steam.js';
 	import { _ } from 'svelte-i18n';
 	import { tippy } from '../tippy.js';
 	import { Folder, Download, FolderAdd } from 'akar-icons-svelte';
@@ -11,7 +11,7 @@
 	export let text;
 	export let callback;
 	export let cancel = null;
-	export let gma = null;
+	export let extractedName = null;
 	export let forceCreateFolder = false;
 
 	let extractPath = [null, null, AppSettings.create_folder_on_extract];
@@ -113,7 +113,7 @@
 	<h1>{$_('extract_where_to')}</h1>
 	<h4>{$_('extract_overwrite_warning')}</h4>
 
-	<input type="text" name="path" on:input={extractDestHover} on:focus={extractDestFocused} on:blur={extractDestLostFocus} on:change={extractDestInputted} bind:this={extractPathInput} placeholder={extractPath[0] ? (extractPath[1] + ((forceCreateFolder || extractPath[2]) ? (PATH_SEPARATOR + (gma?.extracted_name ?? 'addon_name')) : '')) : (gma?.extracted_name ?? 'addon_name')}/>
+	<input type="text" name="path" on:input={extractDestHover} on:focus={extractDestFocused} on:blur={extractDestLostFocus} on:change={extractDestInputted} bind:this={extractPathInput} placeholder={extractPath[0] ? (extractPath[1] + ((forceCreateFolder || extractPath[2]) ? (PATH_SEPARATOR + (extractedName ?? 'addon_name')) : '')) : (extractedName ?? 'addon_name')}/>
 
 	{#if extractPath[0] === 'browse' && !forceCreateFolder}
 		<div id="checkbox">

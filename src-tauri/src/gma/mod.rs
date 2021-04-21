@@ -105,14 +105,6 @@ pub struct GMAEntry {
 	pub index: u64,
 }
 
-#[derive(Clone, Debug, derive_more::Deref, derive_more::DerefMut)]
-pub struct GMAEntriesMap(HashMap<String, GMAEntry>);
-impl Serialize for GMAEntriesMap {
-	fn serialize<S: serde::Serializer>(&self, serialize: S) -> Result<S::Ok, S::Error> {
-		serialize.collect_seq(self.keys())
-	}
-}
-
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GMAFile {
@@ -124,7 +116,7 @@ pub struct GMAFile {
 	#[serde(flatten)]
 	pub metadata: Option<GMAMetadata>,
 
-	pub entries: Option<GMAEntriesMap>,
+	pub entries: Option<HashMap<String, GMAEntry>>,
 
 	#[serde(skip)]
 	pub pointers: GMAFilePointers,
@@ -292,3 +284,5 @@ pub use read::*;
 
 pub mod write;
 pub use write::*;
+
+pub mod preview;

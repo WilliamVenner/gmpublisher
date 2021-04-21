@@ -4,7 +4,7 @@ use byteorder::{LittleEndian, ReadBytesExt};
 
 use crate::{ArcBytes, NTStringReader};
 
-use super::{GMAEntriesMap, GMAEntry, GMAError, GMAFile, GMAMetadata};
+use super::{GMAEntry, GMAError, GMAFile, GMAMetadata};
 
 macro_rules! safe_read {
 	( $x:expr ) => {
@@ -108,7 +108,7 @@ impl GMAFile {
 			};
 			handle.seek(SeekFrom::Start(self.pointers.entries_list))?;
 
-			let mut entries = GMAEntriesMap(HashMap::new());
+			let mut entries = HashMap::new();
 			let mut entry_cursor = 0;
 
 			while handle.read_u32::<LittleEndian>()? != 0 {

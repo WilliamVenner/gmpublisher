@@ -2,7 +2,7 @@
 	import { Cross, LinkChain } from "akar-icons-svelte";
 	import Dead from "./Dead.svelte";
 	import { _ } from 'svelte-i18n';
-	import { Addons } from '../addons';
+	import { Steam } from '../steam';
 	import filesize from 'filesize';
 	import { tippyFollow } from '../tippy';
 	import { JOB_TYPE_EXTRACT } from '../pages/Downloader.svelte';
@@ -42,7 +42,7 @@
 	</td>
 	<td class="details">
 		{#if job.ws_id}
-			{#await Addons.getWorkshopAddon(job.ws_id, job.type !== JOB_TYPE_EXTRACT ? deadCallback : undefined)}
+			{#await Steam.getWorkshopAddon(job.ws_id, job.type !== JOB_TYPE_EXTRACT ? deadCallback : undefined)}
 				{#if job.fileName}
 					{job.fileName}
 				{:else}

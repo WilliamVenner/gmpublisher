@@ -11,9 +11,11 @@
 	}
 </script>
 
-<modal id={id} on:click={doCancel} bind:this={modal} class:active={active}><div class="hide-scroll" style={padding ? ('padding:' + padding) : null}>
-	<slot></slot>
-</div></modal>
+<modal id={id} on:click={doCancel} bind:this={modal} class:active={active}>
+	<div class="hide-scroll" style={padding ? ('padding:' + padding) : null}>
+		<slot></slot>
+	</div>
+</modal>
 
 <style>
 	modal {

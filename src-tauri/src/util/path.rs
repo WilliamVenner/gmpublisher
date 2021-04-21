@@ -115,22 +115,29 @@ pub fn has_extension<P: AsRef<Path>, S: AsRef<str>>(path: P, extension: S) -> bo
 		.unwrap_or(false)
 }
 
-pub fn open<P: AsRef<Path>>(path: P) -> Result<(), opener::OpenError> {
-	opener::open(path.as_ref())
+pub fn open<P: AsRef<Path>>(path: P) {
+	let path = path.as_ref();
+	if let Err(_) = opener::open(path) {
+		tauri::api::dialog::message("File", path.to_string_lossy());
+	}
 }
 
-pub fn open_file_location<P: AsRef<Path>>(path: P) -> Result<std::process::Child, std::io::Error> {
+pub fn open_file_location<P: AsRef<Path>>(path: P) {
 	let path = path.as_ref().display();
 
-	#[cfg(target_os = "windows")]
-	return std::process::Command::new("explorer").arg(format!("/select,{}", path)).spawn();
+	if let Err(_) = (|| {
+		#[cfg(target_os = "windows")]
+		return std::process::Command::new("explorer").arg(format!("/select,{}", path)).spawn();
 
-	#[cfg(target_os = "macos")]
-	return std::process::Command::new("open").arg("-R").arg(path).spawn();
+		#[cfg(target_os = "macos")]
+		return std::process::Command::new("open").arg("-R").arg(path).spawn();
 
-	#[cfg(target_os = "linux")]
-	return std::process::Command::new("xdg-open").arg("--select").arg(path).spawn();
+		#[cfg(target_os = "linux")]
+		return std::process::Command::new("xdg-open").arg("--select").arg(path).spawn();
 
-	#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-	Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported OS"))
+		#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+		Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported OS"))
+	})() {
+		tauri::api::dialog::message("File Location", path.to_string());
+	}
 }

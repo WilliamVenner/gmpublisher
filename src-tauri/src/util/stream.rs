@@ -2,6 +2,8 @@ use std::{io::{BufRead, BufWriter, ErrorKind, Seek, SeekFrom, Write}, sync::Arc}
 
 use byteorder::WriteBytesExt;
 
+use crate::Transaction;
+
 pub fn stream_len<F: Seek + ?Sized>(f: &mut F) -> Result<u64, std::io::Error> {
 	let old_pos = f.stream_position()?;
 	let len = f.seek(SeekFrom::End(0))?;
@@ -32,6 +34,42 @@ pub fn stream_bytes<R: BufRead + ?Sized, W: Write>(r: &mut R, w: &mut BufWriter<
 			r.consume(consumed);
 		};
 		r.consume(consumed);
+	})
+}
+
+pub fn stream_bytes_with_transaction<R: BufRead + ?Sized, W: Write>(r: &mut R, w: &mut BufWriter<W>, mut bytes: usize, transaction: &Transaction) -> Result<(), std::io::Error> {
+	Ok({
+		let bytes_f = bytes as f64;
+		let mut consumed_total: f64 = 0.;
+
+		let consumed = loop {
+			let consumed = match r.fill_buf() {
+				Ok([]) => break 0,
+				Ok(data) if data.len() >= bytes => {
+					w.write_all(&data[..bytes])?;
+					break bytes;
+				}
+				Ok(data) => {
+					w.write_all(data)?;
+					bytes -= data.len();
+					data.len()
+				}
+				Err(e) if e.kind() == ErrorKind::Interrupted => 0,
+				Err(e) => return Err(e),
+			};
+			if consumed > 0 {
+				r.consume(consumed);
+
+				consumed_total += consumed as f64;
+				transaction.progress(consumed_total / bytes_f);
+			}
+		};
+		if consumed > 0 {
+			r.consume(consumed);
+
+			consumed_total += consumed as f64;
+			transaction.progress(consumed_total / bytes_f);
+		}
 	})
 }
 

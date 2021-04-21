@@ -50,7 +50,7 @@
 		});
 	}
 
-	let steamUser = invoke('get_steam_user');
+	let steamUser = invoke('get_current_user');
 </script>
 
 <nav>

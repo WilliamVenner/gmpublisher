@@ -14,7 +14,7 @@
 	import { tippyFollow } from '../tippy';
 	import { playSound } from '../sounds';
 	import DownloaderJob from '../components/DownloaderJob.svelte';
-import { Addons } from '../addons';
+	import { Steam } from '../steam';
 
 	let extractingJobs = [];
 	let downloadingJobs = [];
@@ -93,7 +93,7 @@ import { Addons } from '../addons';
 						if (gmaName) {
 							job.fileName = gmaName;
 						} else if (srcPath) {
-							Addons.getAddon(srcPath).then(gma => {
+							Steam.getAddon(srcPath).then(gma => {
 								if (gma?.installed?.title) {
 									console.log(job.ws_id, gma.installed.ws_id);
 									if (gma.installed.ws_id && !job.ws_id) job.ws_id = gma.installed.ws_id;
@@ -302,12 +302,12 @@ import { Addons } from '../addons';
 							{/if}
 						{/each}
 						{#each downloadingJobs as job}
-							{#if job.transaction.progress >= 100 || 'error' in job.transaction}
+							{#if job.transaction.progress <= 0 && !('error' in job.transaction)}
 								<DownloaderJob {job}/>
 							{/if}
 						{/each}
 						{#each downloadingJobs as job}
-							{#if job.transaction.progress <= 0 && !('error' in job.transaction)}
+							{#if 'error' in job.transaction}
 								<DownloaderJob {job}/>
 							{/if}
 						{/each}
@@ -357,12 +357,12 @@ import { Addons } from '../addons';
 							{/if}
 						{/each}
 						{#each extractingJobs as job}
-							{#if job.transaction.progress >= 100 || 'error' in job.transaction}
+							{#if job.transaction.progress <= 0 && !('error' in job.transaction)}
 								<DownloaderJob {job}/>
 							{/if}
 						{/each}
 						{#each extractingJobs as job}
-							{#if job.transaction.progress <= 0 && !('error' in job.transaction)}
+							{#if job.transaction.progress >= 100 || 'error' in job.transaction}
 								<DownloaderJob {job}/>
 							{/if}
 						{/each}

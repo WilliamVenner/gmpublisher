@@ -8,7 +8,7 @@
 	import filesize from 'filesize';
 	import Loading from '../components/Loading.svelte';
 	import Dead from '../components/Dead.svelte';
-	import { Addons } from '../addons';
+	import { Steam } from '../steam';
 
 	let workshopDataIndex = [];
 	let workshopDataIDIndex = [];
@@ -193,7 +193,7 @@
 
 						const index = workshopDataIndex.push(
 							!!data.installed.id ?
-							Addons.getWorkshopAddon(data.installed.id)
+							Steam.getWorkshopAddon(data.installed.id)
 							: Promise.resolve(null)
 						) - 1;
 

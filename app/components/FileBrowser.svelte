@@ -1,5 +1,5 @@
 <script>
-	import { getFileTypeInfo } from '../addons.js';
+	import { getFileTypeInfo } from '../steam.js';
 	import { _ } from 'svelte-i18n';
 	import filesize from 'filesize';
 	import { tippyFollow } from '../tippy.js';

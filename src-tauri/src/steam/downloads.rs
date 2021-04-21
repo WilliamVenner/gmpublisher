@@ -8,7 +8,7 @@ use std::{
 
 use steamworks::{ClientManager, ItemState, PublishedFileId, QueryResults, UGC};
 
-use crate::{gma::ExtractDestination, transaction, transactions::Transaction, webview_emit, GMAFile, GMOD_APP_ID};
+use crate::{gma::{ExtractGMAMut, ExtractDestination}, transaction, transactions::Transaction, webview_emit, GMAFile, GMOD_APP_ID};
 
 lazy_static! {
 	pub static ref DOWNLOADS: Downloads = Downloads::init();
@@ -132,7 +132,7 @@ impl Downloads {
 
 			transaction.data((Some(gma.metadata.as_ref().map(|metadata| metadata.title().to_owned())), gma.size));
 
-			if let Err(err) = gma.extract(extract_destination, transaction.clone(), false) {
+			if let Err(err) = gma.extract(extract_destination, &transaction, false) {
 				transaction.error(err.to_string(), turbonone!());
 			}
 		});
