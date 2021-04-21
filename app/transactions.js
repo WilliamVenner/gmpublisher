@@ -205,9 +205,12 @@ transactionEvent('Data', ([ transaction, data ]) => {
 
 invoke('websocket').then(port => {
 	const decoder = new TextDecoder('utf-8');
-	const read_nt_string = (byteOffset, view) => {
+	const read_nt_string = (byteOffset, view, json) => {
+		let i = byteOffset;
+		if (json) {
+			if (view.getUint8(i++) === 0) return [null, i];
+		}
 		const buffer = [];
-		let i = byteOffset + 1;
 		for (i; i < view.byteLength; i++) {
 			const byte = view.getUint8(i);
 			if (byte === 0) {
@@ -217,12 +220,14 @@ invoke('websocket').then(port => {
 				buffer.push(byte);
 			}
 		}
-		return [decoder.decode(new Uint8Array(buffer)), i];
+		if (json) {
+			return [JSON.parse(decoder.decode(new Uint8Array(buffer))), i];
+		} else {
+			return [decoder.decode(new Uint8Array(buffer)), i];
+		}
 	};
 	const read_json = (byteOffset, view) => {
-		const data = read_nt_string(byteOffset, view);
-		data[0] = JSON.parse(data[0]);
-		return data;
+		return read_nt_string(byteOffset, view, true);
 	};
 
 	const socket = new WebSocket('ws://localhost:' + port, 'gmpublisher');

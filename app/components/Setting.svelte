@@ -108,14 +108,12 @@
 		outline: none;
 		box-shadow: inset 0 0 0px 1.5px #127cff;
 	}
-
 	.path-container {
 		display: flex;
 	}
 	.path-container > input {
 		flex: 1;
 	}
-
 	.browse {
 		margin-left: .75rem;
 		padding: .7rem;

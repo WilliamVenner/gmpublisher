@@ -86,6 +86,9 @@ body::-webkit-scrollbar, .hide-scroll::-webkit-scrollbar { /* WebKit */
 .tippy-box[data-placement^='right'] > .tippy-arrow::before {
 	border-right-color: #0F0F0F !important;
 }
+.tippy-content {
+	white-space: pre-line;
+}
 
 @keyframes modal {
 	from {

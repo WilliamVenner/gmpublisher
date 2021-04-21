@@ -100,7 +100,7 @@ impl GMAFile {
 				THREAD_POOL.spawn(move || {
 					let contents = match fs::read(&path) {
 						Ok(contents) => contents,
-						Err(_) => return transaction.data(("ERR_GMA_IO_ERROR", path)),
+						Err(_) => return transaction.data(("ERR_IO_ERROR", path)),
 					};
 
 					let mut crc32 = crc32fast::Hasher::new();

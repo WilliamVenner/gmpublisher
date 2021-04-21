@@ -63,8 +63,10 @@ delete window.__WS_DEAD__.localFile;
 
 window.PATH_SEPARATOR = {$_PATH_SEPARATOR_$};
 
+window.DEFAULT_IGNORE_GLOBS = JSON.parse('{$_DEFAULT_IGNORE_GLOBS_$}');
+
 let resizeTimeout;
-function resized(e) {
+function resized() {
 	window.__TAURI__.invoke("window_resized", {
 		width: window.outerWidth,
 		height: window.outerHeight

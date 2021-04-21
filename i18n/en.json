@@ -152,20 +152,60 @@
 	"ERR_UNKNOWN": "Unknown Error",
 	"ERR_NO_ADDONS_FOUND": "No Addons Found",
 	"ERR_STEAM_ERROR": "Steam Error: {error}",
-	"ERR_WHITELIST": "Whitelist check failed for entry",
-	"ERR_GMA_IO_ERROR": "I/O Error",
+	"ERR_WHITELIST": "These entries do not pass the file type/location whitelist. If this was unexpected, your addon probably has an incorrect file structure.",
+	"ERR_IO_ERROR": "I/O Error",
 	"ERR_GMA_FORMAT_ERROR": "Corrupted GMA file",
 	"ERR_GMA_INVALID_HEADER": "Invalid GMA file",
 	"ERR_GMA_ENTRY_NOT_FOUND": "Entry not found",
 	"ERR_DOWNLOAD_MISSING": "Downloaded, but files are missing",
-	"ERR_CONTENT_PATH_NOT_DIR": "Content path was not a directory",
-	"ERR_CONTENT_PATH_MULTIPLE_GMA": "Multiple GMA files found in this content path",
-	"ERR_ICON_TOO_LARGE": "Icon too large",
-	"ERR_ICON_TOO_SMALL": "Icon too small",
+	"ERR_ICON_TOO_LARGE": "Icon too large (> 1 MB)",
+	"ERR_ICON_TOO_SMALL": "Icon too small (< 16 B)",
 	"ERR_ICON_INVALID_FORMAT": "Icon must be a JPG, PNG or GIF",
-	"ERR_PUBLISH_FAILED": "Publish Failed",
 	"ERR_LZMA": "LZMA Compression Error",
 	"ERR_DOWNLOAD_FAILED": "Download Failed",
 	"ERR_ITEM_NOT_FOUND": "Item Not Found",
-	"ERR_ITEM_INACCESSIBLE": "Item Inaccessible"
+	"ERR_ITEM_INACCESSIBLE": "Item Inaccessible",
+	"ERR_INVALID_CONTENT_PATH": "This content path does not exist, is not a directory or gmpublisher has insufficient permissions to access it",
+	"ERR_MULTIPLE_GMAS": "Multiple GMA files found in this content path",
+	"ERR_IMAGE_ERROR": "Image Error: {error}",
+	"ERR_DUPLICATE_ENTRIES": "There are duplicate entries in this content path. i use arch btw",
+	"ERR_NO_ENTRIES": "There are no entries in this content path.",
+
+	"icon_instructions": "Accepted Formats: JPG, PNG, GIF\nMax Size: 1 MB",
+	"addon_title": "Title...",
+	"addon_path": "Path...",
+	"icon_file_pick": "Workshop Icon",
+	"remove_icon": "Remove Icon",
+
+	"addon_types": {
+		"ServerContent": "Server Content",
+		"gamemode": "Gamemode",
+		"map": "Map",
+		"weapon": "Weapon",
+		"vehicle": "Vehicle",
+		"npc": "NPC",
+		"tool": "Tool",
+		"effects": "Effects",
+		"model": "Model"
+	},
+
+	"tag_1": "Tag 1",
+	"tag_2": "Tag 2",
+	"tag_3": "Tag 3",
+
+	"addon_tags": {
+		"fun": "Fun",
+		"roleplay": "Roleplay",
+		"scenic": "Scenic",
+		"movie": "Movie",
+		"realism": "Realism",
+		"cartoon": "Cartoon",
+		"water": "Water",
+		"comic": "Comic",
+		"build": "Build"
+	},
+
+	"publish_exclamation": "Publish!",
+	"add_ellipsis": "Add...",
+	"ignored_file_patterns": "Ignored File Patterns"
 }

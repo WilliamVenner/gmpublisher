@@ -7,6 +7,19 @@ macro_rules! nul_str {
 	};
 }
 
+pub const DEFAULT_IGNORE: &'static [&'static str] = &[
+	nul_str!(".git/*"),
+	nul_str!("*.psd"),
+	nul_str!("*.pdn"),
+	nul_str!("*.xcf"),
+	nul_str!("*.svn"),
+	nul_str!(".gitignore"),
+	nul_str!(".vscode/*"),
+	nul_str!(".github/*"),
+	nul_str!(".editorconfig"),
+	nul_str!("README.md"),
+];
+
 const ADDON_WHITELIST: &'static [&'static str] = &[
 	nul_str!("lua/*.lua"),
 	nul_str!("scenes/*.vcd"),
@@ -113,8 +126,37 @@ pub fn check<S: Into<String> + Clone>(str: &S) -> bool {
 	string.push('\0');
 
 	let str = string.as_str();
-
 	for glob in ADDON_WHITELIST {
+		if unsafe { globber(glob, str) } {
+			return true;
+		}
+	}
+
+	false
+}
+
+pub fn filter_default_ignored<S: Into<String> + Clone>(str: &S) -> bool {
+	let mut string = str.clone().into();
+	string.push('\0');
+
+	let str = string.as_str();
+	for glob in DEFAULT_IGNORE {
+		if unsafe { globber(glob, str) } {
+			return false;
+		}
+	}
+
+	true
+}
+
+pub fn is_ignored<S: Into<String> + Clone>(str: &S, ignore: &[String]) -> bool {
+	if ignore.is_empty() { return false; }
+
+	let mut string = str.clone().into();
+	string.push('\0');
+
+	let str = string.as_str();
+	for glob in ignore {
 		if unsafe { globber(glob, str) } {
 			return true;
 		}
@@ -155,5 +197,34 @@ pub fn test_whitelist() {
 
 	for bad in bad {
 		assert!(!check(&*bad));
+	}
+}
+
+#[test]
+pub fn test_ignore() {
+	let ignored: &'static [&'static str] = &[
+		".git/index",
+		".git/info/exclude",
+		".git/logs/head",
+		".git/logs/refs/heads/4.0.0",
+		".git/logs/refs/heads/master",
+		".git/logs/refs/remotes/origin/4.0.0",
+		".git/logs/refs/remotes/origin/cracker",
+		".git/logs/refs/remotes/origin/cracker-no-minigames",
+		".git/logs/refs/remotes/origin/master",
+		".git/objects/00/007c75922055623f4177467fd50a7d573c2c86",
+		"blah.psd",
+		"some/location/blah.psd",
+		"some/blah/blah.pdn",
+		"hi.xcf"
+	];
+
+	for ignored in ignored {
+		assert!(!filter_default_ignored(&*ignored));
+	}
+
+	let default_ignore: Vec<String> = DEFAULT_IGNORE.iter().cloned().map(|x| x.to_string()).collect();
+	for ignored in ignored {
+		assert!(is_ignored(&*ignored, &default_ignore));
 	}
 }

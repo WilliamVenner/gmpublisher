@@ -6,7 +6,7 @@
 	import Loading from './Loading.svelte';
 	import Dead from './Dead.svelte';
 
-	export let newAddon = false;
+	export let newAddon = null;
 	export let workshopData = null;
 	export let installedData = null;
 
@@ -40,9 +40,13 @@
 			throw new Error("workshop && installed == null");
 		}
 	}
+
+	function previewGMA() {
+
+	}
 </script>
 
-<main>
+<main on:click={(newAddon ?? previewGMA)()}>
 	<div id="card">
 		<div id="stats">
 			{#if newAddon}

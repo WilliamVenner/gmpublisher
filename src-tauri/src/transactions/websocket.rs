@@ -74,7 +74,6 @@ impl TransactionMessage {
 				bytes.write_u32::<BigEndian>(*id).unwrap();
 				bytes.write_u16::<BigEndian>(*incr).unwrap();
 			}
-			_ => unreachable!()
 		}
 
 		bytes
@@ -226,7 +225,6 @@ impl TransactionServer {
 			TransactionMessage::IncrProgress(id, incr) => {
 				webview_emit!("TransactionIncrProgress", (id, incr));
 			}
-			_ => unreachable!()
 		}
 	}
 }

@@ -231,7 +231,8 @@ impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 					),
 					1,
 				)
-				.replacen("{$_PATH_SEPARATOR_$}", &serde_json::ser::to_string(&PATH_SEPARATOR).unwrap(), 1),
+				.replacen("{$_DEFAULT_IGNORE_GLOBS_$}", &crate::escape_single_quoted_json(serde_json::ser::to_string(&crate::gma::DEFAULT_IGNORE.iter().map(|glob| (&glob[0..glob.len()-1]).to_string()).collect::<Vec<String>>()).unwrap()), 1)
+				.replacen("{$_PATH_SEPARATOR_$}", &serde_json::ser::to_string(&PATH_SEPARATOR).unwrap(), 1)
 		)
 	}
 

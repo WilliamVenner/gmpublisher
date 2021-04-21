@@ -12,6 +12,7 @@ where
 		check_file,
 		open,
 		open_file_location,
+		file_size,
 		crate::transactions::websocket,
 		crate::transactions::cancel_transaction,
 		crate::appdata::update_settings,
@@ -26,6 +27,7 @@ where
 		crate::steam::workshop::fetch_workshop_item,
 		crate::steam::workshop::browse_my_workshop,
 		crate::steam::downloads::workshop_download,
+		crate::steam::publishing::verify_whitelist,
 		crate::addon_size_analyzer::addon_size_analyzer,
 		crate::content_generator::get_content_generator_manifests,
 		crate::content_generator::update_content_generator_manifest,
@@ -67,4 +69,9 @@ fn open(path: PathBuf) {
 #[tauri::command]
 fn open_file_location(path: PathBuf) {
 	ignore! { crate::path::open_file_location(path) };
+}
+
+#[tauri::command]
+fn file_size(path: PathBuf) -> Option<u64> {
+	path.metadata().ok().map(|metadata| metadata.len())
 }

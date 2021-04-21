@@ -5,7 +5,7 @@
 	import Loading from "./Loading.svelte";
 
 	export let next;
-	export let newAddon = false;
+	export let newAddon = null;
 
 	let loading = true;
 	let total = 0;
@@ -45,7 +45,7 @@
 
 	{#if newAddon}
 		<div id="grid">
-			<Addon newAddon={true}/>
+			<Addon newAddon={newAddon}/>
 			{#each addons as addon}
 				<Addon workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
 			{/each}

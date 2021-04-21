@@ -23,7 +23,7 @@ impl Display for GMAError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		use GMAError::*;
 		match self {
-			IOError => write!(f, "ERR_GMA_IO_ERROR"),
+			IOError => write!(f, "ERR_IO_ERROR"),
 			FormatError => write!(f, "ERR_GMA_FORMAT_ERROR"),
 			InvalidHeader => write!(f, "ERR_GMA_INVALID_HEADER"),
 			EntryNotFound => write!(f, "ERR_GMA_ENTRY_NOT_FOUND"),
@@ -97,12 +97,12 @@ impl GMAMetadata {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct GMAEntry {
-	path: String,
-	size: u64,
-	crc: u32,
+	pub path: String,
+	pub size: u64,
+	pub crc: u32,
 
 	#[serde(skip)]
-	index: u64,
+	pub index: u64,
 }
 
 #[derive(Clone, Debug, derive_more::Deref, derive_more::DerefMut)]
