@@ -3640,7 +3640,7 @@ dependencies = [
 [[package]]
 name = "steamworks"
 version = "0.7.0"
-source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#ee85a1b15e4b91877972d8a94d9e24519ae9e44f"
+source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#50f18f8bab13c9d8a0a0e03b90de0c88e95d6a25"
 dependencies = [
  "bitflags 1.2.1",
  "lazy_static",
@@ -3652,7 +3652,7 @@ dependencies = [
 [[package]]
 name = "steamworks-sys"
 version = "0.7.0"
-source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#ee85a1b15e4b91877972d8a94d9e24519ae9e44f"
+source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#50f18f8bab13c9d8a0a0e03b90de0c88e95d6a25"
 dependencies = [
  "bindgen 0.57.0",
 ]

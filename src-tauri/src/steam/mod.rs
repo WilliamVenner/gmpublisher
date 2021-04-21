@@ -145,11 +145,8 @@ impl Steam {
 	}
 
 	pub fn connect() {
-		std::env::set_var("SteamAppId", "4000");
-		std::env::set_var("SteamGameId", "4000");
-
 		loop {
-			if let Ok(connection) = Client::init() {
+			if let Ok(connection) = Client::init_app(4000) {
 				println!("[Steam] Client initialized");
 
 				loop {
