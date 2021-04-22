@@ -219,7 +219,7 @@ impl Search {
 	pub fn dirty(&self) {
 		if !self.dirty.load(std::sync::atomic::Ordering::Acquire) { return; }
 		let mut items = self.items.write();
-		items.sort();
+		items.par_sort();
 		items.dedup();
 	}
 
