@@ -13,7 +13,7 @@ use atomic_refcell::AtomicRefCell;
 
 use self::{downloads::Downloads, users::SteamUser};
 
-use crate::octopus::{AtomicRefSome, PromiseCache, PromiseHashCache, RelaxedRwLock};
+use crate::{Transaction, octopus::{AtomicRefSome, PromiseCache, PromiseHashCache, RelaxedRwLock}};
 
 use crate::webview_emit;
 
@@ -97,6 +97,7 @@ pub struct Steam {
 	users: PromiseHashCache<SteamId, SteamUser>,
 
 	workshop: RelaxedRwLock<(HashSet<PublishedFileId>, Vec<PublishedFileId>)>,
+	workshop_channel: Transaction
 }
 
 unsafe impl Sync for Steam {}
@@ -111,6 +112,7 @@ impl Steam {
 			users: PromiseCache::new(HashMap::new()),
 
 			workshop: RelaxedRwLock::new((HashSet::new(), Vec::new())),
+			workshop_channel: transaction!()
 		}
 	}
 

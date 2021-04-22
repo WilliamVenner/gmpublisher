@@ -178,8 +178,6 @@ pub fn init() {
 }
 
 pub fn new() -> Transaction {
-	main_thread_forbidden!();
-
 	let transaction = Arc::new(TransactionInner {
 		id: TRANSACTIONS.id.fetch_add(1, Ordering::SeqCst),
 		aborted: AtomicBool::new(false),

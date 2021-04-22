@@ -27,6 +27,7 @@ where
 		crate::steam::workshop::fetch_workshop_items,
 		crate::steam::workshop::fetch_workshop_item,
 		crate::steam::workshop::browse_my_workshop,
+		crate::steam::workshop::workshop_item_channel,
 		crate::steam::downloads::workshop_download,
 		crate::steam::publishing::verify_whitelist,
 		crate::addon_size_analyzer::addon_size_analyzer,

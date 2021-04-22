@@ -1,10 +1,6 @@
 // Utility library for shared concurrency between JS and Rust.
 
-use std::{
-	collections::{HashMap, VecDeque},
-	hash::Hash,
-	sync::Arc,
-};
+use std::{collections::{HashMap, VecDeque}, hash::Hash, sync::Arc};
 
 use atomic_refcell::{AtomicRef, AtomicRefMut};
 

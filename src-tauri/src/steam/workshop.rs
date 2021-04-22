@@ -16,7 +16,7 @@ use parking_lot::Mutex;
 
 use super::{users::SteamUser, Steam};
 
-use crate::{main_thread_forbidden, webview::Addon, webview_emit, GMOD_APP_ID};
+use crate::{GMOD_APP_ID, Transaction, main_thread_forbidden, webview::Addon, webview_emit};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -183,17 +183,24 @@ impl Steam {
 							if let Ok(results) = results {
 								let mut i = 0;
 								for item in results.iter() {
+									let item = Addon::from(if let Some(item) = item {
+										let mut item: WorkshopItem = item.into();
+										item.preview_url = results.preview_url(i);
+										item.subscriptions = results.statistic(i, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+										item
+									} else {
+										WorkshopItem::from(queue[i as usize])
+									});
+
+									steam!().workshop_channel.data(item);
+
+									/*
 									webview_emit!(
 										"WorkshopItem",
-										Addon::from(if let Some(item) = item {
-											let mut item: WorkshopItem = item.into();
-											item.preview_url = results.preview_url(i);
-											item.subscriptions = results.statistic(i, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
-											item
-										} else {
-											WorkshopItem::from(queue[i as usize])
-										})
+										item
 									);
+									*/
+
 									i += 1;
 								}
 							} else {
@@ -333,6 +340,11 @@ fn fetch_workshop_items(items: Vec<PublishedFileId>) {
 #[tauri::command]
 fn fetch_workshop_item(item: PublishedFileId) {
 	steam!().fetch_workshop_items(vec![item]);
+}
+
+#[tauri::command]
+fn workshop_item_channel() -> u32 {
+	steam!().workshop_channel.id
 }
 
 pub fn free_caches() {

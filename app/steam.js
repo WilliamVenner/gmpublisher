@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/tauri'
 import { listen } from '@tauri-apps/api/event';
+import { Transaction } from './transactions';
 
 class DeferredPromise {
 	constructor(wrapPromise) {
@@ -39,12 +40,16 @@ class Steam {
 		this.InstalledAddons = [];
 
 		listen("WorkshopItem", ({ payload: { workshop: workshopItem } }) => {
-			if (workshopItem.id in this.Workshop) {
-				this.Workshop[workshopItem.id].resolve(workshopItem);
-			} else {
-				this.Workshop[workshopItem.id] = DeferredPromise.resolve(workshopItem);
-			}
+			this.workshopItemReceived(workshopItem);
 		});
+	}
+
+	workshopItemReceived(workshopItem) {
+		if (workshopItem.id in this.Workshop) {
+			this.Workshop[workshopItem.id].resolve(workshopItem);
+		} else {
+			this.Workshop[workshopItem.id] = DeferredPromise.resolve(workshopItem);
+		}
 	}
 
 	getMyWorkshop(page) {
@@ -80,6 +85,10 @@ class Steam {
 			});
 		}
 		return this.Workshop[id];
+	}
+
+	async lockWorkshopAddons(lock) {
+		await invoke("lock_fetch_workshop_items", { lock });
 	}
 
 	getSteamUser(steamid64) {
@@ -208,6 +217,15 @@ const steam = new Steam();
 
 listen('InstalledAddonsRefreshed', () => {
 	steam.InstalledAddons = [];
+});
+
+invoke('workshop_item_channel').then(transaction_id => {
+	const transaction = new Transaction(transaction_id);
+	transaction.listen(event => {
+		if (event.stream) {
+			steam.workshopItemReceived(event.data.workshop);
+		}
+	});
 });
 
 export { steam as Steam, getFileTypeInfo, trimPath }
