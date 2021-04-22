@@ -171,6 +171,9 @@ function getFileType(extension) {
 		case 'jpeg':
 			return 'image';
 
+		case 'bsp':
+			return 'map';
+
 		case 'vtf':
 		case 'vmt':
 		case 'map':

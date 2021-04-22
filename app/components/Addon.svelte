@@ -12,6 +12,7 @@
 	export let workshopData = null;
 	export let installedData = null;
 	export let onClick = null;
+	export let previewing = false;
 
 	let workshop = workshopData;
 	let installed = installedData;
@@ -45,7 +46,7 @@
 	}
 </script>
 
-<main on:click={e => onClick(e, workshop, installed)}>
+<main class="addon" class:previewing={previewing} on:click={e => onClick(e, workshop, installed)}>
 	<div id="card">
 		<div id="stats">
 			{#if newAddon}
@@ -131,7 +132,7 @@
 		flex-direction: column;
 		height: 100%;
 	}
-	main #card {
+	main:not(.previewing) #card {
 		padding: .8rem;
 		transition: background-color .1s, box-shadow .1s;
 	}

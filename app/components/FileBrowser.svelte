@@ -49,6 +49,7 @@
 			type,
 			extension,
 			size: entry.size,
+			typeTip: $_('file_types.' + type, { values: { extension } }),
 		});
 
 		total_files++;
@@ -95,6 +96,8 @@
 			browsing = browsing.dirs['../'];
 		}
 	}
+
+	browsePath = browsePath.replace(/\\/g, '/');
 </script>
 
 <main id="file-browser">
@@ -129,9 +132,9 @@
 				{/each}
 				{#each browsing.files as entry}
 					<tr on:click={() => openEntry(entry.path)}>
-						<td><img class="icon" use:tippyFollow={$_('file_types.' + entry.type, { values: { extension: entry.extension } })} src="/img/silkicons/{entry.icon}" alt=""/></td>
+						<td><img class="icon" use:tippyFollow={entry.typeTip} src="/img/silkicons/{entry.icon}" alt=""/></td>
 						<td><span>{entry.name}</span></td>
-						<td><span>{$_('file_types.' + entry.type, { values: { extension: entry.extension } })}</span></td>
+						<td><span>{entry.typeTip}</span></td>
 						<td><span>{filesize(entry.size)}</span></td>
 					</tr>
 				{/each}

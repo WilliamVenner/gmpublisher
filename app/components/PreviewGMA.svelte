@@ -1,14 +1,13 @@
 <script>
-	import { Steam, getFileTypeInfo } from '../steam.js';
+	import { Steam } from '../steam.js';
 	import { _ } from 'svelte-i18n';
 	import filesize from 'filesize';
-	import { tippyFollow } from '../tippy.js';
 	import Dead from './Dead.svelte';
 	import SteamID from 'steamid';
-	import { ChevronUp, Folder, LinkOut } from 'akar-icons-svelte';
+	import { LinkOut } from 'akar-icons-svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import Timestamp from './Timestamp.svelte';
-	import { afterUpdate, onDestroy } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import { Transaction } from '../transactions.js';
 	import Loading from './Loading.svelte';
 	import Modal from './Modal.svelte';
@@ -26,9 +25,9 @@
 	let gmaPath;
 	let entriesList;
 
-	function extractEntry() {
+	function extractEntry(entryPath) {
 		if (!gmaPath) return;
-		invoke('extract_preview_entry', { gmaPath, entryPath: this.dataset.path })
+		invoke('extract_preview_entry', { gmaPath, entryPath })
 			.then(transactionId => new Transaction(transactionId, transaction => {
 				return $_('extracting_progress', { values: {
 					pct: transaction.progress,
@@ -62,7 +61,7 @@
 		addon = Promise.allSettled(promises).then(async ([workshop, gma]) => {
 			gmaPath = gma.value?.path ?? workshop.value?.localFile ?? null;
 			if (gmaPath) {
-				entriesList = await invoke('preview_gma', { path: gmaPath });
+				entriesList = Object.values(await invoke('preview_gma', { path: gmaPath }));
 			}
 			return [
 				workshop.status === 'fulfilled' ? (!workshop.value.dead ? workshop.value : null) : null,
@@ -73,11 +72,8 @@
 	updatePromises($promises);
 	onDestroy(promises.subscribe(updatePromises));
 
-	function open(path) {
-		invoke('open_file_location', { path });
-	}
-	function openEntry(gma_path, entry_path) {
-		invoke('extract_gma_entry', { gma_path, entry_path });
+	function open() {
+		invoke('open_file_location', { path: gmaPath });
 	}
 
 	async function interceptCancel() {
@@ -97,7 +93,7 @@
 				<div id="sidebar">
 					<div class="extract-btn" on:click={chooseDestination}>{$_('extract')}</div>
 					<div id="addon" class="hide-scroll">
-						<div><Addon workshopData={$promises[0]} installedData={$promises[1]}/></div>
+						<div><Addon previewing={true} workshopData={$promises[0]} installedData={$promises[1]}/></div>
 						{#if workshop}
 							<div id="tags">
 								{#if workshop.tags}
@@ -209,23 +205,29 @@
 				</div>
 
 				{#if gma || workshop.localFile}
-					<FileBrowser browsePath={gma?.path ?? workshop.localFile} {entriesList} {open} {openEntry} size={gma.size ?? workshop.size}/>
+					<FileBrowser browsePath={gma?.path ?? workshop.localFile} {entriesList} {open} openEntry={extractEntry} size={gma.size ?? workshop.size}/>
 				{:else}
 					<Dead size="2rem"/>
 				{/if}
 			</div>
 
-			<DestinationSelect active={destinationSelect} cancel={() => destinationSelect = false} callback={extractGMA} text={$_('extract')} extractedName={gma?.name} />
+			<DestinationSelect active={destinationSelect} cancel={() => destinationSelect = false} callback={extractGMA} text={$_('extract')} extractedName={gma?.extractedName} />
 		{/if}
 	{/await}
 </Modal>
 
 <style>
-	:global(#gma-preview) > div {
+	:global(#gma-preview > .hide-scroll) {
 		max-width: 100%;
    		max-height: 100%;
-		width: 1000px;
-		height: 700px;
+		width: 63rem;
+		height: 44rem;
+	}
+	@media (max-width: 63rem), (max-height: 44rem) {
+		:global(#gma-preview > .hide-scroll) {
+			width: 100%;
+			height: 100%;
+		}
 	}
 	:global(#gma-preview) #content {
 		display: flex;
@@ -242,10 +244,7 @@
 		z-index: 2;
 		flex: 1;
 	}
-	#addon :global(#workshop-addon) {
-		margin-bottom: 1.2rem;
-	}
-	#addon :global(#workshop-addon #card) {
+	#addon :global(.addon #card) {
 		padding: 0;
 	}
 
@@ -255,9 +254,9 @@
 	}
 
 	#addon #tags {
-		margin-bottom: .6rem;
+		margin-bottom: 1rem;
 		line-height: 1.7rem;
-		margin-top: -.51rem;
+		margin-top: 1rem;
 	}
 	#addon-info {
 		border-spacing: .5rem;

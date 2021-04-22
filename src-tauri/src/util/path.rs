@@ -34,6 +34,27 @@ impl NormalizedPathBuf {
 		}
 	}
 }
+impl AsRef<Path> for NormalizedPathBuf {
+    fn as_ref(&self) -> &Path {
+        self.path.as_ref()
+    }
+}
+impl PartialEq for NormalizedPathBuf {
+	fn eq(&self, other: &Self) -> bool {
+		self.path.eq(&other.path)
+	}
+}
+impl Eq for NormalizedPathBuf {}
+impl PartialOrd for NormalizedPathBuf {
+	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+		self.path.partial_cmp(&other.path)
+	}
+}
+impl Ord for NormalizedPathBuf {
+	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+		self.path.cmp(&other.path)
+	}
+}
 impl std::ops::Deref for NormalizedPathBuf {
 	type Target = PathBuf;
 	fn deref(&self) -> &Self::Target {
@@ -123,7 +144,8 @@ pub fn open<P: AsRef<Path>>(path: P) {
 }
 
 pub fn open_file_location<P: AsRef<Path>>(path: P) {
-	let path = path.as_ref().display();
+	let canonicalized = dunce::canonicalize(path.as_ref()).unwrap_or_else(|_| path.as_ref().to_path_buf());
+	let path = canonicalized.display();
 
 	if let Err(_) = (|| {
 		#[cfg(target_os = "windows")]

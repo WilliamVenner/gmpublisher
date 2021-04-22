@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use steamworks::PublishedFileId;
 use thiserror::Error;
 
-use crate::{ArcBytes, main_thread_forbidden};
+use crate::{ArcBytes, main_thread_forbidden, path::NormalizedPathBuf};
 
 const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 
@@ -108,6 +108,7 @@ pub struct GMAEntry {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GMAFile {
+	#[serde(serialize_with = "serde_canonicalize")]
 	pub path: PathBuf,
 	pub size: u64,
 
@@ -167,7 +168,7 @@ impl Ord for GMAFile {
 impl GMAFile {
 	fn read_header<P: AsRef<Path>>(mut f: GMAReader, path: P) -> Result<GMAFile, GMAError> {
 		let mut gma = GMAFile {
-			size: path.as_ref().metadata().and_then(|metadata| Ok(metadata.len())).unwrap_or(0),
+			size: path.as_ref().metadata().map(|metadata| metadata.len()).unwrap_or(0),
 			path: path.as_ref().to_owned(),
 			id: None,
 			metadata: None,
@@ -270,6 +271,16 @@ impl GMAFile {
 		}
 
 		self.extracted_name = extracted_name;
+	}
+}
+
+fn serde_canonicalize<S>(path: &PathBuf, serializer: S) -> Result<S::Ok, S::Error>
+where
+	S: serde::Serializer,
+{
+	match dunce::canonicalize(&path) {
+	    Ok(path) => path.serialize(serializer),
+	    Err(_) => path.serialize(serializer)
 	}
 }
 

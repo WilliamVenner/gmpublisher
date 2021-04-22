@@ -232,7 +232,6 @@ impl ExtractGMAImmut for GMAFile {
 		};
 
 		let entry = self.entries.as_ref().expect("Expected entries to be read by this point").get(&entry_path).ok_or(GMAError::EntryNotFound)?;
-		debug_assert_ne!(entry.index, 0);
 
 		let result = GMAFile::stream_entry_bytes_with_transaction(&mut handle, self.pointers.entries, &path, entry, transaction).map(|_| path.to_owned());
 

@@ -1,17 +1,14 @@
-use atomic_refcell::AtomicRefCell;
-use parking_lot::Mutex;
-use crate::Transaction;
+use std::{path::PathBuf, sync::Arc};
 
-use super::{GMAFile, GMAError, GMAEntry, ExtractDestination};
-use std::{any::Any, collections::HashMap, path::PathBuf, sync::Arc};
-use crate::gma::extract::ExtractGMAImmut;
+use parking_lot::Mutex;
+use super::{extract::ExtractGMAImmut, GMAFile, GMAError, GMAEntry, ExtractDestination};
 
 lazy_static! {
 	static ref PREVIEW_GMA: Mutex<Option<Arc<GMAFile>>> = Mutex::new(None);
 }
 
 #[tauri::command]
-pub fn preview_gma(path: Option<PathBuf>) -> Result<Option<serde_json::Value>, GMAError> {
+pub fn preview_gma(path: Option<PathBuf>) -> Result<Option<Vec<GMAEntry>>, GMAError> {
 	if let Some(path) = path {
 		let mut lock = PREVIEW_GMA.lock();
 
@@ -19,7 +16,10 @@ pub fn preview_gma(path: Option<PathBuf>) -> Result<Option<serde_json::Value>, G
 		gma.entries()?;
 		*lock = Some(Arc::new(gma));
 
-		Ok(Some(json!(lock.as_ref().unwrap().entries.as_ref().unwrap())))
+		let mut entries: Vec<GMAEntry> = lock.as_ref().unwrap().entries.as_ref().unwrap().values().cloned().collect();
+		entries.sort_unstable_by(|a, b| a.path.cmp(&b.path));
+
+		Ok(Some(entries))
 	} else {
 		*PREVIEW_GMA.lock() = None;
 		Ok(None)
@@ -30,7 +30,7 @@ pub fn preview_gma(path: Option<PathBuf>) -> Result<Option<serde_json::Value>, G
 pub fn extract_preview_entry(gma_path: PathBuf, entry_path: String) -> Option<u32> {
 	let mut lock = PREVIEW_GMA.lock();
 	if let Some(gma) = lock.as_mut() {
-		if gma.path != gma_path {
+		if *gma.path != gma_path {
 			let mut race_gma = GMAFile::open(gma_path).ok()?;
 			race_gma.entries().ok()?;
 			*gma = Arc::new(race_gma);
@@ -52,7 +52,7 @@ pub fn extract_preview_entry(gma_path: PathBuf, entry_path: String) -> Option<u3
 pub fn extract_preview_gma(gma_path: PathBuf, dest: ExtractDestination) -> Option<u32> {
 	let mut lock = PREVIEW_GMA.lock();
 	if let Some(gma) = lock.as_mut() {
-		if gma.path != gma_path {
+		if *gma.path != gma_path {
 			let mut race_gma = GMAFile::open(gma_path).ok()?;
 			race_gma.entries().ok()?;
 			*gma = Arc::new(race_gma);
