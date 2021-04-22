@@ -9,6 +9,7 @@ lazy_static! {
 	pub static ref APP_DATA: crate::appdata::AppData = crate::appdata::AppData::init();
 	pub static ref WEBVIEW: crate::webview::WrappedWebview<Args<String, String, tauri::api::assets::EmbeddedAssets, tauri::runtime::flavors::wry::Wry>> =
 		crate::webview::WrappedWebview::pending();
+	pub static ref SEARCH: crate::search::Search = crate::search::Search::init();
 }
 
 #[macro_export]
@@ -35,6 +36,13 @@ macro_rules! game_addons {
 macro_rules! app_data {
 	() => {
 		&crate::APP_DATA
+	};
+}
+
+#[macro_export]
+macro_rules! search {
+	() => {
+		&crate::SEARCH
 	};
 }
 

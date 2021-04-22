@@ -1362,6 +1362,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fuzzy-matcher"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54614a3312934d066701a80f20f15fa3b56d67ac7722b39eea5b4c9dd1d66c94"
+dependencies = [
+ "thread_local",
+]
+
+[[package]]
 name = "gdk"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1601,6 +1610,7 @@ dependencies = [
  "dirs-next",
  "dunce",
  "erased-serde",
+ "fuzzy-matcher",
  "image",
  "indexmap",
  "lazy_static",

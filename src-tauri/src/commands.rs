@@ -36,6 +36,9 @@ where
 		crate::gma::preview::preview_gma,
 		crate::gma::preview::extract_preview_entry,
 		crate::gma::preview::extract_preview_gma,
+		crate::search::search,
+		crate::search::search_channel,
+		crate::search::full_search,
 	]
 }
 

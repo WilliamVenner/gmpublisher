@@ -16,7 +16,7 @@ use parking_lot::Mutex;
 
 use super::{users::SteamUser, Steam};
 
-use crate::{GMOD_APP_ID, Transaction, main_thread_forbidden, webview::Addon, webview_emit};
+use crate::{GMOD_APP_ID, main_thread_forbidden, webview::Addon};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -32,7 +32,7 @@ pub struct WorkshopItem {
 	pub preview_url: Option<String>,
 	pub subscriptions: u64,
 	pub local_file: Option<PathBuf>,
-	pub search_title: String,
+	//pub search_title: String,
 
 	#[serde(skip)]
 	pub steamid: Option<SteamId>,
@@ -56,7 +56,7 @@ impl From<QueryResult> for WorkshopItem {
 			preview_url: None,
 			subscriptions: 0,
 			local_file: None,
-			search_title: result.title.to_lowercase(),
+			//search_title: result.title.to_lowercase(),
 
 			dead: false,
 		}
@@ -78,7 +78,7 @@ impl From<PublishedFileId> for WorkshopItem {
 			preview_url: None,
 			subscriptions: 0,
 			local_file: None,
-			search_title: id.0.to_string(),
+			//search_title: id.0.to_string(),
 			dead: true,
 		}
 	}

@@ -1,26 +1,69 @@
 <script>
 	import { _ } from 'svelte-i18n';
 	import { Search, Cross } from 'akar-icons-svelte';
+	import { invoke } from '@tauri-apps/api/tauri';
+	import { Transaction } from '../transactions';
 
 	let searchActive = false;
 
-	function updateSearch() {
+	function getRandomInt(min, max) {
+		return Math.floor(Math.random() * (max - min + 1)) + min;
+	}
 
+	let prevSalt;
+	function getSalt() {
+		while (true) {
+			const salt = getRandomInt(0, 0xffffffff);
+			if (salt != prevSalt) {
+				prevSalt = salt;
+				return salt;
+			}
+		}
+	}
+
+	let searchResults = [];
+	function updateSearch() {
+		const query = this.value.trim();
+		if (query.length === 0) {
+			searchResults = [];
+		} else {
+			invoke('search', { salt: getSalt(), query: this.value });
+		}
 	}
 
 	function clearSearch() {
 
 	}
+
+	invoke('search_channel').then(transaction_id => {
+		const transaction = new Transaction(transaction_id);
+		transaction.listen(event => {
+			if (event.stream) {
+				const [salt, results] = event.data;
+				if (salt !== prevSalt) return;
+				searchResults = results;
+			}
+		});
+	});
 </script>
 
-<main><div>
-	<input type="text" id="search" placeholder={$_('search')} on:input={updateSearch}/>
-	{#if searchActive}
-		<span id="cancel-search" on:click={clearSearch}><Cross size="1rem"/></span>
-	{:else}
-		<Search size="1rem"/>
+<main class:results={searchResults.length > 0}>
+	<div id="input-container">
+		<input type="text" id="search" placeholder={$_('search')} on:input={updateSearch}/>
+		{#if searchActive}
+			<span id="cancel-search" on:click={clearSearch}><Cross size="1rem"/></span>
+		{:else}
+			<Search size="1rem"/>
+		{/if}
+	</div>
+	{#if searchResults.length > 0}
+		<div id="search-results">
+			{#each searchResults as result}
+				<div class="result">{result[0]}</div>
+			{/each}
+		</div>
 	{/if}
-</div></main>
+</main>
 
 <style>
 	main {
@@ -70,5 +113,23 @@
 	}
 	#search:focus + :global(.icon) {
 		opacity: 1;
+	}
+
+	main.results #search:focus {
+		border-bottom-left-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+	main:not(:focus-within) > #search-results {
+		opacity: 0;
+		pointer-events: none;
+	}
+	main > #search-results {
+		position: absolute;
+		top: 100%;
+		padding: 1rem;
+		background: #474747;
+	}
+	main > #search-results .result:not(:last-child) {
+		margin-bottom: .5rem;
 	}
 </style>

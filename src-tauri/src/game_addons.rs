@@ -187,6 +187,8 @@ impl GameAddons {
 
 			*pages = pages_heap.into_sorted_vec();
 
+			search!().add_bulk(&pages);
+
 			println!("Discovered {} addons", paths.len());
 		}
 

@@ -125,7 +125,7 @@ pub struct GMAFile {
 	#[serde(skip)]
 	pub version: u8,
 
-	extracted_name: String,
+	pub extracted_name: String,
 
 	#[serde(skip)]
 	pub modified: Option<SystemTime>,
@@ -156,12 +156,12 @@ impl PartialEq for GMAFile {
 impl Eq for GMAFile {}
 impl PartialOrd for GMAFile {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-		self.modified.partial_cmp(&other.modified)
+		self.modified.partial_cmp(&other.modified).map(|x| x.reverse())
 	}
 }
 impl Ord for GMAFile {
 	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-		self.modified.cmp(&other.modified)
+		self.modified.cmp(&other.modified).reverse()
 	}
 }
 

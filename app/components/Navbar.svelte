@@ -87,7 +87,6 @@
 		padding-right: 1.5rem;
 		background-color: #323232;
 		box-shadow: 0px 0px 10px rgba(0,0,0,0.4);
-		overflow: hidden;
 		top: 0;
 		left: 0;
 		display: flex;
