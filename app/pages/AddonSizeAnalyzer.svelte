@@ -21,6 +21,32 @@
 		workshopDataReceived = false;
 	});
 
+	let workshopItemImageCache = {};
+	let workshopItemReceivedReady = true;
+	function workshopItemReceived(item) {
+		if (workshopItemReceivedReady) {
+			// TODO chunk it to prevent actual DDoS!!!!
+			console.log(item);/*
+			if (workshopData?.previewUrl) {
+
+			const image = new Image(square.w, square.h);
+			image.onload = () => {
+				addonsCtx.globalCompositeOperation = 'destination-over';
+					addonsCtx.drawImage(image, x, y, square.w, square.h);
+				addonsCtx.globalCompositeOperation = 'source-over';
+			}
+			image.src = workshopData.previewUrl;
+
+			break;
+
+			}
+			workshopItemImageCache[item.id] = */
+			updateCanvas();
+			requestAnimationFrame(() => workshopItemReceivedReady = true);
+		}
+		return item;
+	}
+
 	const tagCache = {}; let tagCacheId = 0;
 	function getTagId(tag) {
 		if (!(tag in tagCache)) {
@@ -193,7 +219,7 @@
 
 						const index = workshopDataIndex.push(
 							!!data.installed.id ?
-							Steam.getWorkshopAddon(data.installed.id)
+							Steam.getWorkshopAddon(data.installed.id).then(workshopItemReceived)
 							: Promise.resolve(null)
 						) - 1;
 
@@ -347,18 +373,9 @@
 		if (workshopDataIndex != false && !workshopDataReceived) {
 			workshopDataReceived = true;
 
-			for (let i = 0; i < workshopDataIndex.length; i += 25) {
-				const chunk = i;
-				Promise.allSettled(workshopDataIndex.slice(i, i + 25)).then(values => {
-					for (let i = 0; i < values.length; i++) {
-						workshopDataPromises[chunk + i] = values[i]?.value ?? null;
-					}
-					updateCanvas();
-				});
-			}
-
 			Promise.allSettled(workshopDataIndex, () => {
-				treemap = null
+				treemap = null;
+				updateCanvas();
 			});
 		}
 	}
