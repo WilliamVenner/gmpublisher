@@ -22,6 +22,7 @@
 	let subscriptions = [];
 	onDestroy(() => subscriptions.forEach(subscription => subscription()));
 
+	let gmaSize;
 	let gmaPath;
 	let entriesList;
 
@@ -31,8 +32,8 @@
 			.then(transactionId => new Transaction(transactionId, transaction => {
 				return $_('extracting_progress', { values: {
 					pct: transaction.progress,
-					data: filesize((transaction.progress / 100) * gma.size),
-					dataTotal: size
+					data: filesize((transaction.progress / 100) * gmaSize),
+					dataTotal: filesize(gmaSize)
 				}});
 			}));
 	}
@@ -45,8 +46,8 @@
 			.then(transactionId => new Transaction(transactionId, transaction => {
 				return $_('extracting_progress', { values: {
 					pct: transaction.progress,
-					data: filesize((transaction.progress / 100) * gma.size),
-					dataTotal: size
+					data: filesize((transaction.progress / 100) * gmaSize),
+					dataTotal: filesize(gmaSize)
 				}});
 			}));
 	}
@@ -63,6 +64,7 @@
 			if (gmaPath) {
 				entriesList = Object.values(await invoke('preview_gma', { path: gmaPath }));
 			}
+			gmaSize = gma.value?.size ?? workshop.value?.size ?? 0;
 			return [
 				workshop.status === 'fulfilled' ? (!workshop.value.dead ? workshop.value : null) : null,
 				gma.status === 'fulfilled' ? gma.value : null
@@ -205,7 +207,7 @@
 				</div>
 
 				{#if gma || workshop.localFile}
-					<FileBrowser browsePath={gma?.path ?? workshop.localFile} {entriesList} {open} openEntry={extractEntry} size={gma.size ?? workshop.size}/>
+					<FileBrowser browsePath={gmaPath} {entriesList} {open} openEntry={extractEntry} size={gmaSize}/>
 				{:else}
 					<Dead size="2rem"/>
 				{/if}

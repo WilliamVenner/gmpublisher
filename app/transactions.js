@@ -144,9 +144,9 @@ class Transaction {
 
 	setProgress(progress) {
 		if (progress !== this.progress) {
-			this.emit({ progress });
 			this.progressInt = progress;
 			this.progress = progress / 100;
+			this.emit({ progress: this.progress });
 		}
 
 		return this;
