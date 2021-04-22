@@ -104,8 +104,21 @@
 	}
 
 	function doCallback() {
-		if (!this.classList.contains('disabled'))
-			callback(extractPath);
+		if (!this.classList.contains('disabled')) {
+			switch (extractPath[0]) {
+				case 'browse':
+					return callback({'Directory': extractPath[1]});
+
+				case 'tmp':
+					return callback('Temp');
+
+				case 'addons':
+					return callback('Addons');
+
+				case 'downloads':
+					return callback('Downloads');
+			}
+		}
 	}
 </script>
 

@@ -279,8 +279,8 @@ impl Steam {
 }
 
 #[tauri::command]
-fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>, u64), (String, serde_json::Value)> {
-	if !path.is_dir() || !path.is_absolute() { return Err((PublishError::InvalidContentPath.to_string(), json!(turbonone!()))); }
+fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>, u64), (String, Option<Vec<String>>)> {
+	if !path.is_dir() || !path.is_absolute() { return Err((PublishError::InvalidContentPath.to_string(), None)); }
 
 	let root_path_strip_len = path.to_slash_lossy().len() + 1;
 
@@ -332,12 +332,12 @@ fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>
 
 	if failed.is_empty() {
 		if files.is_empty() {
-			Err((PublishError::NoEntries.to_string(), json!(turbonone!())))
+			Err((PublishError::NoEntries.to_string(), None))
 		} else {
 			Ok((files, size))
 		}
 	} else {
 		failed.sort_unstable();
-		Err((PublishError::NotWhitelisted(vec![]).to_string(), json!(failed)))
+		Err((PublishError::NotWhitelisted(vec![]).to_string(), Some(failed)))
 	}
 }

@@ -23,8 +23,26 @@
 	let subscriptions = [];
 	onDestroy(() => subscriptions.forEach(subscription => subscription()));
 
-	function openGMAEntry() {
-		invoke('open_gma_entry', { path: this.dataset.path })
+	let gmaPath;
+	let entriesList;
+
+	function extractEntry() {
+		if (!gmaPath) return;
+		invoke('extract_preview_entry', { gmaPath, entryPath: this.dataset.path })
+			.then(transactionId => new Transaction(transactionId, transaction => {
+				return $_('extracting_progress', { values: {
+					pct: transaction.progress,
+					data: filesize((transaction.progress / 100) * gma.size),
+					dataTotal: size
+				}});
+			}));
+	}
+
+	function extractGMA(dest) {
+		destinationSelect = false;
+
+		if (!gmaPath) return;
+		invoke('extract_preview_gma', { gmaPath, dest })
 			.then(transactionId => new Transaction(transactionId, transaction => {
 				return $_('extracting_progress', { values: {
 					pct: transaction.progress,
@@ -35,17 +53,17 @@
 	}
 
 	let destinationSelect = false;
-	function extract() {
+	function chooseDestination() {
 		destinationSelect = true;
-	}
-	function doExtract() {
-		destinationSelect = false;
 	}
 
 	let addon;
 	function updatePromises(promises) {
-		addon = Promise.allSettled(promises).then(([workshop, gma]) => {
-			console.log(workshop, gma);
+		addon = Promise.allSettled(promises).then(async ([workshop, gma]) => {
+			gmaPath = gma.value?.path ?? workshop.value?.localFile ?? null;
+			if (gmaPath) {
+				entriesList = await invoke('preview_gma', { path: gmaPath });
+			}
 			return [
 				workshop.status === 'fulfilled' ? (!workshop.value.dead ? workshop.value : null) : null,
 				gma.status === 'fulfilled' ? gma.value : null
@@ -61,9 +79,14 @@
 	function openEntry(gma_path, entry_path) {
 		invoke('extract_gma_entry', { gma_path, entry_path });
 	}
+
+	async function interceptCancel() {
+		await invoke('preview_gma', { path: null });
+		cancel();
+	}
 </script>
 
-<Modal id="gma-preview" {active} {cancel}>
+<Modal id="gma-preview" {active} cancel={interceptCancel}>
 	{#await addon}
 		<Loading size="2rem"/>
 	{:then [workshop, gma]}
@@ -72,7 +95,7 @@
 		{:else}
 			<div id="content">
 				<div id="sidebar">
-					<div class="extract-btn" on:click={extract}>{$_('extract')}</div>
+					<div class="extract-btn" on:click={chooseDestination}>{$_('extract')}</div>
 					<div id="addon" class="hide-scroll">
 						<div><Addon workshopData={$promises[0]} installedData={$promises[1]}/></div>
 						{#if workshop}
@@ -186,19 +209,13 @@
 				</div>
 
 				{#if gma || workshop.localFile}
-					{#await Steam.getGMAEntries(gma?.path ?? workshop.localFile)}
-						<Loading size="2rem"/>
-					{:then entriesList}
-						<FileBrowser browsePath={gma?.path ?? workshop.localFile} {entriesList} {open} {openEntry} size={gma.size ?? workshop.size}/>
-					{:catch gmaError}
-						<Dead size="2rem"/>{$_(gmaError)}
-					{/await}
+					<FileBrowser browsePath={gma?.path ?? workshop.localFile} {entriesList} {open} {openEntry} size={gma.size ?? workshop.size}/>
 				{:else}
 					<Dead size="2rem"/>
 				{/if}
 			</div>
 
-			<DestinationSelect active={destinationSelect} cancel={() => destinationSelect = false} callback={doExtract} text={$_('extract_where_to')} extractedName={gma?.name} />
+			<DestinationSelect active={destinationSelect} cancel={() => destinationSelect = false} callback={extractGMA} text={$_('extract')} extractedName={gma?.name} />
 		{/if}
 	{/await}
 </Modal>

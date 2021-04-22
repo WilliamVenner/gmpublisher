@@ -178,26 +178,9 @@
 		this.classList.remove('error');
 	}
 
-	function setDestination(extractPath) {
+	function setDestination(extractDestination) {
 		destinationModal = false;
-
-		switch (extractPath[0]) {
-			case 'browse':
-				AppSettings.extract_destination = {'Directory': extractPath[1]};
-				break;
-
-			case 'tmp':
-				AppSettings.extract_destination = 'Temp';
-				break;
-
-			case 'addons':
-				AppSettings.extract_destination = 'Addons';
-				break;
-
-			case 'downloads':
-				AppSettings.extract_destination = 'Downloads';
-				break;
-		}
+		AppSettings.extract_destination = extractDestination;
 
 		invoke('update_settings', { settings: AppSettings });
 	}

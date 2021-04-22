@@ -1,7 +1,6 @@
 use std::{convert::TryInto, net::{TcpListener, TcpStream}};
 use byteorder::{BigEndian, WriteBytesExt};
 use crossbeam::channel::{Receiver, Sender};
-use serde::Serialize;
 use websocket::{server::{NoTlsAcceptor, WsServer}, sync::{Client, Server}};
 use websocket::OwnedMessage;
 use crate::NTStringWriter;
@@ -77,14 +76,6 @@ impl TransactionMessage {
 		}
 
 		bytes
-	}
-}
-impl Serialize for TransactionMessage {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where
-		S: serde::Serializer
-	{
-		serializer.serialize_bytes(&self.as_bytes())
 	}
 }
 impl Into<OwnedMessage> for TransactionMessage {

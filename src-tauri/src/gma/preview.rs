@@ -3,7 +3,7 @@ use parking_lot::Mutex;
 use crate::Transaction;
 
 use super::{GMAFile, GMAError, GMAEntry, ExtractDestination};
-use std::{sync::Arc, any::Any, path::PathBuf};
+use std::{any::Any, collections::HashMap, path::PathBuf, sync::Arc};
 use crate::gma::extract::ExtractGMAImmut;
 
 lazy_static! {
@@ -11,7 +11,7 @@ lazy_static! {
 }
 
 #[tauri::command]
-pub fn preview_gma(path: Option<PathBuf>) -> Result<serde_json::Value, GMAError> {
+pub fn preview_gma(path: Option<PathBuf>) -> Result<Option<serde_json::Value>, GMAError> {
 	if let Some(path) = path {
 		let mut lock = PREVIEW_GMA.lock();
 
@@ -19,10 +19,10 @@ pub fn preview_gma(path: Option<PathBuf>) -> Result<serde_json::Value, GMAError>
 		gma.entries()?;
 		*lock = Some(Arc::new(gma));
 
-		Ok(json!(lock.as_ref().unwrap().entries.as_ref().unwrap()))
+		Ok(Some(json!(lock.as_ref().unwrap().entries.as_ref().unwrap())))
 	} else {
 		*PREVIEW_GMA.lock() = None;
-		Ok(serde_json::Value::Null)
+		Ok(None)
 	}
 }
 

@@ -69,7 +69,7 @@
 			console.log(entries);
 
 			gmaEntries = entries;
-			gmaSize = filesize(size);
+			gmaSize = size;
 
 			pathFailMessage = null;
 			tippyFollow(pathInputContainer, pathFailMessage);
