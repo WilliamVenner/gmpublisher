@@ -30,6 +30,7 @@ where
 		crate::steam::workshop::workshop_item_channel,
 		crate::steam::downloads::workshop_download,
 		crate::steam::publishing::verify_whitelist,
+		crate::steam::publishing::publish,
 		crate::addon_size_analyzer::addon_size_analyzer,
 		crate::content_generator::get_content_generator_manifests,
 		crate::content_generator::update_content_generator_manifest,
@@ -46,6 +47,7 @@ where
 pub fn free_caches() {
 	crate::game_addons::free_caches();
 	crate::steam::workshop::free_caches();
+	search!().clear();
 }
 
 #[tauri::command]

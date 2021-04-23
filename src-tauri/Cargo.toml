@@ -30,9 +30,9 @@ path = "../../tauri/core/tauri"
 
 [dependencies.steamworks]
 features = [ "serde" ]
-git = "https://github.com/WilliamVenner/steamworks-rs.git"
-branch = "master"
-#path = "../../steamworks-rs"
+#git = "https://github.com/WilliamVenner/steamworks-rs.git"
+#branch = "master"
+path = "../../steamworks-rs"
 
 [dependencies]
 turbonone = "0.2.1"

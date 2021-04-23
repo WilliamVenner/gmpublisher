@@ -1,14 +1,8 @@
 use serde::Serialize;
-use std::{
-	cell::RefCell,
-	collections::{HashMap, HashSet, VecDeque},
-	ops::DerefMut,
-	path::PathBuf,
-	sync::{
+use std::{cell::RefCell, collections::{HashMap, HashSet, VecDeque}, mem::Discriminant, ops::DerefMut, path::PathBuf, sync::{
 		atomic::{AtomicBool, Ordering},
 		Arc,
-	},
-};
+	}};
 
 use steamworks::{PublishedFileId, QueryResult, QueryResults, SteamError, SteamId};
 
@@ -16,7 +10,7 @@ use parking_lot::Mutex;
 
 use super::{users::SteamUser, Steam};
 
-use crate::{GMOD_APP_ID, main_thread_forbidden, webview::Addon};
+use crate::{GMOD_APP_ID, main_thread_forbidden, search::SearchItemSource, webview::Addon};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -34,9 +28,8 @@ pub struct WorkshopItem {
 	pub local_file: Option<PathBuf>,
 	//pub search_title: String,
 
-	#[serde(skip)]
+	#[serde(serialize_with = "super::serialize_opt_steamid", rename = "steamid64")]
 	pub steamid: Option<SteamId>,
-	pub steamid64: Option<String>,
 
 	pub dead: bool,
 }
@@ -46,7 +39,6 @@ impl From<QueryResult> for WorkshopItem {
 			id: result.published_file_id,
 			title: result.title.clone(),
 			steamid: Some(result.owner),
-			steamid64: Some(result.owner.raw().to_string()),
 			owner: None,
 			time_created: result.time_created,
 			time_updated: result.time_updated,
@@ -68,7 +60,6 @@ impl From<PublishedFileId> for WorkshopItem {
 			id,
 			title: id.0.to_string(),
 			steamid: None,
-			steamid64: None,
 			owner: None,
 			time_created: 0,
 			time_updated: 0,
@@ -157,8 +148,8 @@ impl Steam {
 				let mut backlog = FETCHER_BACKLOG.borrow_mut();
 
 				backlog.reserve(workshop.1.len());
-				for id in workshop.1.drain(..).into_iter() {
-					backlog.push_back(id);
+				for data in workshop.1.drain(..).into_iter() {
+					backlog.push_back(data);
 				}
 
 				drop(workshop);
@@ -172,6 +163,8 @@ impl Steam {
 
 					let next = Arc::new(AtomicBool::new(false));
 					let next_ref = next.clone();
+
+					search!().reserve(queue.len());
 
 					steam!()
 						.client()
@@ -187,6 +180,7 @@ impl Steam {
 										let mut item: WorkshopItem = item.into();
 										item.preview_url = results.preview_url(i);
 										item.subscriptions = results.statistic(i, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+										search!().add(&item);
 										item
 									} else {
 										WorkshopItem::from(queue[i as usize])
@@ -309,6 +303,7 @@ impl Steam {
 								let mut item: WorkshopItem = x.unwrap().into();
 								item.preview_url = data.preview_url(i as u32);
 								item.subscriptions = data.statistic(i as u32, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+								search!().add(&item);
 								item.into()
 							})
 							.collect::<Vec<Addon>>(),
@@ -334,12 +329,12 @@ pub fn browse_my_workshop(page: u32) -> Option<(u32, Vec<Addon>)> {
 
 #[tauri::command]
 fn fetch_workshop_items(items: Vec<PublishedFileId>) {
-	steam!().fetch_workshop_items(items);
+	steam!().fetch_workshop_items(items, );
 }
 
 #[tauri::command]
 fn fetch_workshop_item(item: PublishedFileId) {
-	steam!().fetch_workshop_items(vec![item]);
+	steam!().fetch_workshop_items(vec![item], );
 }
 
 #[tauri::command]

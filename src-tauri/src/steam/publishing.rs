@@ -1,9 +1,9 @@
-use crate::{GMOD_APP_ID, gma::GMAEntry};
+use crate::{GMOD_APP_ID, Transaction, gma::{GMAFile, GMAEntry, GMAMetadata, GMAFilePointers}};
 use image::{ImageError, ImageFormat};
 use parking_lot::Mutex;
 use path_slash::PathBufExt;
 use walkdir::WalkDir;
-use std::{fs::File, io::BufReader, mem::MaybeUninit, path::PathBuf, sync::Arc};
+use std::{fs::File, io::BufReader, mem::MaybeUninit, path::PathBuf, sync::Arc, time::SystemTime};
 use steamworks::{PublishedFileId, SteamError};
 
 #[cfg(not(target_os = "windows"))]
@@ -113,7 +113,7 @@ impl Into<PathBuf> for WorkshopIcon {
 		match self {
 			WorkshopIcon::Path(path) => path,
 			WorkshopIcon::Default => {
-				let mut path = std::env::temp_dir();
+				let mut path = app_data!().temp_dir().to_owned();
 				path.push("gmpublisher_default_icon.png");
 				if !path.is_file() {
 					std::fs::write(&path, include_bytes!("../../../public/img/gmpublisher_default_icon.png")).expect("Failed to write default icon to temp directory!");
@@ -194,12 +194,12 @@ pub enum WorkshopUpdateType {
 }
 
 impl Steam {
-	pub fn update(&self, details: WorkshopUpdateType) -> Result<(PublishedFileId, bool), PublishError> {
+	pub fn update(&self, details: WorkshopUpdateType, transaction: Transaction) -> Result<(PublishedFileId, bool), PublishError> {
 		use WorkshopUpdateType::*;
 
 		let result = Arc::new(Mutex::new(None));
 		let result_ref = result.clone();
-		match details {
+		let update_handle = match details {
 			Creation(details) => {
 				self.client()
 					.ugc()
@@ -209,7 +209,7 @@ impl Steam {
 					.preview_path(&Into::<PathBuf>::into(details.preview))
 					.submit(None, move |result| {
 						*result_ref.lock() = Some(result);
-					});
+					})
 			}
 
 			Update(details) => {
@@ -227,23 +227,39 @@ impl Steam {
 				.content_path(&path)
 				.submit(details.changes.as_deref(), move |result| {
 					*result_ref.lock() = Some(result);
+				})
+			}
+		};
+
+		let (_, _, total) = update_handle.progress();
+		transaction.data(total);
+
+		let result = loop {
+			let (processed, progress, total) = update_handle.progress();
+			if !matches!(processed, steamworks::UpdateStatus::Invalid) {
+				transaction.status(match processed {
+					steamworks::UpdateStatus::Invalid => unreachable!(),
+					steamworks::UpdateStatus::PreparingConfig => "PUBLISH_PREPARING_CONFIG",
+					steamworks::UpdateStatus::PreparingContent => "PUBLISH_PREPARING_CONTENT",
+					steamworks::UpdateStatus::UploadingContent => "PUBLISH_UPLOADING_CONTENT",
+					steamworks::UpdateStatus::UploadingPreviewFile => "PUBLISH_UPLOADING_PREVIEW_FILE",
+					steamworks::UpdateStatus::CommittingChanges => "PUBLISH_COMMITTING_CHANGES",
 				});
 			}
-		}
+			transaction.progress(progress as f64 / total as f64);
 
-		loop {
 			if !result.is_locked() && result.lock().is_some() {
 				break Arc::try_unwrap(result).unwrap().into_inner().unwrap().map_err(|error| PublishError::SteamError(error));
 			} else {
 				self.run_callbacks();
 			}
-		}
+		};
+
+		if result.is_ok() { transaction.progress(1.); }
+		result
 	}
 
-	pub fn publish(&self, path: PathBuf, title: String, preview: PathBuf) -> Result<(PublishedFileId, bool), PublishError> {
-		let path = ContentPath::new(path)?;
-		let preview = WorkshopIcon::new(preview)?;
-
+	pub fn publish(&self, path: ContentPath, preview: WorkshopIcon, title: String, transaction: Transaction) -> Result<(PublishedFileId, bool), PublishError> {
 		let published = Arc::new(Mutex::new(None));
 		let published_ref = published.clone();
 		self.client()
@@ -274,7 +290,7 @@ impl Steam {
 			.into_inner()
 			.unwrap()?;
 
-		self.update(WorkshopUpdateType::Creation(WorkshopCreationDetails { id, title, preview, path }))
+		self.update(WorkshopUpdateType::Creation(WorkshopCreationDetails { id, title, preview, path }), transaction)
 	}
 }
 
@@ -285,6 +301,7 @@ fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>
 	let root_path_strip_len = path.to_slash_lossy().len() + 1;
 
 	let mut size = 0;
+	let mut failed_extra = false;
 	let mut failed = Vec::with_capacity(10);
 	let mut files = Vec::new();
 	#[cfg(not(target_os = "windows"))]
@@ -313,7 +330,7 @@ fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>
 	}).filter(|(_, relative_path)| crate::gma::whitelist::filter_default_ignored(relative_path)).filter(|(_, relative_path)| !crate::gma::whitelist::is_ignored(relative_path, &ignore)) {
 		if !crate::gma::whitelist::check(&relative_path) {
 			if failed.len() == 9 {
-				failed.push("...".to_string());
+				failed_extra = true;
 				break;
 			} else {
 				failed.push(relative_path);
@@ -338,6 +355,94 @@ fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>
 		}
 	} else {
 		failed.sort_unstable();
+
+		if failed_extra {
+			failed.push("...".to_string());
+		}
+
 		Err((PublishError::NotWhitelisted(vec![]).to_string(), Some(failed)))
 	}
+}
+
+#[tauri::command]
+pub fn publish(content_path: PathBuf, icon_path: Option<PathBuf>, title: String, tags: Vec<String>, addon_type: String) -> u32 {
+	let transaction = transaction!();
+	let id = transaction.id;
+
+	let icon_path = match icon_path {
+		Some(icon_path) => match WorkshopIcon::new(icon_path) {
+			Ok(icon) => icon,
+			Err(error) => {
+				transaction.error(error.to_string(), turbonone!());
+				return id;
+			}
+		},
+		None => WorkshopIcon::Default
+	};
+
+	rayon::spawn(move || {
+		transaction.status("PUBLISH_PACKING");
+
+		let mut path = app_data!().temp_dir().to_owned();
+		path.pop();
+		path.push("gmpublisher_publishing");
+
+		if let Err(_) = std::fs::create_dir_all(&path) {
+			transaction.error("ERR_IO_ERROR", turbonone!());
+			return;
+		}
+
+		path.push("gmpublisher.gma");
+
+		let gma = GMAFile { // TODO convert to GMAFile::new()
+		    path: path.clone(),
+		    size: 0,
+		    id: None,
+		    metadata: Some(GMAMetadata::Standard {
+		        title: title.clone(),
+		        addon_type,
+		        tags,
+		        ignore: app_data!().settings.read().ignore_globs.to_owned(),
+			}),
+		    entries: None,
+		    pointers: GMAFilePointers::default(),
+		    version: 3,
+		    extracted_name: String::new(),
+		    modified: None,
+		    membuffer: None,
+		};
+
+		if let Err(error) = gma.create(content_path, transaction.clone()) {
+			if !transaction.aborted() {
+				transaction.error(error.to_string(), turbonone!());
+			}
+			return;
+		}
+
+		path.pop();
+		let content_path = match ContentPath::new(path) {
+			Ok(content_path) => content_path,
+			Err(error) => {
+				transaction.error(error.to_string(), turbonone!());
+				return;
+			}
+		};
+
+		transaction.status("PUBLISH_STARTING");
+
+		let (id, accepted_legal_agreement) = match steam!().publish(content_path, icon_path, title, transaction.clone()) {
+			Ok(data) => data,
+			Err(error) => {
+				transaction.error(error.to_string(), turbonone!());
+				return;
+			}
+		};
+
+		transaction.finished((id, accepted_legal_agreement));
+
+		// TODO remove packed addon when done
+	});
+	// https://partner.steamgames.com/doc/api/ISteamUGC#GetItemUpdateProgress
+
+	id
 }

@@ -6,7 +6,7 @@ use std::{
 	fs::{self, File},
 	io::{BufWriter, Write},
 	path::Path,
-	sync::mpsc,
+	sync::{Arc, atomic::AtomicBool},
 	time::SystemTime,
 };
 
@@ -27,17 +27,19 @@ impl NTStringWriter for BufWriter<File> {}
 
 impl GMAFile {
 	pub fn write(&self) -> Result<BufWriter<File>, GMAError> {
-		Ok(BufWriter::new(File::open(&self.path)?))
+		Ok(BufWriter::new(File::create(&self.path)?))
 	}
 
-	pub fn create<P: AsRef<Path>>(&self, src_path: P, data: &GMAMetadata, transaction: Transaction) -> Result<(), GMAError> {
+	pub fn create<P: AsRef<Path>>(&self, src_path: P, transaction: Transaction) -> Result<(), GMAError> {
 		let mut f = self.write()?;
 
 		let src_path = src_path.as_ref();
 
-		let (title, addon_json) = match data {
+		let metadata = self.metadata.as_ref().expect("Expected metadata to be set");
+
+		let (title, addon_json) = match metadata {
 			GMAMetadata::Legacy { title, .. } => (title.as_str(), None),
-			GMAMetadata::Standard { title, .. } => (title.as_str(), Some(data)),
+			GMAMetadata::Standard { title, .. } => (title.as_str(), Some(metadata)),
 		};
 
 		f.write(GMA_HEADER)?;
@@ -70,12 +72,14 @@ impl GMAFile {
 		f.write_i32::<LittleEndian>(1)?;
 
 		// file list
-		let (rx, total) = {
-			let (tx, rx) = mpsc::channel();
+		let (error, rx, total) = {
+			let error = Arc::new(AtomicBool::new(false));
+
+			let (tx, rx) = crossbeam::channel::unbounded();
 
 			let root_path_strip_len = src_path.to_string_lossy().len() + 1;
 
-			let mut total = 0;
+			let mut total = 0.;
 			for (path, relative_path) in WalkDir::new(src_path).into_iter().filter_map(|entry| {
 				entry.ok().and_then(|entry| {
 					if entry.file_type().is_file() {
@@ -95,12 +99,18 @@ impl GMAFile {
 					None
 				})
 			}) {
+				if error.load(std::sync::atomic::Ordering::Acquire) { break; }
+
 				let tx = tx.clone();
 				let transaction = transaction.clone();
+				let error = error.clone();
 				THREAD_POOL.spawn(move || {
 					let contents = match fs::read(&path) {
 						Ok(contents) => contents,
-						Err(_) => return transaction.data(("ERR_IO_ERROR", path)),
+						Err(_) => return {
+							error.store(true, std::sync::atomic::Ordering::Release);
+							transaction.error("ERR_PATH_IO_ERROR", path);
+						}
 					};
 
 					let mut crc32 = crc32fast::Hasher::new();
@@ -109,13 +119,13 @@ impl GMAFile {
 					let crc32 = crc32.finalize();
 
 					tx.send((relative_path.into_bytes().into_boxed_slice(), contents.into_boxed_slice(), crc32))
-						.unwrap();
+						.unwrap(); // TODO do we need to box here?
 				});
 
-				total += 1;
+				total += 1.;
 			}
 
-			(rx, total as f64)
+			(error, rx, total)
 		};
 
 		let mut entries_list_buf = LinkedList::new();
@@ -154,7 +164,7 @@ impl GMAFile {
 
 		f.write_u32::<LittleEndian>(crc32)?;
 
-		transaction.finished(turbonone!());
+		if Arc::try_unwrap(error).unwrap().into_inner() { return Err(GMAError::IOError); }
 
 		Ok(())
 	}

@@ -14,6 +14,7 @@
 	import Addon from './Addon.svelte';
 	import FileBrowser from './FileBrowser.svelte';
 	import DestinationSelect from './DestinationSelect.svelte';
+	import { writable } from 'svelte/store';
 
 	export let active = false;
 	export let promises;
@@ -24,7 +25,7 @@
 
 	let gmaSize;
 	let gmaPath;
-	let entriesList;
+	let entriesList = writable([]);
 
 	function extractEntry(entryPath) {
 		if (!gmaPath) return;
@@ -62,7 +63,7 @@
 		addon = Promise.allSettled(promises).then(async ([workshop, gma]) => {
 			gmaPath = gma.value?.path ?? workshop.value?.localFile ?? null;
 			if (gmaPath) {
-				entriesList = Object.values(await invoke('preview_gma', { path: gmaPath }));
+				$entriesList = Object.values(await invoke('preview_gma', { path: gmaPath }));
 			}
 			gmaSize = gma.value?.size ?? workshop.value?.size ?? 0;
 			return [

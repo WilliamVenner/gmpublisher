@@ -35,6 +35,8 @@ pub struct Settings {
 	pub extract_destination: ExtractDestination,
 	pub destinations: Vec<PathBuf>,
 	pub create_folder_on_extract: bool,
+
+	pub ignore_globs: Vec<String>
 }
 impl Default for Settings {
 	fn default() -> Self {
@@ -52,6 +54,8 @@ impl Default for Settings {
 
 			destinations: Vec::new(),
 			create_folder_on_extract: true,
+
+			ignore_globs: Vec::new()
 		}
 	}
 }
@@ -215,6 +219,9 @@ impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 		sanitized.sanitize();
 		*app_data!().settings.write() = sanitized;
 
+		let mut default_ignore: Vec<String> = crate::gma::DEFAULT_IGNORE.iter().map(|glob| (&glob[0..glob.len()-1]).to_string()).collect::<Vec<String>>();
+		default_ignore.sort();
+
 		Some(
 			include_str!("../../app/plugins/AppData.js")
 				.replacen(
@@ -229,7 +236,7 @@ impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 					),
 					1,
 				)
-				.replacen("{$_DEFAULT_IGNORE_GLOBS_$}", &crate::escape_single_quoted_json(serde_json::ser::to_string(&crate::gma::DEFAULT_IGNORE.iter().map(|glob| (&glob[0..glob.len()-1]).to_string()).collect::<Vec<String>>()).unwrap()), 1)
+				.replacen("{$_DEFAULT_IGNORE_GLOBS_$}", &crate::escape_single_quoted_json(serde_json::ser::to_string(&default_ignore).unwrap()), 1)
 				.replacen("{$_PATH_SEPARATOR_$}", &serde_json::ser::to_string(&PATH_SEPARATOR).unwrap(), 1)
 		)
 	}

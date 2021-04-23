@@ -1,8 +1,4 @@
-use std::{
-	collections::{HashMap, HashSet},
-	mem::MaybeUninit,
-	sync::{atomic::AtomicBool, Arc},
-};
+use std::{collections::{HashMap, HashSet}, mem::{Discriminant, MaybeUninit}, sync::{atomic::AtomicBool, Arc}};
 
 use steamworks::{
 	Callback, CallbackHandle, Client, ClientManager, PublishedFileId, SingleClient, SteamId, SteamServerConnectFailure, SteamServersConnected,
@@ -13,7 +9,7 @@ use atomic_refcell::AtomicRefCell;
 
 use self::{downloads::Downloads, users::SteamUser};
 
-use crate::{Transaction, octopus::{AtomicRefSome, PromiseCache, PromiseHashCache, RelaxedRwLock}};
+use crate::{Transaction, octopus::{AtomicRefSome, PromiseCache, PromiseHashCache, RelaxedRwLock}, search::SearchItemSource};
 
 use crate::webview_emit;
 
@@ -25,6 +21,16 @@ pub mod workshop;
 pub use downloads::DOWNLOADS;
 
 pub const RESULTS_PER_PAGE: usize = steamworks::RESULTS_PER_PAGE as usize;
+
+pub(super) fn serialize_opt_steamid<S>(steamid: &Option<SteamId>, serialize: S) -> Result<S::Ok, S::Error>
+where
+	S: serde::Serializer,
+{
+	match steamid {
+	    Some(steamid) => serialize.serialize_some(&steamid.raw().to_string()),
+	    None => serialize.serialize_none(),
+	}
+}
 
 mod serde_steamid64 {
 	use serde::{

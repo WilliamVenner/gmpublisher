@@ -131,7 +131,7 @@ pub struct GMAFile {
 	pub modified: Option<SystemTime>,
 
 	#[serde(skip)]
-	membuffer: Option<ArcBytes>,
+	pub membuffer: Option<ArcBytes>,
 }
 impl std::fmt::Debug for GMAFile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
