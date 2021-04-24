@@ -18,10 +18,16 @@
 			name: 'size_analyzer',
 			component: AddonSizeAnalyzer,
 		},
+		/*
+		{
+			name: 'subscriptions',
+			component: Subscriptions,
+		},
 		{
 			name: 'content_generator',
 			component: ContentGenerator,
 		},
+		*/
 	];
 
 	export const pages = writable(pagesManifest);
@@ -41,6 +47,7 @@
 	import MyWorkshop from '../pages/MyWorkshop.svelte';
 	import ContentGenerator from '../pages/ContentGenerator.svelte';
 	import SidebarItem from './SidebarItem.svelte';
+import Subscriptions from '../pages/Subscriptions.svelte';
 
 	function selectPage(page) {
 		$pages[page].created = true;

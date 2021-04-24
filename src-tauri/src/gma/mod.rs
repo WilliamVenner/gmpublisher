@@ -128,7 +128,7 @@ pub struct GMAFile {
 	pub extracted_name: String,
 
 	#[serde(skip)]
-	pub modified: Option<SystemTime>,
+	pub modified: Option<u64>,
 
 	#[serde(skip)]
 	pub membuffer: Option<ArcBytes>,

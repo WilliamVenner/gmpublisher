@@ -299,10 +299,6 @@
 
 		checkForm(false);
 	}));
-
-	onDestroy(() => {
-		if (updatingAddonSubscription) updatingAddonSubscription();
-	});
 </script>
 
 <Modal id="prepare-publish" active={$preparePublish} cancel={togglePreparePublish}>

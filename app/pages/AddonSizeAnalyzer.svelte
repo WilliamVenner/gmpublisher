@@ -21,29 +21,43 @@
 		workshopDataReceived = false;
 	});
 
+	function imageLoaded() {
+		if (workshopItemReceivedReady) {
+			loadFrame();
+		} else {
+			clearTimeout(workshopItemImageTimeout);
+			workshopItemImageTimeout = setTimeout(imageLoaded, 100);
+		}
+	}
+
+	function loadFrame() {
+		workshopItemReceivedReady = false;
+
+		clearTimeout(workshopItemImageTimeout);
+
+		updateCanvas();
+		requestAnimationFrame(frame);
+	}
+
+	function frame() {
+		workshopItemReceivedReady = true;
+	}
+
 	let workshopItemImageCache = {};
 	let workshopItemReceivedReady = true;
-	function workshopItemReceived(item) {
-		if (workshopItemReceivedReady) {
-			// TODO chunk it to prevent actual DDoS!!!!
-			console.log(item);/*
-			if (workshopData?.previewUrl) {
-
-			const image = new Image(square.w, square.h);
-			image.onload = () => {
-				addonsCtx.globalCompositeOperation = 'destination-over';
-					addonsCtx.drawImage(image, x, y, square.w, square.h);
-				addonsCtx.globalCompositeOperation = 'source-over';
-			}
-			image.src = workshopData.previewUrl;
-
-			break;
-
-			}
-			workshopItemImageCache[item.id] = */
-			updateCanvas();
-			requestAnimationFrame(() => workshopItemReceivedReady = true);
+	let workshopItemImageTimeout;
+	function workshopItemReceived(item, w, h) {
+		if (item.previewUrl) {
+			const image = new Image(w, h);
+			workshopItemImageCache[item.id] = image;
+			image.onload = imageLoaded;
+			image.src = item.previewUrl;
 		}
+
+		if (workshopItemReceivedReady) {
+			loadFrame();
+		}
+
 		return item;
 	}
 
@@ -219,7 +233,7 @@
 
 						const index = workshopDataIndex.push(
 							!!data.installed.id ?
-							Steam.getWorkshopAddon(data.installed.id).then(workshopItemReceived)
+							Steam.getWorkshopAddon(data.installed.id).then(item => workshopItemReceived(item, square.w, square.h))
 							: Promise.resolve(null)
 						) - 1;
 
@@ -228,20 +242,12 @@
 
 					} else if (!!data.installed.id) {
 
-						let workshopData = workshopDataPromises[workshopDataIDIndex[data.installed.id] ?? -1];
-
-						if (workshopData?.previewUrl) {
-
-							const image = new Image(square.w, square.h);
-							image.onload = () => {
-								addonsCtx.globalCompositeOperation = 'destination-over';
-									addonsCtx.drawImage(image, x, y, square.w, square.h);
-								addonsCtx.globalCompositeOperation = 'source-over';
-							}
-							image.src = workshopData.previewUrl;
+						if (data.installed.id in workshopItemImageCache) {
+							addonsCtx.globalCompositeOperation = 'destination-over';
+								addonsCtx.drawImage(workshopItemImageCache[data.installed.id], x, y, square.w, square.h);
+							addonsCtx.globalCompositeOperation = 'source-over';
 
 							break;
-
 						}
 
 					}

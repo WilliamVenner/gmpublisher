@@ -223,5 +223,10 @@
 	"PUBLISH_UPLOADING_CONTENT": "Uploading Content",
 	"PUBLISH_UPLOADING_PREVIEW_FILE": "Uploading Preview File",
 	"PUBLISH_COMMITTING_CHANGES": "Committing Changes",
-	"PUBLISH_PROCESSING_ICON": "Processing Icon"
+	"PUBLISH_PROCESSING_ICON": "Processing Icon",
+
+	"subscriptions": "Subscriptions",
+	"unsubscribe": "Unsubscribe",
+	"unsubscribe_all": "Unsubscribe All",
+	"unsubscribe_all_warning": "WARNING: This will unsubscribe you from ALL Workshop addons you are subscribed to."
 }

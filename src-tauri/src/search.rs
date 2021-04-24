@@ -128,7 +128,7 @@ impl Searchable for GMAFile {
 			SearchItemSource::InstalledAddons(dunce::canonicalize(&self.path).unwrap_or_else(|_| self.path.to_owned())),
 			label,
 			terms,
-			self.modified.and_then(|x| x.duration_since(std::time::SystemTime::UNIX_EPOCH).ok().map(|dur| dur.as_secs())).unwrap_or(0)
+			self.modified.unwrap_or(0)
 		))
 	}
 }

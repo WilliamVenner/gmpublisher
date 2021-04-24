@@ -6,6 +6,7 @@ use std::{
 		atomic::{AtomicBool, Ordering},
 		mpsc, Arc,
 	},
+	time::SystemTime
 };
 
 use lazy_static::lazy_static;
@@ -174,7 +175,9 @@ impl GameAddons {
 				let modified = gma
 					.path
 					.metadata()
-					.and_then(|metadata| metadata.modified().map(|x| Some(x)))
+					.and_then(|metadata| metadata.modified().map(|x| {
+						Some(x.duration_since(SystemTime::UNIX_EPOCH).map(|dur| dur.as_secs()).unwrap_or(0))
+					}))
 					.unwrap_or(None);
 				gma.modified = modified;
 
