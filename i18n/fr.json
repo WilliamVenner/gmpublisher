@@ -5,15 +5,15 @@
 	"loading": "Chargement...",
 	"gmod_dir": {
 		"name": "Répertoire de Garry's Mod",
-		"fail": "Impossible de trouver le répertoire d'installation de Garry's Mod que vous avez spécifié.\nVérifiez bien si le répertoire contient un dossier bin/ avec gmad et gmpublsh."
+		"fail": "Impossible de trouver le répertoire d'installation de Garry's Mod que vous avez spécifié.\nVérifiez si le répertoire contient bien un dossier bin/ avec gmad et gmpublsh."
 	},
 	"greetings": {
-		"morning": "Bonne matinée, {name} !",
-		"morning.anon": "Bonne matinée !",
+		"morning": "Bonjour, {name} !",
+		"morning.anon": "Bonjour !",
 		"afternoon": "Bonne après-midi, {name} !",
 		"afternoon.anon": "Bonne après-midi !",
 		"evening": "Bonne soirée, {name} !",
-		"evening.anon": "Bonne soirée !"
+		"evening.anon": "Bonsoir !"
 	},
 	"game": "Jeu",
 	"filesystem": "Système de fichiers",
@@ -103,7 +103,7 @@
 	"FS_ANALYZER_COMPUTING": "Calcul...",
 	"FS_ANALYZER_TAGGIFYING": "Étiquetage...",
 
-	"time_just_now": "Juste maintenant",
+	"time_just_now": "À l'instant",
 	"click_to_open": "Cliquez pour ouvrir !",
 	"content_generator": "Générateur de contenu",
 	"installed_addons": "Addons installés",
@@ -150,7 +150,7 @@
 	"ERR_UNKNOWN": "Erreur inconnue",
 	"ERR_NO_ADDONS_FOUND": "Aucun addon trouvé",
 	"ERR_STEAM_ERROR": "Erreur Steam : {data}",
-	"ERR_WHITELIST": "Ces entrées ne passent pas la liste blanche des types de fichiers et des emplacements. Si vous ne vous y attendiez pas, votre addon a probablement une structure de fichier incorrecte. Si vous souhaitez filtrer ces types de fichiers de vos GMAs, ajoutez-les aux modèles de fichiers ignorés.\n\n{data}",
+	"ERR_WHITELIST": "Ces entrées ne passent pas la liste blanche des types de fichiers et des emplacements. Si c'est inattendu, votre addon a probablement une structure de fichier incorrecte. Si vous souhaitez filtrer ces types de fichiers de vos GMAs, ajoutez-les aux modèles de fichiers ignorés.\n\n{data}",
 	"ERR_IO_ERROR": "Erreur E/S",
 	"ERR_PATH_IO_ERROR": "Erreur E/S ({data})",
 	"ERR_GMA_FORMAT_ERROR": "Fichier GMA corrompu",
@@ -178,15 +178,15 @@
 	"remove_icon": "Supprimer l'icône",
 
 	"addon_types": {
-		"ServerContent": "Server Content",
-		"gamemode": "Gamemode",
-		"map": "Map",
-		"weapon": "Weapon",
-		"vehicle": "Vehicle",
-		"npc": "NPC",
-		"tool": "Tool",
-		"effects": "Effects",
-		"model": "Model"
+		"ServerContent": "Contenu Serveur",
+		"gamemode": "Mode de jeu",
+		"map": "Carte",
+		"weapon": "Arme",
+		"vehicle": "Véhicule",
+		"npc": "PNJ",
+		"tool": "Outil",
+		"effects": "Effets",
+		"model": "Modèle"
 	},
 
 	"tag_1": "Étiquette 1",
@@ -219,7 +219,7 @@
 	"update_warning": "Vous êtes en train de mettre à jour {titre} ({id}).",
 
 	"PUBLISH_PACKING": "Compression {pct}% ({data} / {dataTotal})",
-	"PUBLISH_STARTING": "Commencer à publier",
+	"PUBLISH_STARTING": "Commencer la publication",
 	"PUBLISH_PREPARING_CONFIG": "Préparation de la configuration",
 	"PUBLISH_PREPARING_CONTENT": "Préparation du contenu",
 	"PUBLISH_UPLOADING_CONTENT": "Téléversement du contenu",
