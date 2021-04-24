@@ -1,4 +1,5 @@
-use std::{collections::HashMap, fs::File, io::BufWriter, path::PathBuf};
+use std::{cell::{Cell, RefCell}, collections::HashMap, fs::{self, OpenOptions, File}, io::{SeekFrom, Seek}, mem::MaybeUninit, path::PathBuf};
+use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 
 use crate::{gma::ExtractDestination, webview_emit, RwLockCow};
 
@@ -18,6 +19,48 @@ lazy_static! {
 		.join("gmpublisher/settings.json");
 	static ref TEMP_DIR: PathBuf = std::env::temp_dir().join("gmpublisher");
 	static ref DOWNLOADS_DIR: Option<PathBuf> = dirs::download_dir();
+}
+
+#[derive(Debug)]
+pub struct OpenCount(Cell<u32>);
+unsafe impl Send for OpenCount {}
+unsafe impl Sync for OpenCount {}
+impl OpenCount {
+	fn init() -> OpenCount {
+		OpenCount(Cell::new(0))
+	}
+
+	fn increment(&self) {
+		self.0.set((|| -> Result<u32, std::io::Error> {
+
+			let mut count_file = app_data!().user_data_dir().to_owned();
+			fs::create_dir_all(&count_file)?;
+
+			count_file.push(".open_count");
+
+			let mut f = OpenOptions::new()
+				.read(true)
+				.write(true)
+				.create(true)
+				.open(count_file)?;
+
+			let count = f.read_u32::<LittleEndian>().unwrap_or(0) + 1;
+
+			f.seek(SeekFrom::Start(0))?;
+			f.write_u32::<LittleEndian>(count)?;
+
+			Ok(count)
+
+		})().unwrap_or(0));
+	}
+}
+impl serde::Serialize for OpenCount {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer
+	{
+        serializer.serialize_u32(self.0.get())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -61,7 +104,7 @@ impl Default for Settings {
 
 			ignore_globs: Vec::new(),
 			my_workshop_local_paths: HashMap::new(),
-			upscale_addon_icon: true
+			upscale_addon_icon: true,
 		}
 	}
 }
@@ -74,7 +117,7 @@ impl Settings {
 	}
 
 	fn load(sanitize: bool) -> Result<Settings, anyhow::Error> {
-		let contents = std::fs::read_to_string(&*APP_SETTINGS_PATH)?;
+		let contents = fs::read_to_string(&*APP_SETTINGS_PATH)?;
 		let mut settings: Settings = serde_json::de::from_str(&contents)?;
 		if sanitize {
 			settings.sanitize();
@@ -122,6 +165,7 @@ impl Settings {
 pub struct AppData {
 	pub settings: RwLock<Settings>,
 	pub version: &'static str,
+	pub open_count: OpenCount,
 
 	#[serde(serialize_with = "serde_temp_dir")]
 	temp_dir: PathBuf,
@@ -138,6 +182,7 @@ impl AppData {
 		Self {
 			settings: RwLock::new(settings),
 			version: env!("CARGO_PKG_VERSION"),
+			open_count: OpenCount::init(),
 
 			// Placeholders
 			temp_dir: PathBuf::new(),
@@ -219,6 +264,8 @@ impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 
 		let mut default_ignore: Vec<String> = crate::gma::DEFAULT_IGNORE.iter().map(|glob| (&glob[0..glob.len()-1]).to_string()).collect::<Vec<String>>();
 		default_ignore.sort();
+
+		app_data!().open_count.increment();
 
 		Some(
 			include_str!("../../app/plugins/AppData.js")
