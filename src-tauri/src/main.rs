@@ -1,5 +1,3 @@
-#![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
-
 use tauri::{Attributes, Manager};
 
 #[macro_use]
@@ -110,7 +108,7 @@ fn main() {
 	#[cfg(debug_assertions)]
 	deadlock_watchdog();
 
-	ignore! { write_tauri_settings() };
+	//ignore! { write_tauri_settings() };
 
 	globals::init_globals();
 

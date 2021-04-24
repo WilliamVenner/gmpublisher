@@ -64,7 +64,12 @@ macro_rules! webview_emit {
 }
 
 pub(super) fn init_globals() {
+	println!("Initializing Steamworks...");
 	lazy_static::initialize(&STEAMWORKS);
+
+	println!("Initializing AppData...");
 	lazy_static::initialize(&APP_DATA);
+
+	println!("Initializing Transactions...");
 	crate::transactions::init();
 }

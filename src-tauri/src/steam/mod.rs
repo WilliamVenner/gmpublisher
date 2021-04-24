@@ -171,6 +171,7 @@ impl Steam {
 					return interface.into();
 				}
 			}
+			sleep_ms!(50);
 		}
 	}
 

@@ -113,6 +113,7 @@ impl Default for Settings {
 }
 impl Settings {
 	pub fn init() -> Settings {
+		println!("Initializing Settings...");
 		match Settings::load(false) {
 			Ok(settings) => settings,
 			Err(_) => Settings::default(),
@@ -200,21 +201,31 @@ impl AppData {
 	}
 
 	pub fn gmod_dir(&self) -> Option<PathBuf> {
+		println!("Locating Garry's Mod...");
+
 		if let Some(ref gmod) = self.settings.read().gmod {
 			if gmod.is_dir() {
+				println!("Using user-defined path");
 				return Some(gmod.to_owned());
 			}
 		}
 
 		if !steam!().connected() {
+			println!("Steam is not connected, parsing Steam library folders...");
 			match steamlocate::SteamDir::locate().and_then(|mut steam_dir| steam_dir.app(&GMOD_APP_ID.0).and_then(|steam_app| Some(steam_app.path.to_owned()))) {
-				Some(path) => return Some(path),
+				Some(path) => {
+					println!("Located!");
+					return Some(path)
+				},
 				None => {
+					println!("Failed to parse Steam library folders. Waiting for Steam...");
 					for i in 0..3 as u8 {
 						sleep!(1);
 						if steam!().connected() {
+							println!("Steam connected!");
 							break;
 						} else if i == 2 {
+							println!("Gave up.");
 							return None;
 						}
 					}
@@ -222,10 +233,13 @@ impl AppData {
 			}
 		}
 
+		println!("Getting Garry's Mod location from Steamworks...");
 		let gmod: PathBuf = steam!().client().apps().app_install_dir(GMOD_APP_ID).into();
 		if gmod.is_dir() {
+			println!("Located!");
 			Some(gmod)
 		} else {
+			println!("Failed.");
 			None
 		}
 	}
