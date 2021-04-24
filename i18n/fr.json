@@ -167,7 +167,7 @@
 	"ERR_INVALID_CONTENT_PATH": "Ce chemin de contenu n'existe pas, n'est pas un répertoire ou gmpublisher n'a pas les permissions suffisantes pour y accéder",
 	"ERR_MULTIPLE_GMAS": "Plusieurs fichiers GMA trouvés dans ce chemin de contenu",
 	"ERR_IMAGE_ERROR": "Erreur d'image : {data}",
-	"ERR_DUPLICATE_ENTRIES": "Il y a un doublon ({data}) dans ce chemin de contenu. Tous les chemins doivent être uniques et en minuscules.",
+	"ERR_DUPLICATE_ENTRIES": "Il y a un doublon ({data}) dans ce chemin de contenu. Tous les chemins doivent être uniques et en minuscules. i use arch btw",
 	"ERR_NO_ENTRIES": "Il n'y a aucune entrée dans ce chemin de contenu.",
 	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Accord juridique du Workshop non accepté",
 
