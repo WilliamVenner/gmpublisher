@@ -302,7 +302,7 @@ impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 }
 
 #[tauri::command]
-pub fn update_settings(mut settings: Settings) {
+pub fn update_settings(mut settings: Settings) -> bool {
 	settings.sanitize();
 
 	ignore! { settings.save() };
@@ -317,6 +317,8 @@ pub fn update_settings(mut settings: Settings) {
 	}
 
 	webview_emit!("UpdateAppData", &*crate::APP_DATA);
+
+	true
 }
 
 #[tauri::command]

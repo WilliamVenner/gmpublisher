@@ -357,12 +357,17 @@ impl Steam {
 }
 
 #[tauri::command]
-fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>, u64), PublishError> {
+fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishError> {
 	if !path.is_dir() || !path.is_absolute() {
 		return Err(PublishError::InvalidContentPath);
 	}
 
 	let root_path_strip_len = path.to_slash_lossy().len() + 1;
+
+	let ignore: Vec<String> = app_data!().settings.read().ignore_globs.iter().cloned().map(|mut glob| {
+		glob.push('\0');
+		glob
+	}).collect();
 
 	let mut size = 0;
 	let mut failed_extra = false;

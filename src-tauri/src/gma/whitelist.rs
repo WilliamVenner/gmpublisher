@@ -18,6 +18,11 @@ pub const DEFAULT_IGNORE: &'static [&'static str] = &[
 	nul_str!(".github/*"),
 	nul_str!(".editorconfig"),
 	nul_str!("README.md"),
+	nul_str!("README.txt"),
+	nul_str!("readme.txt"),
+	nul_str!("addon.json"),
+	nul_str!("addon.txt"),
+	nul_str!("addon.jpg"),
 ];
 
 const ADDON_WHITELIST: &'static [&'static str] = &[
@@ -159,6 +164,7 @@ pub fn is_ignored<S: Into<String> + Clone>(str: &S, ignore: &[String]) -> bool {
 
 	let str = string.as_str();
 	for glob in ignore {
+		debug_assert!(glob.ends_with('\0'));
 		if unsafe { globber(glob, str) } {
 			return true;
 		}
@@ -219,6 +225,8 @@ pub fn test_ignore() {
 		"some/location/blah.psd",
 		"some/blah/blah.pdn",
 		"hi.xcf",
+		"addon.jpg",
+		"addon.json"
 	];
 
 	for ignored in ignored {
@@ -229,4 +237,7 @@ pub fn test_ignore() {
 	for ignored in ignored {
 		assert!(is_ignored(&*ignored, &default_ignore));
 	}
+
+	assert!(is_ignored(&"lol.txt".to_string(), &["lol.txt\0".to_string()]));
+	assert!(!is_ignored(&"lol.txt".to_string(), &[]));
 }

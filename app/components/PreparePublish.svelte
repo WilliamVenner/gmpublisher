@@ -78,7 +78,7 @@
 	}
 
 	function checkPath(path, successSound) {
-		return invoke('verify_whitelist', { path, ignore: ignoreGlobs }).then(([entries, size]) => {
+		return invoke('verify_whitelist', { path }).then(([entries, size]) => {
 
 			$gmaEntries = entries;
 			gmaSize = size;
@@ -140,26 +140,26 @@
 		invoke('open', { path: pathValue });
 	}
 
-	function ignoreKeyPress(e) {
+	async function ignoreKeyPress(e) {
 		if (e.which === 13 || e.keyCode === 13 || e.key === 'Enter') {
 			e.preventDefault();
 			const ignore = this.value.trim();
-			if (ignore.length > 0 && ignoreGlobs.findIndex(s => s === ignore) === -1) {
-				ignoreGlobs.push(ignore);
-				ignoreGlobs = ignoreGlobs;
-				invoke('update_settings', { settings: AppSettings });
+			if (ignore.length > 0 && AppSettings.ignore_globs.findIndex(s => s === ignore) === -1) {
+				AppSettings.ignore_globs.push(ignore);
+				ignoreGlobs = AppSettings.ignore_globs;
+				await invoke('update_settings', { settings: AppSettings });
 				if (pathValue.length > 0) checkPath(pathValue);
 			}
 			this.value = '';
 		}
 	}
-	function removeIgnore() {
+	async function removeIgnore() {
 		const ignore = this.innerText;
-		const index = ignoreGlobs.findIndex(s => s === ignore);
+		const index = AppSettings.ignore_globs.findIndex(s => s === ignore);
 		if (index !== -1) {
-			ignoreGlobs.splice(index, 1);
-			ignoreGlobs = ignoreGlobs;
-			invoke('update_settings', { settings: AppSettings });
+			AppSettings.ignore_globs.splice(index, 1);
+			ignoreGlobs = AppSettings.ignore_globs;
+			await invoke('update_settings', { settings: AppSettings });
 			if (pathValue.length > 0) checkPath(pathValue);
 		}
 	}

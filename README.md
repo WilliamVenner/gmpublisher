@@ -18,6 +18,7 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 * Bulk download & extract Workshop items and collections
 * Upload animated GIFs as your Workshop item's icon
 * Analyze which addons are taking up the most disk space using the addon size analyzer treemap
+* Supports legacy SteamPipe addons and old GMA versions
 * (Coming soon) Manage Steam Workshop subscriptions
 * (Coming soon) resource.AddWorkshop generator
 
