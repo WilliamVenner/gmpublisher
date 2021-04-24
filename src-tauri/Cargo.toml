@@ -19,20 +19,21 @@ features = [ "codegen" ]
 #git = "https://github.com/williamvenner/tauri"
 #branch = "personal"
 
+[dependencies.tauri]
+features = ["api-all", "cli"]
+#version = "1.0.0-beta-rc.2"
+#path = "../../tauri/core/tauri"
+git = "https://github.com/williamvenner/tauri"
+branch = "personal"
+
 [build-dependencies]
 bindgen = "0.58.1"
 
-[dependencies.tauri]
-features = ["api-all", "cli"]
-path = "../../tauri/core/tauri"
-#git = "https://github.com/williamvenner/tauri"
-#branch = "personal"
-
 [dependencies.steamworks]
 features = [ "serde" ]
-#git = "https://github.com/WilliamVenner/steamworks-rs.git"
-#branch = "master"
-path = "../../steamworks-rs"
+#path = "../../steamworks-rs"
+git = "https://github.com/WilliamVenner/steamworks-rs.git"
+branch = "master"
 
 [dependencies]
 tauri-utils = "1.0.0-beta-rc.0"

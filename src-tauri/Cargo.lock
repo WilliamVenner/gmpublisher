@@ -3306,9 +3306,9 @@ dependencies = [
 
 [[package]]
 name = "rfd"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cf7347832c8a6641053cda45bcdae57916204de0c53f7964abab69015454f54"
+checksum = "9d70f2f644f85e23857c7fa9b939ec6a85f3eace37ebcae9ec977a33865496f5"
 dependencies = [
  "block",
  "dispatch",
@@ -3651,6 +3651,7 @@ dependencies = [
 [[package]]
 name = "steamworks"
 version = "0.7.0"
+source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#b68c000fb38f555f0e77187c5ee27a2449518ab8"
 dependencies = [
  "bitflags 1.2.1",
  "lazy_static",
@@ -3662,6 +3663,7 @@ dependencies = [
 [[package]]
 name = "steamworks-sys"
 version = "0.7.0"
+source = "git+https://github.com/WilliamVenner/steamworks-rs.git?branch=master#b68c000fb38f555f0e77187c5ee27a2449518ab8"
 dependencies = [
  "bindgen 0.57.0",
 ]
@@ -3826,6 +3828,7 @@ dependencies = [
 [[package]]
 name = "tauri"
 version = "1.0.0-beta-rc.2"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#cda11fb48db7bb7b8729b9d798a6e800d022c249"
 dependencies = [
  "base64 0.13.0",
  "bytes 1.0.1",
@@ -3853,7 +3856,7 @@ dependencies = [
  "tar",
  "tauri-hotkey",
  "tauri-macros",
- "tauri-utils 1.0.0-beta-rc.0",
+ "tauri-utils 1.0.0-beta-rc.0 (git+https://github.com/williamvenner/tauri?branch=personal)",
  "tempfile",
  "thiserror",
  "tinyfiledialogs",
@@ -3879,21 +3882,6 @@ dependencies = [
 [[package]]
 name = "tauri-codegen"
 version = "1.0.0-beta-rc.0"
-dependencies = [
- "blake3",
- "proc-macro2",
- "quote 1.0.9",
- "serde",
- "serde_json",
- "tauri-utils 1.0.0-beta-rc.0",
- "thiserror",
- "walkdir",
- "zstd",
-]
-
-[[package]]
-name = "tauri-codegen"
-version = "1.0.0-beta-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7994828a91bb13ebbdf9b8c2c499822c32f77638edbb47cd531be2a912ba3f3f"
 dependencies = [
@@ -3903,6 +3891,22 @@ dependencies = [
  "serde",
  "serde_json",
  "tauri-utils 1.0.0-beta-rc.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thiserror",
+ "walkdir",
+ "zstd",
+]
+
+[[package]]
+name = "tauri-codegen"
+version = "1.0.0-beta-rc.0"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#cda11fb48db7bb7b8729b9d798a6e800d022c249"
+dependencies = [
+ "blake3",
+ "proc-macro2",
+ "quote 1.0.9",
+ "serde",
+ "serde_json",
+ "tauri-utils 1.0.0-beta-rc.0 (git+https://github.com/williamvenner/tauri?branch=personal)",
  "thiserror",
  "walkdir",
  "zstd",
@@ -3938,16 +3942,19 @@ dependencies = [
 [[package]]
 name = "tauri-macros"
 version = "1.0.0-beta-rc.0"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#cda11fb48db7bb7b8729b9d798a6e800d022c249"
 dependencies = [
  "proc-macro2",
  "quote 1.0.9",
  "syn 1.0.69",
- "tauri-codegen 1.0.0-beta-rc.0",
+ "tauri-codegen 1.0.0-beta-rc.0 (git+https://github.com/williamvenner/tauri?branch=personal)",
 ]
 
 [[package]]
 name = "tauri-utils"
 version = "1.0.0-beta-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8c8cdee84c6f8eb8155ff6720f55f61d715b4038aadb1a0b2f37828c4e1c33f"
 dependencies = [
  "phf",
  "proc-macro2",
@@ -3963,8 +3970,7 @@ dependencies = [
 [[package]]
 name = "tauri-utils"
 version = "1.0.0-beta-rc.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8c8cdee84c6f8eb8155ff6720f55f61d715b4038aadb1a0b2f37828c4e1c33f"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#cda11fb48db7bb7b8729b9d798a6e800d022c249"
 dependencies = [
  "phf",
  "proc-macro2",

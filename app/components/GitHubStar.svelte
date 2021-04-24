@@ -2,13 +2,24 @@
 	import { onMount } from "svelte";
 	import Modal from './Modal.svelte';
 	import { _ } from 'svelte-i18n';
+	import Logo from "./Logo.svelte";
 	export let active = false;
 	onMount(() => active = true);
 
+	const RE_LINKIFY = /%(.+?)%/g;
+
+	let star;
 	let gluaEnhanced;
 	onMount(() => {
+		star.innerText = $_('github_star_plz_i_need_a_job_maybe');
+		star.innerHTML = star.innerHTML.replace(RE_LINKIFY, (_, text) => {
+			return '<a class="color" href="https://github.com/WilliamVenner/gmpublisher" target="_blank">' + text + '</a>';
+		});
+
 		gluaEnhanced.innerText = $_('vscode_glua_enhanced');
-		gluaEnhanced.innerHTML = gluaEnhanced.innerHTML.replace('VSCODE_GLUA_ENHANCED_LINK', '<a class="color" href="https://marketplace.visualstudio.com/items?itemName=venner.vscode-glua-enhanced" target="_blank">VSCode GLua Enhanced</a>');
+		gluaEnhanced.innerHTML = gluaEnhanced.innerHTML.replace(RE_LINKIFY, (_, text) => {
+			return '<a class="color" href="https://marketplace.visualstudio.com/items?itemName=venner.vscode-glua-enhanced" target="_blank">' + text + '</a>';
+		});
 	});
 
 	function pissOff() {
@@ -17,9 +28,9 @@
 </script>
 
 <Modal id="github-star-modal" {active} cancel={pissOff}>
-	<img src="/img/logo.svg" class="logo"/>
+	<Logo/>
 	<h2>{$_('enjoying_gmpublisher')}<img src="/img/dog.gif"/></h2>
-	<p>{$_('github_star_plz_i_need_a_job_maybe')}<br><span bind:this={gluaEnhanced}></span></p>
+	<p><span bind:this={star}>{$_('github_star_plz_i_need_a_job_maybe')}</span><br><span bind:this={gluaEnhanced}>{$_('vscode_glua_enhanced')}</span></p>
 	<div class="btn" on:mousedown={pissOff} on:click={pissOff}>Piss off</div>
 </Modal>
 
@@ -44,11 +55,12 @@
 		margin-top: 0;
 	}
 
-	.logo {
+	:global(#github-star-modal #logo) {
 		transform: rotate(-10deg);
 		margin-bottom: 1.5rem;
 		margin-top: 1rem;
 		width: 10rem;
+		height: auto;
 	}
 	.btn {
 		cursor: pointer;

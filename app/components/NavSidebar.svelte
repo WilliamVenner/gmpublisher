@@ -48,6 +48,7 @@
 	import ContentGenerator from '../pages/ContentGenerator.svelte';
 	import SidebarItem from './SidebarItem.svelte';
 	import Subscriptions from '../pages/Subscriptions.svelte';
+	import Logo from './Logo.svelte';
 
 	function selectPage(page) {
 		$pages[page].created = true;
@@ -60,7 +61,7 @@
 	{/each}
 
 	<div id="credits" slot="footer">
-		<img src="/img/logo.svg" alt="Logo" id="logo" /><br>
+		<!--<img src="/img/logo.svg" alt="Logo" id="logo"/>--><Logo/><br>
 		gmpublisher v{AppData.version} by Billy<br>
 		<a tabindex="-1" href="https://github.com/WilliamVenner/gmpublisher/stargazers" target="_blank">{$_('github_star')}</a>&nbsp;🤩
 	</div>
@@ -92,8 +93,9 @@
 		color: #fff;
 	}
 
-	#logo {
+	:global(#nav-sidebar #logo) {
 		margin-bottom: .5rem;
 		width: min(calc(100% - 1rem), 50px);
+		height: auto;
 	}
 </style>
