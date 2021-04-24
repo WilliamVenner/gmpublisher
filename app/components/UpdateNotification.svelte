@@ -16,7 +16,7 @@
 		return false;
 	}
 
-	const CARGO_PKG_VERSION = /((?:(?:\.|(?<=^|\D))\d+)+)$/;
+	const CARGO_PKG_VERSION = /((?:\.?\d+)+)$/;
 	const updateAvailable = new Promise((resolve, reject) => {
 		fetch('https://api.github.com/repos/WilliamVenner/gmpublisher/releases/latest')
 			.then(response => response.json(), reject)
