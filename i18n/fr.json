@@ -1,6 +1,6 @@
 {
-	"settings": "Paramètres",
-	"reset_settings": "Rétablir les paramètres d'usine",
+	"LANGUAGE_NAME": "Français",
+
 	"my_workshop": "Mon Workshop",
 	"loading": "Chargement...",
 	"gmod_dir": {
@@ -17,7 +17,7 @@
 	},
 	"game": "Jeu",
 	"filesystem": "Système de fichiers",
-	"github_star": "Star on GitHub",
+	"github_star": "Mettre une étoile sur GitHub",
 	"search": "Recherche...",
 	"showing_num_addons": "Affichage de {num} sur {total} addons",
 	"extract_where_to": "Où ça ?",
@@ -91,7 +91,7 @@
 	"LOG_DOWNLOAD_STARTED": "Début du téléchargement de {addon}",
 	"LOG_DOWNLOAD_FINISHED": "Téléchargement terminé de {addon} en {time}",
 	"LOG_DOWNLOAD_FAILED": "ÉCHEC du téléchargement de {addon} (\"{reason}\")",
-	
+
 	"LOG_EXTRACT_STARTED": "Début de l'extraction de {addon}",
 	"LOG_EXTRACT_FAILED": "ÉCHEC de l'extraction de {addon} (\"{reason}\")",
 	"LOG_EXTRACT_FINISHED": "Extraction terminé de {addon} en {time}",
@@ -102,7 +102,140 @@
 	"FS_ANALYZER_STEAM": "Téléchargement des données Steam...",
 	"FS_ANALYZER_COMPUTING": "Calcul...",
 	"FS_ANALYZER_TAGGIFYING": "Étiquetage...",
-	
+
 	"time_just_now": "Juste maintenant",
-	"click_to_open": "Cliquez pour ouvrir !"
+	"click_to_open": "Cliquez pour ouvrir !",
+	"content_generator": "Générateur de contenu",
+	"installed_addons": "Addons installés",
+
+	"steam_disconnected": "Déconnecté des serveurs Steam",
+	"steam_connected": "Connecté aux serveurs Steam",
+
+	"publish_new": "Publier un nouveau...",
+
+	"settings": {
+		"saved": "Sauvegardé !",
+		"settings": "Paramètres",
+
+		"paths": {
+			"paths": "Chemins d'accès",
+			"user_data": "Dossier des données de l'utilisateur",
+			"gmod": "Dossier d'installation de Garry's Mod",
+			"temp": "Dossier temporaire",
+			"downloads": "Dossier de téléchargement"
+		},
+
+		"general": {
+			"general": "Général",
+			"sounds": "Sons"
+		},
+
+		"resets": {
+			"resets": "Réinitialiser",
+			"settings": "Réinitialiser les paramètres",
+			"clear_temp": "Effacer les fichiers temporaires",
+			"clear_user_data": "Effacer les données de l'utilisateur"
+		}
+	},
+
+	"gma_type_name": "Addon Garry's Mod compressé",
+	"downloading_tip": "Vous pouvez faire glisser les liens Steam Workshop sur cet écran pour les télécharger et les extraire.",
+	"open_workshop": "Ouvrir le Workshop",
+	"bulk_extract_gmas": "Extraction en vrac des GMAs",
+	"error": "Erreur",
+	"queued": "En attente",
+	"remove_all": "Tout retirer",
+	"open_all": "Tout ouvrir",
+
+	"ERR_UNKNOWN": "Erreur inconnue",
+	"ERR_NO_ADDONS_FOUND": "Aucun addon trouvé",
+	"ERR_STEAM_ERROR": "Erreur Steam : {data}",
+	"ERR_WHITELIST": "Ces entrées ne passent pas la liste blanche des types de fichiers et des emplacements. Si vous ne vous y attendiez pas, votre addon a probablement une structure de fichier incorrecte. Si vous souhaitez filtrer ces types de fichiers de vos GMAs, ajoutez-les aux modèles de fichiers ignorés.\n\n{data}",
+	"ERR_IO_ERROR": "Erreur E/S",
+	"ERR_PATH_IO_ERROR": "Erreur E/S ({data})",
+	"ERR_GMA_FORMAT_ERROR": "Fichier GMA corrompu",
+	"ERR_GMA_INVALID_HEADER": "Fichier GMA invalide",
+	"ERR_GMA_ENTRY_NOT_FOUND": "Entrée introuvable",
+	"ERR_DOWNLOAD_MISSING": "Téléchargé, mais des fichiers sont manquants",
+	"ERR_ICON_TOO_LARGE": "Icône trop volumineuse (> 1 MB)",
+	"ERR_ICON_TOO_SMALL": "Icône trop petite (< 16 B)",
+	"ERR_ICON_INVALID_FORMAT": "L'icône doit être un JPG, PNG ou GIF.",
+	"ERR_LZMA": "Erreur de compression LZMA",
+	"ERR_DOWNLOAD_FAILED": "Échec du téléchargement",
+	"ERR_ITEM_NOT_FOUND": "Article introuvable",
+	"ERR_ITEM_INACCESSIBLE": "Article Inaccessible",
+	"ERR_INVALID_CONTENT_PATH": "Ce chemin de contenu n'existe pas, n'est pas un répertoire ou gmpublisher n'a pas les permissions suffisantes pour y accéder",
+	"ERR_MULTIPLE_GMAS": "Plusieurs fichiers GMA trouvés dans ce chemin de contenu",
+	"ERR_IMAGE_ERROR": "Erreur d'image : {data}",
+	"ERR_DUPLICATE_ENTRIES": "Il y a un doublon ({data}) dans ce chemin de contenu. Tous les chemins doivent être uniques et en minuscules.",
+	"ERR_NO_ENTRIES": "Il n'y a aucune entrée dans ce chemin de contenu.",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Accord juridique du Workshop non accepté",
+
+	"icon_instructions": "Formats acceptés : JPG, PNG, GIF\nTaille maximale : 1 MB\nRecommandé : 512x512",
+	"addon_title": "Titre...",
+	"addon_path": "Chemin d'accès de l'addon...",
+	"icon_file_pick": "Icône Workshop",
+	"remove_icon": "Supprimer l'icône",
+
+	"addon_types": {
+		"ServerContent": "Server Content",
+		"gamemode": "Gamemode",
+		"map": "Map",
+		"weapon": "Weapon",
+		"vehicle": "Vehicle",
+		"npc": "NPC",
+		"tool": "Tool",
+		"effects": "Effects",
+		"model": "Model"
+	},
+
+	"tag_1": "Étiquette 1",
+	"tag_2": "Étiquette 2",
+	"tag_3": "Étiquette 3",
+
+	"addon_tags": {
+		"fun": "Fun",
+		"roleplay": "Roleplay",
+		"scenic": "Scenic",
+		"movie": "Movie",
+		"realism": "Realism",
+		"cartoon": "Cartoon",
+		"water": "Water",
+		"comic": "Comic",
+		"build": "Build"
+	},
+
+	"publish_exclamation": "Publier !",
+	"update_exclamation": "Mettre à jour !",
+	"add_ellipsis": "Ajouter...",
+	"ignored_file_patterns": "Modèles de fichiers ignorés",
+	"show_more": "AFFICHER PLUS",
+	"ignored_for_convenience": "Ce modèle de fichier est ignoré par défaut pour votre confort.",
+	"file_browser": "Explorateur de fichiers",
+	"file_browser_select": "Déposez un fichier ici ou cliquez pour parcourir",
+	"no_files_found": "Aucun fichier trouvé",
+	"upscale_addon_icon": "Mettre à l'échelle vers 512x512",
+	"changelog": "Liste des modifications",
+	"update_warning": "Vous êtes en train de mettre à jour {titre} ({id}).",
+
+	"PUBLISH_PACKING": "Compression {pct}% ({data} / {dataTotal})",
+	"PUBLISH_STARTING": "Commencer à publier",
+	"PUBLISH_PREPARING_CONFIG": "Préparation de la configuration",
+	"PUBLISH_PREPARING_CONTENT": "Préparation du contenu",
+	"PUBLISH_UPLOADING_CONTENT": "Téléversement du contenu",
+	"PUBLISH_UPLOADING_PREVIEW_FILE": "Téléversement du fichier d'aperçu",
+	"PUBLISH_COMMITTING_CHANGES": "Engagement des changements",
+	"PUBLISH_PROCESSING_ICON": "Traitement de l'icône",
+
+	"subscriptions": "Abonnements",
+	"unsubscribe": "Se désabonner",
+	"unsubscribe_all": "Se désabonner de tous",
+	"unsubscribe_all_warning": "AVERTISSEMENT : Cette opération vous désabonnera de TOUS les addons Workshop auxquels vous êtes abonné.",
+	"update_available": "Nouvelle mise à jour disponible!\n{version}",
+	"workshop_page": "Page Workshop",
+	"steam_workshop": "Workshop Steam",
+	"open_count": "Vous avez ouvert gmpublisher {count} fois ! Félicitations !",
+	"enjoying_gmpublisher": "Vous appréciez gmpublisher ?",
+	"github_star_plz_i_need_a_job_maybe": "Si vous avez un compte GitHub, pensez à déposer une étoile sur le %dépôt GitHub% si mon travail vous a aidé :D",
+	"vscode_glua_enhanced": "Si vous êtes un développeur, vous pouvez également être intéressé par mon extension %VSCode GLua Enhanced%."
 }
