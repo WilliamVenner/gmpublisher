@@ -45,6 +45,7 @@ pub mod search;
 pub mod webview;
 
 mod commands;
+mod cli;
 
 fn write_tauri_settings() -> Option<()> {
 	// silly bypass for the pointless permissions system
@@ -98,17 +99,13 @@ fn deadlock_watchdog() {
 	});
 }
 
-fn stdin() -> bool {
-	// TODO
-	false
-}
-
 fn main() {
-	println!("gmpublisher v{}", env!("CARGO_PKG_VERSION"));
-
-	if stdin() {
+	#[cfg(debug_assertions)]
+	if cli::stdin() {
 		return;
 	}
+
+	println!("gmpublisher v{}", env!("CARGO_PKG_VERSION"));
 
 	#[cfg(debug_assertions)]
 	deadlock_watchdog();
