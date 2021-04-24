@@ -207,8 +207,19 @@ impl AppData {
 		}
 
 		if !steam!().connected() {
-			return steamlocate::SteamDir::locate()
-				.and_then(|mut steam_dir| steam_dir.app(&GMOD_APP_ID.0).and_then(|steam_app| Some(steam_app.path.to_owned())));
+			match steamlocate::SteamDir::locate().and_then(|mut steam_dir| steam_dir.app(&GMOD_APP_ID.0).and_then(|steam_app| Some(steam_app.path.to_owned()))) {
+				Some(path) => return Some(path),
+				None => {
+					for i in 0..3 as u8 {
+						sleep!(1);
+						if steam!().connected() {
+							break;
+						} else if i == 2 {
+							return None;
+						}
+					}
+				}
+			}
 		}
 
 		let gmod: PathBuf = steam!().client().apps().app_install_dir(GMOD_APP_ID).into();
