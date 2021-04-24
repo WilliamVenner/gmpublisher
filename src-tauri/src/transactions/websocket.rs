@@ -96,7 +96,7 @@ pub struct TransactionServer {
 }
 impl TransactionServer {
 	pub fn init() -> Result<TransactionServer, anyhow::Error> {
-		let socket = Server::bind("0.0.0.0:0")?;
+		let socket = Server::bind("127.0.0.1:0")?;
 		let addr = socket.local_addr()?;
 
 		let (tx, rx) = crossbeam::channel::unbounded::<WebSocketMessage>();
