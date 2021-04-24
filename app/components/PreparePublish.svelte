@@ -310,7 +310,16 @@
 		{#if gmaIconBase64}
 			<div id="icon-container" on:click={browseIcon}>
 				<div id="addon-icon-background" style="background-image: url('{gmaIconBase64}')"></div>
-				<div id="addon-icon" class:upscale={canUpscale && upscale.checked}><img src={gmaIconBase64} bind:this={gmaIcon}/></div>
+				{#if canUpscale && upscale.checked}
+					<div id="addon-icon" class="upscale">
+						<img src={gmaIconBase64} bind:this={gmaIcon}/>
+						<img src="/img/gmpublisher_default_icon.png"/>
+					</div>
+				{:else}
+					<div id="addon-icon">
+						<img src={gmaIconBase64} bind:this={gmaIcon}/>
+					</div>
+				{/if}
 			</div>
 		{:else}
 			<div id="icon-container" on:click={browseIcon}>
@@ -513,7 +522,6 @@
 	}
 	#addon-icon img {
 		background-image: url('/img/transparency.svg');
-		position: absolute;
 		margin: auto;
 		top: 0;
 		left: 0;
@@ -521,10 +529,27 @@
 		bottom: 0;
 		max-width: 100%;
 		max-height: 100%;
+		display: block;
+	}
+	#addon-icon:not(.upscale) img {
+		position: absolute;
+	}
+	#addon-icon.upscale {
+		width: max-content;
+		height: 15rem;
+		position: relative;
+		display: block;
+		margin: auto;
 	}
 	#addon-icon.upscale img {
-		width: 100%;
 		height: 100%;
+	}
+	#addon-icon.upscale > img:first-child {
+		position: absolute;
+		width: 100%;
+	}
+	#addon-icon.upscale > img:last-child {
+		opacity: 0;
 	}
 	#addon-icon-background {
 		position: absolute;
