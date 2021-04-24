@@ -309,7 +309,7 @@
 </script>
 
 <Modal id="prepare-publish" active={$preparePublish} cancel={togglePreparePublish}>
-	<div id="details-container">
+	<div id="details-container" class="hide-scroll">
 		{#if $updatingAddon}
 			<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={$updatingAddon.id}" target="_blank">{$_('workshop_page')}<LinkOut size=".8rem"/></a></div>
 		{/if}
