@@ -12,6 +12,8 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 # -> Windows users need to install [WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703) for gmpublisher to work (for now) <-
 
+# -> Your antivirus may block gmpublisher since it's an unsigned application <-
+
 ## Features
 
 * Doesn't depend on gmad.exe or gmpublish.exe
