@@ -104,6 +104,8 @@ fn stdin() -> bool {
 }
 
 fn main() {
+	println!("gmpublisher v{}", env!("CARGO_PKG_VERSION"));
+
 	if stdin() {
 		return;
 	}
@@ -114,6 +116,8 @@ fn main() {
 	ignore! { write_tauri_settings() };
 
 	globals::init_globals();
+
+	println!("Starting GUI...");
 
 	tauri::Builder::default()
 		.create_window("gmpublisher".to_string(), tauri::WindowUrl::default(), |args| {
@@ -135,4 +139,6 @@ fn main() {
 		.invoke_handler(commands::invoke_handler())
 		.run(tauri::generate_context!())
 		.unwrap();
+
+	println!("Goodbye!");
 }
