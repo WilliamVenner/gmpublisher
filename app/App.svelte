@@ -3,6 +3,7 @@
 	import TasksOverlay from './components/TasksOverlay.svelte';
 	import Navbar from './components/Navbar.svelte';
 	import NavSidebar, { pages, activeItem } from './components/NavSidebar.svelte';
+	import GitHubStar from './components/GitHubStar.svelte';
 </script>
 
 <main>
@@ -23,6 +24,10 @@
 			{/if}
 		{/each}
 	</div>
+
+	{#if AppData.open_count === 5}
+		<GitHubStar/>
+	{/if}
 
 </main>
 
