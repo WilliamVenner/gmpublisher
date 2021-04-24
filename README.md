@@ -48,6 +48,8 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 The program should work out-of-the-box.
 
+###### (Pre-builds coming soon)
+
 ## Technical Stuff
 
 * The program makes heavy use of multithreading, and will work best on processors with a decent amount of cores.
