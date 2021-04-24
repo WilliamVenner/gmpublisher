@@ -108,7 +108,8 @@
 	let treemap;
 
 	const DeadSVG = new Image();
-	DeadSVG.src = '/img/dead-canvas.svg';
+	// TODO DeadSVG.src = '/img/dead-canvas.svg';
+	DeadSVG.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48' fill='none'%3E%3Cpath stroke='%23212121' stroke-width='3' stroke-linecap='square' d='M1.5 8.5v34h45v-28m-3-3h-10v-3m-3-3h-10m15 6h-18v-3m-3-3h-10'/%3E%3Cpath stroke='%23212121' stroke-width='2' stroke-linecap='square' d='M12 35h2m2-2h12m2 2h3m2 2h3M11 21h0m0 4h0m4 0h0m0-4h0m-2 2h0m20-2h0m0 4h0m4 0h0m0-4h0m-2 2h0'/%3E%3C/svg%3E";
 
 	function analyze() {
 		transaction?.cancel();
