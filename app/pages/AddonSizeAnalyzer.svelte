@@ -9,6 +9,7 @@
 	import Loading from '../components/Loading.svelte';
 	import Dead from '../components/Dead.svelte';
 	import { Steam } from '../steam';
+	import PreviewGMA from '../components/PreviewGMA.svelte';
 
 	let workshopDataIndex = [];
 	let workshopDataIDIndex = [];
@@ -460,17 +461,14 @@
 		return addon;
 	}
 
+	let previewingGMA = false;
+	const promises = writable([new Promise(() => {}), new Promise(() => {})]);
 	async function openHoveredAddon(e) {
 		let addon = await findHoveredAddon(e, false);
 		selectHoveredSquare();
 		if (addon) {
-			// TODO
-			/*$modals = [...$modals, {
-				component: PreviewGMA,
-				props: {
-					gmaData: addon.gma
-				}
-			}];*/
+			previewingGMA = true;
+			$promises = [addon.installed.id ? Steam.getWorkshopAddon(addon.installed.id) : null, Promise.resolve(addon.installed)];
 		}
 	}
 
@@ -499,6 +497,8 @@
 </script>
 
 <svelte:window on:resize={resized}/>
+
+<PreviewGMA active={previewingGMA} {promises} cancel={() => previewingGMA = false}/>
 
 <div id="popper-content" bind:this={popperContent}>
 	<div class="popper-content">
