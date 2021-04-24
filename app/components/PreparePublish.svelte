@@ -307,7 +307,7 @@
 <Modal id="prepare-publish" active={$preparePublish} cancel={togglePreparePublish}>
 	<div id="details-container">
 		{#if $updatingAddon}
-			<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={$updatingAddon.id}" target="_blank">Steam Workshop<LinkOut size=".8rem"/></a></div>
+			<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={$updatingAddon.id}" target="_blank">{$_('workshop_page')}<LinkOut size=".8rem"/></a></div>
 		{/if}
 
 		{#if gmaIconBase64}

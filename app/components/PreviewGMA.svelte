@@ -199,7 +199,7 @@
 							</tbody>
 						</table>
 						{#if (gma && gma.id) || workshop}
-							<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={gma?.id ?? workshop.id}" target="_blank">Steam Workshop<LinkOut size=".8rem"/></a></div>
+							<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={gma?.id ?? workshop.id}" target="_blank">{$_('steam_workshop')}<LinkOut size=".8rem"/></a></div>
 						{/if}
 						{#if workshop && workshop.description}
 							<p id="description" class="select">{workshop.description}</p>
@@ -240,6 +240,9 @@
 	}
 	:global(#gma-preview > div > .dead), :global(#gma-preview > div > .loading) {
 		position: absolute;
+	}
+	:global(#gma-preview > div) {
+		border-top-left-radius: 0 !important;
 	}
 
 	#addon {

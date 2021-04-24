@@ -8,7 +8,7 @@
 	import Dead from './Dead.svelte';
 	import PreviewGMA from './PreviewGMA.svelte';
 	import PreparePublish from './PreparePublish.svelte';
-import { writable } from 'svelte/store';
+	import { writable } from 'svelte/store';
 
 	function getRandomInt(min, max) {
 		return Math.floor(Math.random() * (max - min + 1)) + min;
