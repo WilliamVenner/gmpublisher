@@ -216,6 +216,7 @@
 	}
 	#destinations .destination img, #destinations .destination :global(.icon), #destinations .destination :global(svg) {
 		height: 2.5rem;
+		width: 2.5rem;
 		margin-bottom: .6rem;
 	}
 	#destinations .destination > div {
