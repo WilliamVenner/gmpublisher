@@ -27,14 +27,14 @@
 	"addons_folder": "Addons",
 	"downloads_folder": "Downloads",
 	"open": "Abrir",
-	"create_folder": "Criar Pasta",
+	"create_folder": "Criar pasta",
 	"extract": "Extrair",
 	"extracting": "Extraindo",
 	"extracting_progress": "Extraindo {pct}% ({data} / {dataTotal})",
 	"pack": "Pacote",
 	"publish": "Publicar",
 	"update": "Atualizar",
-	"size_analyzer": "Analisador de Tamanho de Addon",
+	"size_analyzer": "Analisador de tamanho de addon",
 	"name": "Nome",
 	"cancel": "Cancelar",
 	"done": "Pronto",
@@ -72,7 +72,7 @@
 	"created": "Criado",
 	"updated": "Atualizado",
 	"author": "Autor",
-	"open_addon_location": "Abrir Localização do Addon",
+	"open_addon_location": "Abrir localização do addon",
 
 	"downloader": "Downloader",
 	"download-input": "Cole IDs da Oficina, links, coleções aqui dentro...",
@@ -81,7 +81,7 @@
 	"log": "Log",
 	"waiting": "Esperando",
 	"extraction_tip": "Você pode arrastar e soltar arquivos GMA nesta tela para extraí-los diretamente.",
-	"set_destination": "Definir Destino",
+	"set_destination": "Definir destino",
 
 	"addon": "Addon",
 	"speed": "Velocidade",
@@ -103,15 +103,15 @@
 	"FS_ANALYZER_TAGGIFYING": "Etiquetando ...",
 	"FS_ANALYZER_DISCOVERING": "Descobrindo...",
 
-	"time_just_now": "Agora Mesmo",
+	"time_just_now": "Agora mesmo",
 	"click_to_open": "Clique para abrir!",
-	"content_generator": "Gerador de Conteúdo",
-	"installed_addons": "Addons Instalados",
+	"content_generator": "Gerador de conteúdo",
+	"installed_addons": "Addons instalados",
 
 	"steam_disconnected": "Desconectado dos servidores Steam",
 	"steam_connected": "Conectado aos servidores Steam",
 
-	"publish_new": "Publicar Novo...",
+	"publish_new": "Publicar novo...",
 
 	"settings": {
 		"saved": "Salvo!",
@@ -119,7 +119,7 @@
 
 		"paths": {
 			"paths": "Caminhos",
-			"user_data": "Caminho de dados do Usuário",
+			"user_data": "Caminho de dados do usuário",
 			"gmod": "Caminho de instalação do Garry's Mod",
 			"temp": "Caminho temporário",
 			"downloads": "Caminho de downloads"
@@ -147,8 +147,8 @@
 	"remove_all": "Remover tudo",
 	"open_all": "Abrir tudo",
 
-	"ERR_UNKNOWN": "Erro Desconhecido",
-	"ERR_NO_ADDONS_FOUND": "Nenhum Addon Encontrado",
+	"ERR_UNKNOWN": "Erro desconhecido",
+	"ERR_NO_ADDONS_FOUND": "Nenhum addon encontrado",
 	"ERR_STEAM_ERROR": "Erro Steam: {data}",
 	"ERR_WHITELIST": "Essas entradas não passam na lista de permissões de tipo/localização de arquivo. Se isso foi inesperado, seu addon provavelmente tem uma estrutura de arquivo incorreta.\n\nSe você quiser filtrar esses tipos de arquivo dos seus GMAs, adicione-os aos Padrões de Arquivo Ignorados.\n\n{data}",
 	"ERR_IO_ERROR": "Erro I/O",
