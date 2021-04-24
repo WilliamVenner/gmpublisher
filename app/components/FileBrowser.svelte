@@ -25,6 +25,8 @@
 	};
 
 	function initBrowser() {
+		browsing = undefined;
+		total_files = 0;
 		entries = {
 			dirs: {},
 			files: [],

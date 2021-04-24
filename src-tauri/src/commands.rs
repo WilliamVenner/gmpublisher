@@ -31,6 +31,7 @@ where
 		crate::steam::downloads::workshop_download,
 		crate::steam::publishing::verify_whitelist,
 		crate::steam::publishing::publish,
+		crate::steam::publishing::verify_icon,
 		crate::addon_size_analyzer::addon_size_analyzer,
 		crate::content_generator::get_content_generator_manifests,
 		crate::content_generator::update_content_generator_manifest,

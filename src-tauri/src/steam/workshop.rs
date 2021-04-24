@@ -291,7 +291,7 @@ impl Steam {
 				page,
 			)
 			.ok()?
-			.exclude_tag("dupe")
+			.require_tag("addon")
 			.allow_cached_response(600)
 			.fetch(move |result: Result<QueryResults<'_>, SteamError>| {
 				if let Ok(data) = result {

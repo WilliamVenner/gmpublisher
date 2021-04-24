@@ -98,7 +98,14 @@ fn deadlock_watchdog() {
 	});
 }
 
+fn stdin() -> bool {
+	// TODO
+	false
+}
+
 fn main() {
+	if stdin() { return; }
+
 	#[cfg(debug_assertions)]
 	deadlock_watchdog();
 

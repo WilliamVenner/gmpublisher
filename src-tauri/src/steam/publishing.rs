@@ -1,9 +1,9 @@
-use crate::{GMOD_APP_ID, Transaction, gma::{GMAFile, GMAEntry, GMAMetadata, GMAFilePointers}};
-use image::{ImageError, ImageFormat};
+use crate::{Base64Image, GMOD_APP_ID, Transaction, gma::{GMAFile, GMAEntry, GMAMetadata, GMAFilePointers}};
+use image::{DynamicImage, GenericImageView, ImageError, ImageFormat};
 use parking_lot::Mutex;
 use path_slash::PathBufExt;
 use walkdir::WalkDir;
-use std::{fs::File, io::BufReader, mem::MaybeUninit, path::PathBuf, sync::Arc, time::SystemTime};
+use std::{fs::File, io::BufReader, mem::MaybeUninit, path::{Path, PathBuf}, sync::Arc, time::SystemTime};
 use steamworks::{PublishedFileId, SteamError};
 
 #[cfg(not(target_os = "windows"))]
@@ -23,20 +23,28 @@ pub enum PublishError {
 	ImageError(ImageError),
 }
 impl std::fmt::Display for PublishError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-			PublishError::NotWhitelisted(_) => write!(f, "ERR_WHITELIST"),
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			PublishError::NotWhitelisted(whitelisted) => write!(f, "ERR_WHITELIST:{}", whitelisted.join("\n")),
 			PublishError::NoEntries => write!(f, "ERR_NO_ENTRIES"),
 			PublishError::DuplicateEntries => write!(f, "ERR_DUPLICATE_ENTRIES"),
-            PublishError::InvalidContentPath => write!(f, "ERR_INVALID_CONTENT_PATH"),
-            PublishError::MultipleGMAs => write!(f, "ERR_MULTIPLE_GMAS"),
-            PublishError::IconTooLarge => write!(f, "ERR_ICON_TOO_LARGE"),
-            PublishError::IconTooSmall => write!(f, "ERR_ICON_TOO_SMALL"),
-            PublishError::IconInvalidFormat => write!(f, "ERR_ICON_INVALID_FORMAT"),
-            PublishError::IOError => write!(f, "ERR_IO_ERROR"),
-            PublishError::SteamError(_) => write!(f, "ERR_STEAM_ERROR"),
-            PublishError::ImageError(_) => write!(f, "ERR_IMAGE_ERROR"),
-        }
+			PublishError::InvalidContentPath => write!(f, "ERR_INVALID_CONTENT_PATH"),
+			PublishError::MultipleGMAs => write!(f, "ERR_MULTIPLE_GMAS"),
+			PublishError::IconTooLarge => write!(f, "ERR_ICON_TOO_LARGE"),
+			PublishError::IconTooSmall => write!(f, "ERR_ICON_TOO_SMALL"),
+			PublishError::IconInvalidFormat => write!(f, "ERR_ICON_INVALID_FORMAT"),
+			PublishError::IOError => write!(f, "ERR_IO_ERROR"),
+			PublishError::SteamError(error) => write!(f, "ERR_STEAM_ERROR:{}", error.to_string()),
+			PublishError::ImageError(error) => write!(f, "ERR_IMAGE_ERROR:{}", error.to_string()),
+		}
+	}
+}
+impl serde::Serialize for PublishError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer
+	{
+        serializer.serialize_str(&self.to_string())
     }
 }
 impl From<SteamError> for PublishError {
@@ -104,19 +112,52 @@ impl ContentPath {
 
 const WORKSHOP_ICON_MAX_SIZE: u64 = 1000000;
 const WORKSHOP_ICON_MIN_SIZE: u64 = 16;
+const WORKSHOP_DEFAULT_ICON: &'static [u8] = include_bytes!("../../../public/img/gmpublisher_default_icon.png");
+
 pub enum WorkshopIcon {
-	Path(PathBuf),
+	Custom {
+		image: DynamicImage,
+		path: PathBuf,
+		format: ImageFormat,
+		width: u32,
+		height: u32,
+		upscale: bool
+	},
 	Default
+}
+impl WorkshopIcon {
+	pub fn can_upscale(width: u32, height: u32, format: ImageFormat) -> bool {
+		!matches!(format, ImageFormat::Gif) && ((width < 512 || height < 512) || (width != height))
+	}
 }
 impl Into<PathBuf> for WorkshopIcon {
 	fn into(self) -> PathBuf {
 		match self {
-			WorkshopIcon::Path(path) => path,
+			WorkshopIcon::Custom { path, image, width, height, upscale, format } => {
+				if upscale && WorkshopIcon::can_upscale(width, height, format) {
+					let format_extension = match format {
+						ImageFormat::Png => "png",
+						ImageFormat::Jpeg => "jpg",
+						_ => unreachable!()
+					};
+
+					let mut temp_img = app_data!().temp_dir().to_owned();
+					temp_img.push(format!("gmpublisher_upscaled_icon.{}", format_extension));
+
+					let image = image.resize_exact(512, 512, image::imageops::FilterType::CatmullRom);
+					match image.save_with_format(&temp_img, format) {
+						Ok(_) => temp_img,
+						Err(_) => path
+					}
+				} else {
+					path
+				}
+			},
 			WorkshopIcon::Default => {
 				let mut path = app_data!().temp_dir().to_owned();
 				path.push("gmpublisher_default_icon.png");
-				if !path.is_file() {
-					std::fs::write(&path, include_bytes!("../../../public/img/gmpublisher_default_icon.png")).expect("Failed to write default icon to temp directory!");
+				if !path.is_file() && path.metadata().map(|metadata| metadata.len()).unwrap_or(0) != WORKSHOP_DEFAULT_ICON.len() as u64 {
+					std::fs::write(&path, WORKSHOP_DEFAULT_ICON).expect("Failed to write default icon to temp directory!");
 				}
 				path
 			},
@@ -124,37 +165,8 @@ impl Into<PathBuf> for WorkshopIcon {
 	}
 }
 impl WorkshopIcon {
-	fn try_format(tried_best_guess: bool, file_type: ImageFormat, path: &PathBuf, mut file_types: Vec<ImageFormat>) -> Result<(), PublishError> {
-		if let Err(error) = image::load(BufReader::new(File::open(path)?), file_type) {
-			if let ImageError::Decoding(decoding_error) = error {
-				if !tried_best_guess {
-					if let image::error::ImageFormatHint::Exact(best_guess) = decoding_error.format_hint() {
-						let mut i = 0;
-						while i != file_types.len() {
-							if file_types[i] == best_guess {
-								return WorkshopIcon::try_format(true, file_types.remove(i), path, file_types);
-							} else {
-								i += 1;
-							}
-						}
-					}
-				}
-
-				if file_types.is_empty() {
-					Err(PublishError::IconInvalidFormat)
-				} else {
-					WorkshopIcon::try_format(tried_best_guess, file_types.remove(0), path, file_types)
-				}
-			} else {
-				Err(PublishError::ImageError(error))
-			}
-		} else {
-			Ok(())
-		}
-	}
-
-	pub fn new(path: PathBuf) -> Result<WorkshopIcon, PublishError> {
-		// FIXME remove the guessing, it probably won't work with Steam
+	pub fn new<P: AsRef<Path>>(path: P, upscale: bool) -> Result<WorkshopIcon, PublishError> {
+		let path = path.as_ref();
 
 		let len = path.metadata()?.len();
 		if len > WORKSHOP_ICON_MAX_SIZE {
@@ -164,75 +176,92 @@ impl WorkshopIcon {
 		}
 
 		let file_extension = path.extension().and_then(|x| x.to_str()).unwrap_or("jpg").to_ascii_lowercase();
-		let mut file_types = match file_extension.as_str() {
-			"png" => vec![ImageFormat::Png, ImageFormat::Jpeg, ImageFormat::Gif],
-			"gif" => vec![ImageFormat::Gif, ImageFormat::Jpeg, ImageFormat::Png],
-			_ => vec![ImageFormat::Jpeg, ImageFormat::Png, ImageFormat::Gif],
+		let image_format = match file_extension.as_str() {
+			"png" => ImageFormat::Png,
+			"gif" => ImageFormat::Gif,
+			"jpeg" | "jpg" => ImageFormat::Jpeg,
+			_ => return Err(PublishError::IconInvalidFormat)
 		};
 
-		WorkshopIcon::try_format(false, file_types.remove(0), &path, file_types)?;
-
-		Ok(WorkshopIcon::Path(path))
+		let image = image::load(BufReader::new(File::open(path)?), image_format)?;
+		Ok(WorkshopIcon::Custom {
+			path: path.to_path_buf(),
+			width: image.width(),
+			height: image.height(),
+			format: image_format,
+			upscale,
+			image,
+		})
 	}
 }
 
-pub struct WorkshopCreationDetails {
-	pub id: PublishedFileId,
-	pub title: String,
-	pub path: ContentPath,
-	pub preview: WorkshopIcon,
-}
-pub struct WorkshopUpdateDetails {
-	pub id: PublishedFileId,
-	pub path: PathBuf,
-	pub preview: Option<PathBuf>,
-	pub changes: Option<String>,
-}
 pub enum WorkshopUpdateType {
-	Creation(WorkshopCreationDetails),
-	Update(WorkshopUpdateDetails),
+	Creation {
+		title: String,
+		path: ContentPath,
+		tags: Vec<String>,
+		addon_type: String,
+		preview: WorkshopIcon,
+	},
+	Update {
+		title: String,
+		path: ContentPath,
+		tags: Vec<String>,
+		addon_type: String,
+		preview: Option<WorkshopIcon>,
+		changes: Option<String>,
+	},
 }
 
 impl Steam {
-	pub fn update(&self, details: WorkshopUpdateType, transaction: Transaction) -> Result<(PublishedFileId, bool), PublishError> {
+	pub fn update(&self, id: PublishedFileId, details: WorkshopUpdateType, transaction: Transaction) -> Result<bool, PublishError> {
 		use WorkshopUpdateType::*;
 
 		let result = Arc::new(Mutex::new(None));
 		let result_ref = result.clone();
 		let update_handle = match details {
-			Creation(details) => {
+			Creation { title, path, mut tags, addon_type, preview } => {
+				tags.reserve(tags.len() + 2);
+				tags.push("Addon".to_string());
+				tags.push(addon_type);
+
 				self.client()
 					.ugc()
-					.start_item_update(GMOD_APP_ID, details.id)
-					.content_path(&details.path)
-					.title(&details.title)
-					.preview_path(&Into::<PathBuf>::into(details.preview))
+					.start_item_update(GMOD_APP_ID, id)
+					.content_path(&path)
+					.title(&title)
+					.preview_path(&Into::<PathBuf>::into(preview))
+					.tags(tags)
+					.description("Uploaded with [url=https://gmpublisher.download]gmpublisher[/url]")
 					.submit(None, move |result| {
 						*result_ref.lock() = Some(result);
 					})
 			}
 
-			Update(details) => {
-				let path = ContentPath::new(details.path)?;
-				let preview = match details.preview {
-					Some(preview) => Some(WorkshopIcon::new(preview)?),
+			Update { title, path, mut tags, addon_type, preview, changes } => {
+				let mut tags = tags;
+				tags.reserve(tags.len() + 2);
+				tags.push("Addon".to_string());
+				tags.push(addon_type);
+
+				let preview_path: Option<PathBuf> = match preview {
+					Some(preview) => Some(preview.into()),
 					None => None,
 				};
 
-				let update = self.client().ugc().start_item_update(GMOD_APP_ID, details.id);
-				match preview {
-					Some(preview) => update.preview_path(&Into::<PathBuf>::into(preview)),
+				let update = self.client().ugc().start_item_update(GMOD_APP_ID, id);
+				match preview_path {
+					Some(preview_path) => update.preview_path(&preview_path),
 					None => update,
 				}
 				.content_path(&path)
-				.submit(details.changes.as_deref(), move |result| {
+				.tags(tags)
+				.title(&title)
+				.submit(changes.as_deref(), move |result| {
 					*result_ref.lock() = Some(result);
 				})
 			}
 		};
-
-		let (_, _, total) = update_handle.progress();
-		transaction.data(total);
 
 		let result = loop {
 			let (processed, progress, total) = update_handle.progress();
@@ -246,34 +275,38 @@ impl Steam {
 					steamworks::UpdateStatus::CommittingChanges => "PUBLISH_COMMITTING_CHANGES",
 				});
 			}
-			transaction.progress(progress as f64 / total as f64);
+			if total == 0 {
+				transaction.progress(0.);
+			} else {
+				transaction.data(total);
+				transaction.progress(progress as f64 / total as f64);
+			}
 
 			if !result.is_locked() && result.lock().is_some() {
-				break Arc::try_unwrap(result).unwrap().into_inner().unwrap().map_err(|error| PublishError::SteamError(error));
+				break Arc::try_unwrap(result).unwrap().into_inner().unwrap();
 			} else {
 				self.run_callbacks();
 			}
 		};
 
-		if result.is_ok() { transaction.progress(1.); }
-		result
+		match result {
+			Ok((_, legal_agreement)) => {
+				transaction.progress(1.);
+				Ok(legal_agreement)
+			},
+			Err(error) => Err(PublishError::SteamError(error))
+		}
 	}
 
-	pub fn publish(&self, path: ContentPath, preview: WorkshopIcon, title: String, transaction: Transaction) -> Result<(PublishedFileId, bool), PublishError> {
+	pub fn publish(&self, details: WorkshopUpdateType, transaction: Transaction) -> (Option<PublishedFileId>, Result<bool, PublishError>) {
+		debug_assert!(matches!(details, WorkshopUpdateType::Creation { .. }));
+
 		let published = Arc::new(Mutex::new(None));
 		let published_ref = published.clone();
 		self.client()
 			.ugc()
 			.create_item(GMOD_APP_ID, steamworks::FileType::Community, move |result| {
-				match result {
-					Ok((id, _accepted_legal_agreement)) => {
-						// TODO test accepted_legal_agreement
-						*published_ref.lock() = Some(Ok(id));
-					}
-					Err(err) => {
-						*published_ref.lock() = Some(Err(err));
-					}
-				}
+				*published_ref.lock() = Some(result);
 			});
 
 		loop {
@@ -285,18 +318,24 @@ impl Steam {
 			self.run_callbacks();
 		}
 
-		let id = Arc::try_unwrap(published)
-			.unwrap()
-			.into_inner()
-			.unwrap()?;
+		let id = match Arc::try_unwrap(published)
+		.unwrap()
+		.into_inner()
+		.unwrap() {
+			Ok((id, _)) => id,
+			Err(error) => return (None, Err(PublishError::SteamError(error)))
+		};
 
-		self.update(WorkshopUpdateType::Creation(WorkshopCreationDetails { id, title, preview, path }), transaction)
+		(
+			Some(id),
+			self.update(id, details, transaction)
+		)
 	}
 }
 
 #[tauri::command]
-fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>, u64), (String, Option<Vec<String>>)> {
-	if !path.is_dir() || !path.is_absolute() { return Err((PublishError::InvalidContentPath.to_string(), None)); }
+fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>, u64), PublishError> {
+	if !path.is_dir() || !path.is_absolute() { return Err(PublishError::InvalidContentPath); }
 
 	let root_path_strip_len = path.to_slash_lossy().len() + 1;
 
@@ -347,9 +386,11 @@ fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>
 		}
 	}
 
+	// TODO some tasks shouldnt be cancelable (i.e. showing the cross button)
+
 	if failed.is_empty() {
 		if files.is_empty() {
-			Err((PublishError::NoEntries.to_string(), None))
+			Err(PublishError::NoEntries)
 		} else {
 			Ok((files, size))
 		}
@@ -360,27 +401,37 @@ fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>
 			failed.push("...".to_string());
 		}
 
-		Err((PublishError::NotWhitelisted(vec![]).to_string(), Some(failed)))
+		Err(PublishError::NotWhitelisted(failed))
 	}
 }
 
 #[tauri::command]
-pub fn publish(content_path: PathBuf, icon_path: Option<PathBuf>, title: String, tags: Vec<String>, addon_type: String) -> u32 {
+pub fn publish(content_path_src: PathBuf, icon_path: Option<PathBuf>, title: String, tags: Vec<String>, addon_type: String, upscale: bool, update_id: Option<PublishedFileId>, changes: Option<String>) -> u32 {
 	let transaction = transaction!();
 	let id = transaction.id;
 
-	let icon_path = match icon_path {
-		Some(icon_path) => match WorkshopIcon::new(icon_path) {
-			Ok(icon) => icon,
-			Err(error) => {
-				transaction.error(error.to_string(), turbonone!());
-				return id;
-			}
-		},
-		None => WorkshopIcon::Default
-	};
-
 	rayon::spawn(move || {
+		let preview = match icon_path {
+			Some(icon_path) => {
+				transaction.status("PUBLISH_PROCESSING_ICON");
+
+				match WorkshopIcon::new(icon_path, upscale) {
+					Ok(icon) => Some(icon),
+					Err(error) => {
+						transaction.error(error.to_string(), turbonone!());
+						return;
+					}
+				}
+			},
+			None => {
+				if update_id.is_some() {
+					Some(WorkshopIcon::Default)
+				} else {
+					None
+				}
+			}
+		};
+
 		transaction.status("PUBLISH_PACKING");
 
 		let mut path = app_data!().temp_dir().to_owned();
@@ -394,33 +445,37 @@ pub fn publish(content_path: PathBuf, icon_path: Option<PathBuf>, title: String,
 
 		path.push("gmpublisher.gma");
 
-		let gma = GMAFile { // TODO convert to GMAFile::new()
-		    path: path.clone(),
-		    size: 0,
-		    id: None,
-		    metadata: Some(GMAMetadata::Standard {
-		        title: title.clone(),
-		        addon_type,
-		        tags,
-		        ignore: app_data!().settings.read().ignore_globs.to_owned(),
-			}),
-		    entries: None,
-		    pointers: GMAFilePointers::default(),
-		    version: 3,
-		    extracted_name: String::new(),
-		    modified: None,
-		    membuffer: None,
-		};
+		{
+			let gma = GMAFile { // TODO convert to GMAFile::new()
+				path: path.clone(),
+				size: 0,
+				id: None,
+				metadata: Some(GMAMetadata::Standard {
+					title: title.clone(),
+					addon_type: addon_type.clone(),
+					tags: tags.clone(),
+					ignore: app_data!().settings.read().ignore_globs.to_owned(),
+				}),
+				entries: None,
+				pointers: GMAFilePointers::default(),
+				version: 3,
+				extracted_name: String::new(),
+				modified: None,
+				membuffer: None,
+			};
 
-		if let Err(error) = gma.create(content_path, transaction.clone()) {
-			if !transaction.aborted() {
-				transaction.error(error.to_string(), turbonone!());
+			if let Err(error) = gma.create(&content_path_src, transaction.clone()) {
+				if !transaction.aborted() {
+					transaction.error(error.to_string(), turbonone!());
+				}
+				return;
 			}
-			return;
 		}
 
-		path.pop();
-		let content_path = match ContentPath::new(path) {
+		let mut content_path = path.clone();
+		content_path.pop();
+
+		let content_path = match ContentPath::new(content_path) {
 			Ok(content_path) => content_path,
 			Err(error) => {
 				transaction.error(error.to_string(), turbonone!());
@@ -430,19 +485,78 @@ pub fn publish(content_path: PathBuf, icon_path: Option<PathBuf>, title: String,
 
 		transaction.status("PUBLISH_STARTING");
 
-		let (id, accepted_legal_agreement) = match steam!().publish(content_path, icon_path, title, transaction.clone()) {
-			Ok(data) => data,
-			Err(error) => {
-				transaction.error(error.to_string(), turbonone!());
-				return;
-			}
+		let (id, result) = if let Some(id) = update_id {
+			(update_id, steam!().update(id, WorkshopUpdateType::Update {
+				title,
+				path: content_path,
+				tags,
+				addon_type,
+				preview,
+			    changes,
+			}, transaction.clone()))
+		} else {
+			steam!().publish(WorkshopUpdateType::Creation {
+				title,
+				path: content_path,
+				tags,
+				addon_type,
+				preview: preview.unwrap(),
+			}, transaction.clone())
 		};
 
-		transaction.finished((id, accepted_legal_agreement));
+		ignore! { std::fs::remove_file(path) };
 
-		// TODO remove packed addon when done
+		match result {
+			Ok(legal_agreement) => {
+				if legal_agreement {
+					crate::path::open("https://steamcommunity.com/workshop/workshoplegalagreement");
+				}
+
+				let id = id.unwrap();
+
+				crate::path::open(format!("https://steamcommunity.com/sharedfiles/filedetails/?id={}", id.0));
+
+				transaction.finished(turbonone!());
+
+				app_data!().settings.write().my_workshop_local_paths.insert(id, content_path_src);
+				ignore! { app_data!().settings.read().save() };
+				app_data!().send();
+			},
+			Err(error) => {
+				transaction.error(error.to_string(), turbonone!());
+				if let Some(id) = id {
+					steam!().client().ugc().delete_item(id, |_| {});
+				}
+			}
+		};
 	});
-	// https://partner.steamgames.com/doc/api/ISteamUGC#GetItemUpdateProgress
 
 	id
+}
+
+#[tauri::command]
+pub fn verify_icon(path: PathBuf) -> Result<(String, bool), Transaction> {
+	WorkshopIcon::new(&path, false).and_then(|icon| {
+		let (prefix, can_upscale) = match icon {
+			WorkshopIcon::Custom { format, width, height, .. } => {
+				(
+					format!("data:image/{};base64,", match format {
+						ImageFormat::Png => "png",
+						ImageFormat::Jpeg => "jpeg",
+						ImageFormat::Gif => "gif",
+						_ => unreachable!()
+					}),
+
+					WorkshopIcon::can_upscale(width, height, format)
+				)
+			},
+			_ => unreachable!()
+		};
+		let base64 = base64::encode(std::fs::read(path)?);
+		Ok((prefix + &base64, can_upscale))
+	}).map_err(|error| {
+		let transaction = transaction!();
+		transaction.error(error.to_string(), turbonone!());
+		transaction
+	})
 }

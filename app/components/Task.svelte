@@ -4,6 +4,7 @@
 	import { Cross, Check, CircleAlert } from "akar-icons-svelte";
 	import { tippyFollow } from '../tippy.js';
 	import { _ } from 'svelte-i18n';
+	import { translateError } from '../i18n';
 	import { taskHeight, tasksMax, tasks, tasksNum } from '../transactions.js';
 	import { onDestroy } from "svelte";
 	import Loading from './Loading.svelte';
@@ -101,7 +102,7 @@
 				<CircleAlert id="error" stroke-width="3"/>
 			</div>
 			{#if error}
-				{$_(error[0], { values: { error: error[1] } })}
+				{translateError(...error)}
 			{:else if cancelled}
 				{$_('cancelled')}
 			{:else if finished}

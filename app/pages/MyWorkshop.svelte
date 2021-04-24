@@ -14,15 +14,26 @@
 		return Steam.getMyWorkshop(++page);
 	}
 
+	let updatingAddon = writable(null);
+
 	function togglePreparePublish() {
+		$updatingAddon = null;
 		$preparePublish = !$preparePublish;
 	}
 
-	function editPublishedAddon() {
-
+	async function editPublishedAddon(_, addon) {
+		const addonAwaited = await addon;
+		if (addonAwaited != $updatingAddon) {
+			$updatingAddon = addonAwaited;
+		}
+		$preparePublish = !$preparePublish;
 	}
+
+	let remountAddonScroller = writable(false);
 </script>
 
-<AddonScroller next={next} onClick={editPublishedAddon} onNewAddonClick={togglePreparePublish}/>
+{#if $remountAddonScroller || !$remountAddonScroller}
+	<AddonScroller {next} onClick={editPublishedAddon} onNewAddonClick={togglePreparePublish}/>
+{/if}
 
-<PreparePublish/>
+<PreparePublish {updatingAddon} {remountAddonScroller}/>

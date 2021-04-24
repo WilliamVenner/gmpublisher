@@ -1624,6 +1624,7 @@ dependencies = [
  "steamworks",
  "tauri",
  "tauri-build",
+ "tauri-utils 1.0.0-beta-rc.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror",
  "turbonone",
  "walkdir",

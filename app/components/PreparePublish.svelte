@@ -11,6 +11,12 @@
 	import { writable } from 'svelte/store';
 	import { Transaction } from '../transactions';
 	import filesize from 'filesize';
+	import Loading from './Loading.svelte';
+	import { translateError } from '../i18n';
+	import { onDestroy, onMount } from 'svelte';
+
+	export let updatingAddon = null;
+	export let remountAddonScroller;
 
 	function togglePreparePublish() {
 		$preparePublish = !$preparePublish;
@@ -18,13 +24,19 @@
 
 	let gmaIcon;
 	let gmaIconPath = null;
+	let gmaIconBase64;
 	let gmaEntries = writable([]);
 	let gmaSize;
 	let readyForPublish = false;
 	let ignoreGlobs = AppSettings.ignore_globs;
+	let isPublishing = false;
 
 	let titleInput;
 	let addonTypeInput;
+	let changeLog;
+
+	let upscale;
+	let canUpscale = false;
 
 	let pathInput;
 	let pathInputContainer;
@@ -46,30 +58,24 @@
 				name: $_('icon_file_pick')
 			}]
 
-		}).then(async path => {
+		}).then(path => {
 			if (path) {
-				const size = await invoke('file_size', { path });
-				if (size === null) {
-					playSound('error');
-					alert($_('ERR_IO_ERROR'));
-				} else if (size > 1000000) {
-					playSound('error');
-					alert($_('ERR_ICON_TOO_LARGE'));
-				} else if (size < 16) {
-					playSound('error');
-					alert($_('ERR_ICON_TOO_SMALL'));
-				} else {
+				invoke('verify_icon', { path }).then(([base64, can_upscale]) => {
+					canUpscale = can_upscale;
 					gmaIconPath = path;
-				}
+					gmaIconBase64 = base64;
+				}, transactionId => new Transaction(transactionId, () => ''));
 			}
 		});
 	}
 	function removeIcon() {
 		gmaIconPath = null;
+		gmaIconBase64 = null;
+		canUpscale = false;
 	}
 
 	function checkPath(path, successSound) {
-		invoke('verify_whitelist', { path, ignore: ignoreGlobs }).then(([entries, size]) => {
+		return invoke('verify_whitelist', { path, ignore: ignoreGlobs }).then(([entries, size]) => {
 
 			$gmaEntries = entries;
 			gmaSize = size;
@@ -81,16 +87,11 @@
 
 			if (successSound) playSound('success');
 
-		}, ([err, failed_paths]) => {
+		}, (err) => {
 
 			$gmaEntries = [];
 			pathValue = pathInput.value;
-
-			if (err === "ERR_WHITELIST") {
-				pathFailMessage = $_('ERR_WHITELIST') + '\n\n' + failed_paths.join('\n');
-			} else {
-				pathFailMessage = $_(err);
-			}
+			pathFailMessage = translateError(err);
 
 			tippyFollow(pathInputContainer, pathFailMessage);
 			playSound('error');
@@ -100,9 +101,9 @@
 		});
 	}
 
-	function onPathChanged(path) {
+	async function onPathChanged(path, playSound) {
 		if (path.length > 0) {
-			checkPath(path, true);
+			await checkPath(path, playSound);
 		} else {
 			pathFailMessage = null;
 			tippyFollow(pathInputContainer, pathFailMessage);
@@ -111,7 +112,8 @@
 	}
 
 	let chosenAddonTags = [null, null, null];
-	let addonTags = ['fun', 'roleplay', 'scenic', 'movie', 'realism', 'cartoon', 'water', 'comic', 'build'];
+	const addonTags = ['fun', 'roleplay', 'scenic', 'movie', 'realism', 'cartoon', 'water', 'comic', 'build'];
+	const addonTypes = ['ServerContent', 'gamemode', 'map', 'weapon', 'vehicle', 'npc', 'tool', 'effects', 'model'];
 	function tagChosen() {
 		const chosen = [];
 		document.querySelectorAll('.tag-choice').forEach((choice, i) => {
@@ -159,14 +161,25 @@
 		}
 	}
 
-	function publish() {
-		if (!readyForPublish) return;
+	async function publish() {
+		if (!readyForPublish || isPublishing) return;
+		isPublishing = true;
 		playSound('success');
+
 		invoke('publish', {
-			contentPath: pathValue,
+
+			contentPathSrc: pathValue,
+
 			title: titleInput.value.trim(),
 			tags: chosenAddonTags.filter(tag => !!tag),
-			addonType: addonTypeInput.value
+			addonType: addonTypeInput.value,
+
+			iconPath: gmaIconPath,
+			upscale: canUpscale && upscale.checked,
+
+			updateId: $updatingAddon ? ((await $updatingAddon).id) : undefined,
+			changes: changeLog ? changeLog.value : null,
+
 		}).then(transactionId => {
 			const transaction = new Transaction(transactionId, transaction => {
 				return $_(transaction.status ?? 'PUBLISH_PACKING', { values: {
@@ -178,13 +191,11 @@
 
 			transaction.listen(event => {
 				if (event.finished) {
-					const [id, not_accepted_legal_agreement] = event.data;
+					$remountAddonScroller = !$remountAddonScroller;
+				}
 
-					if (not_accepted_legal_agreement) {
-						invoke('open', { path: 'https://steamcommunity.com/workshop/workshoplegalagreement/' });
-					}
-
-					invoke('open', { path: 'https://steamcommunity.com/sharedfiles/filedetails/?id=' + id });
+				if (event.finished || event.error) {
+					isPublishing = false;
 				}
 			});
 		});
@@ -209,38 +220,119 @@
 		return true;
 	}
 
-	function checkForm() {
+	function checkForm(sound) {
 		const isValid = isFormValid();
 		if (isValid !== readyForPublish) {
 			readyForPublish = isValid;
-			if (readyForPublish) {
-				playSound('btn-on');
-			} else {
-				playSound('btn-off');
+			if (sound !== false) {
+				if (readyForPublish) {
+					playSound('btn-on');
+				} else {
+					playSound('btn-off');
+				}
 			}
 		}
 	}
+
+	const tagSearchMax = Math.max(addonTypes.length, addonTags.length);
+	let updatingAddonSubscription;
+	onMount(() => updatingAddonSubscription = updatingAddon.subscribe(async updatingAddon => {
+		if (changeLog) changeLog.value = '';
+
+		if (!updatingAddon) {
+			gmaIconPath = null;
+			gmaIconBase64 = null;
+			$gmaEntries = [];
+			gmaSize = null;
+			readyForPublish = false;
+			titleInput.value = '';
+			addonTypeInput.value = 'default';
+			upscale.checked = AppSettings.upscale_addon_icon;
+			upscale = upscale;
+			canUpscale = false;
+			pathInput.value = '';
+			pathValue = '';
+			pathFailMessage = null;
+			return;
+		}
+
+		canUpscale = false;
+
+		gmaIconPath = null;
+		gmaIconBase64 = updatingAddon.previewUrl;
+
+		if (updatingAddon.id in AppSettings.my_workshop_local_paths) {
+			await onPathChanged(AppSettings.my_workshop_local_paths[updatingAddon.id]);
+		} else {
+			pathValue = '';
+			pathFailMessage = null;
+		}
+
+		addonTypeInput.value = 'default';
+		addonTypeInput = addonTypeInput;
+
+		chosenAddonTags = [null, null, null];
+		let chosen = 0;
+		for (let i = 0; i < updatingAddon.tags.length; i++) {
+			if (updatingAddon.tags[i] === 'ServerContent') {
+				addonTypeInput.value = 'ServerContent';
+				addonTypeInput = addonTypeInput;
+				continue;
+			}
+			if (updatingAddon.tags[i] === 'Addon') continue;
+
+			const tag = updatingAddon.tags[i].toLowerCase();
+			let search = -1;
+			while (++search < tagSearchMax) {
+				if (addonTags[search] === tag) {
+					chosenAddonTags[chosen++] = tag;
+				} else if (addonTypes[search] === tag) {
+					addonTypeInput.value = tag;
+					addonTypeInput = addonTypeInput;
+				}
+			}
+		}
+		chosenAddonTags = chosenAddonTags;
+
+		titleInput.value = updatingAddon.title;
+		titleInput = titleInput;
+
+		checkForm(false);
+	}));
+
+	onDestroy(() => {
+		if (updatingAddonSubscription) updatingAddonSubscription();
+	});
 </script>
 
 <Modal id="prepare-publish" active={$preparePublish} cancel={togglePreparePublish}>
 	<div id="details-container">
-		{#if gmaIconPath}
+		{#if gmaIconBase64}
 			<div id="icon-container" on:click={browseIcon}>
-				<div id="addon-icon-background" style="background-image: url('{gmaIconPath}')"></div>
-				<div id="addon-icon"><img src={gmaIconPath} bind:this={gmaIcon}/></div>
+				<div id="addon-icon-background" style="background-image: url('{gmaIconBase64}')"></div>
+				<div id="addon-icon" class:upscale={canUpscale && upscale.checked}><img src={gmaIconBase64} bind:this={gmaIcon}/></div>
 			</div>
-			<div id="icon-browse" on:click={removeIcon}><Cross size="1rem"/>{$_('remove_icon')}</div>
 		{:else}
 			<div id="icon-container" on:click={browseIcon}>
 				<div id="addon-icon-background" style="background-image: url('/img/gmpublisher_default_icon.png')"></div>
 				<div id="addon-icon"><img src="/img/gmpublisher_default_icon.png" bind:this={gmaIcon}/></div>
 			</div>
+		{/if}
+		{#if gmaIconBase64 && !$updatingAddon}
+			<div id="icon-browse" on:click={removeIcon}><Cross size="1rem"/>{$_('remove_icon')}</div>
+		{:else}
 			<div id="icon-browse" on:click={browseIcon}><Folder size="1rem"/>{$_('browse')}</div>
 		{/if}
 		<p>{$_('icon_instructions')}</p>
+		<div id="upscale-container">
+			<label class:disabled={!canUpscale}>
+				<input type="checkbox" id="upscale" bind:this={upscale} checked={AppSettings.upscale_addon_icon} disabled={!canUpscale} on:change={() => upscale = upscale}/>
+				{$_('upscale_addon_icon')}
+			</label>
+		</div>
 
 		<div class="path-container" bind:this={pathInputContainer}>
-			<input type="text" class:error={pathFailMessage?.length > 0} bind:this={pathInput} id="path" placeholder={$_('addon_path')} required on:change={() => onPathChanged(this.value)} value={pathValue}/>
+			<input type="text" class:error={pathFailMessage?.length > 0} bind:this={pathInput} id="path" placeholder={$_('addon_path')} required on:change={() => onPathChanged(pathInput.value, true)} value={pathValue}/>
 			<div class="browse icon-button" on:click={browseAddon}><Folder size="1rem"/></div>
 		</div>
 
@@ -248,20 +340,14 @@
 
 		<select id="addon-type" bind:this={addonTypeInput} on:blur={checkForm} on:change={checkForm}>
 			<option value="default" selected hidden disabled>{$_('addon_type')}</option>
-			<option value="ServerContent">{$_('addon_types.ServerContent')}</option>
-			<option value="gamemode">{$_('addon_types.gamemode')}</option>
-			<option value="map">{$_('addon_types.map')}</option>
-			<option value="weapon">{$_('addon_types.weapon')}</option>
-			<option value="vehicle">{$_('addon_types.vehicle')}</option>
-			<option value="npc">{$_('addon_types.npc')}</option>
-			<option value="tool">{$_('addon_types.tool')}</option>
-			<option value="effects">{$_('addon_types.effects')}</option>
-			<option value="model">{$_('addon_types.model')}</option>
+			{#each addonTypes as addonType}
+				<option value={addonType}>{$_('addon_types.' + addonType)}</option>
+			{/each}
 		</select>
 
 		<div id="addon-tags" on:blur={checkForm} on:change={checkForm}>
 			<select on:change={tagChosen} class="tag-choice" value={chosenAddonTags[0] ?? 'default'}>
-				<option value="default" hidden disabled>{$_('tag_1')}</option>
+				<option value="default">{$_('tag_1')}</option>
 				{#each addonTags as tag}
 					{#if chosenAddonTags.findIndex(choice => choice === tag) === -1}
 						<option value={tag}>{$_('addon_tags.' + tag)}</option>
@@ -271,7 +357,7 @@
 				{/each}
 			</select>
 			<select on:change={tagChosen} class="tag-choice" value={chosenAddonTags[1] ?? 'default'}>
-				<option value="default" hidden disabled>{$_('tag_2')}</option>
+				<option value="default">{$_('tag_2')}</option>
 				{#each addonTags as tag}
 					{#if chosenAddonTags.findIndex(choice => choice === tag) === -1}
 						<option value={tag}>{$_('addon_tags.' + tag)}</option>
@@ -281,8 +367,8 @@
 				{/each}
 			</select>
 			<select on:change={tagChosen} class="tag-choice" value={chosenAddonTags[2] ?? 'default'}>
-				<option value="default" hidden disabled>{$_('tag_3')}</option>
-				{#each addonTags as tag, i}
+				<option value="default">{$_('tag_3')}</option>
+				{#each addonTags as tag}
 					{#if chosenAddonTags.findIndex(choice => choice === tag) === -1}
 						<option value={tag}>{$_('addon_tags.' + tag)}</option>
 					{:else}
@@ -292,11 +378,34 @@
 			</select>
 		</div>
 
-		<div id="publish-btn" on:click={publish} class:disabled={!readyForPublish}><CloudUpload size="1.1rem"/>{$_('publish_exclamation')}</div>
+		{#if $updatingAddon}
+			<div id="publish-btn" on:click={publish} class:disabled={!readyForPublish || isPublishing} use:tippyFollow={$_('update_warning', { values: { title: $updatingAddon.title, id: $updatingAddon.id } })}>
+				{#if isPublishing}
+					<Loading size="1.1rem"/>
+				{:else}
+					<CloudUpload size="1.1rem"/>{$_('update_exclamation')}
+				{/if}
+			</div>
+		{:else}
+			<div id="publish-btn" on:click={publish} class:disabled={!readyForPublish || isPublishing}>
+				{#if isPublishing}
+					<Loading size="1.1rem"/>
+				{:else}
+					<CloudUpload size="1.1rem"/>{$_('publish_exclamation')}
+				{/if}
+			</div>
+		{/if}
 	</div>
 
-	<div id="file-browser-container">
-		<FileBrowser fileSelect={path => onPathChanged.call(pathInput, path)} background={true} browsePath={pathValue.length > 0 ? pathValue : null} entriesList={gmaEntries} {openEntry} open={openAddon} size={gmaSize}/>
+	<div id="middle-column">
+		<FileBrowser fileSelect={path => onPathChanged(path)} background={true} browsePath={pathValue.length > 0 ? pathValue : null} entriesList={gmaEntries} {openEntry} open={openAddon} size={gmaSize}/>
+
+		{#if $updatingAddon}
+			<div id="changes-container">
+				<textarea id="changes" bind:this={changeLog} required></textarea>
+				<div>{$_('changelog')}</div>
+			</div>
+		{/if}
 	</div>
 
 	<div id="ignore">
@@ -315,20 +424,27 @@
 
 <style>
 	:global(#prepare-publish > div) {
-		display: grid;
+		display: flex;
 		width: 70rem;
 		min-height: 0;
-		height: 42rem;
+		height: min-content;
 		padding: 1.5rem;
-		grid-template-rows: 1fr;
-		grid-template-columns: 18rem 1fr 14rem;
-		grid-gap: 1.5rem;
+	}
+	#details-container {
+		width: 18rem;
+	}
+	#middle-column {
+		flex: 1;
+		margin-left: 1.5rem;
+		margin-right: 1.5rem;
+		display: flex;
+		flex-direction: column;
 	}
 
-	#file-browser-container > :global(#file-browser) {
-		height: 100%;
+	#middle-column > :global(#file-browser) {
 		border-radius: .4rem;
 		overflow: hidden;
+		flex: 1;
 	}
 
 	input[type='text'] {
@@ -368,6 +484,10 @@
 		position: relative;
 		overflow: hidden;
 		cursor: pointer;
+		background-color: #101010;
+		box-shadow: inset 0 0 6px 2px rgb(0 0 0 / 20%);
+		border: 1px solid #101010;
+		border-radius: .4rem;
 	}
 	#icon-browse {
 		cursor: pointer;
@@ -387,22 +507,35 @@
 		margin-right: .5rem;
 	}
 	#addon-icon {
-		text-align: center;
-	}
-	#addon-icon > img {
-		background-image: url('/img/transparency.svg');
-		width: 15rem;
+		width: 100%;
 		height: 15rem;
+		position: relative;
+	}
+	#addon-icon img {
+		background-image: url('/img/transparency.svg');
+		position: absolute;
+		margin: auto;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		max-width: 100%;
+		max-height: 100%;
+	}
+	#addon-icon.upscale img {
+		width: 100%;
+		height: 100%;
 	}
 	#addon-icon-background {
 		position: absolute;
 		width: calc(100% + 10px);
 		height: calc(100% + 10px);
 		background-size: cover;
+		background-position: 50% 50%;
 		filter: blur(5px);
 		left: -5px;
 		top: -5px;
-		z-index: -1;
+		z-index: 0;
 	}
 
 	p {
@@ -466,6 +599,7 @@
 	#ignore {
 		display: flex;
 		flex-direction: column;
+		width: 14rem;
 	}
 	#ignore > .title {
 		text-align: center;
@@ -514,5 +648,64 @@
 	}
 	#publish-btn > :global(.icon) {
 		margin-right: .25rem;
+	}
+
+	#upscale-container > label.disabled {
+		opacity: .5;
+	}
+	#upscale-container > label:not(.disabled) {
+		cursor: pointer;
+	}
+	#upscale-container > label {
+		display: flex;
+		justify-content: center;
+	}
+	#upscale-container input {
+		margin-right: .5rem;
+	}
+
+	#changes-container {
+		position: relative;
+	}
+	#changes-container > div {
+		position: absolute;
+		top: 1.5rem;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		margin: auto;
+		font-size: 1.3em;
+		text-shadow: 0px 1px 0px rgb(0 0 0 / 60%);
+		opacity: .5;
+		pointer-events: none;
+		width: min-content;
+		height: min-content;
+		z-index: 2;
+	}
+	#changes-container:focus-within > div, #changes:not(:invalid) + div {
+		opacity: 0;
+	}
+	#changes {
+		appearance: none;
+		font: inherit;
+		border-radius: 4px;
+		border: none;
+		background: rgba(255,255,255,.1);
+		box-shadow: 0px 0px 2px 0px rgb(0 0 0 / 40%);
+		padding: .7rem;
+		color: #fff;
+		font-size: .85em;
+		width: 100%;
+		min-height: 12.35rem;
+		height: 12.35rem;
+		max-height: 12.35rem;
+		margin-top: 1.5rem;
+		resize: none;
+		z-index: 1;
+		display: block;
+	}
+	#changes:focus {
+		box-shadow: inset 0 0 0px 1.5px #127cff;
+		outline: none;
 	}
 </style>

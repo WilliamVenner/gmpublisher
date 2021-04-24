@@ -95,7 +95,6 @@
 						} else if (srcPath) {
 							Steam.getAddon(srcPath).then(gma => {
 								if (gma?.installed?.title) {
-									console.log(job.ws_id, gma.installed.ws_id);
 									if (gma.installed.ws_id && !job.ws_id) job.ws_id = gma.installed.ws_id;
 									job.fileName = gma.installed.title;
 									extractingJobs = extractingJobs;

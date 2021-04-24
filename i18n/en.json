@@ -147,10 +147,10 @@
 
 	"ERR_UNKNOWN": "Unknown Error",
 	"ERR_NO_ADDONS_FOUND": "No Addons Found",
-	"ERR_STEAM_ERROR": "Steam Error: {error}",
-	"ERR_WHITELIST": "These entries do not pass the file type/location whitelist. If this was unexpected, your addon probably has an incorrect file structure.\n\nIf you want to filter these file types from your GMAs, add them to the Ignored File Patterns.",
+	"ERR_STEAM_ERROR": "Steam Error: {data}",
+	"ERR_WHITELIST": "These entries do not pass the file type/location whitelist. If this was unexpected, your addon probably has an incorrect file structure.\n\nIf you want to filter these file types from your GMAs, add them to the Ignored File Patterns.\n\n{data}",
 	"ERR_IO_ERROR": "I/O Error",
-	"ERR_PATH_IO_ERROR": "I/O Error ({error})",
+	"ERR_PATH_IO_ERROR": "I/O Error ({data})",
 	"ERR_GMA_FORMAT_ERROR": "Corrupted GMA file",
 	"ERR_GMA_INVALID_HEADER": "Invalid GMA file",
 	"ERR_GMA_ENTRY_NOT_FOUND": "Entry not found",
@@ -164,11 +164,12 @@
 	"ERR_ITEM_INACCESSIBLE": "Item Inaccessible",
 	"ERR_INVALID_CONTENT_PATH": "This content path does not exist, is not a directory or gmpublisher has insufficient permissions to access it",
 	"ERR_MULTIPLE_GMAS": "Multiple GMA files found in this content path",
-	"ERR_IMAGE_ERROR": "Image Error: {error}",
+	"ERR_IMAGE_ERROR": "Image Error: {data}",
 	"ERR_DUPLICATE_ENTRIES": "There are duplicate entries in this content path. i use arch btw",
 	"ERR_NO_ENTRIES": "There are no entries in this content path.",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Workshop legal agreement not accepted",
 
-	"icon_instructions": "Accepted Formats: JPG, PNG, GIF\nMax Size: 1 MB",
+	"icon_instructions": "Accepted Formats: JPG, PNG, GIF\nMax Size: 1 MB\nRecommended: 512x512",
 	"addon_title": "Title...",
 	"addon_path": "Addon Path...",
 	"icon_file_pick": "Workshop Icon",
@@ -203,6 +204,7 @@
 	},
 
 	"publish_exclamation": "Publish!",
+	"update_exclamation": "Update!",
 	"add_ellipsis": "Add...",
 	"ignored_file_patterns": "Ignored File Patterns",
 	"show_more": "SHOW MORE",
@@ -210,6 +212,9 @@
 	"file_browser": "File Browser",
 	"file_browser_select": "Drop a file here or click to browse",
 	"no_files_found": "No files found",
+	"upscale_addon_icon": "Scale to 512x512",
+	"changelog": "Changelog",
+	"update_warning": "You are pushing an UPDATE to {title} ({id})",
 
 	"PUBLISH_PACKING": "Packing {pct}% ({data} / {dataTotal})",
 	"PUBLISH_STARTING": "Starting Publish",
@@ -217,5 +222,6 @@
 	"PUBLISH_PREPARING_CONTENT": "Preparing Content",
 	"PUBLISH_UPLOADING_CONTENT": "Uploading Content",
 	"PUBLISH_UPLOADING_PREVIEW_FILE": "Uploading Preview File",
-	"PUBLISH_COMMITTING_CHANGES": "Committing Changes"
+	"PUBLISH_COMMITTING_CHANGES": "Committing Changes",
+	"PUBLISH_PROCESSING_ICON": "Processing Icon"
 }

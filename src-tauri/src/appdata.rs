@@ -1,4 +1,4 @@
-use std::{fs::File, io::BufWriter, path::PathBuf};
+use std::{collections::HashMap, fs::File, io::BufWriter, path::PathBuf};
 
 use crate::{gma::ExtractDestination, webview_emit, RwLockCow};
 
@@ -6,6 +6,7 @@ use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
 use parking_lot::{RwLock, RwLockReadGuard};
 use serde::{Deserialize, Serialize};
+use steamworks::PublishedFileId;
 use tauri::Params;
 
 lazy_static! {
@@ -36,7 +37,10 @@ pub struct Settings {
 	pub destinations: Vec<PathBuf>,
 	pub create_folder_on_extract: bool,
 
-	pub ignore_globs: Vec<String>
+	pub ignore_globs: Vec<String>,
+
+	pub my_workshop_local_paths: HashMap<PublishedFileId, PathBuf>,
+	pub upscale_addon_icon: bool,
 }
 impl Default for Settings {
 	fn default() -> Self {
@@ -55,7 +59,9 @@ impl Default for Settings {
 			destinations: Vec::new(),
 			create_folder_on_extract: true,
 
-			ignore_globs: Vec::new()
+			ignore_globs: Vec::new(),
+			my_workshop_local_paths: HashMap::new(),
+			upscale_addon_icon: true
 		}
 	}
 }
@@ -77,20 +83,12 @@ impl Settings {
 	}
 
 	pub fn save(&self) -> Result<(), anyhow::Error> {
-		Ok(serde_json::ser::to_writer(BufWriter::new(File::create(&*APP_SETTINGS_PATH)?), self)?)
+		Ok(serde_json::ser::to_writer(File::create(&*APP_SETTINGS_PATH)?, self)?)
 	}
 
 	pub fn sanitize(&mut self) {
-		// TODO replace with drain_filter when it's stable
-		let mut i = 0;
-		while i != self.destinations.len() {
-			let destination = &self.destinations[i];
-			if !destination.is_absolute() || !destination.is_dir() {
-				self.destinations.remove(i);
-			} else {
-				i += 1;
-			}
-		}
+		self.destinations.retain(|dir| dir.is_absolute() && dir.is_dir());
+		self.my_workshop_local_paths.retain(|_, dir| dir.is_absolute() && dir.is_dir());
 
 		match &self.extract_destination {
 			ExtractDestination::Directory(path) => {
