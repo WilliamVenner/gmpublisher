@@ -75,7 +75,7 @@
 	"open_addon_location": "Eklenti Lokasyonunu Aç",
 
 	"downloader": "Yükleyici",
-	"download-input": "Atöyle ID'lerini, bağlantıları ve koleksiyonları vuraya yapıştır...",
+	"download-input": "Atöyle ID'lerini, bağlantıları ve koleksiyonları buraya yapıştır...",
 	"download-input-tip": "İPUCU: Buraya virgülle ayrılmış veya satırsonu (newline) ile ayrılmış öğeleri yapıştırabilirsiniz!",
 	"downloading": "İndiriliyor",
 	"log": "Kayıt",
