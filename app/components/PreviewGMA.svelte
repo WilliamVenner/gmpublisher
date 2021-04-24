@@ -81,6 +81,7 @@
 
 	async function interceptCancel() {
 		await invoke('preview_gma', { path: null });
+		destinationSelect = false;
 		cancel();
 	}
 </script>
