@@ -152,10 +152,10 @@ pub fn open_file_location<P: AsRef<Path>>(path: P) {
 		return std::process::Command::new("explorer").arg(format!("/select,{}", path)).spawn();
 
 		#[cfg(target_os = "macos")]
-		return std::process::Command::new("open").arg("-R").arg(path).spawn();
+		return std::process::Command::new("open").arg("-R").arg(path.to_string()).spawn();
 
 		#[cfg(target_os = "linux")]
-		return std::process::Command::new("xdg-open").arg("--select").arg(path).spawn();
+		return std::process::Command::new("xdg-open").arg("--select").arg(path.to_string()).spawn();
 
 		#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 		Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported OS"))

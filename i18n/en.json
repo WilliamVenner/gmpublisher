@@ -167,7 +167,7 @@
 	"ERR_INVALID_CONTENT_PATH": "This content path does not exist, is not a directory or gmpublisher has insufficient permissions to access it",
 	"ERR_MULTIPLE_GMAS": "Multiple GMA files found in this content path",
 	"ERR_IMAGE_ERROR": "Image Error: {data}",
-	"ERR_DUPLICATE_ENTRIES": "There are duplicate entries in this content path. i use arch btw",
+	"ERR_DUPLICATE_ENTRIES": "There is a duplicate entry ({data}) in this content path. All paths must be unique & lowercase. i use arch btw",
 	"ERR_NO_ENTRIES": "There are no entries in this content path.",
 	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Workshop legal agreement not accepted",
 

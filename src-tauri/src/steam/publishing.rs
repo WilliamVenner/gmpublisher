@@ -21,7 +21,7 @@ use std::collections::HashSet;
 pub enum PublishError {
 	NotWhitelisted(Vec<String>),
 	NoEntries,
-	DuplicateEntries,
+	DuplicateEntry(String),
 	InvalidContentPath,
 	MultipleGMAs,
 	IconTooLarge,
@@ -36,7 +36,7 @@ impl std::fmt::Display for PublishError {
 		match self {
 			PublishError::NotWhitelisted(whitelisted) => write!(f, "ERR_WHITELIST:{}", whitelisted.join("\n")),
 			PublishError::NoEntries => write!(f, "ERR_NO_ENTRIES"),
-			PublishError::DuplicateEntries => write!(f, "ERR_DUPLICATE_ENTRIES"),
+			PublishError::DuplicateEntry(path) => write!(f, "ERR_DUPLICATE_ENTRIES:{}", path),
 			PublishError::InvalidContentPath => write!(f, "ERR_INVALID_CONTENT_PATH"),
 			PublishError::MultipleGMAs => write!(f, "ERR_MULTIPLE_GMAS"),
 			PublishError::IconTooLarge => write!(f, "ERR_ICON_TOO_LARGE"),
@@ -373,8 +373,9 @@ fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishError>
 	let mut failed_extra = false;
 	let mut failed = Vec::with_capacity(10);
 	let mut files = Vec::new();
+
 	#[cfg(not(target_os = "windows"))]
-	let mut dedup = HashSet::new();
+	let mut dedup: HashSet<String> = HashSet::new();
 
 	for (path, relative_path) in WalkDir::new(&path)
 		.contents_first(true)
@@ -405,6 +406,13 @@ fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishError>
 		.filter(|(_, relative_path)| crate::gma::whitelist::filter_default_ignored(relative_path))
 		.filter(|(_, relative_path)| !crate::gma::whitelist::is_ignored(relative_path, &ignore))
 	{
+		#[cfg(not(target_os = "windows"))]
+		{
+			if !dedup.insert(relative_path.to_owned()) {
+				return Err(PublishError::DuplicateEntry(relative_path));
+			}
+		}
+
 		if !crate::gma::whitelist::check(&relative_path) {
 			if failed.len() == 9 {
 				failed_extra = true;
