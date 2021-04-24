@@ -168,7 +168,7 @@
 														</a>
 													</div>
 												{:then owner}
-													<a target="_blank" href="https://steamcommunity.com/profiles/{owner.steamid64}" style="text-decoration:none">
+													<a target="_blank" href="https://steamcommunity.com/profiles/{workshop.steamid64}" style="text-decoration:none">
 														<img id="avatar" src="data:image/png;base64,{owner.avatar}"/>
 														<span>{owner.name}</span>
 													</a>
@@ -238,6 +238,9 @@
 		height: 100%;
 		box-shadow: rgba(0, 0, 0, .24) 0px 3px 8px;
 	}
+	:global(#gma-preview > div > .dead), :global(#gma-preview > div > .loading) {
+		position: absolute;
+	}
 
 	#addon {
 		width: 17rem;
@@ -280,13 +283,6 @@
 	}
 	#addon #avatar {
 		margin-right: .2rem;
-	}
-
-	:global(#gma-preview) > #error {
-		line-height: 1.8rem;
-		text-align: center;
-		width: max-content;
-		height: max-content;
 	}
 
 	#ws-link {
