@@ -1,14 +1,12 @@
-<p align="center">
-<img src="https://user-images.githubusercontent.com/14863743/115953578-41e5a580-a4e4-11eb-84d9-45b296f9e18d.png" alt="Logo"/>
+<p align="center"><img src="https://user-images.githubusercontent.com/14863743/115953578-41e5a580-a4e4-11eb-84d9-45b296f9e18d.png" alt="Logo"/></p>
 
-<h1>⚙️ gmpublisher</h1>
+# ⚙️ gmpublisher
 
-<h2>Currently in <b>Beta</b> development.</h2>
+#### Currently in **Beta** development.
 
 A powerful and feature-packed Workshop publisher for Garry's Mod is finally here!
 
-<a href="https://github.com/WilliamVenner/gmpublisher/releases">Click for downloads</a>
-</p>
+[Click for downloads](https://github.com/WilliamVenner/gmpublisher/releases)
 
 ###### Are you a developer? You may also like my [VSCode GLua Enhanced](https://github.com/WilliamVenner/vscode-glua-enhanced) extension!
 
