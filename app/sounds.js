@@ -1,7 +1,9 @@
 const audio = {
 	'alert': new Audio('/sound/alert.wav'),
-	'success': new Audio('/sound/success.wav'),
+	'success': new Audio('/sound/success.ogg'),
 	'error': new Audio('/sound/error.wav'),
+	'delete': new Audio('/sound/delete.ogg'),
+	'confirmed': new Audio('/sound/confirmed.ogg'),
 	'btn-on': new Audio('/sound/btn_on.ogg'),
 	'btn-off': new Audio('/sound/btn_off.ogg'),
 };
