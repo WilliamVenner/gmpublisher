@@ -10,8 +10,8 @@
 	"greetings": {
 		"morning": "Bonjour, {name} !",
 		"morning.anon": "Bonjour !",
-		"afternoon": "Bonne après-midi, {name} !",
-		"afternoon.anon": "Bonne après-midi !",
+		"afternoon": "Bon après-midi, {name} !",
+		"afternoon.anon": "Bon après-midi !",
 		"evening": "Bonne soirée, {name} !",
 		"evening.anon": "Bonsoir !"
 	},
