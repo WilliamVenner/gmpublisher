@@ -1592,7 +1592,7 @@ dependencies = [
 
 [[package]]
 name = "gmpublisher"
-version = "2.0.1"
+version = "2.0.2"
 dependencies = [
  "anyhow",
  "atomic_refcell",
@@ -3636,9 +3636,9 @@ dependencies = [
 
 [[package]]
 name = "steamlocate"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18c40e098716a3749812d81f24837dfd526af6b8594977c92f3c8055f475bfe6"
+checksum = "8937d90a6b2a2e1f64b4484bda61b364d31a8e085450e7fe49cd2b90c8fd826c"
 dependencies = [
  "anyhow",
  "dirs 3.0.1",
