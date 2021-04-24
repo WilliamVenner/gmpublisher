@@ -439,7 +439,7 @@
 
 			let workshopData = workshopDataPromises[workshopDataIDIndex[addon.installed.id ?? -1] ?? -1];
 
-			popperName.textContent = ((workshopData && typeof workshopData === 'object' ? workshopData.dead : true) ? (addon.installed.name ?? addon.installed.extractedName) : workshopData.title) ?? addon.installed.id;
+			popperName.textContent = ((workshopData && typeof workshopData === 'object' ? workshopData.dead : true) ? (addon.installed.title ?? addon.installed.extractedName) : workshopData.title) ?? addon.installed.id;
 			popperSize.textContent = filesize(Number(addon.installed.size));
 
 			const tagName = lookupTagName(addon.tagId);
