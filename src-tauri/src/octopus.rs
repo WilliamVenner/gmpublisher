@@ -121,14 +121,24 @@ impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
 			let queue = queue.clone();
 			std::thread::spawn(move || loop {
 				let (mutex, cvar) = &*queue;
-				cvar.wait(&mut mutex.lock());
-
-				let mut queue = mutex.lock();
-				if !queue.is_empty() {
-					let mut inner = inner.write();
-					for f in queue.drain(..) {
-						f(&mut inner);
+				{
+					let mut guard = mutex.lock();
+					if guard.is_empty() {
+						cvar.wait(&mut guard);
 					}
+				}
+
+				loop {
+					{
+						let mut queue = mutex.lock();
+						if !queue.is_empty() {
+							let mut inner = inner.write();
+							for f in queue.drain(..) {
+								f(&mut inner);
+							}
+						} else { break; }
+					}
+					sleep_ms!(25);
 				}
 			});
 		}

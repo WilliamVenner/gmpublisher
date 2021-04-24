@@ -424,7 +424,7 @@ pub fn publish(content_path_src: PathBuf, icon_path: Option<PathBuf>, title: Str
 				}
 			},
 			None => {
-				if update_id.is_some() {
+				if update_id.is_none() {
 					Some(WorkshopIcon::Default)
 				} else {
 					None

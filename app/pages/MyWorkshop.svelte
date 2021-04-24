@@ -1,7 +1,3 @@
-<script context="module">
-	export const preparePublish = writable(false);
-</script>
-
 <script>
 	import { Steam } from '../steam';
 	import AddonScroller from '../components/AddonScroller.svelte';
@@ -15,6 +11,7 @@
 	}
 
 	let updatingAddon = writable(null);
+	let preparePublish = writable(false);
 
 	function togglePreparePublish() {
 		$updatingAddon = null;
@@ -36,4 +33,4 @@
 	<AddonScroller {next} onClick={editPublishedAddon} onNewAddonClick={togglePreparePublish}/>
 {/if}
 
-<PreparePublish {updatingAddon} {remountAddonScroller}/>
+<PreparePublish {preparePublish} {updatingAddon} {remountAddonScroller}/>

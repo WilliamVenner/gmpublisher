@@ -228,5 +228,6 @@
 	"subscriptions": "Subscriptions",
 	"unsubscribe": "Unsubscribe",
 	"unsubscribe_all": "Unsubscribe All",
-	"unsubscribe_all_warning": "WARNING: This will unsubscribe you from ALL Workshop addons you are subscribed to."
+	"unsubscribe_all_warning": "WARNING: This will unsubscribe you from ALL Workshop addons you are subscribed to.",
+	"update_available": "New Update Available!\n{version}"
 }

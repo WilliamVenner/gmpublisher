@@ -1,6 +1,5 @@
 <script>
-import { writable } from 'svelte/store';
-
+	import { writable } from 'svelte/store';
 	import { Steam } from '../steam';
 	import AddonScroller from '../components/AddonScroller.svelte';
 	import PreviewGMA from '../components/PreviewGMA.svelte';

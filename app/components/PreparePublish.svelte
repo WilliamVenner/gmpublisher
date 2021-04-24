@@ -1,8 +1,11 @@
+<script context="module">
+	export const isPublishing = writable(false);
+</script>
+
 <script>
-	import { preparePublish } from '../pages/MyWorkshop.svelte';
 	import { _ } from 'svelte-i18n';
 	import Modal from '../components/Modal.svelte';
-	import { CloudUpload, Cross, Folder } from 'akar-icons-svelte';
+	import { CloudUpload, Cross, Folder, LinkOut } from 'akar-icons-svelte';
 	import { tippyFollow } from '../tippy';
 	import * as dialog from '@tauri-apps/api/dialog';
 	import { invoke } from '@tauri-apps/api/tauri';
@@ -13,10 +16,11 @@
 	import filesize from 'filesize';
 	import Loading from './Loading.svelte';
 	import { translateError } from '../i18n';
-	import { onDestroy, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 
 	export let updatingAddon = null;
 	export let remountAddonScroller;
+	export let preparePublish;
 
 	function togglePreparePublish() {
 		$preparePublish = !$preparePublish;
@@ -29,7 +33,6 @@
 	let gmaSize;
 	let readyForPublish = false;
 	let ignoreGlobs = AppSettings.ignore_globs;
-	let isPublishing = false;
 
 	let titleInput;
 	let addonTypeInput;
@@ -162,8 +165,8 @@
 	}
 
 	async function publish() {
-		if (!readyForPublish || isPublishing) return;
-		isPublishing = true;
+		if (!readyForPublish || $isPublishing) return;
+		$isPublishing = true;
 		playSound('success');
 
 		invoke('publish', {
@@ -195,7 +198,7 @@
 				}
 
 				if (event.finished || event.error) {
-					isPublishing = false;
+					$isPublishing = false;
 				}
 			});
 		});
@@ -303,6 +306,10 @@
 
 <Modal id="prepare-publish" active={$preparePublish} cancel={togglePreparePublish}>
 	<div id="details-container">
+		{#if $updatingAddon}
+			<div id="ws-link"><a class="color" href="https://steamcommunity.com/sharedfiles/filedetails/?id={$updatingAddon.id}" target="_blank">Steam Workshop<LinkOut size=".8rem"/></a></div>
+		{/if}
+
 		{#if gmaIconBase64}
 			<div id="icon-container" on:click={browseIcon}>
 				<div id="addon-icon-background" style="background-image: url('{gmaIconBase64}')"></div>
@@ -384,16 +391,16 @@
 		</div>
 
 		{#if $updatingAddon}
-			<div id="publish-btn" on:click={publish} class:disabled={!readyForPublish || isPublishing} use:tippyFollow={$_('update_warning', { values: { title: $updatingAddon.title, id: $updatingAddon.id } })}>
-				{#if isPublishing}
+			<div id="publish-btn" on:click={publish} class:disabled={!readyForPublish || $isPublishing} use:tippyFollow={$_('update_warning', { values: { title: $updatingAddon.title, id: $updatingAddon.id } })}>
+				{#if $isPublishing}
 					<Loading size="1.1rem"/>
 				{:else}
 					<CloudUpload size="1.1rem"/>{$_('update_exclamation')}
 				{/if}
 			</div>
 		{:else}
-			<div id="publish-btn" on:click={publish} class:disabled={!readyForPublish || isPublishing}>
-				{#if isPublishing}
+			<div id="publish-btn" on:click={publish} class:disabled={!readyForPublish || $isPublishing}>
+				{#if $isPublishing}
 					<Loading size="1.1rem"/>
 				{:else}
 					<CloudUpload size="1.1rem"/>{$_('publish_exclamation')}
@@ -728,5 +735,13 @@
 	#changes:focus {
 		box-shadow: inset 0 0 0px 1.5px #127cff;
 		outline: none;
+	}
+
+	#ws-link {
+		margin-bottom: 1.2rem;
+		text-align: center;
+	}
+	#ws-link :global(.icon) {
+		margin-left: .2rem;
 	}
 </style>

@@ -1,5 +1,5 @@
 use serde::Serialize;
-use std::{cell::RefCell, collections::{HashMap, HashSet, VecDeque}, mem::Discriminant, ops::DerefMut, path::PathBuf, sync::{
+use std::{cell::RefCell, collections::{HashMap, HashSet, VecDeque}, ops::DerefMut, path::PathBuf, sync::{
 		atomic::{AtomicBool, Ordering},
 		Arc,
 	}};
@@ -10,7 +10,7 @@ use parking_lot::Mutex;
 
 use super::{users::SteamUser, Steam};
 
-use crate::{GMOD_APP_ID, main_thread_forbidden, search::SearchItemSource, webview::Addon};
+use crate::{GMOD_APP_ID, main_thread_forbidden, webview::Addon};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -180,20 +180,12 @@ impl Steam {
 										let mut item: WorkshopItem = item.into();
 										item.preview_url = results.preview_url(i);
 										item.subscriptions = results.statistic(i, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
-										search!().add(&item);
 										item
 									} else {
 										WorkshopItem::from(queue[i as usize])
 									});
 
 									steam!().workshop_channel.data(item);
-
-									/*
-									webview_emit!(
-										"WorkshopItem",
-										item
-									);
-									*/
 
 									i += 1;
 								}
@@ -215,6 +207,7 @@ impl Steam {
 				FETCHER_NEXT.store(true, Ordering::Release);
 			});
 
+			sleep_ms!(50);
 			while !FETCHER_NEXT.load(Ordering::Acquire) {
 				sleep_ms!(50);
 			}
@@ -222,7 +215,7 @@ impl Steam {
 	}
 
 	pub fn fetch_workshop_items(&'static self, ids: Vec<PublishedFileId>) {
-		self.workshop.write(|workshop| {
+		self.workshop.write(move |workshop| {
 			let (cache, queue) = workshop.deref_mut();
 			queue.reserve(ids.len());
 			for id in ids.into_iter().filter(|id| cache.insert(*id)) {

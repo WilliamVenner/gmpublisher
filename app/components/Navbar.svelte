@@ -7,6 +7,7 @@
 	import Search from './Search.svelte';
 	import Settings from './Settings.svelte';
 	import { playSound } from '../sounds';
+	import UpdateNotification from './UpdateNotification.svelte';
 
 	let timeOfDay = 'morning';
 	{
@@ -66,6 +67,8 @@
 	{/await}
 
 	<Search/>
+
+	<UpdateNotification/>
 
 	{#if steamConnected}
 		<span class="nav-icon" use:tippy={'✔ ' + $_('steam_connected')}><Rss id="steam-connection" size="1.5rem" stroke-width="1.5"/></span>

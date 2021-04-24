@@ -124,9 +124,16 @@ impl TransactionServer {
 			let message = match receiver.recv_message() {
 				Ok(message) => message,
 				Err(err) => {
-					if !matches!(err, websocket::WebSocketError::NoDataAvailable) {
-						dprintln!("WebSocketError: {:#?}", err);
-					}
+					match &err {
+						websocket::WebSocketError::NoDataAvailable => continue,
+						websocket::WebSocketError::IoError(error) => match error.kind() {
+							std::io::ErrorKind::ConnectionReset => break,
+							_ => {}
+						},
+						_ => {}
+					};
+
+					dprintln!("WebSocketError: {:#?}", err);
 					continue;
 				}
 			};

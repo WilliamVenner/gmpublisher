@@ -10,3 +10,5 @@
 .pnp.*
 
 .DS_Store
+
+!.vscode

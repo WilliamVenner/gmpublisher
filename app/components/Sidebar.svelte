@@ -2,7 +2,7 @@
 	export let id = null;
 </script>
 
-<sidebar id={id}>
+<sidebar {id}>
 	<div><slot></slot></div>
 	<slot name="footer"></slot>
 </sidebar>

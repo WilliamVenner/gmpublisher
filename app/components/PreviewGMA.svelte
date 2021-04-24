@@ -161,12 +161,12 @@
 											<th>{$_('author')}</th>
 											<td>
 												{#await Steam.getSteamUser(workshop.steamid64)}
+													<Loading inline="true"/>&nbsp;
 													<div id="author-loading">
 														<a target="_blank" class="color" href="https://steamcommunity.com/profiles/{workshop.steamid64}">
 															{new SteamID(workshop.steamid64).getSteam2RenderedID(true)}
 														</a>
 													</div>
-													&nbsp;<Loading inline="true"/>
 												{:then owner}
 													<a target="_blank" href="https://steamcommunity.com/profiles/{owner.steamid64}" style="text-decoration:none">
 														<img id="avatar" src="data:image/png;base64,{owner.avatar}"/>
@@ -327,6 +327,7 @@
 
 	#author-loading {
 		display: flex;
+		width: 100%;
 	}
 	#author-loading > a {
 		flex: 1;

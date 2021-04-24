@@ -16,7 +16,7 @@ const MAX_QUICK_RESULTS: u8 = 10;
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "source", content = "association")]
 pub enum SearchItemSource {
-	InstalledAddons(PathBuf),
+	InstalledAddons(PathBuf, Option<PublishedFileId>),
 	MyWorkshop(PublishedFileId),
 	WorkshopItem(PublishedFileId),
 }
@@ -46,8 +46,8 @@ impl Ord for SearchItem {
 impl PartialEq for SearchItem {
     fn eq(&self, other: &Self) -> bool {
 		match &self.source {
-		    SearchItemSource::InstalledAddons(a) => match &other.source {
-				SearchItemSource::InstalledAddons(b) => a == b,
+		    SearchItemSource::InstalledAddons(a, _) => match &other.source {
+				SearchItemSource::InstalledAddons(b, _) => a == b,
 				_ => false,
 			},
 		    SearchItemSource::MyWorkshop(a) => match &other.source {
@@ -125,7 +125,7 @@ impl Searchable for GMAFile {
 		};
 
 		Some(SearchItem::new(
-			SearchItemSource::InstalledAddons(dunce::canonicalize(&self.path).unwrap_or_else(|_| self.path.to_owned())),
+			SearchItemSource::InstalledAddons(dunce::canonicalize(&self.path).unwrap_or_else(|_| self.path.to_owned()), self.id.to_owned()),
 			label,
 			terms,
 			self.modified.unwrap_or(0)
