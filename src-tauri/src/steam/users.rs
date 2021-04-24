@@ -14,7 +14,7 @@ lazy_static! {
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SteamUser {
-	#[serde(with = "super::serde_steamid64")]
+	#[serde(serialize_with = "super::serialize_steamid")]
 	pub steamid: SteamId,
 	pub name: String,
 	pub avatar: Option<crate::Base64Image>,

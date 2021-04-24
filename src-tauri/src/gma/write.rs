@@ -6,14 +6,14 @@ use std::{
 	fs::{self, File},
 	io::{BufWriter, Write},
 	path::Path,
-	sync::{Arc, atomic::AtomicBool},
+	sync::{atomic::AtomicBool, Arc},
 	time::SystemTime,
 };
 
 use path_slash::PathExt;
 use walkdir::WalkDir;
 
-use crate::{GMAFile, NTStringWriter, transactions::Transaction};
+use crate::{transactions::Transaction, GMAFile, NTStringWriter};
 
 use super::{whitelist, GMAError, GMAMetadata};
 
@@ -99,7 +99,9 @@ impl GMAFile {
 					None
 				})
 			}) {
-				if error.load(std::sync::atomic::Ordering::Acquire) { break; }
+				if error.load(std::sync::atomic::Ordering::Acquire) {
+					break;
+				}
 
 				let tx = tx.clone();
 				let transaction = transaction.clone();
@@ -107,9 +109,11 @@ impl GMAFile {
 				THREAD_POOL.spawn(move || {
 					let contents = match fs::read(&path) {
 						Ok(contents) => contents,
-						Err(_) => return {
-							error.store(true, std::sync::atomic::Ordering::Release);
-							transaction.error("ERR_PATH_IO_ERROR", path);
+						Err(_) => {
+							return {
+								error.store(true, std::sync::atomic::Ordering::Release);
+								transaction.error("ERR_PATH_IO_ERROR", path);
+							}
 						}
 					};
 
@@ -164,7 +168,9 @@ impl GMAFile {
 
 		f.write_u32::<LittleEndian>(crc32)?;
 
-		if Arc::try_unwrap(error).unwrap().into_inner() { return Err(GMAError::IOError); }
+		if Arc::try_unwrap(error).unwrap().into_inner() {
+			return Err(GMAError::IOError);
+		}
 
 		Ok(())
 	}

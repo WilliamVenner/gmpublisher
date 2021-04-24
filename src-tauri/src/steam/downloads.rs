@@ -8,7 +8,12 @@ use std::{
 
 use steamworks::{ClientManager, ItemState, PublishedFileId, QueryResults, UGC};
 
-use crate::{gma::{ExtractGMAMut, ExtractDestination}, transaction, transactions::Transaction, webview_emit, GMAFile, GMOD_APP_ID};
+use crate::{
+	gma::{ExtractDestination, ExtractGMAMut},
+	transaction,
+	transactions::Transaction,
+	webview_emit, GMAFile, GMOD_APP_ID,
+};
 
 lazy_static! {
 	pub static ref DOWNLOADS: Downloads = Downloads::init();
@@ -76,15 +81,7 @@ impl Downloads {
 		THREAD_POOL.spawn(move || {
 			let transaction = transaction!();
 
-			webview_emit!(
-				"ExtractionStarted",
-				(
-					transaction.id,
-					turbonone!(),
-					turbonone!(),
-					Some(item)
-				)
-			);
+			webview_emit!("ExtractionStarted", (transaction.id, turbonone!(), turbonone!(), Some(item)));
 
 			let mut gma = if folder.is_dir() {
 				let mut gma_path = None;
@@ -115,15 +112,13 @@ impl Downloads {
 					return transaction.error("ERR_DOWNLOAD_MISSING", turbonone!());
 				}
 			} else if folder.is_file() && crate::path::has_extension(&folder, "bin") {
-
 				match GMAFile::open(&folder) {
 					Ok(gma) => gma,
 					Err(_) => match GMAFile::decompress(folder) {
 						Ok(gma) => gma,
 						Err(err) => return transaction.error(err.to_string(), turbonone!()),
-					}
+					},
 				}
-
 			} else {
 				return transaction.error("ERR_DOWNLOAD_MISSING", turbonone!());
 			};

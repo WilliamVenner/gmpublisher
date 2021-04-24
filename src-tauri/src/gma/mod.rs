@@ -1,4 +1,11 @@
-use std::{collections::HashMap, fmt::Display, fs::File, io::{BufReader, SeekFrom}, path::{Path, PathBuf}, time::SystemTime};
+use std::{
+	collections::HashMap,
+	fmt::Display,
+	fs::File,
+	io::{BufReader, SeekFrom},
+	path::{Path, PathBuf},
+	time::SystemTime,
+};
 
 use byteorder::ReadBytesExt;
 
@@ -6,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use steamworks::PublishedFileId;
 use thiserror::Error;
 
-use crate::{ArcBytes, main_thread_forbidden, path::NormalizedPathBuf};
+use crate::{main_thread_forbidden, ArcBytes};
 
 const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 
@@ -134,19 +141,19 @@ pub struct GMAFile {
 	pub membuffer: Option<ArcBytes>,
 }
 impl std::fmt::Debug for GMAFile {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GMAFile")
-		.field("path", &self.path)
-		.field("size", &self.size)
-		.field("id", &self.id)
-		.field("metadata", &self.metadata)
-		.field("entries", &self.entries)
-		.field("pointers", &self.pointers)
-		.field("version", &self.version)
-		.field("extracted_name", &self.extracted_name)
-		.field("modified", &self.modified)
-		.finish()
-    }
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("GMAFile")
+			.field("path", &self.path)
+			.field("size", &self.size)
+			.field("id", &self.id)
+			.field("metadata", &self.metadata)
+			.field("entries", &self.entries)
+			.field("pointers", &self.pointers)
+			.field("version", &self.version)
+			.field("extracted_name", &self.extracted_name)
+			.field("modified", &self.modified)
+			.finish()
+	}
 }
 impl PartialEq for GMAFile {
 	fn eq(&self, other: &Self) -> bool {
@@ -177,7 +184,7 @@ impl GMAFile {
 			version: 0,
 			extracted_name: String::new(),
 			modified: None,
-			membuffer: None
+			membuffer: None,
 		};
 
 		if gma.size == 0 {
@@ -279,8 +286,8 @@ where
 	S: serde::Serializer,
 {
 	match dunce::canonicalize(&path) {
-	    Ok(path) => path.serialize(serializer),
-	    Err(_) => path.serialize(serializer)
+		Ok(path) => path.serialize(serializer),
+		Err(_) => path.serialize(serializer),
 	}
 }
 

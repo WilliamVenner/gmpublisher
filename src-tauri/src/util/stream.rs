@@ -1,4 +1,7 @@
-use std::{io::{BufRead, BufWriter, ErrorKind, Seek, SeekFrom, Write}, sync::Arc};
+use std::{
+	io::{BufRead, BufWriter, ErrorKind, Seek, SeekFrom, Write},
+	sync::Arc,
+};
 
 use byteorder::WriteBytesExt;
 
@@ -37,7 +40,12 @@ pub fn stream_bytes<R: BufRead + ?Sized, W: Write>(r: &mut R, w: &mut BufWriter<
 	})
 }
 
-pub fn stream_bytes_with_transaction<R: BufRead + ?Sized, W: Write>(r: &mut R, w: &mut BufWriter<W>, mut bytes: usize, transaction: &Transaction) -> Result<(), std::io::Error> {
+pub fn stream_bytes_with_transaction<R: BufRead + ?Sized, W: Write>(
+	r: &mut R,
+	w: &mut BufWriter<W>,
+	mut bytes: usize,
+	transaction: &Transaction,
+) -> Result<(), std::io::Error> {
 	Ok({
 		let bytes_f = bytes as f64;
 		let mut consumed_total: f64 = 0.;
@@ -116,7 +124,7 @@ impl AsRef<[u8]> for ArcBytes {
 	}
 }
 impl From<Vec<u8>> for ArcBytes {
-    fn from(bytes: Vec<u8>) -> Self {
-        ArcBytes(Arc::new(bytes))
-    }
+	fn from(bytes: Vec<u8>) -> Self {
+		ArcBytes(Arc::new(bytes))
+	}
 }

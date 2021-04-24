@@ -1,4 +1,8 @@
-use std::{collections::HashMap, fs::File, io::{BufReader, Cursor, SeekFrom}};
+use std::{
+	collections::HashMap,
+	fs::File,
+	io::{BufReader, Cursor, SeekFrom},
+};
 
 use byteorder::{LittleEndian, ReadBytesExt};
 
@@ -14,25 +18,25 @@ macro_rules! safe_read {
 
 pub enum GMAReader {
 	MemBuffer(Cursor<ArcBytes>),
-	Disk(BufReader<File>)
+	Disk(BufReader<File>),
 }
 impl std::ops::Deref for GMAReader {
-    type Target = dyn NTStringReader;
+	type Target = dyn NTStringReader;
 
-    fn deref(&self) -> &Self::Target {
-        match self {
+	fn deref(&self) -> &Self::Target {
+		match self {
 			Self::MemBuffer(buf) => buf,
-			Self::Disk(buf) => buf
+			Self::Disk(buf) => buf,
 		}
-    }
+	}
 }
 impl std::ops::DerefMut for GMAReader {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        match self {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		match self {
 			Self::MemBuffer(buf) => buf,
-			Self::Disk(buf) => buf
+			Self::Disk(buf) => buf,
 		}
-    }
+	}
 }
 impl NTStringReader for Cursor<ArcBytes> {}
 impl NTStringReader for BufReader<File> {}

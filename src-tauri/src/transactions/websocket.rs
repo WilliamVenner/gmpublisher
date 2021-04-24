@@ -1,9 +1,15 @@
-use std::{convert::TryInto, net::{TcpListener, TcpStream}};
+use crate::NTStringWriter;
 use byteorder::{BigEndian, WriteBytesExt};
 use crossbeam::channel::{Receiver, Sender};
-use websocket::{server::{NoTlsAcceptor, WsServer}, sync::{Client, Server}};
-use websocket::OwnedMessage;
-use crate::NTStringWriter;
+use std::{
+	convert::TryInto,
+	net::{TcpListener, TcpStream},
+};
+use websocket::{
+	server::{NoTlsAcceptor, WsServer},
+	sync::{Client, Server},
+	OwnedMessage,
+};
 
 const CANCEL_TRANSACTION: &[u8] = &[123];
 
@@ -15,7 +21,7 @@ impl Into<OwnedMessage> for WebSocketMessage {
 	fn into(self) -> OwnedMessage {
 		match self {
 			WebSocketMessage::OwnedMessage(message) => message,
-			WebSocketMessage::TransactionMessage(message) => OwnedMessage::Binary(message.as_bytes())
+			WebSocketMessage::TransactionMessage(message) => OwnedMessage::Binary(message.as_bytes()),
 		}
 	}
 }
@@ -155,23 +161,23 @@ impl TransactionServer {
 							Ok(bytes) => {
 								super::cancel_transaction(u32::from_be_bytes(*bytes));
 								dprintln!("[1] WebSocket Invalid Message: {:?}", bytes);
-							},
+							}
 							Err(bytes) => {
 								dprintln!("[0] WebSocket Invalid Message: {:?}", bytes);
 								continue;
 							}
 						}
 					}
-				},
+				}
 
 				OwnedMessage::Text(text) => {
 					#[cfg(debug_assertions)]
 					println!("WebSocket Message: {}", text);
 					#[cfg(not(debug_assertions))]
 					unreachable!();
-				},
+				}
 
-				_ => {},
+				_ => {}
 			}
 		});
 
@@ -180,9 +186,9 @@ impl TransactionServer {
 				WebSocketMessage::OwnedMessage(message) => match message {
 					OwnedMessage::Binary(_) => {
 						ignore! { sender.send_message(&message) };
-					},
+					}
 					OwnedMessage::Close(_) => break,
-					_ => unreachable!()
+					_ => unreachable!(),
 				},
 
 				WebSocketMessage::TransactionMessage(message) => {
@@ -198,7 +204,7 @@ impl TransactionServer {
 		if let Err(err) = self.tx.send(WebSocketMessage::TransactionMessage(message)) {
 			TransactionServer::send_tauri_event(match err.into_inner() {
 				WebSocketMessage::TransactionMessage(message) => message,
-				_ => unreachable!()
+				_ => unreachable!(),
 			});
 		}
 	}

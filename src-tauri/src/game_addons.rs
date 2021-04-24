@@ -6,7 +6,7 @@ use std::{
 		atomic::{AtomicBool, Ordering},
 		mpsc, Arc,
 	},
-	time::SystemTime
+	time::SystemTime,
 };
 
 use lazy_static::lazy_static;
@@ -15,7 +15,7 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::ser::SerializeTuple;
 use steamworks::PublishedFileId;
 
-use crate::{gma::extract::ExtractGMAMut, game_addons, webview::Addon, GMAFile};
+use crate::{game_addons, gma::extract::ExtractGMAMut, webview::Addon, GMAFile};
 
 lazy_static! {
 	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
@@ -175,9 +175,11 @@ impl GameAddons {
 				let modified = gma
 					.path
 					.metadata()
-					.and_then(|metadata| metadata.modified().map(|x| {
-						Some(x.duration_since(SystemTime::UNIX_EPOCH).map(|dur| dur.as_secs()).unwrap_or(0))
-					}))
+					.and_then(|metadata| {
+						metadata
+							.modified()
+							.map(|x| Some(x.duration_since(SystemTime::UNIX_EPOCH).map(|dur| dur.as_secs()).unwrap_or(0)))
+					})
 					.unwrap_or(None);
 				gma.modified = modified;
 
@@ -270,7 +272,7 @@ pub fn get_installed_addon(path: PathBuf) -> Option<Arc<Addon>> {
 				let gma = Arc::new(Addon::Installed(gma));
 				game_addons!().external.write().insert(path, Some(gma.clone()));
 				Some(gma)
-			},
+			}
 			Err(_) => {
 				game_addons!().external.write().insert(path, None);
 				None
@@ -294,7 +296,12 @@ pub fn downloader_extract_gmas(paths: Vec<PathBuf>) {
 				let transaction = transaction!();
 				webview_emit!(
 					"ExtractionStarted",
-					(transaction.id, Some(path.clone()), path.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(), gma.id)
+					(
+						transaction.id,
+						Some(path.clone()),
+						path.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(),
+						gma.id
+					)
 				);
 				transaction.data((turbonone!(), path.metadata().map(|metadata| metadata.len()).unwrap_or(0)));
 				ignore! { gma.extract(destination.clone(), &transaction, false) };

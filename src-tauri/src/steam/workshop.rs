@@ -1,8 +1,14 @@
 use serde::Serialize;
-use std::{cell::RefCell, collections::{HashMap, HashSet, VecDeque}, ops::DerefMut, path::PathBuf, sync::{
+use std::{
+	cell::RefCell,
+	collections::{HashMap, HashSet, VecDeque},
+	ops::DerefMut,
+	path::PathBuf,
+	sync::{
 		atomic::{AtomicBool, Ordering},
 		Arc,
-	}};
+	},
+};
 
 use steamworks::{PublishedFileId, QueryResult, QueryResults, SteamError, SteamId};
 
@@ -10,7 +16,7 @@ use parking_lot::Mutex;
 
 use super::{users::SteamUser, Steam};
 
-use crate::{GMOD_APP_ID, main_thread_forbidden, webview::Addon};
+use crate::{main_thread_forbidden, webview::Addon, GMOD_APP_ID};
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -27,7 +33,6 @@ pub struct WorkshopItem {
 	pub subscriptions: u64,
 	pub local_file: Option<PathBuf>,
 	//pub search_title: String,
-
 	#[serde(serialize_with = "super::serialize_opt_steamid", rename = "steamid64")]
 	pub steamid: Option<SteamId>,
 
@@ -49,7 +54,6 @@ impl From<QueryResult> for WorkshopItem {
 			subscriptions: 0,
 			local_file: None,
 			//search_title: result.title.to_lowercase(),
-
 			dead: false,
 		}
 	}
@@ -322,12 +326,12 @@ pub fn browse_my_workshop(page: u32) -> Option<(u32, Vec<Addon>)> {
 
 #[tauri::command]
 fn fetch_workshop_items(items: Vec<PublishedFileId>) {
-	steam!().fetch_workshop_items(items, );
+	steam!().fetch_workshop_items(items);
 }
 
 #[tauri::command]
 fn fetch_workshop_item(item: PublishedFileId) {
-	steam!().fetch_workshop_items(vec![item], );
+	steam!().fetch_workshop_items(vec![item]);
 }
 
 #[tauri::command]

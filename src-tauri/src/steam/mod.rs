@@ -1,4 +1,8 @@
-use std::{collections::{HashMap, HashSet}, mem::{Discriminant, MaybeUninit}, sync::{atomic::AtomicBool, Arc}};
+use std::{
+	collections::{HashMap, HashSet},
+	mem::MaybeUninit,
+	sync::{atomic::AtomicBool, Arc},
+};
 
 use steamworks::{
 	Callback, CallbackHandle, Client, ClientManager, PublishedFileId, SingleClient, SteamId, SteamServerConnectFailure, SteamServersConnected,
@@ -9,7 +13,10 @@ use atomic_refcell::AtomicRefCell;
 
 use self::{downloads::Downloads, users::SteamUser};
 
-use crate::{Transaction, octopus::{AtomicRefSome, PromiseCache, PromiseHashCache, RelaxedRwLock}, search::SearchItemSource};
+use crate::{
+	octopus::{AtomicRefSome, PromiseCache, PromiseHashCache, RelaxedRwLock},
+	Transaction,
+};
 
 use crate::webview_emit;
 
@@ -22,52 +29,21 @@ pub use downloads::DOWNLOADS;
 
 pub const RESULTS_PER_PAGE: usize = steamworks::RESULTS_PER_PAGE as usize;
 
-pub(super) fn serialize_opt_steamid<S>(steamid: &Option<SteamId>, serialize: S) -> Result<S::Ok, S::Error>
+pub fn serialize_opt_steamid<S>(steamid: &Option<SteamId>, serialize: S) -> Result<S::Ok, S::Error>
 where
 	S: serde::Serializer,
 {
 	match steamid {
-	    Some(steamid) => serialize.serialize_some(&steamid.raw().to_string()),
-	    None => serialize.serialize_none(),
+		Some(steamid) => serialize.serialize_some(&steamid.raw().to_string()),
+		None => serialize.serialize_none(),
 	}
 }
 
-mod serde_steamid64 {
-	use serde::{
-		de::{self, Visitor},
-		Deserializer, Serializer,
-	};
-	use steamworks::SteamId;
-
-	pub(super) fn serialize<S>(steamid: &SteamId, serialize: S) -> Result<S::Ok, S::Error>
-	where
-		S: Serializer,
-	{
-		serialize.serialize_str(&steamid.raw().to_string())
-	}
-
-	struct SteamID64Visitor;
-	impl<'de> Visitor<'de> for SteamID64Visitor {
-		type Value = SteamId;
-
-		fn visit_string<E>(self, str: String) -> Result<Self::Value, E>
-		where
-			E: de::Error,
-		{
-			Ok(SteamId::from_raw(str.parse::<u64>().unwrap_or(0)))
-		}
-
-		fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-			formatter.write_str("Expected a SteamID64")
-		}
-	}
-
-	pub(super) fn deserialize<'de, D>(deserialize: D) -> Result<SteamId, D::Error>
-	where
-		D: Deserializer<'de>,
-	{
-		deserialize.deserialize_string(SteamID64Visitor)
-	}
+pub fn serialize_steamid<S>(steamid: &SteamId, serialize: S) -> Result<S::Ok, S::Error>
+where
+	S: serde::Serializer,
+{
+	serialize.serialize_str(&steamid.raw().to_string())
 }
 
 pub struct Interface {
@@ -103,7 +79,7 @@ pub struct Steam {
 	users: PromiseHashCache<SteamId, SteamUser>,
 
 	workshop: RelaxedRwLock<(HashSet<PublishedFileId>, Vec<PublishedFileId>)>,
-	workshop_channel: Transaction
+	workshop_channel: Transaction,
 }
 
 unsafe impl Sync for Steam {}
@@ -118,7 +94,7 @@ impl Steam {
 			users: PromiseCache::new(HashMap::new()),
 
 			workshop: RelaxedRwLock::new((HashSet::new(), Vec::new())),
-			workshop_channel: transaction!()
+			workshop_channel: transaction!(),
 		}
 	}
 

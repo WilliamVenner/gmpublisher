@@ -1,8 +1,13 @@
-use std::{collections::HashMap, fs::{self, File}, io::{Read, BufWriter, Cursor, SeekFrom}, path::{Path, PathBuf}, sync::atomic::{AtomicUsize, Ordering}};
+use std::{
+	fs::{self, File},
+	io::{BufWriter, Cursor, Read, SeekFrom},
+	path::{Path, PathBuf},
+	sync::atomic::{AtomicUsize, Ordering},
+};
 
 use crate::{app_data, transactions::Transaction};
 
-use super::{GMAEntry, GMAError, GMAFile, GMAMetadata, GMAReader, whitelist};
+use super::{whitelist, GMAEntry, GMAError, GMAFile, GMAMetadata, GMAReader};
 
 use lazy_static::lazy_static;
 use rayon::{
@@ -84,7 +89,7 @@ impl GMAFile {
 
 		let input = File::open(path.as_ref())?;
 
-		let lzma_decoder =  xz2::stream::Stream::new_lzma_decoder(u64::MAX).map_err(|_| GMAError::LZMA)?;
+		let lzma_decoder = xz2::stream::Stream::new_lzma_decoder(u64::MAX).map_err(|_| GMAError::LZMA)?;
 		let mut xz_decoder = xz2::read::XzDecoder::new_stream(input, lzma_decoder);
 
 		let mut output = Vec::new();
@@ -119,12 +124,7 @@ impl GMAFile {
 		Ok(())
 	}
 
-	fn stream_entry_bytes(
-		handle: &mut GMAReader,
-		entries_start: u64,
-		entry_path: &PathBuf,
-		entry: &GMAEntry,
-	) -> Result<(), GMAError> {
+	fn stream_entry_bytes(handle: &mut GMAReader, entries_start: u64, entry_path: &PathBuf, entry: &GMAEntry) -> Result<(), GMAError> {
 		use std::io::Write;
 
 		fs::create_dir_all(&entry_path.with_file_name(""))?;
@@ -144,7 +144,13 @@ impl GMAFile {
 pub trait ExtractGMAImmut {
 	fn extract(&self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError>;
 	fn extract_entry(&self, entry_path: String, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError>;
-	fn extract_entry_with_handle(&self, entry_path: String, transaction: &Transaction, open_after_extract: bool, handle: Option<GMAReader>) -> Result<PathBuf, GMAError>;
+	fn extract_entry_with_handle(
+		&self,
+		entry_path: String,
+		transaction: &Transaction,
+		open_after_extract: bool,
+		handle: Option<GMAReader>,
+	) -> Result<PathBuf, GMAError>;
 }
 pub trait ExtractGMAMut {
 	fn extract(&mut self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError>;
@@ -165,7 +171,9 @@ impl ExtractGMAImmut for GMAFile {
 			let i = AtomicUsize::new(0);
 
 			let finished = |mut dest_path: PathBuf| {
-				if i.fetch_add(1, Ordering::AcqRel) > entries_len_i || transaction.aborted() { return; }
+				if i.fetch_add(1, Ordering::AcqRel) > entries_len_i || transaction.aborted() {
+					return;
+				}
 
 				transaction.finished(dest_path.to_owned());
 
@@ -183,12 +191,15 @@ impl ExtractGMAImmut for GMAFile {
 				}
 			};
 
-			entries.par_iter().try_for_each(
-				|(entry_path, entry)| -> Result<(), GMAError> {
+			entries
+				.par_iter()
+				.try_for_each(|(entry_path, entry)| -> Result<(), GMAError> {
 					let mut handle = self.read()?;
 
 					if whitelist::check(entry_path) {
-						if transaction.aborted() { return Err(GMAError::Cancelled); }
+						if transaction.aborted() {
+							return Err(GMAError::Cancelled);
+						}
 
 						// FIXME count errors, check if errors == number of entries, return an error instead of finished
 						ignore! { GMAFile::stream_entry_bytes(&mut handle, entries_start, &dest_path.join(entry_path), entry) };
@@ -204,11 +215,11 @@ impl ExtractGMAImmut for GMAFile {
 					}
 
 					Ok(())
-				},
-			).map(|_| {
-				(finished)(dest_path.to_owned());
-				dest_path
-			})
+				})
+				.map(|_| {
+					(finished)(dest_path.to_owned());
+					dest_path
+				})
 		});
 
 		if !transaction.aborted() {
@@ -220,7 +231,13 @@ impl ExtractGMAImmut for GMAFile {
 		result
 	}
 
-	fn extract_entry_with_handle(&self, entry_path: String, transaction: &Transaction, open_after_extract: bool, handle: Option<GMAReader>) -> Result<PathBuf, GMAError> {
+	fn extract_entry_with_handle(
+		&self,
+		entry_path: String,
+		transaction: &Transaction,
+		open_after_extract: bool,
+		handle: Option<GMAReader>,
+	) -> Result<PathBuf, GMAError> {
 		let mut path = app_data!().temp_dir().to_owned();
 		path.push("gmpublisher");
 		path.push(&self.extracted_name);
@@ -231,9 +248,15 @@ impl ExtractGMAImmut for GMAFile {
 			None => self.read()?,
 		};
 
-		let entry = self.entries.as_ref().expect("Expected entries to be read by this point").get(&entry_path).ok_or(GMAError::EntryNotFound)?;
+		let entry = self
+			.entries
+			.as_ref()
+			.expect("Expected entries to be read by this point")
+			.get(&entry_path)
+			.ok_or(GMAError::EntryNotFound)?;
 
-		let result = GMAFile::stream_entry_bytes_with_transaction(&mut handle, self.pointers.entries, &path, entry, transaction).map(|_| path.to_owned());
+		let result =
+			GMAFile::stream_entry_bytes_with_transaction(&mut handle, self.pointers.entries, &path, entry, transaction).map(|_| path.to_owned());
 
 		if let Err(ref error) = result {
 			if !transaction.aborted() {

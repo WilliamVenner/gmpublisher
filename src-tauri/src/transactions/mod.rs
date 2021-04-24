@@ -4,9 +4,12 @@ use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::Serialize;
-use std::sync::{Arc, Weak, atomic::{AtomicBool, AtomicU32, Ordering}};
+use std::sync::{
+	atomic::{AtomicBool, AtomicU32, Ordering},
+	Arc, Weak,
+};
 
-use crate::{dprintln, main_thread_forbidden, webview_emit};
+use crate::dprintln;
 
 use self::websocket::{TransactionMessage, TransactionServer};
 
@@ -31,7 +34,7 @@ impl Transactions {
 		Transactions {
 			inner: RwLock::new(Vec::new()),
 			id: AtomicU32::new(0),
-			websocket: TransactionServer::init().ok()
+			websocket: TransactionServer::init().ok(),
 		}
 	}
 

@@ -1,5 +1,11 @@
-use std::{cell::{Cell, RefCell}, collections::HashMap, fs::{self, OpenOptions, File}, io::{SeekFrom, Seek}, mem::MaybeUninit, path::PathBuf};
-use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use std::{
+	cell::Cell,
+	collections::HashMap,
+	fs::{self, File, OpenOptions},
+	io::{Seek, SeekFrom},
+	path::PathBuf,
+};
 
 use crate::{gma::ExtractDestination, webview_emit, RwLockCow};
 
@@ -31,36 +37,33 @@ impl OpenCount {
 	}
 
 	fn increment(&self) {
-		self.0.set((|| -> Result<u32, std::io::Error> {
+		self.0.set(
+			(|| -> Result<u32, std::io::Error> {
+				let mut count_file = app_data!().user_data_dir().to_owned();
+				fs::create_dir_all(&count_file)?;
 
-			let mut count_file = app_data!().user_data_dir().to_owned();
-			fs::create_dir_all(&count_file)?;
+				count_file.push(".open_count");
 
-			count_file.push(".open_count");
+				let mut f = OpenOptions::new().read(true).write(true).create(true).open(count_file)?;
 
-			let mut f = OpenOptions::new()
-				.read(true)
-				.write(true)
-				.create(true)
-				.open(count_file)?;
+				let count = f.read_u32::<LittleEndian>().unwrap_or(0) + 1;
 
-			let count = f.read_u32::<LittleEndian>().unwrap_or(0) + 1;
+				f.seek(SeekFrom::Start(0))?;
+				f.write_u32::<LittleEndian>(count)?;
 
-			f.seek(SeekFrom::Start(0))?;
-			f.write_u32::<LittleEndian>(count)?;
-
-			Ok(count)
-
-		})().unwrap_or(0));
+				Ok(count)
+			})()
+			.unwrap_or(0),
+		);
 	}
 }
 impl serde::Serialize for OpenCount {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
 	{
-        serializer.serialize_u32(self.0.get())
-    }
+		serializer.serialize_u32(self.0.get())
+	}
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -262,7 +265,10 @@ impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 		sanitized.sanitize();
 		*app_data!().settings.write() = sanitized;
 
-		let mut default_ignore: Vec<String> = crate::gma::DEFAULT_IGNORE.iter().map(|glob| (&glob[0..glob.len()-1]).to_string()).collect::<Vec<String>>();
+		let mut default_ignore: Vec<String> = crate::gma::DEFAULT_IGNORE
+			.iter()
+			.map(|glob| (&glob[0..glob.len() - 1]).to_string())
+			.collect::<Vec<String>>();
 		default_ignore.sort();
 
 		app_data!().open_count.increment();
@@ -281,8 +287,12 @@ impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 					),
 					1,
 				)
-				.replacen("{$_DEFAULT_IGNORE_GLOBS_$}", &crate::escape_single_quoted_json(serde_json::ser::to_string(&default_ignore).unwrap()), 1)
-				.replacen("{$_PATH_SEPARATOR_$}", &serde_json::ser::to_string(&PATH_SEPARATOR).unwrap(), 1)
+				.replacen(
+					"{$_DEFAULT_IGNORE_GLOBS_$}",
+					&crate::escape_single_quoted_json(serde_json::ser::to_string(&default_ignore).unwrap()),
+					1,
+				)
+				.replacen("{$_PATH_SEPARATOR_$}", &serde_json::ser::to_string(&PATH_SEPARATOR).unwrap(), 1),
 		)
 	}
 

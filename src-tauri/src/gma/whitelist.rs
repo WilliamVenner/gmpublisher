@@ -150,7 +150,9 @@ pub fn filter_default_ignored<S: Into<String> + Clone>(str: &S) -> bool {
 }
 
 pub fn is_ignored<S: Into<String> + Clone>(str: &S, ignore: &[String]) -> bool {
-	if ignore.is_empty() { return false; }
+	if ignore.is_empty() {
+		return false;
+	}
 
 	let mut string = str.clone().into();
 	string.push('\0');
@@ -216,7 +218,7 @@ pub fn test_ignore() {
 		"blah.psd",
 		"some/location/blah.psd",
 		"some/blah/blah.pdn",
-		"hi.xcf"
+		"hi.xcf",
 	];
 
 	for ignored in ignored {

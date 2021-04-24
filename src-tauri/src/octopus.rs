@@ -1,6 +1,10 @@
 // Utility library for shared concurrency between JS and Rust.
 
-use std::{collections::{HashMap, VecDeque}, hash::Hash, sync::Arc};
+use std::{
+	collections::{HashMap, VecDeque},
+	hash::Hash,
+	sync::Arc,
+};
 
 use atomic_refcell::{AtomicRef, AtomicRefMut};
 
@@ -136,7 +140,9 @@ impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
 							for f in queue.drain(..) {
 								f(&mut inner);
 							}
-						} else { break; }
+						} else {
+							break;
+						}
 					}
 					sleep_ms!(25);
 				}

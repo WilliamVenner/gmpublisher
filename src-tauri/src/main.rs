@@ -104,7 +104,9 @@ fn stdin() -> bool {
 }
 
 fn main() {
-	if stdin() { return; }
+	if stdin() {
+		return;
+	}
 
 	#[cfg(debug_assertions)]
 	deadlock_watchdog();

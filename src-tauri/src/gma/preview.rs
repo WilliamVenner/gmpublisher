@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
+use super::{extract::ExtractGMAImmut, ExtractDestination, GMAEntry, GMAError, GMAFile};
 use parking_lot::Mutex;
-use super::{extract::ExtractGMAImmut, GMAFile, GMAError, GMAEntry, ExtractDestination};
 
 lazy_static! {
 	static ref PREVIEW_GMA: Mutex<Option<Arc<GMAFile>>> = Mutex::new(None);
@@ -40,7 +40,9 @@ pub fn extract_preview_entry(gma_path: PathBuf, entry_path: String) -> Option<u3
 		let id = transaction.id;
 
 		let gma_ref = gma.clone();
-		rayon::spawn(move || { ignore! { gma_ref.extract_entry(entry_path, &transaction, true) }; });
+		rayon::spawn(move || {
+			ignore! { gma_ref.extract_entry(entry_path, &transaction, true) };
+		});
 
 		Some(id)
 	} else {
@@ -62,7 +64,9 @@ pub fn extract_preview_gma(gma_path: PathBuf, dest: ExtractDestination) -> Optio
 		let id = transaction.id;
 
 		let gma_ref = gma.clone();
-		rayon::spawn(move || { ignore! { gma_ref.extract(dest, &transaction, true) }; });
+		rayon::spawn(move || {
+			ignore! { gma_ref.extract(dest, &transaction, true) };
+		});
 
 		Some(id)
 	} else {

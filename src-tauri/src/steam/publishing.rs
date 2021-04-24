@@ -1,10 +1,19 @@
-use crate::{Base64Image, GMOD_APP_ID, Transaction, gma::{GMAFile, GMAEntry, GMAMetadata, GMAFilePointers}};
+use crate::{
+	gma::{GMAEntry, GMAFile, GMAFilePointers, GMAMetadata},
+	Transaction, GMOD_APP_ID,
+};
 use image::{DynamicImage, GenericImageView, ImageError, ImageFormat};
 use parking_lot::Mutex;
 use path_slash::PathBufExt;
-use walkdir::WalkDir;
-use std::{fs::File, io::BufReader, mem::MaybeUninit, path::{Path, PathBuf}, sync::Arc, time::SystemTime};
+use std::{
+	fs::File,
+	io::BufReader,
+	mem::MaybeUninit,
+	path::{Path, PathBuf},
+	sync::Arc,
+};
 use steamworks::{PublishedFileId, SteamError};
+use walkdir::WalkDir;
 
 #[cfg(not(target_os = "windows"))]
 use std::collections::HashSet;
@@ -40,12 +49,12 @@ impl std::fmt::Display for PublishError {
 	}
 }
 impl serde::Serialize for PublishError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
 	{
-        serializer.serialize_str(&self.to_string())
-    }
+		serializer.serialize_str(&self.to_string())
+	}
 }
 impl From<SteamError> for PublishError {
 	fn from(error: SteamError) -> PublishError {
@@ -121,9 +130,9 @@ pub enum WorkshopIcon {
 		format: ImageFormat,
 		width: u32,
 		height: u32,
-		upscale: bool
+		upscale: bool,
 	},
-	Default
+	Default,
 }
 impl WorkshopIcon {
 	pub fn can_upscale(width: u32, height: u32, format: ImageFormat) -> bool {
@@ -133,12 +142,19 @@ impl WorkshopIcon {
 impl Into<PathBuf> for WorkshopIcon {
 	fn into(self) -> PathBuf {
 		match self {
-			WorkshopIcon::Custom { path, image, width, height, upscale, format } => {
+			WorkshopIcon::Custom {
+				path,
+				image,
+				width,
+				height,
+				upscale,
+				format,
+			} => {
 				if upscale && WorkshopIcon::can_upscale(width, height, format) {
 					let format_extension = match format {
 						ImageFormat::Png => "png",
 						ImageFormat::Jpeg => "jpg",
-						_ => unreachable!()
+						_ => unreachable!(),
 					};
 
 					let mut temp_img = app_data!().temp_dir().to_owned();
@@ -147,12 +163,12 @@ impl Into<PathBuf> for WorkshopIcon {
 					let image = image.resize_exact(512, 512, image::imageops::FilterType::CatmullRom);
 					match image.save_with_format(&temp_img, format) {
 						Ok(_) => temp_img,
-						Err(_) => path
+						Err(_) => path,
 					}
 				} else {
 					path
 				}
-			},
+			}
 			WorkshopIcon::Default => {
 				let mut path = app_data!().temp_dir().to_owned();
 				path.push("gmpublisher_default_icon.png");
@@ -160,7 +176,7 @@ impl Into<PathBuf> for WorkshopIcon {
 					std::fs::write(&path, WORKSHOP_DEFAULT_ICON).expect("Failed to write default icon to temp directory!");
 				}
 				path
-			},
+			}
 		}
 	}
 }
@@ -180,7 +196,7 @@ impl WorkshopIcon {
 			"png" => ImageFormat::Png,
 			"gif" => ImageFormat::Gif,
 			"jpeg" | "jpg" => ImageFormat::Jpeg,
-			_ => return Err(PublishError::IconInvalidFormat)
+			_ => return Err(PublishError::IconInvalidFormat),
 		};
 
 		let image = image::load(BufReader::new(File::open(path)?), image_format)?;
@@ -220,7 +236,13 @@ impl Steam {
 		let result = Arc::new(Mutex::new(None));
 		let result_ref = result.clone();
 		let update_handle = match details {
-			Creation { title, path, mut tags, addon_type, preview } => {
+			Creation {
+				title,
+				path,
+				mut tags,
+				addon_type,
+				preview,
+			} => {
 				tags.reserve(tags.len() + 2);
 				tags.push("Addon".to_string());
 				tags.push(addon_type);
@@ -238,7 +260,14 @@ impl Steam {
 					})
 			}
 
-			Update { title, path, mut tags, addon_type, preview, changes } => {
+			Update {
+				title,
+				path,
+				tags,
+				addon_type,
+				preview,
+				changes,
+			} => {
 				let mut tags = tags;
 				tags.reserve(tags.len() + 2);
 				tags.push("Addon".to_string());
@@ -293,8 +322,8 @@ impl Steam {
 			Ok((_, legal_agreement)) => {
 				transaction.progress(1.);
 				Ok(legal_agreement)
-			},
-			Err(error) => Err(PublishError::SteamError(error))
+			}
+			Err(error) => Err(PublishError::SteamError(error)),
 		}
 	}
 
@@ -318,24 +347,20 @@ impl Steam {
 			self.run_callbacks();
 		}
 
-		let id = match Arc::try_unwrap(published)
-		.unwrap()
-		.into_inner()
-		.unwrap() {
+		let id = match Arc::try_unwrap(published).unwrap().into_inner().unwrap() {
 			Ok((id, _)) => id,
-			Err(error) => return (None, Err(PublishError::SteamError(error)))
+			Err(error) => return (None, Err(PublishError::SteamError(error))),
 		};
 
-		(
-			Some(id),
-			self.update(id, details, transaction)
-		)
+		(Some(id), self.update(id, details, transaction))
 	}
 }
 
 #[tauri::command]
 fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>, u64), PublishError> {
-	if !path.is_dir() || !path.is_absolute() { return Err(PublishError::InvalidContentPath); }
+	if !path.is_dir() || !path.is_absolute() {
+		return Err(PublishError::InvalidContentPath);
+	}
 
 	let root_path_strip_len = path.to_slash_lossy().len() + 1;
 
@@ -346,27 +371,35 @@ fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>
 	#[cfg(not(target_os = "windows"))]
 	let mut dedup = HashSet::new();
 
-	for (path, relative_path) in WalkDir::new(&path).contents_first(true).into_iter().filter_map(|entry| {
+	for (path, relative_path) in WalkDir::new(&path)
+		.contents_first(true)
+		.into_iter()
+		.filter_map(|entry| {
+			let path = match entry {
+				Ok(entry) => entry.into_path(),
+				Err(err) => match err.path() {
+					Some(path) => path.to_path_buf(),
+					None => return None,
+				},
+			};
 
-		let path = match entry {
-			Ok(entry) => entry.into_path(),
-			Err(err) => match err.path() {
-				Some(path) => path.to_path_buf(),
-				None => return None,
+			if path.is_dir() {
+				return None;
 			}
-		};
 
-		if path.is_dir() { return None; }
+			let relative_path = {
+				let mut relative_path = path.to_slash_lossy();
+				if relative_path.len() < root_path_strip_len {
+					return None;
+				}
+				relative_path.split_off(root_path_strip_len).to_lowercase()
+			};
 
-		let relative_path = {
-			let mut relative_path = path.to_slash_lossy();
-			if relative_path.len() < root_path_strip_len { return None; }
-			relative_path.split_off(root_path_strip_len).to_lowercase()
-		};
-
-		Some((path, relative_path))
-
-	}).filter(|(_, relative_path)| crate::gma::whitelist::filter_default_ignored(relative_path)).filter(|(_, relative_path)| !crate::gma::whitelist::is_ignored(relative_path, &ignore)) {
+			Some((path, relative_path))
+		})
+		.filter(|(_, relative_path)| crate::gma::whitelist::filter_default_ignored(relative_path))
+		.filter(|(_, relative_path)| !crate::gma::whitelist::is_ignored(relative_path, &ignore))
+	{
 		if !crate::gma::whitelist::check(&relative_path) {
 			if failed.len() == 9 {
 				failed_extra = true;
@@ -381,7 +414,7 @@ fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>
 				path: relative_path,
 				size: entry_size,
 				crc: 0,
-				index: 0
+				index: 0,
 			});
 		}
 	}
@@ -406,7 +439,16 @@ fn verify_whitelist(path: PathBuf, ignore: Vec<String>) -> Result<(Vec<GMAEntry>
 }
 
 #[tauri::command]
-pub fn publish(content_path_src: PathBuf, icon_path: Option<PathBuf>, title: String, tags: Vec<String>, addon_type: String, upscale: bool, update_id: Option<PublishedFileId>, changes: Option<String>) -> u32 {
+pub fn publish(
+	content_path_src: PathBuf,
+	icon_path: Option<PathBuf>,
+	title: String,
+	tags: Vec<String>,
+	addon_type: String,
+	upscale: bool,
+	update_id: Option<PublishedFileId>,
+	changes: Option<String>,
+) -> u32 {
 	let transaction = transaction!();
 	let id = transaction.id;
 
@@ -422,7 +464,7 @@ pub fn publish(content_path_src: PathBuf, icon_path: Option<PathBuf>, title: Str
 						return;
 					}
 				}
-			},
+			}
 			None => {
 				if update_id.is_none() {
 					Some(WorkshopIcon::Default)
@@ -446,7 +488,8 @@ pub fn publish(content_path_src: PathBuf, icon_path: Option<PathBuf>, title: Str
 		path.push("gmpublisher.gma");
 
 		{
-			let gma = GMAFile { // TODO convert to GMAFile::new()
+			let gma = GMAFile {
+				// TODO convert to GMAFile::new()
 				path: path.clone(),
 				size: 0,
 				id: None,
@@ -486,22 +529,32 @@ pub fn publish(content_path_src: PathBuf, icon_path: Option<PathBuf>, title: Str
 		transaction.status("PUBLISH_STARTING");
 
 		let (id, result) = if let Some(id) = update_id {
-			(update_id, steam!().update(id, WorkshopUpdateType::Update {
-				title,
-				path: content_path,
-				tags,
-				addon_type,
-				preview,
-			    changes,
-			}, transaction.clone()))
+			(
+				update_id,
+				steam!().update(
+					id,
+					WorkshopUpdateType::Update {
+						title,
+						path: content_path,
+						tags,
+						addon_type,
+						preview,
+						changes,
+					},
+					transaction.clone(),
+				),
+			)
 		} else {
-			steam!().publish(WorkshopUpdateType::Creation {
-				title,
-				path: content_path,
-				tags,
-				addon_type,
-				preview: preview.unwrap(),
-			}, transaction.clone())
+			steam!().publish(
+				WorkshopUpdateType::Creation {
+					title,
+					path: content_path,
+					tags,
+					addon_type,
+					preview: preview.unwrap(),
+				},
+				transaction.clone(),
+			)
 		};
 
 		ignore! { std::fs::remove_file(path) };
@@ -521,7 +574,7 @@ pub fn publish(content_path_src: PathBuf, icon_path: Option<PathBuf>, title: Str
 				app_data!().settings.write().my_workshop_local_paths.insert(id, content_path_src);
 				ignore! { app_data!().settings.read().save() };
 				app_data!().send();
-			},
+			}
 			Err(error) => {
 				transaction.error(error.to_string(), turbonone!());
 				if let Some(id) = id {
@@ -536,27 +589,29 @@ pub fn publish(content_path_src: PathBuf, icon_path: Option<PathBuf>, title: Str
 
 #[tauri::command]
 pub fn verify_icon(path: PathBuf) -> Result<(String, bool), Transaction> {
-	WorkshopIcon::new(&path, false).and_then(|icon| {
-		let (prefix, can_upscale) = match icon {
-			WorkshopIcon::Custom { format, width, height, .. } => {
-				(
-					format!("data:image/{};base64,", match format {
-						ImageFormat::Png => "png",
-						ImageFormat::Jpeg => "jpeg",
-						ImageFormat::Gif => "gif",
-						_ => unreachable!()
-					}),
-
-					WorkshopIcon::can_upscale(width, height, format)
-				)
-			},
-			_ => unreachable!()
-		};
-		let base64 = base64::encode(std::fs::read(path)?);
-		Ok((prefix + &base64, can_upscale))
-	}).map_err(|error| {
-		let transaction = transaction!();
-		transaction.error(error.to_string(), turbonone!());
-		transaction
-	})
+	WorkshopIcon::new(&path, false)
+		.and_then(|icon| {
+			let (prefix, can_upscale) = match icon {
+				WorkshopIcon::Custom { format, width, height, .. } => (
+					format!(
+						"data:image/{};base64,",
+						match format {
+							ImageFormat::Png => "png",
+							ImageFormat::Jpeg => "jpeg",
+							ImageFormat::Gif => "gif",
+							_ => unreachable!(),
+						}
+					),
+					WorkshopIcon::can_upscale(width, height, format),
+				),
+				_ => unreachable!(),
+			};
+			let base64 = base64::encode(std::fs::read(path)?);
+			Ok((prefix + &base64, can_upscale))
+		})
+		.map_err(|error| {
+			let transaction = transaction!();
+			transaction.error(error.to_string(), turbonone!());
+			transaction
+		})
 }

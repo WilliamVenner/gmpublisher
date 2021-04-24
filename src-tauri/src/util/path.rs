@@ -35,9 +35,9 @@ impl NormalizedPathBuf {
 	}
 }
 impl AsRef<Path> for NormalizedPathBuf {
-    fn as_ref(&self) -> &Path {
-        self.path.as_ref()
-    }
+	fn as_ref(&self) -> &Path {
+		self.path.as_ref()
+	}
 }
 impl PartialEq for NormalizedPathBuf {
 	fn eq(&self, other: &Self) -> bool {
