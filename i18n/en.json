@@ -5,7 +5,7 @@
 	"loading": "Loading...",
 	"gmod_dir": {
 		"name": "Garry's Mod Directory",
-		"fail": "Failed to find a valid Garry's Mod directory where you've specified.\nMake sure the directory contains a bin/ folder which contains gmad and gmpublsh."
+		"fail": "Failed to find a valid Garry's Mod directory where you've specified.\nMake sure the directory contains a bin/ folder which contains gmad and gmpublish."
 	},
 	"greetings": {
 		"morning": "Good morning, {name}!",
