@@ -90,6 +90,8 @@
 
 			if (successSound) playSound('success');
 
+			checkForm();
+
 		}, (err) => {
 
 			$gmaEntries = [];
@@ -100,6 +102,8 @@
 			playSound('error');
 
 			pathValue = path;
+
+			checkForm();
 
 		});
 	}
