@@ -137,6 +137,14 @@ impl TransactionInner {
 		}
 	}
 
+	pub fn progress_reset(&self) {
+		if self.aborted() {
+			dprintln!("Tried to reset the progress of an aborted transaction!");
+		} else {
+			self.emit(TransactionMessage::ResetProgress(self.id));
+		}
+	}
+
 	pub fn error<S: Into<String>, D: Serialize + Send + 'static>(&self, msg: S, data: D) {
 		self.abort();
 		self.emit(TransactionMessage::Error(self.id, msg.into(), json!(data)));

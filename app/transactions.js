@@ -174,6 +174,10 @@ function transactionEvent(event, callback) {
 	});
 }
 
+transactionEvent('ResetProgress', ([ transaction ]) => {
+	transaction.setProgress(0);
+});
+
 transactionEvent('Progress', ([ transaction, progress ]) => {
 	if (progress > (transaction.progressInt ?? 0)) transaction.setProgress(progress);
 });
@@ -273,6 +277,10 @@ invoke('websocket').then(port => {
 
 			case 5:
 			receiveTransactionEvent('IncrProgress', [id, view.getUint16(5)]);
+			break;
+
+			case 6:
+			receiveTransactionEvent('ResetProgress', [id]);
 			break;
 		}
 	});

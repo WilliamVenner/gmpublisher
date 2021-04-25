@@ -33,6 +33,7 @@ pub enum TransactionMessage {
 	Status(u32, String),
 	Progress(u32, u16),
 	IncrProgress(u32, u16),
+	ResetProgress(u32),
 }
 impl TransactionMessage {
 	fn write_json(bytes: &mut Vec<u8>, json: &serde_json::Value) {
@@ -78,6 +79,10 @@ impl TransactionMessage {
 				bytes.write_u8(5).unwrap();
 				bytes.write_u32::<BigEndian>(*id).unwrap();
 				bytes.write_u16::<BigEndian>(*incr).unwrap();
+			}
+			TransactionMessage::ResetProgress(id) => {
+				bytes.write_u8(6).unwrap();
+				bytes.write_u32::<BigEndian>(*id).unwrap();
 			}
 		}
 
@@ -228,6 +233,9 @@ impl TransactionServer {
 			}
 			TransactionMessage::IncrProgress(id, incr) => {
 				webview_emit!("TransactionIncrProgress", (id, incr));
+			}
+			TransactionMessage::ResetProgress(id) => {
+				webview_emit!("TransactionResetProgress", id);
 			}
 		}
 	}
