@@ -122,8 +122,7 @@ impl GMAFile {
 					crc32.update(&contents);
 					let crc32 = crc32.finalize();
 
-					tx.send((relative_path.into_bytes().into_boxed_slice(), contents.into_boxed_slice(), crc32))
-						.unwrap(); // TODO do we need to box here?
+					tx.send((relative_path.into_bytes().into_boxed_slice(), contents.into_boxed_slice(), crc32)).unwrap();
 				});
 
 				total += 1.;
@@ -132,31 +131,29 @@ impl GMAFile {
 			(error, rx, total)
 		};
 
-		let mut entries_list_buf = LinkedList::new();
 		let mut entries_buf = LinkedList::new();
 
-		let mut i: f64 = 0.;
+		let mut i = 0;
+		let mut i_f: f64 = 0.;
 		while let Ok((path, contents, crc32)) = rx.recv() {
-			entries_list_buf.push_back((path, contents.len(), crc32));
-			entries_buf.push_back(contents);
+			i += 1;
 
-			i += 1.;
-			transaction.progress(i / total);
-		}
-
-		for (i, (path, size, crc32)) in entries_list_buf.into_iter().enumerate() {
-			f.write_u32::<LittleEndian>((i + 1) as u32)?;
+			f.write_u32::<LittleEndian>(i as u32)?;
 			f.write(&path)?;
 			f.write_u8(0)?;
-			f.write_i64::<LittleEndian>(size as i64)?;
+			f.write_i64::<LittleEndian>(contents.len() as i64)?;
 			f.write_u32::<LittleEndian>(crc32)?;
+
+			entries_buf.push_back(contents);
+
+			i_f += 1.;
+			transaction.progress(i_f / total);
 		}
 
 		f.write_u32::<LittleEndian>(0)?;
 
 		for contents in entries_buf.into_iter() {
 			f.write(&contents)?;
-			f.write_u8(0)?;
 		}
 
 		let written = f.buffer();
