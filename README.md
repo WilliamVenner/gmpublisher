@@ -63,6 +63,10 @@ The program should work out-of-the-box.
 
 ###### (Pre-builds coming soon)
 
+## Tutorials
+
+[DanFMN - Fastest Way to Upload a Garry's Mod Addon To Workshop](https://youtu.be/_syLXTFXmgM)
+
 ## Technical Stuff
 
 * The program makes heavy use of multithreading, and will work best on processors with a decent amount of cores.
@@ -70,10 +74,6 @@ The program should work out-of-the-box.
 * This is not an Electron app; this is a [Tauri](https://github.com/tauri-apps/tauri) app. Big thanks to all the contributors to Tauri for their amazing work on finally killing Electron for good.
 * gmpublisher uses the fantastic [steamworks-rs](https://crates.io/crates/steamworks) library for interfacing with the [Steamworks SDK](https://partner.steamgames.com/doc/api)
 * The program is only about ~10 MB (which is probably just a lot of [panic unwinding traces](https://doc.rust-lang.org/nomicon/unwinding.html)!)
-
-## Tutorials
-
-[DanFMN - Fastest Way to Upload a Garry's Mod Addon To Workshop](https://youtu.be/_syLXTFXmgM)
 
 ## Media
 
