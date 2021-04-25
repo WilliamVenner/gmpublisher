@@ -87,6 +87,8 @@ pub struct Settings {
 
 	pub my_workshop_local_paths: HashMap<PublishedFileId, PathBuf>,
 	pub upscale_addon_icon: bool,
+
+	pub language: Option<String>,
 }
 impl Default for Settings {
 	fn default() -> Self {
@@ -108,6 +110,8 @@ impl Default for Settings {
 			ignore_globs: Vec::new(),
 			my_workshop_local_paths: HashMap::new(),
 			upscale_addon_icon: true,
+
+			language: None,
 		}
 	}
 }

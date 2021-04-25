@@ -1,6 +1,6 @@
 <script>
 	import { tippy } from '../tippy';
-	import { _ } from 'svelte-i18n';
+	import { getLocaleFromNavigator, _ } from 'svelte-i18n';
 	import { Gear } from 'akar-icons-svelte';
 	import Modal from './Modal.svelte';
 	import Sidebar from './Sidebar.svelte';
@@ -9,13 +9,14 @@
 	import Setting from './Setting.svelte';
 	import { playSound } from '../sounds';
 	import { invoke } from '@tauri-apps/api/tauri';
+	import { switchLanguage } from '../i18n';
 
 	let active = false;
 	function toggle() {
 		active = !active;
 	}
 
-	let activeItem = writable('paths');
+	let activeItem = writable('general');
 
 	function saveSettings(e) {
 		e.preventDefault();
@@ -45,32 +46,51 @@
 		}
 		form.requestSubmit();
 	}
+
+	const languages = [
+		['default', 'Automatic'],
+		['en', 'English'],
+	];
+	for (let lang in APP_LANGUAGES) {
+		languages.push([lang, APP_LANGUAGES[lang]]);
+	}
+	function chooseLanguage() {
+		if (this.value === 'default') {
+			AppSettings.language = null;
+			switchLanguage(getLocaleFromNavigator());
+		} else {
+			AppSettings.language = this.value;
+			switchLanguage(this.value);
+		}
+		form.requestSubmit();
+	}
 </script>
 
 <Modal id="settings" active={active} cancel={toggle}>
 	<Sidebar id="settings-sidebar">
 
-		<SidebarItem {activeItem} id="paths">{$_('settings.paths.paths')}</SidebarItem>
 		<SidebarItem {activeItem} id="general">{$_('settings.general.general')}</SidebarItem>
+		<SidebarItem {activeItem} id="paths">{$_('settings.paths.paths')}</SidebarItem>
 		<!-- TODO <SidebarItem {activeItem} id="resets">{$_('settings.resets.resets')}</SidebarItem>-->
 
 	</Sidebar>
 
 	<form id="content" class="hide-scroll" on:submit={saveSettings} bind:this={form}>
-		{#if $activeItem === 'paths'}
+		{#if $activeItem === 'general'}
 			<div id="open-count">
 				<div>
-					<Setting {afterChange} id="gmod" type="directory" initial={AppData.gmod_dir} value={AppSettings.gmod} beforeChange={validateGmod}>{$_('settings.paths.gmod')}</Setting>
-					<Setting {afterChange} id="downloads" type="directory" initial={AppData.downloads_dir} value={AppSettings.downloads}>{$_('settings.paths.downloads')}</Setting>
-					<Setting {afterChange} id="user_data" type="directory" initial={AppData.user_data_dir} value={AppSettings.user_data}>{$_('settings.paths.user_data')}</Setting>
-					<Setting {afterChange} id="temp" type="directory" initial={AppData.temp_dir} value={AppSettings.temp}>{$_('settings.paths.temp')}</Setting>
+					<Setting id="language" type="select" value={AppSettings.language ?? 'default'} choices={languages} afterChange={chooseLanguage}>Language</Setting>
+					<Setting {afterChange} id="sounds" type="bool" value={AppSettings.sounds}>{$_('settings.general.sounds')}</Setting>
 				</div>
 				<div>{$_('open_count', { values: { count: AppData.open_count } })}</div>
 			</div>
-		{:else if $activeItem === 'general'}
-			<Setting {afterChange} id="sounds" type="bool" value={AppSettings.sounds}>{$_('settings.general.sounds')}</Setting>
+		{:else if $activeItem === 'paths'}
+			<Setting {afterChange} id="gmod" type="directory" initial={AppData.gmod_dir ?? $_('ERR_UNKNOWN')} value={AppSettings.gmod} beforeChange={validateGmod}>{$_('settings.paths.gmod')}</Setting>
+			<Setting {afterChange} id="downloads" type="directory" initial={AppData.downloads_dir} value={AppSettings.downloads}>{$_('settings.paths.downloads')}</Setting>
+			<Setting {afterChange} id="user_data" type="directory" initial={AppData.user_data_dir} value={AppSettings.user_data}>{$_('settings.paths.user_data')}</Setting>
+			<Setting {afterChange} id="temp" type="directory" initial={AppData.temp_dir} value={AppSettings.temp}>{$_('settings.paths.temp')}</Setting>
 		{:else if $activeItem === 'resets'}
-			resets
+			<!-- TODO -->
 		{/if}
 	</form>
 </Modal>
@@ -106,5 +126,7 @@
 		margin-top: 1rem;
 		text-align: center;
 		font-size: .8em;
+		padding-bottom: 1.5rem;
+		margin-bottom: -1.5rem;
 	}
 </style>

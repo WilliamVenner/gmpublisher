@@ -32,11 +32,11 @@
 </script>
 
 <span class="switch-container">
-	<span class="switch" on:click={toggle} class:checked={checked}>
+	<label for={id}><slot></slot></label>
+	<div class="switch" on:click={toggle} class:checked={checked}>
 		<input type="checkbox" id={id} name={id} checked={value ? true : null} bind:this={checkbox}/>
 		<div class="circle"></div>
-	</span>
-	<label for={id}><slot></slot></label>
+	</div>
 </span>
 
 <style>
@@ -45,7 +45,7 @@
 		cursor: pointer;
 	}
 	.switch-container > label {
-		margin-left: .4rem;
+		margin-right: .4rem;
 		cursor: pointer;
 	}
 

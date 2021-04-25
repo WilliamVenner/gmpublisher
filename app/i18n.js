@@ -1,6 +1,10 @@
-import { _, addMessages, init as i18n_init, getLocaleFromNavigator } from 'svelte-i18n';
+import { _, addMessages, init as i18n_init, getLocaleFromNavigator, register, locale } from 'svelte-i18n';
 import { get } from 'svelte/store';
 import en from '../i18n/en.json';
+
+for (let file in APP_LANGUAGES) {
+	register(file, () => import(`../i18n/${file}.json`));
+}
 
 export default () => {
 	addMessages('en', en);
@@ -24,5 +28,13 @@ export function translateError(error, data) {
 		} else {
 			return get(_)(match[1]);
 		}
+	}
+}
+
+export function switchLanguage(newLocale) {
+	if (newLocale in APP_LANGUAGES) {
+		locale.set(newLocale);
+	} else {
+		locale.set(getLocaleFromNavigator());
 	}
 }

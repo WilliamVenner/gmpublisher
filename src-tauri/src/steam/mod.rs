@@ -126,6 +126,10 @@ impl Steam {
 
 		lazy_static::initialize(&DOWNLOADS);
 		std::thread::spawn(Downloads::watchdog);
+
+		if app_data!().settings.read().gmod.is_none() {
+			app_data!().send();
+		}
 	}
 
 	pub fn connect() {

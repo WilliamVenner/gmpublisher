@@ -3,10 +3,24 @@ import commonjs from '@rollup/plugin-commonjs';
 import resolve from '@rollup/plugin-node-resolve';
 import livereload from 'rollup-plugin-livereload';
 import replace from '@rollup/plugin-replace';
+import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 import json from '@rollup/plugin-json';
 import { terser } from 'rollup-plugin-terser';
 import css from 'rollup-plugin-css-only';
 import svelteSVG from "rollup-plugin-svelte-svg";
+import fs from 'fs';
+
+const appLanguages = {};
+const languageFiles = fs.readdirSync('./i18n');
+let i = -1;
+while (++i < languageFiles.length) {
+	const file = languageFiles[i];
+	if (file === 'en.json') continue;
+	const fileName = file.substr(0, file.length - 5);
+	let languageName;
+	try { languageName = JSON.parse(fs.readFileSync('./i18n/' + file, { encoding: 'utf-8' }))?.LANGUAGE_NAME ?? file; } catch(e) {}
+	appLanguages[fileName] = languageName ?? fileName;
+}
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -38,7 +52,9 @@ export default {
 		format: 'iife',
 		name: 'app',
 		file: 'public/build/bundle.js',
-		inlineDynamicImports: true
+		inlineDynamicImports: true,
+
+		intro: `const APP_LANGUAGES = ${JSON.stringify(appLanguages)};`
 	},
 	plugins: [
 		replace({
@@ -70,6 +86,10 @@ export default {
 		json(),
 
 		svelteSVG(),
+
+		dynamicImportVars({
+			//include: languageFiles.map(file => './i18n/' + file)
+		}),
 
 		// In dev mode, call `npm run start` once
 		// the bundle has been generated
