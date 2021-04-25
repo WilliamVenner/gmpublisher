@@ -1,13 +1,4 @@
-use std::{
-	collections::{BinaryHeap, HashMap},
-	fs::DirEntry,
-	path::{Path, PathBuf},
-	sync::{
-		atomic::{AtomicBool, Ordering},
-		mpsc, Arc,
-	},
-	time::SystemTime,
-};
+use std::{collections::{BinaryHeap, HashMap}, fs::DirEntry, path::{Path, PathBuf}, sync::{Arc, atomic::{AtomicU8, Ordering}, mpsc}, time::SystemTime};
 
 use lazy_static::lazy_static;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
@@ -21,9 +12,28 @@ lazy_static! {
 	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
 }
 
+#[repr(u8)]
+enum Discovered {
+	No = 0,
+	Discovering = 1,
+	Yes = 2
+}
+impl From<u8> for Discovered {
+	#[inline(always)]
+	fn from(n: u8) -> Self {
+		unsafe { std::mem::transmute(n) }
+	}
+}
+impl Into<u8> for Discovered {
+	#[inline(always)]
+	fn into(self) -> u8 {
+		unsafe { std::mem::transmute(self) }
+	}
+}
+
 #[derive(Debug)]
 pub struct GameAddons {
-	discovered: AtomicBool,
+	discovered: AtomicU8,
 	paths: RwLock<HashMap<PathBuf, Arc<Addon>>>,
 	pages: RwLock<Vec<Arc<Addon>>>,
 	external: RwLock<HashMap<PathBuf, Option<Arc<Addon>>>>,
@@ -32,7 +42,7 @@ pub struct GameAddons {
 impl GameAddons {
 	pub fn init() -> GameAddons {
 		GameAddons {
-			discovered: AtomicBool::new(false),
+			discovered: AtomicU8::new(Discovered::No.into()),
 			paths: RwLock::new(HashMap::new()),
 			pages: RwLock::new(Vec::new()),
 			external: RwLock::new(HashMap::new()),
@@ -93,7 +103,7 @@ impl GameAddons {
 	}
 
 	pub fn refresh(&self) {
-		self.discovered.store(true, Ordering::Release);
+		self.discovered.store(Discovered::Discovering.into(), Ordering::Release);
 
 		let mut gmod = if let Some(gmod) = app_data!().gmod_dir() {
 			gmod
@@ -197,13 +207,22 @@ impl GameAddons {
 			println!("Discovered {} addons", paths.len());
 		}
 
+		self.discovered.store(Discovered::Yes.into(), Ordering::Release);
+
 		// Download the first page from Steam
 		browse_installed_addons(1);
 	}
 
 	pub fn discover_addons(&self) {
-		if !self.discovered.load(Ordering::Acquire) {
-			self.refresh();
+		main_thread_forbidden!();
+
+		match self.discovered.load(Ordering::Acquire).into() {
+			Discovered::Yes => {},
+			Discovered::No => self.refresh(),
+			Discovered::Discovering => loop {
+				sleep_ms!(25);
+				game_addons!().discover_addons();
+			}
 		}
 	}
 
@@ -315,5 +334,5 @@ pub fn free_caches() {
 	let mut pages = crate::game_addons!().pages.write();
 	*paths = HashMap::new();
 	*pages = Vec::new();
-	crate::game_addons!().discovered.store(false, Ordering::Release);
+	crate::game_addons!().discovered.store(Discovered::No.into(), Ordering::Release);
 }
