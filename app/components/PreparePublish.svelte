@@ -1,5 +1,6 @@
 <script context="module">
 	export const isPublishing = writable(false);
+	export const remountAddonScroller = writable(false);
 </script>
 
 <script>
@@ -16,10 +17,10 @@
 	import filesize from 'filesize';
 	import Loading from './Loading.svelte';
 	import { translateError } from '../i18n';
+	import { Steam } from '../steam';
 	import { onMount } from 'svelte';
 
 	export let updatingAddon = null;
-	export let remountAddonScroller;
 	export let preparePublish;
 
 	function togglePreparePublish() {
@@ -118,12 +119,13 @@
 		}
 	}
 
+	let tagChoiceContainer;
 	let chosenAddonTags = [null, null, null];
 	const addonTags = ['fun', 'roleplay', 'scenic', 'movie', 'realism', 'cartoon', 'water', 'comic', 'build'];
 	const addonTypes = ['ServerContent', 'gamemode', 'map', 'weapon', 'vehicle', 'npc', 'tool', 'effects', 'model'];
 	function tagChosen() {
 		const chosen = [];
-		document.querySelectorAll('.tag-choice').forEach((choice, i) => {
+		tagChoiceContainer.querySelectorAll(':scope > .tag-choice').forEach((choice, i) => {
 			if (choice.value !== 'default') {
 				if (chosen.findIndex(choice => choice === choice.value) !== -1) {
 					choice.value = 'default';
@@ -198,7 +200,8 @@
 
 			transaction.listen(event => {
 				if (event.finished) {
-					$remountAddonScroller = !$remountAddonScroller;
+					$remountAddonScroller = true;
+					Steam.MyWorkshop = [];
 				}
 
 				if (event.finished || event.error) {
@@ -242,8 +245,7 @@
 	}
 
 	const tagSearchMax = Math.max(addonTypes.length, addonTags.length);
-	let updatingAddonSubscription;
-	onMount(() => updatingAddonSubscription = updatingAddon.subscribe(async updatingAddon => {
+	onMount(() => updatingAddon.subscribe(async updatingAddon => {
 		if (changeLog) changeLog.value = '';
 
 		if (!updatingAddon) {
@@ -260,6 +262,7 @@
 			pathInput.value = '';
 			pathValue = '';
 			pathFailMessage = null;
+			chosenAddonTags = [null, null, null];
 			return;
 		}
 
@@ -361,7 +364,7 @@
 			{/each}
 		</select>
 
-		<div id="addon-tags" on:blur={checkForm} on:change={checkForm}>
+		<div id="addon-tags" on:blur={checkForm} on:change={checkForm} bind:this={tagChoiceContainer}>
 			<select on:change={tagChosen} class="tag-choice" value={chosenAddonTags[0] ?? 'default'}>
 				<option value="default">{$_('tag_1')}</option>
 				{#each addonTags as tag}
