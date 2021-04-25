@@ -1,6 +1,6 @@
 {
   "name": "gmpublisher",
-  "version": "2.0.0",
+  "version": "2.0.3",
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
