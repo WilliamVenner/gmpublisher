@@ -292,8 +292,10 @@ impl Steam {
 			}
 		};
 
+		let mut last_processed;
 		let result = loop {
 			let (processed, progress, total) = update_handle.progress();
+			last_processed = processed;
 			if !matches!(processed, steamworks::UpdateStatus::Invalid) {
 				transaction.status(match processed {
 					steamworks::UpdateStatus::Invalid => unreachable!(),
@@ -304,8 +306,8 @@ impl Steam {
 					steamworks::UpdateStatus::CommittingChanges => "PUBLISH_COMMITTING_CHANGES",
 				});
 			}
-			if total == 0 {
-				transaction.progress(0.);
+			if total == 0 || last_processed != processed {
+				transaction.progress_reset();
 			} else {
 				transaction.data(total);
 				transaction.progress(progress as f64 / total as f64);
