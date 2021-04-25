@@ -101,13 +101,11 @@
 		}
 		$preparePublish = !$preparePublish;
 	}
-
-	let remountAddonScroller = writable(false);
 </script>
 
 <PreviewGMA active={previewingGMA} {promises} cancel={() => previewingGMA = false}/>
 
-<PreparePublish {preparePublish} {updatingAddon} {remountAddonScroller}/>
+<PreparePublish {preparePublish} {updatingAddon}/>
 
 <main class:results={searchResults.length > 0}>
 	<div id="input-container">

@@ -289,7 +289,6 @@ impl Steam {
 			)
 			.ok()?
 			.require_tag("addon")
-			.allow_cached_response(600)
 			.fetch(move |result: Result<QueryResults<'_>, SteamError>| {
 				if let Ok(data) = result {
 					*results_ref.lock() = Some(Some((

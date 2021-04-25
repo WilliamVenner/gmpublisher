@@ -3,7 +3,8 @@
 	import AddonScroller from '../components/AddonScroller.svelte';
 	import { _ } from 'svelte-i18n';
 	import { writable } from 'svelte/store';
-	import PreparePublish from '../components/PreparePublish.svelte';
+	import PreparePublish, { remountAddonScroller } from '../components/PreparePublish.svelte';
+	import { afterUpdate } from 'svelte';
 
 	let page = 0;
 	function next() {
@@ -26,11 +27,16 @@
 		$preparePublish = !$preparePublish;
 	}
 
-	let remountAddonScroller = writable(false);
+	afterUpdate(() => {
+		if ($remountAddonScroller) {
+			$remountAddonScroller = false;
+			page = 0;
+		}
+	});
 </script>
 
-{#if $remountAddonScroller || !$remountAddonScroller}
+{#if !$remountAddonScroller}
 	<AddonScroller {next} onClick={editPublishedAddon} onNewAddonClick={togglePreparePublish}/>
 {/if}
 
-<PreparePublish {preparePublish} {updatingAddon} {remountAddonScroller}/>
+<PreparePublish {preparePublish} {updatingAddon}/>
