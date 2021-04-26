@@ -27,7 +27,7 @@ impl From<u8> for Discovered {
 impl Into<u8> for Discovered {
 	#[inline(always)]
 	fn into(self) -> u8 {
-		unsafe { std::mem::transmute(self) }
+		self as u8
 	}
 }
 

@@ -246,11 +246,15 @@
 	"bundle_name": "Bundle name...",
 	"bundle_name_tip": "This is just to help you identify which bundle is which.",
 	"based_on_collection": "Based on...",
+	"based_on_collection_name": "Based on \"{name}\"",
 	"collection_link": "Workshop Collection link...",
 	"import_bundle": "Import Bundle",
 	"export_bundle": "Export Bundle",
 	"delete": "Delete",
 	"rename": "Rename",
 	"create_exclamation": "Create!",
-	"optional": "(Optional)"
+	"optional": "(Optional)",
+	"paste_bundle": "You can drag and drop a bundle's .lua file here, or simply paste a bundle's contents to this window.",
+	"bundle_file": "Bundle File",
+	"importing_bundle": "Importing Bundle..."
 }

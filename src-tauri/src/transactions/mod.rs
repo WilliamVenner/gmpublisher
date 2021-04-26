@@ -145,9 +145,9 @@ impl TransactionInner {
 		}
 	}
 
-	pub fn error<S: Into<String>, D: Serialize + Send + 'static>(&self, msg: S, data: D) {
+	pub fn error<S: std::fmt::Display, D: Serialize + Send + 'static>(&self, msg: S, data: D) {
 		self.abort();
-		self.emit(TransactionMessage::Error(self.id, msg.into(), json!(data)));
+		self.emit(TransactionMessage::Error(self.id, msg.to_string(), json!(data)));
 	}
 
 	pub fn finished<D: Serialize + Send + 'static>(&self, data: D) {

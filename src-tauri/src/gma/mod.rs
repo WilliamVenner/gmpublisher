@@ -19,25 +19,23 @@ const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 
 #[derive(Debug, Clone, Serialize, Error)]
 pub enum GMAError {
+	#[error("ERR_IO_ERROR")]
 	IOError,
+
+	#[error("ERR_GMA_FORMAT_ERROR")]
 	FormatError,
+
+	#[error("ERR_GMA_INVALID_HEADER")]
 	InvalidHeader,
+
+	#[error("ERR_GMA_ENTRY_NOT_FOUND")]
 	EntryNotFound,
+
+	#[error("ERR_LZMA")]
 	LZMA,
+
+	#[error("ERR_CANCELLED")]
 	Cancelled,
-}
-impl Display for GMAError {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		use GMAError::*;
-		match self {
-			IOError => write!(f, "ERR_IO_ERROR"),
-			FormatError => write!(f, "ERR_GMA_FORMAT_ERROR"),
-			InvalidHeader => write!(f, "ERR_GMA_INVALID_HEADER"),
-			EntryNotFound => write!(f, "ERR_GMA_ENTRY_NOT_FOUND"),
-			LZMA => write!(f, "ERR_LZMA"),
-			Cancelled => write!(f, "ERR_CANCELLED"),
-		}
-	}
 }
 impl From<std::io::Error> for GMAError {
 	fn from(_: std::io::Error) -> Self {

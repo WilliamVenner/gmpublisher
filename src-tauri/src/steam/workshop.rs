@@ -32,6 +32,7 @@ pub struct WorkshopItem {
 	pub preview_url: Option<String>,
 	pub subscriptions: u64,
 	pub local_file: Option<PathBuf>,
+	pub size: u32,
 	//pub search_title: String,
 	#[serde(serialize_with = "super::serialize_opt_steamid", rename = "steamid64")]
 	pub steamid: Option<SteamId>,
@@ -53,6 +54,7 @@ impl From<QueryResult> for WorkshopItem {
 			preview_url: None,
 			subscriptions: 0,
 			local_file: None,
+			size: result.file_size,
 			//search_title: result.title.to_lowercase(),
 			dead: false,
 		}
@@ -73,6 +75,7 @@ impl From<PublishedFileId> for WorkshopItem {
 			preview_url: None,
 			subscriptions: 0,
 			local_file: None,
+			size: 0,
 			//search_title: id.0.to_string(),
 			dead: true,
 		}
