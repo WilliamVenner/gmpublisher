@@ -23,11 +23,11 @@
 			name: 'subscriptions',
 			component: Subscriptions,
 		},
+		*/
 		{
 			name: 'content_generator',
 			component: ContentGenerator,
 		},
-		*/
 	];
 
 	export const pages = writable(pagesManifest);

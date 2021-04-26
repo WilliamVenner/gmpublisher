@@ -38,7 +38,7 @@ pub use steam::workshop::WorkshopItem;
 pub mod octopus;
 pub use octopus::*;
 
-pub mod content_generator;
+pub mod bundles;
 pub mod search;
 pub mod webview;
 

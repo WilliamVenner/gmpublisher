@@ -237,5 +237,20 @@
 	"open_count": "You've opened gmpublisher {count} times! Congratulations!",
 	"enjoying_gmpublisher": "Enjoying gmpublisher?",
 	"github_star_plz_i_need_a_job_maybe": "If you have a GitHub account, consider dropping a star on the %GitHub repository% if my work helped you :D",
-	"vscode_glua_enhanced": "If you're a developer, you may also be interested in my %VSCode GLua Enhanced% extension."
+	"vscode_glua_enhanced": "If you're a developer, you may also be interested in my %VSCode GLua Enhanced% extension.",
+
+	"no_bundles": "You have no bundles!",
+	"new_bundle": "New Bundle",
+	"bundles_what": "What are bundles?",
+	"bundles_help": "There's a big problem with the way the Workshop works in Garry's Mod. Server owners do not realise that their server's Workshop collection is only intended for the use of their server. You should never have to tell a player to subscribe to the server's Workshop collection.\n\nThe solution? Bundles!\n\nBundles are lists of Workshop addons that clients will download when joining your server.\nUsing bundles, you can optimize the loading time of your server by specifically picking addons players will download. gmpublisher will generate a Lua file for you to put on your server which will control this.",
+	"bundle_name": "Bundle name...",
+	"bundle_name_tip": "This is just to help you identify which bundle is which.",
+	"based_on_collection": "Based on...",
+	"collection_link": "Workshop Collection link...",
+	"import_bundle": "Import Bundle",
+	"export_bundle": "Export Bundle",
+	"delete": "Delete",
+	"rename": "Rename",
+	"create_exclamation": "Create!",
+	"optional": "(Optional)"
 }
