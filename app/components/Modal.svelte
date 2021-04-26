@@ -9,9 +9,25 @@
 		if (cancel && e.target === modal)
 			cancel();
 	}
+
+	function keydown(e) {
+		if (active && document.activeElement === this && (e.keyCode === 27 || e.key === 'Escape')) {
+			cancel();
+		}
+	}
+
+	$: {
+		if (modal) {
+			if (active) {
+				modal.focus();
+			} else {
+				modal.blur();
+			}
+		}
+	}
 </script>
 
-<modal id={id} on:click={doCancel} bind:this={modal} class:active={active}>
+<modal id={id} on:click={doCancel} bind:this={modal} class:active={active} on:keydown={keydown} tabindex="0">
 	<div class="hide-scroll" style={padding ? ('padding:' + padding) : null}>
 		<slot></slot>
 	</div>
