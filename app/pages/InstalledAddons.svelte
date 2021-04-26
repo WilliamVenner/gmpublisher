@@ -11,7 +11,7 @@
 
 	let previewingGMA = false;
 	const promises = writable([new Promise(() => {}), new Promise(() => {})]);
-	function onClick(e, workshop, installed) {
+	function onClick(_, workshop, installed) {
 		previewingGMA = true;
 		$promises = [workshop, installed];
 	}
