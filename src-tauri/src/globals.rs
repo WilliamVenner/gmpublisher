@@ -72,4 +72,10 @@ pub(super) fn init_globals() {
 
 	println!("Initializing Transactions...");
 	crate::transactions::init();
+
+	rayon::spawn(|| {
+		println!("Initializing Game Addons...");
+		lazy_static::initialize(&GAME_ADDONS);
+		GAME_ADDONS.discover_addons();
+	});
 }
