@@ -1624,7 +1624,7 @@ dependencies = [
  "steamworks",
  "tauri",
  "tauri-build",
- "tauri-utils 1.0.0-beta-rc.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tauri-utils 1.0.0-beta-rc.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror",
  "turbonone",
  "walkdir",
@@ -3786,11 +3786,12 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.10.5"
+version = "0.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8834e42be61ae4f6338b216fbb69837c7f33c3d4d3a139fb073735b25af4d9e"
+checksum = "7f5e4b56d92c7c56cc8a06df0cc06860a8ec6102e9a8a5ee85dff90afbeadf3d"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
+ "core-foundation-sys 0.8.2",
  "doc-comment",
  "libc",
  "ntapi",
@@ -3827,8 +3828,8 @@ dependencies = [
 
 [[package]]
 name = "tauri"
-version = "1.0.0-beta-rc.2"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#cda11fb48db7bb7b8729b9d798a6e800d022c249"
+version = "1.0.0-beta-rc.4"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#4c40292bbc011466f845c487d099fce9830ed9e0"
 dependencies = [
  "base64 0.13.0",
  "bytes 1.0.1",
@@ -3856,7 +3857,7 @@ dependencies = [
  "tar",
  "tauri-hotkey",
  "tauri-macros",
- "tauri-utils 1.0.0-beta-rc.0 (git+https://github.com/williamvenner/tauri?branch=personal)",
+ "tauri-utils 1.0.0-beta-rc.1 (git+https://github.com/williamvenner/tauri?branch=personal)",
  "tempfile",
  "thiserror",
  "tinyfiledialogs",
@@ -3868,29 +3869,29 @@ dependencies = [
 
 [[package]]
 name = "tauri-build"
-version = "1.0.0-beta-rc.0"
+version = "1.0.0-beta-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bafb25a2dd5bc6559250052a56fb67764196a7630445018241a9cde14135e461"
+checksum = "72c0791792e5b01df47ff580f7bdca3600d2e5fd98451471d75458f4dbddf2d8"
 dependencies = [
  "anyhow",
  "proc-macro2",
  "quote 1.0.9",
- "tauri-codegen 1.0.0-beta-rc.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tauri-codegen 1.0.0-beta-rc.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "winres",
 ]
 
 [[package]]
 name = "tauri-codegen"
-version = "1.0.0-beta-rc.0"
+version = "1.0.0-beta-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7994828a91bb13ebbdf9b8c2c499822c32f77638edbb47cd531be2a912ba3f3f"
+checksum = "b15e1584330f194c375dff4583bdd9cc9dd31dc47b485e089d0571f9009216ba"
 dependencies = [
  "blake3",
  "proc-macro2",
  "quote 1.0.9",
  "serde",
  "serde_json",
- "tauri-utils 1.0.0-beta-rc.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tauri-utils 1.0.0-beta-rc.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror",
  "walkdir",
  "zstd",
@@ -3898,15 +3899,15 @@ dependencies = [
 
 [[package]]
 name = "tauri-codegen"
-version = "1.0.0-beta-rc.0"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#cda11fb48db7bb7b8729b9d798a6e800d022c249"
+version = "1.0.0-beta-rc.1"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#4c40292bbc011466f845c487d099fce9830ed9e0"
 dependencies = [
  "blake3",
  "proc-macro2",
  "quote 1.0.9",
  "serde",
  "serde_json",
- "tauri-utils 1.0.0-beta-rc.0 (git+https://github.com/williamvenner/tauri?branch=personal)",
+ "tauri-utils 1.0.0-beta-rc.1 (git+https://github.com/williamvenner/tauri?branch=personal)",
  "thiserror",
  "walkdir",
  "zstd",
@@ -3941,20 +3942,20 @@ dependencies = [
 
 [[package]]
 name = "tauri-macros"
-version = "1.0.0-beta-rc.0"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#cda11fb48db7bb7b8729b9d798a6e800d022c249"
+version = "1.0.0-beta-rc.1"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#4c40292bbc011466f845c487d099fce9830ed9e0"
 dependencies = [
  "proc-macro2",
  "quote 1.0.9",
  "syn 1.0.69",
- "tauri-codegen 1.0.0-beta-rc.0 (git+https://github.com/williamvenner/tauri?branch=personal)",
+ "tauri-codegen 1.0.0-beta-rc.1 (git+https://github.com/williamvenner/tauri?branch=personal)",
 ]
 
 [[package]]
 name = "tauri-utils"
-version = "1.0.0-beta-rc.0"
+version = "1.0.0-beta-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8c8cdee84c6f8eb8155ff6720f55f61d715b4038aadb1a0b2f37828c4e1c33f"
+checksum = "a896f622a51ae93bd77aa7aa02b4bbd1dd4982932551ea3319f04ffdf82fbe8f"
 dependencies = [
  "phf",
  "proc-macro2",
@@ -3969,8 +3970,8 @@ dependencies = [
 
 [[package]]
 name = "tauri-utils"
-version = "1.0.0-beta-rc.0"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#cda11fb48db7bb7b8729b9d798a6e800d022c249"
+version = "1.0.0-beta-rc.1"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#4c40292bbc011466f845c487d099fce9830ed9e0"
 dependencies = [
  "phf",
  "proc-macro2",
@@ -4903,8 +4904,7 @@ dependencies = [
 [[package]]
 name = "wry"
 version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dffd44ee7ebd826e15ceb5a219562b71d5140e2b218bffe832895b4666708e23"
+source = "git+https://github.com/williamvenner/wry?branch=personal#d898d5955e5109f3a482c1def98ab65229de1255"
 dependencies = [
  "async-channel",
  "cairo-rs",

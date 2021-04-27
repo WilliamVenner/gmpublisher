@@ -1,49 +1,50 @@
-use crossbeam::channel::{SendError, Sender};
+use std::{cell::RefCell, sync::atomic::AtomicBool};
+
+use crossbeam::channel::Sender;
 use serde::Serialize;
-use tauri::{Params, Window};
+use tauri::{Window, api::assets::EmbeddedAssets, runtime::{Args, flavors::wry::Wry}};
 
 use crate::{GMAFile, WorkshopItem};
 
-pub type WebviewEmit = (&'static str, Option<Box<dyn erased_serde::Serialize + Send>>);
+type Params = Args<String, String, EmbeddedAssets, Wry>;
 
-pub struct WrappedWebview<M: Params<Event = String, Label = String> + Send + 'static> {
-	pub tx_emit: Sender<WebviewEmit>,
-	tx_window: Sender<Window<M>>,
+pub struct WrappedWebview {
+	pub window: RefCell<Option<Window<Params>>>,
+	pending: AtomicBool,
+	tx: Sender<Window<Params>>,
 }
-unsafe impl<M: Params<Event = String, Label = String> + Send + 'static> Send for WrappedWebview<M> {}
-unsafe impl<M: Params<Event = String, Label = String> + Send + 'static> Sync for WrappedWebview<M> {}
-impl<M: Params<Event = String, Label = String> + Send + 'static> WrappedWebview<M> {
+unsafe impl Send for WrappedWebview {}
+unsafe impl Sync for WrappedWebview {}
+impl WrappedWebview {
 	pub fn pending() -> Self {
-		let (tx_window, tx_emit) = WrappedWebview::<M>::channel();
-		Self { tx_window, tx_emit }
+		Self {
+			window: RefCell::new(None),
+			tx: WrappedWebview::channel(),
+			pending: AtomicBool::new(true),
+		}
 	}
 
-	fn channel() -> (Sender<Window<M>>, Sender<WebviewEmit>) {
-		let (tx, rx) = crossbeam::channel::bounded::<WebviewEmit>(1);
-		let (tx_window, rx_window) = crossbeam::channel::unbounded::<Window<M>>();
+	fn channel() -> Sender<Window<Params>> {
+		let (tx, rx) = crossbeam::channel::bounded(1);
+
 		std::thread::spawn(move || {
-			let window = rx_window.recv().unwrap();
-			loop {
-				let (event, payload) = rx.recv().unwrap();
-				ignore! { window.emit(&event.to_string(), payload) };
-			}
+			let window = rx.recv().unwrap();
+			*webview!().window.borrow_mut() = Some(window);
+			webview!().pending.store(false, std::sync::atomic::Ordering::Release);
 		});
 
-		(tx_window, tx)
+		tx
 	}
 
-	pub fn init(&self, window: Window<M>) {
-		ignore! { self.tx_window.send(window) };
+	pub fn init(&self, window: Window<Params>) {
+		ignore! { self.tx.send(window) };
 	}
 
-	pub fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, payload: Option<D>) -> Result<(), SendError<WebviewEmit>> {
-		self.tx_emit.send((
-			event,
-			match payload {
-				Some(payload) => Some(Box::new(payload)),
-				None => None,
-			},
-		))
+	pub fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, payload: Option<D>) {
+		while self.pending.load(std::sync::atomic::Ordering::Acquire) {
+			sleep_ms!(50);
+		}
+		ignore! { self.window.borrow().as_ref().unwrap().emit(&event.to_string(), payload) };
 	}
 }
 

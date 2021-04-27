@@ -1,5 +1,3 @@
-use tauri::runtime::Args;
-
 pub const GMOD_APP_ID: steamworks::AppId = steamworks::AppId(4000);
 
 lazy_static! {
@@ -7,8 +5,7 @@ lazy_static! {
 	pub static ref GAME_ADDONS: crate::game_addons::GameAddons = crate::game_addons::GameAddons::init();
 	pub static ref ADDON_SIZE_ANALYZER: crate::addon_size_analyzer::AddonSizeAnalyzer = crate::addon_size_analyzer::AddonSizeAnalyzer::init();
 	pub static ref APP_DATA: crate::appdata::AppData = crate::appdata::AppData::init();
-	pub static ref WEBVIEW: crate::webview::WrappedWebview<Args<String, String, tauri::api::assets::EmbeddedAssets, tauri::runtime::flavors::wry::Wry>> =
-		crate::webview::WrappedWebview::pending();
+	pub static ref WEBVIEW: crate::webview::WrappedWebview = crate::webview::WrappedWebview::pending();
 	pub static ref SEARCH: crate::search::Search = crate::search::Search::init();
 }
 
@@ -55,11 +52,11 @@ macro_rules! webview {
 #[macro_export]
 macro_rules! webview_emit {
 	( $event:expr, $data:expr ) => {
-		crate::webview!().emit($event, Some($data)).unwrap()
+		crate::webview!().emit($event, Some($data))
 	};
 
 	( $event:expr ) => {
-		crate::webview!().emit($event, turbonone!()).unwrap()
+		crate::webview!().emit($event, turbonone!())
 	};
 }
 

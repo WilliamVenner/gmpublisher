@@ -13,10 +13,14 @@ lto = true
 codegen-units = 1
 
 [build-dependencies.tauri-build]
-version = "1.0.0-beta-rc.0"
+version = "1.0.0-beta-rc.1"
 features = [ "codegen" ]
 #git = "https://github.com/williamvenner/tauri"
 #branch = "personal"
+
+[patch.crates-io.wry]
+git = "https://github.com/williamvenner/wry"
+branch = "personal"
 
 [dependencies.tauri]
 features = ["api-all", "cli"]
@@ -31,11 +35,11 @@ bindgen = "0.58.1"
 [dependencies.steamworks]
 features = [ "serde" ]
 #path = "../../steamworks-rs"
-git = "https://github.com/WilliamVenner/steamworks-rs.git"
+git = "https://github.com/WilliamVenner/steamworks-rs"
 branch = "master"
 
 [dependencies]
-tauri-utils = "1.0.0-beta-rc.0"
+tauri-utils = "1.0.0-beta-rc.1"
 turbonone = "0.2.1"
 serde_json = "1.0.64"
 serde = { version = "1.0.125", features = [ "derive", "rc" ] }
