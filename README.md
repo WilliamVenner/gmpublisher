@@ -39,7 +39,7 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 ![](https://user-images.githubusercontent.com/14863743/115957563-18844400-a4fb-11eb-9828-cf76b15c6a48.png) Russian
 
-![](https://user-images.githubusercontent.com/14863743/115954273-f7662800-a4e7-11eb-8196-551f0cc0e3f6.png) Polish
+![](https://user-images.githubusercontent.com/14863743/116080210-ad6c7600-a690-11eb-8c26-33de913e7ad0.png) Polish
 
 ![](https://user-images.githubusercontent.com/14863743/115975014-223c9480-a559-11eb-81c4-6a0bfc0fdb9d.png) Turkish
 

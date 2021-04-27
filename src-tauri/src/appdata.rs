@@ -102,7 +102,7 @@ impl Default for Settings {
 			sounds: true,
 
 			window_size: (800., 600.),
-			window_maximized: true,
+			window_maximized: false,
 
 			destinations: Vec::new(),
 			create_folder_on_extract: true,
@@ -389,4 +389,29 @@ where
 	S: serde::Serializer,
 {
 	app_data!().downloads_dir().serialize(serializer)
+}
+
+pub fn write_tauri_settings() -> Option<()> {
+	use serde_json::Value as JsonValue;
+	use std::io::{BufReader, BufWriter};
+
+	let mut settings_path = dirs_next::config_dir()?;
+	settings_path.push("gmpublisher");
+
+	fs::create_dir_all(&settings_path).ok()?;
+
+	settings_path.push(".tauri-settings.json");
+
+	if settings_path.exists() {
+		let stored = {
+			let mut stored: HashMap<String, JsonValue> = serde_json::from_reader(BufReader::new(File::open(&settings_path).ok()?)).ok()?;
+			stored.insert("allow_notification".to_string(), JsonValue::Bool(true));
+			stored
+		};
+		serde_json::to_writer(BufWriter::new(File::create(settings_path).ok()?), &stored).ok()?;
+	} else {
+		fs::write(settings_path, r#"{"allow_notification":true}"#).ok()?;
+	}
+
+	Some(())
 }

@@ -451,6 +451,8 @@
 	}
 	#details-container {
 		width: 18rem;
+		display: flex;
+		flex-direction: column;
 	}
 	#middle-column {
 		flex: 1;
@@ -458,6 +460,7 @@
 		margin-right: 1.5rem;
 		display: flex;
 		flex-direction: column;
+		min-width: 13rem;
 	}
 
 	#middle-column > :global(#file-browser) {
@@ -514,7 +517,6 @@
 		box-shadow: 0px 0px 2px 0px rgb(0 0 0 / 40%);
 		border-radius: 4px;
 		padding: .7rem;
-		margin-top: 1rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -529,6 +531,7 @@
 		width: 100%;
 		height: 15rem;
 		position: relative;
+		max-height: 100%;
 	}
 	#addon-icon img {
 		background-image: url('/img/transparency.svg');
@@ -576,7 +579,7 @@
 	p {
 		white-space: pre-line;
 		line-height: 1.6;
-		margin-top: 1rem;
+		margin-top: 0;
 		margin-bottom: 0;
 		text-align: center;
 	}
