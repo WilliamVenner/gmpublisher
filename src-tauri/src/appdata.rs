@@ -359,7 +359,11 @@ pub fn validate_gmod(mut path: PathBuf) -> bool {
 
 #[tauri::command]
 pub fn window_resized(width: f64, height: f64) {
-	app_data!().settings.write().window_size = (width, height);
+	{
+		let mut settings = app_data!().settings.write();
+		settings.window_size = (width, height);
+		settings.window_maximized = webview!().window.borrow().as_ref().unwrap().is_maximized();
+	}
 	ignore! { app_data!().settings.read().save() };
 }
 
