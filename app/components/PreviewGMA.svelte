@@ -58,18 +58,33 @@
 		destinationSelect = true;
 	}
 
-	let addon;
+	let addon = new Promise(() => {});
+	async function updateEntries(workshop, gma) {
+		gmaPath = gma?.path ?? workshop?.localFile ?? null;
+		if (gmaPath) {
+			$entriesList = Object.values(await invoke('preview_gma', { path: gmaPath }));
+		}
+		gmaSize = gma?.size ?? workshop?.size ?? 0;
+		console.log($entriesList);
+	}
 	function updatePromises(promises) {
-		addon = Promise.allSettled(promises).then(async ([workshop, gma]) => {
-			gmaPath = gma.value?.path ?? workshop.value?.localFile ?? null;
-			if (gmaPath) {
-				$entriesList = Object.values(await invoke('preview_gma', { path: gmaPath }));
-			}
-			gmaSize = gma.value?.size ?? workshop.value?.size ?? 0;
-			return [
-				workshop.status === 'fulfilled' ? (!workshop.value.dead ? workshop.value : null) : null,
-				gma.status === 'fulfilled' ? gma.value : null
-			];
+		const [workshop, gma] = promises;
+
+		let workshopData = null;
+		let gmaData = null;
+
+		workshop.then(data => {
+			workshopData = data;
+			addon = Promise.resolve([workshopData, gmaData]);
+			updateEntries(workshopData, gmaData);
+			return data;
+		});
+
+		gma.then(data => {
+			gmaData = data;
+			addon = Promise.resolve([workshopData, gmaData]);
+			updateEntries(workshopData, gmaData);
+			return data;
 		});
 	}
 	updatePromises($promises);
