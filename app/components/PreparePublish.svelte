@@ -449,6 +449,15 @@
 		height: min-content;
 		padding: 1.5rem;
 	}
+	@media (max-width: 70rem), (max-height: 44rem) {
+		:global(#prepare-publish > .hide-scroll) {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			max-width: 100%;
+			max-height: 100%;
+		}
+	}
 	#details-container {
 		width: 18rem;
 		display: flex;
