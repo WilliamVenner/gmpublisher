@@ -7,7 +7,6 @@ license = "GPL-3.0"
 repository = "https://github.com/WilliamVenner/gmpublisher"
 default-run = "gmpublisher"
 edition = "2018"
-build = "src/build.rs"
 
 [profile.release]
 lto = true
