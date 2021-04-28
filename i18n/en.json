@@ -238,5 +238,8 @@
 	"enjoying_gmpublisher": "Enjoying gmpublisher?",
 	"github_star_plz_i_need_a_job_maybe": "If you have a GitHub account, consider dropping a star on the %GitHub repository% if my work helped you :D",
 	"vscode_glua_enhanced": "If you're a developer, you may also be interested in my %VSCode GLua Enhanced% extension.",
-	"copy_link": "Copy Link"
+
+	"copy_link": "Copy Link",
+	"open_image": "Open Image",
+	"copy_image_link": "Copy Image Link"
 }

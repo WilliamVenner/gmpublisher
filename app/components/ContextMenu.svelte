@@ -174,6 +174,10 @@
 		navigator.clipboard.writeText('https://steamcommunity.com/sharedfiles/filedetails/?id=' + (await workshop).id);
 	}
 
+	async function copyImageLink() {
+		navigator.clipboard.writeText((await workshop).previewUrl);
+	}
+
 	let choosingExtractDestination = false;
 	let extractedName;
 	let gmaSize;
@@ -208,30 +212,48 @@
 				{#if gma}
 					{#if gma.path}
 						<ContextMenuItem click={chooseExtractDestination}>
-							<span slot="icon"><FolderAdd size="1.2rem"/></span>
+							<span slot="icon"><FolderAdd size="1rem"/></span>
 							<span slot="label">{$_('extract')}</span>
 						</ContextMenuItem>
 						<ContextMenuItem click={openAddonLocation}>
-							<span slot="icon"><Folder size="1.2rem"/></span>
+							<span slot="icon"><Folder size="1rem"/></span>
 							<span slot="label">{$_('open_addon_location')}</span>
 						</ContextMenuItem>
 					{/if}
 				{/if}
 			{/await}
 		{/if}
+		{#await Promise.allSettled([workshop, gma]) then [workshop, gma]}
+			{#if workshop?.value && gma?.value}
+				<div class="divider"></div>
+			{/if}
+		{/await}
 		{#if workshop}
 			{#await workshop then workshop}
 				{#if workshop && !workshop.dead}
 					<a class="nostyle" href="https://steamcommunity.com/sharedfiles/filedetails/?id={workshop.id}" target="_blank">
 						<ContextMenuItem>
-							<span slot="icon"><LinkOut size="1.2rem"/></span>
+							<span slot="icon"><LinkOut size="1rem"/></span>
 							<span slot="label">{$_('steam_workshop')}</span>
 						</ContextMenuItem>
 					</a>
 					<ContextMenuItem click={copyLink}>
-						<span slot="icon"><LinkChain size="1.2rem"/></span>
+						<span slot="icon"><LinkChain size="1rem"/></span>
 						<span slot="label">{$_('copy_link')}</span>
 					</ContextMenuItem>
+					{#if workshop.previewUrl}
+						<div class="divider"></div>
+						<a class="nostyle" href={workshop.previewUrl} target="_blank">
+							<ContextMenuItem>
+								<span slot="icon"><LinkOut size="1rem"/></span>
+								<span slot="label">{$_('open_image')}</span>
+							</ContextMenuItem>
+						</a>
+						<ContextMenuItem click={copyImageLink}>
+							<span slot="icon"><Image size="1rem"/></span>
+							<span slot="label">{$_('copy_image_link')}</span>
+						</ContextMenuItem>
+					{/if}
 				{/if}
 			{/await}
 		{/if}
@@ -254,6 +276,11 @@
 	.context-menu.destroyed {
 		animation: context-menu-reverse .25s forwards;
 		pointer-events: none;
+	}
+
+	.divider {
+		background-color: #636363;
+		height: 1px;
 	}
 
 	@keyframes context-menu {
