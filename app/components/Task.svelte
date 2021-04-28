@@ -6,7 +6,7 @@
 	import { _ } from 'svelte-i18n';
 	import { translateError } from '../i18n';
 	import { taskHeight, tasksMax, tasks, tasksNum } from '../transactions.js';
-	import { onDestroy } from "svelte";
+	import { onDestroy, onMount } from "svelte";
 	import Loading from './Loading.svelte';
 
 	export let transaction;
@@ -68,21 +68,28 @@
 	}
 
 	let statusText;
-	transaction.listen(event => {
-		if ('progress' in event) {
-			progress = event.progress;
-		} else if (event.finished) {
+	onMount(() => {
+		if (!transaction) {
+			// Task message
 			finish();
-		} else if (event.error) {
-			error = [event.error, event.data];
-			finish();
-		} else if (event.cancelled) {
-			cancelled = true;
-			expire();
-		}
+		} else {
+			transaction?.listen(event => {
+				if ('progress' in event) {
+					progress = event.progress;
+				} else if (event.finished) {
+					finish();
+				} else if (event.error) {
+					error = [event.error, event.data];
+					finish();
+				} else if (event.cancelled) {
+					cancelled = true;
+					expire();
+				}
 
-		if (!finished && !cancelled && statusText) {
-			statusText.textContent = statusTextFn(transaction);
+				if (!finished && !cancelled && statusText) {
+					statusText.textContent = statusTextFn(transaction);
+				}
+			});
 		}
 	});
 
@@ -106,12 +113,16 @@
 			{:else if cancelled}
 				{$_('cancelled')}
 			{:else if finished}
-				{$_('done')}
-			{:else}
+				{#if transaction}
+					{$_('done')}
+				{:else}
+					{statusTextFn}
+				{/if}
+			{:else if transaction}
 				<span bind:this={statusText}>{statusTextFn({ progress: 0 })}</span>
 			{/if}
 		</div>
-		{#if !finished && !cancelled && !expired}
+		{#if transaction && !finished && !cancelled && !expired}
 			<div id="cancel" use:tippyFollow={$_('cancel')} on:click={cancel}><Cross id="cancel" stroke-width="3"/></div>
 		{/if}
 	</div>

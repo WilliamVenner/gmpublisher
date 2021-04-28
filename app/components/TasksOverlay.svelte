@@ -1,7 +1,6 @@
 <script>
 	import { taskHeight, tasksMax, tasks as tasksStore, tasksNum } from '../transactions.js';
 	import Task from './Task.svelte';
-	import { get } from 'svelte/store';
 
 	let tasksContainer;
 

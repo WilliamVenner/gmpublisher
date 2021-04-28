@@ -21,6 +21,10 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+export function taskMessage(msg) {
+	tasks.update(tasks => { tasks.push([null, msg, null]); return tasks });
+}
+
 let orphanQueue = [];
 let orphanedTransactions = {};
 function checkOrphanQueue(transaction, id) {
@@ -43,7 +47,7 @@ class Transaction {
 	constructor(id, TASK_statusTextFn) {
 		if (id === null || id == undefined) return;
 
-		if (id in dedup) {
+		if (id !== -1 && id in dedup) {
 			console.log('DUPLICATE TRANSACTION ID: ' + id);
 		} else {
 			dedup[id] = true;
