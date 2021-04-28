@@ -517,7 +517,6 @@
 <main on:mouseout={() => selectHoveredSquare()}>
 	<div bind:this={sizeRef} id="size-ref"></div>
 
-	<script src="/js/lib/k-d-tree.min.js"></script>
 	<div id="popper" bind:this={popper}></div>
 
 	{#await loading}
