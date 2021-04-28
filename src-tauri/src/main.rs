@@ -2,6 +2,8 @@
 
 use tauri::{Attributes, Manager};
 
+mod build;
+
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
@@ -69,6 +71,11 @@ fn deadlock_watchdog() {
 }
 
 fn main() {
+	#[cfg(debug_assertions)]
+	if build::bundler() {
+		return;
+	}
+
 	#[cfg(debug_assertions)]
 	if cli::stdin() {
 		return;

@@ -3829,7 +3829,7 @@ dependencies = [
 [[package]]
 name = "tauri"
 version = "1.0.0-beta-rc.4"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#4c40292bbc011466f845c487d099fce9830ed9e0"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#1ff568592c5570ea5313a107f793983e057747c3"
 dependencies = [
  "base64 0.13.0",
  "bytes 1.0.1",
@@ -3900,7 +3900,7 @@ dependencies = [
 [[package]]
 name = "tauri-codegen"
 version = "1.0.0-beta-rc.1"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#4c40292bbc011466f845c487d099fce9830ed9e0"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#1ff568592c5570ea5313a107f793983e057747c3"
 dependencies = [
  "blake3",
  "proc-macro2",
@@ -3943,7 +3943,7 @@ dependencies = [
 [[package]]
 name = "tauri-macros"
 version = "1.0.0-beta-rc.1"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#4c40292bbc011466f845c487d099fce9830ed9e0"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#1ff568592c5570ea5313a107f793983e057747c3"
 dependencies = [
  "proc-macro2",
  "quote 1.0.9",
@@ -3971,7 +3971,7 @@ dependencies = [
 [[package]]
 name = "tauri-utils"
 version = "1.0.0-beta-rc.1"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#4c40292bbc011466f845c487d099fce9830ed9e0"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#1ff568592c5570ea5313a107f793983e057747c3"
 dependencies = [
  "phf",
  "proc-macro2",

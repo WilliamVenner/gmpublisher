@@ -8,7 +8,8 @@
     "devPath": "http://localhost:5000",
     "beforeDevCommand": "yarn dev",
     "beforeBuildCommand": "yarn build",
-	"withGlobalTauri": true
+    "afterBuildCommand": "cargo run --manifest-path src-tauri/Cargo.toml -- bundle",
+    "withGlobalTauri": true
   },
   "tauri": {
     "bundle": {
@@ -33,7 +34,7 @@
         "useBootstrapper": false
       },
       "macOS": {
-        "frameworks": [],
+        "frameworks": ["lib/steam_api/osx/libsteam_api.dylib"],
         "minimumSystemVersion": "",
         "useBootstrapper": false,
         "exceptionDomain": ""
