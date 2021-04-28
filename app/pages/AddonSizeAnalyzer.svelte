@@ -10,6 +10,7 @@
 	import Dead from '../components/Dead.svelte';
 	import { Steam } from '../steam';
 	import PreviewGMA from '../components/PreviewGMA.svelte';
+	import { registerContext } from '../components/ContextMenu.svelte';
 
 	let workshopDataIndex = [];
 	let workshopDataIDIndex = [];
@@ -160,7 +161,7 @@
 
 	const hangingLetters = ['g','j','p','q','y']; // stupid hack for annoying canvas text rendering
 
-	async function findHoveredAddon(e, shouldSelect) {
+	function findHoveredAddon(e, shouldSelect) {
 		if (!addonsKdTree) return;
 
 		const { offsetX, offsetY } = e;
@@ -392,7 +393,6 @@
 	onDestroy(() => {
 		clearTimeout(resizedTimeout);
 		transaction?.cancel();
-		invoke('free_addon_size_analyzer');
 	});
 
 	let canvasesBinded = false;
@@ -465,7 +465,7 @@
 	let previewingGMA = false;
 	const promises = writable([new Promise(() => {}), new Promise(() => {})]);
 	async function openHoveredAddon(e) {
-		let addon = await findHoveredAddon(e, false);
+		let addon = findHoveredAddon(e, false);
 		selectHoveredSquare();
 		if (addon) {
 			previewingGMA = true;
@@ -495,6 +495,16 @@
 		progressLog.prepend(elem);
 	});
 	onMount(() => $progressMsg = $progressMsg);
+
+	let contextListener;
+	onMount(() => {
+		registerContext(contextListener, e => {
+			const hovered = findHoveredAddon(e, false);
+			if (hovered) {
+				return [Steam.getWorkshopAddon(hovered.installed.id), Promise.resolve(hovered.installed)];
+			}
+		});
+	});
 </script>
 
 <svelte:window on:resize={resized}/>
@@ -514,7 +524,7 @@
 	</div>
 </div>
 
-<main on:mouseout={() => selectHoveredSquare()}>
+<main on:mouseout={() => selectHoveredSquare()} bind:this={contextListener}>
 	<div bind:this={sizeRef} id="size-ref"></div>
 
 	<div id="popper" bind:this={popper}></div>

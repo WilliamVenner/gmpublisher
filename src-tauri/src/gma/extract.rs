@@ -292,3 +292,18 @@ impl ExtractGMAMut for GMAFile {
 		})
 	}
 }
+
+#[tauri::command]
+pub fn extract_gma(gma_path: PathBuf, dest: ExtractDestination) -> Option<u32> {
+	let mut gma = GMAFile::open(gma_path).ok()?;
+	gma.entries().ok()?;
+
+	let transaction = transaction!();
+	let id = transaction.id;
+
+	rayon::spawn(move || {
+		ignore! { gma.extract(dest, &transaction, true) };
+	});
+
+	Some(id)
+}

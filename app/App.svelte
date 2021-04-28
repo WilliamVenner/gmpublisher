@@ -4,11 +4,14 @@
 	import Navbar from './components/Navbar.svelte';
 	import NavSidebar, { pages, activeItem } from './components/NavSidebar.svelte';
 	import GitHubStar from './components/GitHubStar.svelte';
+	import ContextMenuContainer from './components/ContextMenuContainer.svelte';
 </script>
 
 <main>
 
 	<TasksOverlay/>
+
+	<ContextMenuContainer/>
 
 	<Navbar/>
 

@@ -5,6 +5,8 @@
 	import { tippyFollow } from '../tippy';
 	import Loading from './Loading.svelte';
 	import Dead from './Dead.svelte';
+	import { registerContext } from './ContextMenu.svelte';
+import { onMount } from 'svelte';
 
 	// TODO merge workshop and gma promises?
 
@@ -44,9 +46,16 @@
 			throw new Error("workshop && installed == null");
 		}
 	}
+
+	let addonElement;
+	if (!newAddon && !previewing) {
+		onMount(() => {
+			registerContext(addonElement, workshop, installed);
+		});
+	}
 </script>
 
-<main class="addon" class:previewing={previewing} on:click={e => onClick(e, workshop, installed)}>
+<main class="addon" class:previewing={previewing} on:click={e => onClick(e, workshop, installed)} bind:this={addonElement}>
 	<div id="card">
 		<div id="stats">
 			{#if newAddon}
@@ -94,7 +103,7 @@
 				{#if workshop.previewUrl}
 					<div id="preview" class="loading">
 						<Loading size="2rem"/>
-						<img src={workshop.previewUrl} alt="Preview" onload="this.parentElement.classList.remove('loading')"/>
+						<img src={workshop.previewUrl} alt="Preview" onload="this.parentElement?.classList.remove('loading')"/>
 					</div>
 				{:else}
 					<div id="preview" class="dead"><Dead size="4rem"/></div>
