@@ -65,7 +65,6 @@
 	});
 
 	function openResult(result) {
-		console.log(result);
 		switch(result.source) {
 			case 'installed_addons': {
 				previewGMA(

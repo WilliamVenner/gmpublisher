@@ -29,19 +29,21 @@
 			var register = contextRegistry.get(target);
 			let workshop;
 			let gma;
+			let disableDownload;
 
 			if (typeof register[0] === 'function') {
 				register = register[0](e);
 				if (!register) return;
 			}
 
-			[workshop, gma] = register;
+			[workshop, gma, disableDownload] = register;
 
 			currentContext.set({
 				x: e.pageX,
 				y: e.pageY,
 				workshop,
-				gma
+				gma,
+				disableDownload
 			});
 
 			e.preventDefault();
@@ -69,19 +71,21 @@
 
 <script>
 	import { _ } from 'svelte-i18n';
-	import { Folder, FolderAdd, LinkChain, LinkOut, Image } from 'akar-icons-svelte';
+	import { Folder, FolderAdd, LinkChain, LinkOut, Image, CloudDownload } from 'akar-icons-svelte';
 	import { get, writable } from 'svelte/store';
 	import Loading from './Loading.svelte';
 	import { onDestroy, onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import DestinationSelect from './DestinationSelect.svelte';
 	import fileSize from 'filesize';
-	import { Transaction } from '../transactions';
+	import { taskMessage, Transaction } from '../transactions';
+import { playSound } from '../sounds';
 
 	export let workshop = null;
 	export let gma = null;
 	export let x;
 	export let y;
+	export let disableDownload = false;
 
 	let subscription;
 
@@ -132,7 +136,6 @@
 
 		const top = Math.max(Math.min(y, window.innerHeight - contextMenu.clientHeight), 0);
 		contextMenu.style.top = top + 'px';
-		console.log(y, top);
 		contextMenu.style.transformOrigin = y >= top ? 'top' : 'bottom';
 	}
 
@@ -199,6 +202,13 @@
 				}});
 			}));
 	}
+
+	async function download() {
+		await invoke('workshop_download', { ids: [(await workshop).id] });
+
+		playSound('success');
+		taskMessage($_('sent_to_downloader'));
+	}
 </script>
 
 <DestinationSelect active={choosingExtractDestination} cancel={() => choosingExtractDestination = false} callback={extractGMA} text={$_('extract')} extractedName={extractedName}/>
@@ -241,6 +251,12 @@
 						<span slot="icon"><LinkChain size="1rem"/></span>
 						<span slot="label">{$_('copy_link')}</span>
 					</ContextMenuItem>
+					{#if !disableDownload}
+						<ContextMenuItem click={download}>
+							<span slot="icon"><CloudDownload size="1rem"/></span>
+							<span slot="label">{$_('download')}</span>
+						</ContextMenuItem>
+					{/if}
 					{#if workshop.previewUrl}
 						<div class="divider"></div>
 						<a class="nostyle" href={workshop.previewUrl} target="_blank">

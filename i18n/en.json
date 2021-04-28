@@ -241,5 +241,7 @@
 
 	"copy_link": "Copy Link",
 	"open_image": "Open Image",
-	"copy_image_link": "Copy Image Link"
+	"copy_image_link": "Copy Image Link",
+	"download": "Download",
+	"sent_to_downloader": "Sent to Downloader"
 }

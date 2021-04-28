@@ -501,7 +501,7 @@
 		registerContext(contextListener, e => {
 			const hovered = findHoveredAddon(e, false);
 			if (hovered) {
-				return [Steam.getWorkshopAddon(hovered.installed.id), Promise.resolve(hovered.installed)];
+				return [Steam.getWorkshopAddon(hovered.installed.id), Promise.resolve(hovered.installed), true];
 			}
 		});
 	});

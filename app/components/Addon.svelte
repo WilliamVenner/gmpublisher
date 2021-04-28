@@ -6,7 +6,7 @@
 	import Loading from './Loading.svelte';
 	import Dead from './Dead.svelte';
 	import { registerContext } from './ContextMenu.svelte';
-import { onMount } from 'svelte';
+	import { onMount } from 'svelte';
 
 	// TODO merge workshop and gma promises?
 
@@ -50,7 +50,7 @@ import { onMount } from 'svelte';
 	let addonElement;
 	if (!newAddon && !previewing) {
 		onMount(() => {
-			registerContext(addonElement, workshop, installed);
+			registerContext(addonElement, workshop, installed, !!installedData);
 		});
 	}
 </script>

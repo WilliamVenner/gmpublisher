@@ -65,7 +65,6 @@
 			$entriesList = Object.values(await invoke('preview_gma', { path: gmaPath }));
 		}
 		gmaSize = gma?.size ?? workshop?.size ?? 0;
-		console.log($entriesList);
 	}
 	function updatePromises(promises) {
 		const [workshop, gma] = promises;
