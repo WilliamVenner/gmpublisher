@@ -8,12 +8,18 @@ pub fn bundler() -> bool {
 }
 
 #[cfg(any(target_os = "macos"))]
-pub fn bundler() -> bool {
+fn check() -> bool {
 	if let Some(arg) = std::env::args_os().nth(1) {
 		if arg.to_string_lossy() != "bundle" { return false; }
 	} else {
 		return false;
 	}
+	true
+}
+
+#[cfg(target_os = "macos")]
+pub fn bundler() -> bool {
+	if !check() { return false; }
 
 	let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/release/bundle/macos/gmpublisher.app/Contents/MacOS/gmpublisher");
 	assert!(path.is_file());
@@ -27,13 +33,6 @@ pub fn bundler() -> bool {
     .stderr(Stdio::piped())
     .output()
     .expect("Failed to link Steamworks API for MacOS bundle");
-
-	Command::new("strip")
-	.arg(path.as_os_str())
-    .stdout(Stdio::piped())
-    .stderr(Stdio::piped())
-    .output()
-    .expect("Failed to strip debug symbols for MacOS bundle");
 
 	true
 }
