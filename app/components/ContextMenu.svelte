@@ -57,11 +57,19 @@
 			findTarget(e, e.target);
 		}
 	}, false);
+
+	window.addEventListener('scroll', () => {
+		const current = get(currentContext);
+		if (current && current.element) {
+			current.element.remove();
+		}
+		currentContext.set(null);
+	}, true);
 </script>
 
 <script>
 	import { _ } from 'svelte-i18n';
-	import { Folder, FolderAdd, LinkChain, LinkOut } from 'akar-icons-svelte';
+	import { Folder, FolderAdd, LinkChain, LinkOut, Image } from 'akar-icons-svelte';
 	import { get, writable } from 'svelte/store';
 	import Loading from './Loading.svelte';
 	import { onDestroy, onMount } from 'svelte';
@@ -119,11 +127,20 @@
 	let contextMenu;
 	function updatePosition() {
 		if (!contextMenu) return;
+
 		contextMenu.style.left = Math.max(Math.min(x, window.innerWidth - contextMenu.clientWidth), 0) + 'px';
-		contextMenu.style.top = Math.max(Math.min(y, window.innerHeight - contextMenu.clientHeight), 0) + 'px';
+
+		const top = Math.max(Math.min(y, window.innerHeight - contextMenu.clientHeight), 0);
+		contextMenu.style.top = top + 'px';
+		console.log(y, top);
+		contextMenu.style.transformOrigin = y >= top ? 'top' : 'bottom';
 	}
 
-	onMount(updatePosition);
+	onMount(() => {
+		me.element = contextMenu;
+		new ResizeObserver(updatePosition).observe(contextMenu);
+		updatePosition();
+	});
 	$: { updatePosition(); }
 
 	function onClickOff(e) {
@@ -182,7 +199,7 @@
 
 <DestinationSelect active={choosingExtractDestination} cancel={() => choosingExtractDestination = false} callback={extractGMA} text={$_('extract')} extractedName={extractedName}/>
 
-<main class="context-menu" bind:this={contextMenu} class:destroyed={destroyed}>
+<main class="context-menu" bind:this={contextMenu} class:destroyed={destroyed} on:resize={updatePosition}>
 	{#await loading}
 		<Loading size="2rem"/>
 	{:then}
