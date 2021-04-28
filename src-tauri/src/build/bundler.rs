@@ -2,12 +2,6 @@
 
 use std::{path::PathBuf, process::{Command, Stdio}};
 
-#[cfg(any(target_os = "windows", target_os = "linux"))]
-pub fn bundler() -> bool {
-	return false;
-}
-
-#[cfg(any(target_os = "macos"))]
 fn check() -> bool {
 	if let Some(arg) = std::env::args_os().nth(1) {
 		if arg.to_string_lossy() != "bundle" { return false; }
@@ -15,6 +9,11 @@ fn check() -> bool {
 		return false;
 	}
 	true
+}
+
+#[cfg(any(target_os = "windows", target_os = "linux"))]
+pub fn bundler() -> bool {
+	check()
 }
 
 #[cfg(target_os = "macos")]
