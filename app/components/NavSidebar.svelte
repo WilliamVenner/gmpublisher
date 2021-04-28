@@ -12,7 +12,8 @@
 		{
 			name: 'downloader',
 			component: Downloader,
-			background: true
+			background: true,
+			jobs: downloaderJobs
 		},
 		{
 			name: 'size_analyzer',
@@ -42,12 +43,12 @@
 	import Sidebar from './Sidebar.svelte';
 
 	import AddonSizeAnalyzer from '../pages/AddonSizeAnalyzer.svelte';
-	import Downloader from '../pages/Downloader.svelte';
+	import Downloader, { downloaderJobs } from '../pages/Downloader.svelte';
 	import InstalledAddons from '../pages/InstalledAddons.svelte';
 	import MyWorkshop from '../pages/MyWorkshop.svelte';
-	import ContentGenerator from '../pages/ContentGenerator.svelte';
+	//import ContentGenerator from '../pages/ContentGenerator.svelte';
 	import SidebarItem from './SidebarItem.svelte';
-	import Subscriptions from '../pages/Subscriptions.svelte';
+	//import Subscriptions from '../pages/Subscriptions.svelte';
 	import Logo from './Logo.svelte';
 
 	function selectPage(page) {
@@ -57,7 +58,7 @@
 
 <Sidebar id="nav-sidebar">
 	{#each $pages as choice, i}
-		<SidebarItem {activeItem} id={i} click={selectPage}>{$_(choice.name)}</SidebarItem>
+		<SidebarItem {activeItem} id={i} click={selectPage} jobs={choice.jobs}>{$_(choice.name)}</SidebarItem>
 	{/each}
 
 	<div id="credits" slot="footer">

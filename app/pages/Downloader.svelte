@@ -1,6 +1,8 @@
 <script context="module">
 	export const JOB_TYPE_DOWNLOAD = 0;
 	export const JOB_TYPE_EXTRACT = 1;
+
+	export const downloaderJobs = writable(0);
 </script>
 
 <script>
@@ -15,6 +17,7 @@
 	import { playSound } from '../sounds';
 	import DownloaderJob from '../components/DownloaderJob.svelte';
 	import { Steam } from '../steam';
+	import { writable } from 'svelte/store';
 
 	let extractingJobs = [];
 	let downloadingJobs = [];
@@ -231,6 +234,10 @@
 				invoke('open', { path: job.path });
 			}
 		}
+	}
+
+	$: {
+		downloaderJobs.set(extractingWorkers + downloadingWorkers);
 	}
 </script>
 
