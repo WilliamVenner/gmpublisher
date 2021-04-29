@@ -61,8 +61,6 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 The program should work out-of-the-box.
 
-###### (Pre-builds coming soon)
-
 ## Tutorials
 
 [DanFMN - Fastest Way to Upload a Garry's Mod Addon To Workshop](https://youtu.be/_syLXTFXmgM)
