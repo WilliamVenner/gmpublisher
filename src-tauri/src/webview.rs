@@ -139,3 +139,43 @@ impl PartialEq for Addon {
 	}
 }
 impl Eq for Addon {}
+
+pub struct ErrorReporter;
+impl<M: tauri::Params + 'static> tauri::plugin::Plugin<M> for ErrorReporter {
+	fn initialization_script(&self) -> Option<String> {
+		Some(
+			include_str!("../../app/plugins/ErrorReporter.js")
+				.replacen(
+					"{$_DEBUG_MODE_$}",
+					if cfg!(debug_assertions) { "true" } else { "false" },
+					1,
+				)
+		)
+	}
+
+	fn name(&self) -> &'static str {
+		"ErrorReporter"
+	}
+}
+
+#[tauri::command]
+pub fn js_error(message: String, stack: String) {
+	eprintln!("\n=== JavaScript Error! ===");
+	eprintln!("{}", message);
+	eprintln!("{}\n", stack);
+}
+
+#[tauri::command]
+pub fn error(message: String) {
+	eprintln!("[WebView] [ERROR] {}", message);
+}
+
+#[tauri::command]
+pub fn info(message: String) {
+	eprintln!("[WebView] [INFO] {}", message);
+}
+
+#[tauri::command]
+pub fn warn(message: String) {
+	eprintln!("[WebView] [WARN] {}", message);
+}

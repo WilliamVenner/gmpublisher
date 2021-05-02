@@ -108,6 +108,7 @@ fn main() {
 			webview!().init(window);
 			Ok(())
 		})
+		.plugin(webview::ErrorReporter)
 		.plugin(appdata::Plugin)
 		.invoke_handler(commands::invoke_handler())
 		.run(tauri::generate_context!())
