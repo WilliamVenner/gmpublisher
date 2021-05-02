@@ -52,7 +52,8 @@
 		['en', 'English'],
 	];
 	for (let lang in APP_LANGUAGES) {
-		languages.push([lang, APP_LANGUAGES[lang]]);
+		if (lang === 'en') continue;
+		languages.push([lang, APP_LANGUAGES[lang]?.LANGUAGE_NAME ?? lang]);
 	}
 	function chooseLanguage() {
 		if (this.value === 'default') {

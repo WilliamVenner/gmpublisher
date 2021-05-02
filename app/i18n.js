@@ -1,17 +1,22 @@
-import { _, addMessages, init as i18n_init, getLocaleFromNavigator, register, locale } from 'svelte-i18n';
+import { _, addMessages, init, getLocaleFromNavigator, locale } from 'svelte-i18n';
 import { get } from 'svelte/store';
 import en from '../i18n/en.json';
 
-for (let file in APP_LANGUAGES) {
-	register(file, () => import(`../i18n/${file}.json`));
+{
+	for (let file in APP_LANGUAGES) {
+		if (file === 'en') continue;
+		addMessages(file, APP_LANGUAGES[file]);
+	}
+	addMessages('en', en);
+
+	const navigatorLocale = getLocaleFromNavigator() ?? 'en';
+	init({
+		fallbackLocale: 'en',
+		initialLocale: navigatorLocale,
+	});
+
+	console.report('info', `Initial locale: ${navigatorLocale}`);
 }
-
-addMessages('en', en);
-
-i18n_init({
-	fallbackLocale: 'en',
-	initialLocale: getLocaleFromNavigator() ?? 'en',
-});
 
 const RE_SPLIT_ERROR = /^(.*?)(?::([\s\S]*))?$/;
 export function translateError(error, data) {
@@ -29,10 +34,8 @@ export function translateError(error, data) {
 	}
 }
 
-export function switchLanguage(newLocale) {
-	if (newLocale in APP_LANGUAGES) {
-		locale.set(newLocale);
-	} else {
-		locale.set(getLocaleFromNavigator());
-	}
+export function switchLanguage(switchLocale) {
+	const newLocale = switchLocale in APP_LANGUAGES ? switchLocale : (getLocaleFromNavigator() ?? 'en');
+	locale.set(newLocale);
+	console.report('info', `Switched to locale: ${newLocale}`);
 }
