@@ -78,7 +78,6 @@ fn main() {
 
 	rayon::ThreadPoolBuilder::new().num_threads(*crate::NUM_THREADS).build_global().unwrap();
 
-	#[cfg(debug_assertions)]
 	if cli::stdin() {
 		return;
 	}

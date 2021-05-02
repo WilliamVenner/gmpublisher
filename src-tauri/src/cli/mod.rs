@@ -1,3 +1,11 @@
+use std::path::PathBuf;
+
+use crate::{GMAFile, gma::{ExtractDestination, ExtractGMAMut}};
+
+lazy_static! {
+	pub static ref CLI_MODE: bool = std::env::args_os().len() > 1;
+}
+
 // 1. CLI
 // 2. File associations
 // 3. Context menu option
@@ -6,6 +14,8 @@ mod sys;
 
 pub(super) fn stdin() -> bool {
 	use tauri::api::clap::{App, Arg};
+
+	if !*CLI_MODE { return false; }
 
 	let app = App::new("gmpublisher");
 
@@ -19,8 +29,8 @@ pub(super) fn stdin() -> bool {
 		.long("extract")
 		.value_name("FILE")
 		.takes_value(true)
-		.about("Extracts a .GMA file")
-		.conflicts_with_all(&["update", "in", "changes", "icon"]),
+		.about("Extracts a .GMA file"),
+		//.conflicts_with_all(&["update", "in", "changes", "icon"]),
 
 		Arg::new("out")
 		.short('o')
@@ -30,9 +40,9 @@ pub(super) fn stdin() -> bool {
 		.about("Sets the output path for extracting GMAs. Defaults to the temp directory.")
 		.requires("extract")
 		.default_missing_value_os(std::env::temp_dir().join("gmpublisher").as_os_str())
-		.conflicts_with_all(&["update", "in", "changes", "icon"])
+		//.conflicts_with_all(&["update", "in", "changes", "icon"])
 	])
-	.args(&[
+	/*.args(&[
 		Arg::new("update")
 		.short('u')
 		.long("update")
@@ -65,10 +75,30 @@ pub(super) fn stdin() -> bool {
 		.about("Path to a (max 1 MB) JPG/PNG/GIF file for Workshop preview image updating.")
 		.requires("update")
 		.conflicts_with_all(&["out", "extract"])
-	])
+	])*/
 	.get_matches();
 
-	println!("{:#?}", matches);
+	dprintln!("{:#?}", matches);
 
-	false
+	if let Some(extract_path) = matches.value_of("extract") {
+		let extract_path = PathBuf::from(extract_path);
+
+		if !extract_path.is_file() {
+			eprintln!("Invalid GMA file path provided.");
+			return true;
+		}
+
+		if let Ok(mut gma) = GMAFile::open(extract_path) {
+			let dest = match matches.value_of("out") {
+				Some(out) => ExtractDestination::Directory(PathBuf::from(out)),
+				None => ExtractDestination::Temp
+			};
+
+			if let Err(err) = gma.extract(dest, &transaction!(), true) {
+				eprintln!("Error: {:#?}", err);
+			}
+		}
+	}
+
+	true
 }

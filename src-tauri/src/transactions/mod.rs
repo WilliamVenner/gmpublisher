@@ -34,7 +34,7 @@ impl Transactions {
 		Transactions {
 			inner: RwLock::new(Vec::new()),
 			id: AtomicU32::new(0),
-			websocket: TransactionServer::init().ok(),
+			websocket: if *crate::cli::CLI_MODE { None } else { TransactionServer::init().ok() },
 		}
 	}
 
@@ -94,6 +94,8 @@ pub struct TransactionInner {
 }
 impl TransactionInner {
 	fn emit(&self, message: TransactionMessage) {
+		if *crate::cli::CLI_MODE { return; }
+
 		if let Some(ref websocket) = TRANSACTIONS.websocket {
 			websocket.send(message);
 		} else {

@@ -33,11 +33,14 @@ macro_rules! sleep_ms {
 #[macro_export]
 macro_rules! main_thread_forbidden {
 	() => {
-		debug_assert_ne!(
-			std::thread::current().name(),
-			Some("main"),
-			"This should never be called from the main thread"
-		);
+		#[cfg(debug_assertions)]
+		if !*crate::cli::CLI_MODE {
+			debug_assert_ne!(
+				std::thread::current().name(),
+				Some("main"),
+				"This should never be called from the main thread"
+			);
+		}
 	};
 }
 
