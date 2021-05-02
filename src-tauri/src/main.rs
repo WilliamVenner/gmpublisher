@@ -1,6 +1,6 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
-use tauri::{Attributes, Manager};
+use tauri::Manager;
 
 mod build;
 
@@ -95,15 +95,17 @@ fn main() {
 	println!("Starting GUI...");
 
 	tauri::Builder::default()
-		.create_window("gmpublisher".to_string(), tauri::WindowUrl::default(), |args| {
+		.create_window("gmpublisher".to_string(), tauri::WindowUrl::default(), |args, attrs| {
 			let settings = APP_DATA.settings.read();
-			args.title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
-				.maximized(!cfg!(debug_assertions) && settings.window_maximized)
-				.resizable(true)
-				.width(settings.window_size.0)
-				.height(settings.window_size.1)
-				.min_width(800.)
-				.min_height(600.)
+			(
+				args.with_title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
+					.with_maximized(!cfg!(debug_assertions) && settings.window_maximized)
+					.with_resizable(true)
+					.with_inner_size(winit::dpi::PhysicalSize { width: settings.window_size.0, height: settings.window_size.1 })
+					.with_min_inner_size(winit::dpi::PhysicalSize { width: 800., height: 600. }),
+
+				attrs
+			)
 		})
 		.setup(|app| {
 			let window = app.get_window(&"gmpublisher".to_string()).unwrap();
