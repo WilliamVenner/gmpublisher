@@ -2,7 +2,7 @@ mod websocket;
 
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
-use rayon::{ThreadPool, ThreadPoolBuilder};
+use rayon::ThreadPool;
 use serde::Serialize;
 use std::sync::{
 	atomic::{AtomicBool, AtomicU32, Ordering},
@@ -15,7 +15,7 @@ use self::websocket::{TransactionMessage, TransactionServer};
 
 lazy_static! {
 	static ref TRANSACTIONS: Transactions = Transactions::init();
-	static ref TRANSACTIONS_SLAVE: ThreadPool = ThreadPoolBuilder::new().num_threads(1).build().unwrap();
+	static ref TRANSACTIONS_SLAVE: ThreadPool = thread_pool!(1);
 }
 
 pub struct Transactions {

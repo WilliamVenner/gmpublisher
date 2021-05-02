@@ -1614,6 +1614,7 @@ dependencies = [
  "image",
  "indexmap",
  "lazy_static",
+ "num_cpus",
  "opener",
  "parking_lot 0.11.1",
  "path-slash",

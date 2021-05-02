@@ -1,6 +1,20 @@
 pub const GMOD_APP_ID: steamworks::AppId = steamworks::AppId(4000);
 
 lazy_static! {
+	pub static ref NUM_THREADS: usize = usize::max(num_cpus::get() - 2, 2);
+}
+#[macro_export]
+macro_rules! thread_pool {
+	( $n:expr ) => {
+		rayon::ThreadPoolBuilder::new().num_threads(isize::max(isize::min($n - 2, num_cpus::get() as isize), 2) as usize).build().unwrap()
+	};
+
+	() => {
+		rayon::ThreadPoolBuilder::new().num_threads(*crate::NUM_THREADS).build().unwrap()
+	};
+}
+
+lazy_static! {
 	pub static ref STEAMWORKS: crate::steam::Steam = crate::steam::Steam::init();
 	pub static ref GAME_ADDONS: crate::game_addons::GameAddons = crate::game_addons::GameAddons::init();
 	pub static ref ADDON_SIZE_ANALYZER: crate::addon_size_analyzer::AddonSizeAnalyzer = crate::addon_size_analyzer::AddonSizeAnalyzer::init();

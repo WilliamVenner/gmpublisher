@@ -72,6 +72,7 @@ dirs-next = "2.0.0"
 opener = "0.4.1"
 websocket = "0.26.2"
 fuzzy-matcher = "0.3.7"
+num_cpus = "1"
 
 [features]
 default = [ "custom-protocol" ]

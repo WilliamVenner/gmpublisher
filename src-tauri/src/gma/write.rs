@@ -1,6 +1,6 @@
 use byteorder::{LittleEndian, WriteBytesExt};
 use lazy_static::lazy_static;
-use rayon::{ThreadPool, ThreadPoolBuilder};
+use rayon::ThreadPool;
 use std::{
 	collections::LinkedList,
 	fs::{self, File},
@@ -20,7 +20,7 @@ use super::{whitelist, GMAError, GMAMetadata};
 use super::GMA_HEADER;
 
 lazy_static! {
-	static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
+	static ref THREAD_POOL: ThreadPool = thread_pool!();
 }
 
 impl NTStringWriter for BufWriter<File> {}

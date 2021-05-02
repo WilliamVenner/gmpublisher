@@ -2,7 +2,7 @@ use std::{collections::BinaryHeap, sync::Arc};
 
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
-use rayon::{ThreadPool, ThreadPoolBuilder};
+use rayon::ThreadPool;
 use steamworks::PublishedFileId;
 
 use serde::Serialize;
@@ -10,8 +10,8 @@ use serde::Serialize;
 use crate::{game_addons, transaction, transactions::Transaction, webview::Addon};
 
 lazy_static! {
-	static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(4).build().unwrap();
-	static ref ANALYZER_THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
+	static ref THREAD_POOL: ThreadPool = thread_pool!(4);
+	static ref ANALYZER_THREAD_POOL: ThreadPool = thread_pool!();
 }
 
 #[derive(Debug, Serialize, Clone, PartialEq, Eq, derive_more::Deref)]

@@ -12,31 +12,13 @@ use super::{whitelist, GMAEntry, GMAError, GMAFile, GMAMetadata, GMAReader};
 use lazy_static::lazy_static;
 use rayon::{
 	iter::{IntoParallelRefIterator, ParallelIterator},
-	ThreadPool, ThreadPoolBuilder,
+	ThreadPool
 };
 use serde::{Deserialize, Serialize};
 
 lazy_static! {
-	pub static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
+	pub static ref THREAD_POOL: ThreadPool = thread_pool!();
 }
-
-/*#[derive(Clone, Copy)]
-pub enum AfterExtract {
-	None,
-	Open,
-	UserPreference,
-	Future(&'static (dyn Fn() -> bool + Send + Sync + 'static)),
-}
-impl Into<bool> for AfterExtract {
-	fn into(self) -> bool {
-		match self {
-			AfterExtract::None => false,
-			AfterExtract::Open => true,
-			AfterExtract::UserPreference => app_data!().settings.read().open_gma_after_extract,
-			AfterExtract::Future(f) => (f)()
-		}
-	}
-}*/
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExtractDestination {

@@ -1,5 +1,5 @@
 use parking_lot::{Condvar, Mutex, MutexGuard};
-use rayon::{ThreadPool, ThreadPoolBuilder};
+use rayon::ThreadPool;
 
 use std::{
 	path::PathBuf,
@@ -17,7 +17,7 @@ use crate::{
 
 lazy_static! {
 	pub static ref DOWNLOADS: Downloads = Downloads::init();
-	static ref THREAD_POOL: ThreadPool = ThreadPoolBuilder::new().build().unwrap();
+	static ref THREAD_POOL: ThreadPool = thread_pool!();
 }
 
 #[derive(Debug)]
@@ -45,11 +45,7 @@ impl std::ops::Deref for DownloadInner {
 	}
 }
 pub type Download = Arc<DownloadInner>;
-pub struct Downloads {
-	pending: Mutex<Vec<Download>>, // TODO consider using VecDeque?
-	downloading: Mutex<Vec<Download>>,
-	watchdog: Condvar,
-}
+
 pub struct IDList {
 	inner: Vec<PublishedFileId>,
 }
@@ -67,6 +63,12 @@ impl From<Vec<PublishedFileId>> for IDList {
 	fn from(ids: Vec<PublishedFileId>) -> Self {
 		IDList { inner: ids }
 	}
+}
+
+pub struct Downloads {
+	pending: Mutex<Vec<Download>>, // TODO consider using VecDeque?
+	downloading: Mutex<Vec<Download>>,
+	watchdog: Condvar,
 }
 impl Downloads {
 	fn init() -> Self {

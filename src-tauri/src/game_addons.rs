@@ -2,14 +2,14 @@ use std::{collections::{BinaryHeap, HashMap}, fs::DirEntry, path::{Path, PathBuf
 
 use lazy_static::lazy_static;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
-use rayon::{ThreadPool, ThreadPoolBuilder};
+use rayon::ThreadPool;
 use serde::ser::SerializeTuple;
 use steamworks::PublishedFileId;
 
 use crate::{game_addons, gma::extract::ExtractGMAMut, webview::Addon, GMAFile};
 
 lazy_static! {
-	static ref DISCOVERY_POOL: ThreadPool = ThreadPoolBuilder::new().num_threads(3).build().unwrap();
+	static ref DISCOVERY_POOL: ThreadPool = thread_pool!(3);
 }
 
 #[repr(u8)]
@@ -110,6 +110,8 @@ impl GameAddons {
 		} else {
 			*self.paths.write() = HashMap::new();
 			*self.pages.write() = Vec::new();
+
+			self.discovered.store(Discovered::No.into(), Ordering::Release);
 			return;
 		};
 
