@@ -6,14 +6,12 @@ for (let file in APP_LANGUAGES) {
 	register(file, () => import(`../i18n/${file}.json`));
 }
 
-export default () => {
-	addMessages('en', en);
+addMessages('en', en);
 
-	i18n_init({
-		fallbackLocale: 'en',
-		initialLocale: getLocaleFromNavigator(),
-	});
-};
+i18n_init({
+	fallbackLocale: 'en',
+	initialLocale: getLocaleFromNavigator() ?? 'en',
+});
 
 const RE_SPLIT_ERROR = /^(.*?)(?::([\s\S]*))?$/;
 export function translateError(error, data) {
