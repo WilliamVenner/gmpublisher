@@ -10,10 +10,6 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 ###### Are you a developer? You may also like my [VSCode GLua Enhanced](https://github.com/WilliamVenner/vscode-glua-enhanced) extension!
 
-# -> Windows users need to install [WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703) for gmpublisher to work (for now) <-
-
-# -> Your antivirus may block gmpublisher since it's an unsigned application <-
-
 ## Features
 
 * Doesn't depend on gmad.exe or gmpublish.exe
@@ -24,8 +20,8 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 * Analyze which addons are taking up the most disk space using the addon size analyzer treemap
 * Supports legacy SteamPipe addons and old GMA versions
 * Works without an Internet connection
-* (Coming soon) .GMA file type association for quick extraction
-* (Coming soon) CLI interface
+* CLI interface
+* (Windows) .GMA file type association for quick extraction
 * (Coming soon) Manage Steam Workshop subscriptions
 * (Coming soon) resource.AddWorkshop generator
 
@@ -51,15 +47,7 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 ## Requirements
 
-### Windows
-
-[Webview2](https://go.microsoft.com/fwlink/p/?LinkId=2124703)
-
-###### (In future this will not be a requirement)
-
-### macOS, Linux
-
-The program should work out-of-the-box.
+Windows, macOS or Linux
 
 ## Tutorials
 

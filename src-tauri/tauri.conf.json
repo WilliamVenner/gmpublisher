@@ -38,6 +38,11 @@
         "minimumSystemVersion": "",
         "useBootstrapper": false,
         "exceptionDomain": ""
+      },
+      "windows": {
+        "wix": {
+          "template": "msi/msi.wxs"
+        }
       }
     },
     "allowlist": {
