@@ -1609,11 +1609,11 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-utils 1.0.0-beta-rc.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "tauri-winit",
  "thiserror",
  "turbonone",
  "walkdir",
  "websocket",
+ "wry",
  "xz2",
 ]
 
