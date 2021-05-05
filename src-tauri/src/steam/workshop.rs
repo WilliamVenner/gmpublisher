@@ -152,7 +152,7 @@ impl Steam {
 				let mut backlog = FETCHER_BACKLOG.borrow_mut();
 
 				backlog.reserve(workshop.1.len());
-				for data in workshop.1.drain(..).into_iter() {
+				for data in std::mem::take(&mut workshop.1) {
 					backlog.push_back(data);
 				}
 

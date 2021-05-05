@@ -137,7 +137,7 @@ impl<V: Send + Sync + 'static> RelaxedRwLock<V> {
 						let mut queue = mutex.lock();
 						if !queue.is_empty() {
 							let mut inner = inner.write();
-							for f in queue.drain(..) {
+							for f in std::mem::take(&mut *queue) {
 								f(&mut inner);
 							}
 						} else {
