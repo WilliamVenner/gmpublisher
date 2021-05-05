@@ -218,6 +218,8 @@ impl GameAddons {
 		}
 
 		self.discovered.store(Discovered::Yes.into(), Ordering::Release);
+
+		browse_installed_addons(1); // Download the first page first
 	}
 
 	pub fn discover_addons(&self) {
