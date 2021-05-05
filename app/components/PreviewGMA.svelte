@@ -111,7 +111,7 @@
 				<div id="sidebar">
 					<div class="extract-btn" on:click={chooseDestination}>{$_('extract')}</div>
 					<div id="addon" class="hide-scroll">
-						<div><Addon previewing={true} workshopData={$promises[0]} installedData={$promises[1]}/></div>
+						<div><Addon previewing={true} workshopData={$promises[0]} installedData={$promises[1]} fallbackName={gma ? (gma.name ?? gma.extracted_name) : null}/></div>
 						{#if workshop}
 							<div id="tags">
 								{#if workshop.tags}
@@ -131,11 +131,6 @@
 								{/if}
 							</div>
 						{:else if gma}
-							{#if gma.name}
-								<div id="workshop-addon">{gma.name}</div>
-							{:else if gma.extracted_name}
-								<div id="workshop-addon">{gma.extracted_name}</div>
-							{/if}
 							{#if gma.tags}
 								<div id="tags">
 									{#if gma.type && gma.tags.indexOf(gma.type.toLowerCase()) !== -1}
@@ -334,9 +329,6 @@
 
 	:global(#addon > .loading:first-child) {
 		margin-bottom: .8rem !important;
-	}
-	#workshop-addon {
-		text-align: center;
 	}
 
 	#author-loading {
