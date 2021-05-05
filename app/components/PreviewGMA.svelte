@@ -165,7 +165,7 @@
 										<tr>
 											<th>{$_('author')}</th>
 											<td>
-												<a target="_blank" href="https://steamcommunity.com/profiles/{workshop.owner.steamid64}" style="text-decoration:none">
+												<a target="_blank" class="nostyle" href="https://steamcommunity.com/profiles/{workshop.owner.steamid64}">
 													<img id="avatar" src="data:image/png;base64,{workshop.owner.avatar}"/>
 													<span>{workshop.owner.name}</span>
 												</a>
@@ -176,20 +176,21 @@
 											<th>{$_('author')}</th>
 											<td>
 												{#await Steam.getSteamUser(workshop.steamid64)}
-													<Loading inline="true"/>&nbsp;
 													<div id="author-loading">
-														<a target="_blank" class="color" href="https://steamcommunity.com/profiles/{workshop.steamid64}">
+														<a target="_blank" class="nostyle" href="https://steamcommunity.com/profiles/{workshop.steamid64}">
+															<img id="avatar" src="/img/steam_anonymous.jpg"/>
 															{new SteamID(workshop.steamid64).getSteam2RenderedID(true)}
 														</a>
 													</div>
 												{:then owner}
-													<a target="_blank" href="https://steamcommunity.com/profiles/{workshop.steamid64}" style="text-decoration:none">
+													<a target="_blank" class="nostyle" href="https://steamcommunity.com/profiles/{workshop.steamid64}">
 														<img id="avatar" src="data:image/png;base64,{owner.avatar}"/>
 														<span>{owner.name}</span>
 													</a>
 												{:catch}
 													<div id="author-loading">
-														<a target="_blank" class="color" href="https://steamcommunity.com/profiles/{workshop.steamid64}">
+														<a target="_blank" class="nostyle" href="https://steamcommunity.com/profiles/{workshop.steamid64}">
+															<img id="avatar" src="/img/steam_anonymous.jpg"/>
 															{new SteamID(workshop.steamid64).getSteam2RenderedID(true)}
 														</a>
 													</div>
