@@ -279,13 +279,12 @@
 	}
 
 	#addon #tags {
-		margin-bottom: 1rem;
 		line-height: 1.7rem;
 		margin-top: 1rem;
 	}
 	#addon-info {
 		border-spacing: .5rem;
-		margin: -.5rem -.5rem -.5rem -.5rem;
+		margin: .5rem -.5rem -.5rem -.5rem;
 	}
 
 	#addon #description {
