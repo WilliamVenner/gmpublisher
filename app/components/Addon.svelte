@@ -15,6 +15,7 @@
 	export let installedData = null;
 	export let onClick = null;
 	export let previewing = false;
+	export let fallbackName = null;
 
 	let workshop = workshopData;
 	let installed = installedData;
@@ -114,21 +115,21 @@
 
 			{#await workshop}
 				{#await installed}
-					<div id="title">¯\_(ツ)_/¯</div>
+					<div id="title" class="select">{fallbackName ?? '¯\\_(ツ)_/¯'}</div>
 				{:then installed}
-					<div id="title">{installed.name ?? installed.extractedName}</div>
+					<div id="title" class="select">{installed.name ?? installed.extractedName}</div>
 				{:catch}
-					<div id="title">¯\_(ツ)_/¯</div>
+					<div id="title" class="select">{fallbackName ?? '¯\\_(ツ)_/¯'}</div>
 				{/await}
 			{:then workshop}
-				<div id="title">{workshop.title}</div>
+				<div id="title" class="select">{workshop.title}</div>
 			{:catch}
 				{#await installed}
-					<div id="title">¯\_(ツ)_/¯</div>
+					<div id="title" class="select">{fallbackName ?? '¯\\_(ツ)_/¯'}</div>
 				{:then installed}
-					<div id="title">{installed.name ?? installed.extractedName}</div>
+					<div id="title" class="select">{installed.name ?? installed.extractedName}</div>
 				{:catch}
-					<div id="title">¯\_(ツ)_/¯</div>
+					<div id="title" class="select">{fallbackName ?? '¯\\_(ツ)_/¯'}</div>
 				{/await}
 			{/await}
 		{/if}
