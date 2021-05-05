@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use serde::{ser::SerializeTuple, Serialize};
 use steamworks::PublishedFileId;
 
-use fuzzy_matcher::{FuzzyMatcher, skim::{SkimMatcherV2, SkimScoreConfig}};
+use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
 
 use crate::{GMAFile, Transaction, WorkshopItem};
 

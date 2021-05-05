@@ -179,3 +179,11 @@ pub fn info(message: String) {
 pub fn warn(message: String) {
 	eprintln!("[WebView] [WARN] {}", message);
 }
+
+static mut RELOADED: AtomicBool = AtomicBool::new(false);
+#[tauri::command]
+pub fn reloaded() {
+	if unsafe { RELOADED.fetch_or(true, std::sync::atomic::Ordering::SeqCst) } {
+		crate::commands::free_caches();
+	}
+}

@@ -1,5 +1,5 @@
 window.__GMPUBLISHER__ = appDataCallback => {
-	__TAURI__.tauri.invoke('free_caches');
+	__TAURI__.tauri.invoke('reloaded');
 
 	{
 		__TAURI__.event.listen('tauri://file-drop', ({ payload: path }) => {

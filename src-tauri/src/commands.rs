@@ -7,12 +7,12 @@ where
 	M: Params,
 {
 	tauri::generate_handler![
-		free_caches,
 		check_dir,
 		check_file,
 		open,
 		open_file_location,
 		file_size,
+		crate::webview::reloaded,
 		crate::webview::js_error,
 		crate::webview::error,
 		crate::webview::info,
@@ -49,7 +49,6 @@ where
 	]
 }
 
-#[tauri::command]
 pub fn free_caches() {
 	crate::game_addons::free_caches();
 	crate::steam::workshop::free_caches();
