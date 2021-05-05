@@ -175,6 +175,8 @@ impl GameAddons {
 		});
 
 		{
+			let mut ids = Vec::new();
+
 			let mut pages = self.pages.write();
 			*pages = Vec::new();
 
@@ -195,6 +197,10 @@ impl GameAddons {
 					.unwrap_or(None);
 				gma.modified = modified;
 
+				if let Some(id) = gma.id {
+					ids.push(id);
+				}
+
 				let path = gma.path.to_owned();
 				let gma: Arc<Addon> = Arc::new(gma.into());
 
@@ -204,15 +210,14 @@ impl GameAddons {
 
 			*pages = pages_heap.into_sorted_vec();
 
+			steam!().fetch_workshop_items(ids);
+
 			search!().add_bulk(&pages);
 
 			println!("Discovered {} addons", paths.len());
 		}
 
 		self.discovered.store(Discovered::Yes.into(), Ordering::Release);
-
-		// Download the first page from Steam
-		browse_installed_addons(1);
 	}
 
 	pub fn discover_addons(&self) {
