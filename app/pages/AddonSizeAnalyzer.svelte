@@ -659,7 +659,7 @@
 	#progress-log {
 		text-shadow: 0px 1px 0px rgba(0, 0, 0, 0.6);
 		text-align: center;
-		max-height: 1rem;
+		max-height: 0;
 	}
 	#progress-log :global(.log:not(:last-child)) {
 		margin-bottom: .5rem;
