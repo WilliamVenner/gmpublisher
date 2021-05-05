@@ -122,7 +122,8 @@ impl GMAFile {
 					crc32.update(&contents);
 					let crc32 = crc32.finalize();
 
-					tx.send((relative_path.into_bytes().into_boxed_slice(), contents.into_boxed_slice(), crc32)).unwrap();
+					tx.send((relative_path.into_bytes().into_boxed_slice(), contents.into_boxed_slice(), crc32))
+						.unwrap();
 				});
 
 				total += 1.;

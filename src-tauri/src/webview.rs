@@ -2,7 +2,11 @@ use std::{cell::RefCell, sync::atomic::AtomicBool};
 
 use crossbeam::channel::Sender;
 use serde::Serialize;
-use tauri::{Window, api::assets::EmbeddedAssets, runtime::{Args, flavors::wry::Wry}};
+use tauri::{
+	api::assets::EmbeddedAssets,
+	runtime::{flavors::wry::Wry, Args},
+	Window,
+};
 
 use crate::{GMAFile, WorkshopItem};
 
@@ -143,14 +147,11 @@ impl Eq for Addon {}
 pub struct ErrorReporter;
 impl<M: tauri::Params + 'static> tauri::plugin::Plugin<M> for ErrorReporter {
 	fn initialization_script(&self) -> Option<String> {
-		Some(
-			include_str!("../../app/plugins/ErrorReporter.js")
-				.replacen(
-					"{$_DEBUG_MODE_$}",
-					if cfg!(debug_assertions) { "true" } else { "false" },
-					1,
-				)
-		)
+		Some(include_str!("../../app/plugins/ErrorReporter.js").replacen(
+			"{$_DEBUG_MODE_$}",
+			if cfg!(debug_assertions) { "true" } else { "false" },
+			1,
+		))
 	}
 
 	fn name(&self) -> &'static str {

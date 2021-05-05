@@ -366,10 +366,17 @@ fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishError>
 
 	let root_path_strip_len = path.to_slash_lossy().len() + 1;
 
-	let ignore: Vec<String> = app_data!().settings.read().ignore_globs.iter().cloned().map(|mut glob| {
-		glob.push('\0');
-		glob
-	}).collect();
+	let ignore: Vec<String> = app_data!()
+		.settings
+		.read()
+		.ignore_globs
+		.iter()
+		.cloned()
+		.map(|mut glob| {
+			glob.push('\0');
+			glob
+		})
+		.collect();
 
 	let mut size = 0;
 	let mut failed_extra = false;

@@ -94,7 +94,9 @@ pub struct TransactionInner {
 }
 impl TransactionInner {
 	fn emit(&self, message: TransactionMessage) {
-		if *crate::cli::CLI_MODE { return; }
+		if *crate::cli::CLI_MODE {
+			return;
+		}
 
 		if let Some(ref websocket) = TRANSACTIONS.websocket {
 			websocket.send(message);

@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-use crate::{GMAFile, gma::{ExtractDestination, ExtractGMAMut}};
+use crate::{
+	gma::{ExtractDestination, ExtractGMAMut},
+	GMAFile,
+};
 
 lazy_static! {
 	pub static ref CLI_MODE: bool = std::env::args_os().len() > 1;
@@ -15,7 +18,9 @@ mod sys;
 pub(super) fn stdin() -> bool {
 	use tauri::api::clap::{App, Arg};
 
-	if !*CLI_MODE { return false; }
+	if !*CLI_MODE {
+		return false;
+	}
 
 	let app = App::new("gmpublisher");
 
@@ -91,7 +96,7 @@ pub(super) fn stdin() -> bool {
 		if let Ok(mut gma) = GMAFile::open(extract_path) {
 			let dest = match matches.value_of("out") {
 				Some(out) => ExtractDestination::Directory(PathBuf::from(out)),
-				None => ExtractDestination::Temp
+				None => ExtractDestination::Temp,
 			};
 
 			if let Err(err) = gma.extract(dest, &transaction!(), true) {

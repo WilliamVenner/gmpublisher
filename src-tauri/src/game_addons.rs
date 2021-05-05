@@ -1,4 +1,13 @@
-use std::{collections::{BinaryHeap, HashMap}, fs::DirEntry, path::{Path, PathBuf}, sync::{Arc, atomic::{AtomicU8, Ordering}, mpsc}, time::SystemTime};
+use std::{
+	collections::{BinaryHeap, HashMap},
+	fs::DirEntry,
+	path::{Path, PathBuf},
+	sync::{
+		atomic::{AtomicU8, Ordering},
+		mpsc, Arc,
+	},
+	time::SystemTime,
+};
 
 use lazy_static::lazy_static;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
@@ -16,7 +25,7 @@ lazy_static! {
 enum Discovered {
 	No = 0,
 	Discovering = 1,
-	Yes = 2
+	Yes = 2,
 }
 impl From<u8> for Discovered {
 	#[inline(always)]
@@ -226,12 +235,12 @@ impl GameAddons {
 		main_thread_forbidden!();
 
 		match self.discovered.load(Ordering::Acquire).into() {
-			Discovered::Yes => {},
+			Discovered::Yes => {}
 			Discovered::No => self.refresh(),
 			Discovered::Discovering => loop {
 				sleep_ms!(25);
 				game_addons!().discover_addons();
-			}
+			},
 		}
 	}
 

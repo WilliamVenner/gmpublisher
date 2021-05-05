@@ -188,11 +188,9 @@ impl Steam {
 										item.preview_url = results.preview_url(i);
 										item.subscriptions = results.statistic(i, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
 
-										if let Ok(pos) = search_installed_addons.binary_search_by(|x| {
-											match &x.source {
-												crate::search::SearchItemSource::InstalledAddons(_, id) => id.as_ref().unwrap().cmp(&item.id),
-												_ => unreachable!()
-											}
+										if let Ok(pos) = search_installed_addons.binary_search_by(|x| match &x.source {
+											crate::search::SearchItemSource::InstalledAddons(_, id) => id.as_ref().unwrap().cmp(&item.id),
+											_ => unreachable!(),
 										}) {
 											let search_item = unsafe { Arc::get_mut_unchecked(&mut search_installed_addons[pos]) };
 											if search_item.label != item.title {

@@ -12,7 +12,7 @@ use super::{whitelist, GMAEntry, GMAError, GMAFile, GMAMetadata, GMAReader};
 use lazy_static::lazy_static;
 use rayon::{
 	iter::{IntoParallelRefIterator, ParallelIterator},
-	ThreadPool
+	ThreadPool,
 };
 use serde::{Deserialize, Serialize};
 

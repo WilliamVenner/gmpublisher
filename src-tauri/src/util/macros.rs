@@ -85,7 +85,10 @@ lazy_static! {
 #[macro_export]
 macro_rules! thread_pool {
 	( $n:expr ) => {
-		rayon::ThreadPoolBuilder::new().num_threads(isize::max(isize::min($n - 2, num_cpus::get() as isize), 2) as usize).build().unwrap()
+		rayon::ThreadPoolBuilder::new()
+			.num_threads(isize::max(isize::min($n - 2, num_cpus::get() as isize), 2) as usize)
+			.build()
+			.unwrap()
 	};
 
 	() => {

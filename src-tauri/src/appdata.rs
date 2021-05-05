@@ -216,11 +216,13 @@ impl AppData {
 
 		if !steam!().connected() {
 			println!("Steam is not connected, parsing Steam library folders...");
-			match steamlocate::SteamDir::locate().and_then(|mut steam_dir| steam_dir.app(&GMOD_APP_ID.0).and_then(|steam_app| Some(steam_app.path.to_owned()))) {
+			match steamlocate::SteamDir::locate()
+				.and_then(|mut steam_dir| steam_dir.app(&GMOD_APP_ID.0).and_then(|steam_app| Some(steam_app.path.to_owned())))
+			{
 				Some(path) => {
 					println!("Located!");
-					return Some(path)
-				},
+					return Some(path);
+				}
 				None => {
 					println!("Failed to parse Steam library folders. Waiting for Steam...");
 					for i in 0..3 as u8 {

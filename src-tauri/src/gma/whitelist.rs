@@ -226,7 +226,7 @@ pub fn test_ignore() {
 		"some/blah/blah.pdn",
 		"hi.xcf",
 		"addon.jpg",
-		"addon.json"
+		"addon.json",
 	];
 
 	for ignored in ignored {

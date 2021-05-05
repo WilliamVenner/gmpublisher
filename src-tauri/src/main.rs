@@ -47,8 +47,8 @@ pub mod content_generator;
 pub mod search;
 pub mod webview;
 
-mod commands;
 mod cli;
+mod commands;
 
 #[cfg(debug_assertions)]
 fn deadlock_watchdog() {
@@ -101,10 +101,12 @@ fn main() {
 				args.with_title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
 					.with_maximized(!cfg!(debug_assertions) && settings.window_maximized)
 					.with_resizable(true)
-					.with_inner_size(wry::application::dpi::LogicalSize { width: settings.window_size.0, height: settings.window_size.1 })
+					.with_inner_size(wry::application::dpi::LogicalSize {
+						width: settings.window_size.0,
+						height: settings.window_size.1,
+					})
 					.with_min_inner_size(wry::application::dpi::LogicalSize { width: 800., height: 600. }),
-
-				attrs
+				attrs,
 			)
 		})
 		.setup(|app| {
