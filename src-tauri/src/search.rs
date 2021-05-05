@@ -1,17 +1,11 @@
-use std::{
-	path::PathBuf,
-	sync::{
-		atomic::{AtomicBool, AtomicU8},
-		Arc,
-	},
-};
+use std::{path::PathBuf, sync::{Arc, atomic::{AtomicBool, AtomicU32, AtomicU8}}};
 
 use parking_lot::RwLock;
 use rayon::prelude::*;
 use serde::{ser::SerializeTuple, Serialize};
 use steamworks::PublishedFileId;
 
-use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
+use fuzzy_matcher::{FuzzyMatcher, skim::{SkimMatcherV2, SkimScoreConfig}};
 
 use crate::{GMAFile, Transaction, WorkshopItem};
 
@@ -28,11 +22,11 @@ pub enum SearchItemSource {
 
 #[derive(Debug)]
 pub struct SearchItem {
-	label: String,
-	terms: Vec<String>,
-	timestamp: u64,
-	len: usize,
-	source: SearchItemSource,
+	pub label: String,
+	pub terms: Vec<String>,
+	pub timestamp: u64,
+	pub len: usize,
+	pub source: SearchItemSource,
 }
 impl PartialOrd for SearchItem {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
@@ -159,6 +153,8 @@ pub struct Search {
 	dirty: AtomicBool,
 	items: RwLock<Vec<Arc<SearchItem>>>,
 	matcher: SkimMatcherV2,
+
+	pub installed_addons: RwLock<Vec<Arc<SearchItem>>>,
 }
 impl Search {
 	pub fn init() -> Search {
@@ -167,6 +163,8 @@ impl Search {
 			items: RwLock::new(Vec::new()),
 			matcher: SkimMatcherV2::default().ignore_case().use_cache(true),
 			dirty: AtomicBool::new(false),
+
+			installed_addons: RwLock::new(Vec::new()),
 		}
 	}
 
@@ -174,20 +172,78 @@ impl Search {
 		if !self.dirty.load(std::sync::atomic::Ordering::Acquire) {
 			return;
 		}
-		let mut items = self.items.write();
-		items.par_sort();
-		items.dedup();
+
+		{
+			let mut items = self.items.write();
+			items.par_sort();
+			items.dedup();
+		}
+
+		{
+			let mut installed_addons = self.installed_addons.write();
+			installed_addons.par_sort_by(|a, b| {
+				match &a.source {
+					SearchItemSource::InstalledAddons(_, a_id) => match &b.source {
+						SearchItemSource::InstalledAddons(_, b_id) => a_id.cmp(b_id),
+						_ => unreachable!()
+					},
+					_ => unreachable!()
+				}
+			});
+			installed_addons.dedup_by(|a, b| {
+				match &a.source {
+					SearchItemSource::InstalledAddons(_, a_id) => match &b.source {
+						SearchItemSource::InstalledAddons(_, b_id) => a_id.eq(b_id),
+						_ => unreachable!()
+					},
+					_ => unreachable!()
+				}
+			});
+		}
 	}
 
 	pub fn add<V: Searchable>(&self, item: &V) {
 		if let Some(search_item) = item.search_item() {
 			let search_item = Arc::new(search_item);
-			let mut items = self.items.write();
-			let pos = match items.binary_search(&search_item) {
-				Ok(_) => return,
-				Err(pos) => pos,
-			};
-			items.insert(pos, search_item);
+
+			if self.dirty.load(std::sync::atomic::Ordering::Acquire) {
+				if let SearchItemSource::InstalledAddons(_, id) = &search_item.source {
+					if id.is_some() {
+						self.installed_addons.write().push(search_item.clone());
+					}
+				}
+
+				self.items.write().push(search_item);
+			} else {
+				if let SearchItemSource::InstalledAddons(_, id) = &search_item.source {
+					if let Some(id) = id {
+						let mut installed_addons = self.installed_addons.write();
+						match installed_addons.binary_search_by(|cmp| {
+							match &cmp.source {
+								SearchItemSource::InstalledAddons(_, cmp_id) => cmp_id.as_ref().unwrap().cmp(id),
+								_ => unreachable!()
+							}
+						}) {
+							Ok(pos) => {
+								installed_addons[pos] = search_item.clone();
+							},
+							Err(pos) => {
+								installed_addons.insert(pos, search_item.clone());
+							},
+						}
+					}
+				}
+
+				let mut items = self.items.write();
+				match items.binary_search(&search_item) {
+					Ok(pos) => {
+						items[pos] = search_item;
+					},
+					Err(pos) => {
+						items.insert(pos, search_item);
+					},
+				}
+			}
 		}
 	}
 
@@ -198,9 +254,20 @@ impl Search {
 	pub fn add_bulk<V: Searchable>(&self, items: &Vec<V>) {
 		self.dirty.store(true, std::sync::atomic::Ordering::Release);
 
+		let mut installed_addons = once_cell::unsync::OnceCell::new();
+
 		let mut store = self.items.write();
 		store.reserve(items.len());
-		store.extend(items.into_iter().filter_map(|v| v.search_item().map(|search_item| Arc::new(search_item))));
+		store.extend(items.into_iter().filter_map(|v| v.search_item().map(|search_item| {
+			let search_item = Arc::new(search_item);
+			if let SearchItemSource::InstalledAddons(_, id) = &search_item.source {
+				if id.is_some() {
+					installed_addons.get_or_init(|| self.installed_addons.write());
+					installed_addons.get_mut().unwrap().push(search_item.clone());
+				}
+			}
+			search_item
+		})));
 	}
 
 	pub fn quick(&self, query: String) -> (Vec<Arc<SearchItem>>, bool) {
@@ -293,9 +360,19 @@ impl Search {
 		let id = transaction.id;
 
 		rayon::spawn(move || {
-			self.items.read().par_iter().for_each(|search_item| {
+			let items = self.items.read();
+			let items_n_f = items.len() as f64;
+			let i = Arc::new(AtomicU32::new(0));
+
+			items.par_iter().try_for_each_with(i, |i, search_item| {
+				if transaction.aborted() {
+					return Err(());
+				} else {
+					transaction.progress(i.fetch_add(1, std::sync::atomic::Ordering::SeqCst) as f64 / items_n_f);
+				}
+
 				if search_item.len < query.len() {
-					return;
+					return Ok(());
 				}
 
 				let mut winner = None;
@@ -320,7 +397,9 @@ impl Search {
 				if let Some(score) = winner {
 					transaction.data((score, search_item.clone()));
 				}
-			});
+
+				Ok(())
+			}).unwrap();
 
 			transaction.finished(turbonone!());
 		});

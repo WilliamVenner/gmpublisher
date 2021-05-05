@@ -178,12 +178,29 @@ impl Steam {
 						.allow_cached_response(600)
 						.fetch(move |results: Result<QueryResults<'_>, SteamError>| {
 							if let Ok(results) = results {
+								search!().dirty();
+								let mut search_installed_addons = search!().installed_addons.write();
+
 								let mut i = 0;
 								for item in results.iter() {
 									let item = Addon::from(if let Some(item) = item {
 										let mut item: WorkshopItem = item.into();
 										item.preview_url = results.preview_url(i);
 										item.subscriptions = results.statistic(i, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+
+										if let Ok(pos) = search_installed_addons.binary_search_by(|x| {
+											match &x.source {
+												crate::search::SearchItemSource::InstalledAddons(_, id) => id.as_ref().unwrap().cmp(&item.id),
+												_ => unreachable!()
+											}
+										}) {
+											let search_item = unsafe { Arc::get_mut_unchecked(&mut search_installed_addons[pos]) };
+											if search_item.label != item.title {
+												search_item.terms.push(std::mem::take(&mut search_item.label));
+												search_item.label = item.title.to_owned();
+											}
+										}
+
 										item
 									} else {
 										WorkshopItem::from(queue[i as usize])
