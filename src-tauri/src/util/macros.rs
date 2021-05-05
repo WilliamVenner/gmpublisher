@@ -78,3 +78,17 @@ macro_rules! try_block {
 		(|| -> Result<$ty, anyhow::Error> { $code })()
 	};
 }
+
+lazy_static! {
+	pub static ref NUM_THREADS: usize = usize::max(num_cpus::get() - 2, 2);
+}
+#[macro_export]
+macro_rules! thread_pool {
+	( $n:expr ) => {
+		rayon::ThreadPoolBuilder::new().num_threads(isize::max(isize::min($n - 2, num_cpus::get() as isize), 2) as usize).build().unwrap()
+	};
+
+	() => {
+		rayon::ThreadPoolBuilder::new().num_threads(*crate::NUM_THREADS).build().unwrap()
+	};
+}
