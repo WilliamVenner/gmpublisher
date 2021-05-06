@@ -320,6 +320,6 @@ impl AddonSizeAnalyzer {
 }
 
 #[tauri::command]
-fn addon_size_analyzer(w: f64, h: f64) -> Transaction {
+pub fn addon_size_analyzer(w: f64, h: f64) -> Transaction {
 	crate::ADDON_SIZE_ANALYZER.compute(w, h)
 }

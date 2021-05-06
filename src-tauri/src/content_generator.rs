@@ -16,7 +16,7 @@ struct AddWorkshopEntry {
 }
 
 #[derive(Serialize, Deserialize)]
-struct AddWorkshopManifest {
+pub struct AddWorkshopManifest {
 	id: u16,
 	name: String,
 	date: chrono::DateTime<Utc>,
@@ -85,12 +85,12 @@ fn manifests_path() -> PathBuf {
 }
 
 #[tauri::command]
-fn get_content_generator_manifests() -> &'static Vec<AddWorkshopManifest> {
+pub fn get_content_generator_manifests() -> &'static Vec<AddWorkshopManifest> {
 	unsafe { &*(&CONTENT_GENERATOR.lock().saved as *const _) }
 }
 
 #[tauri::command]
-fn update_content_generator_manifest(manifest: AddWorkshopManifest) -> bool {
+pub fn update_content_generator_manifest(manifest: AddWorkshopManifest) -> bool {
 	try_block!({
 		let mut content_generator = CONTENT_GENERATOR.lock();
 

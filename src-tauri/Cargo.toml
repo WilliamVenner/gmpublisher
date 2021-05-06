@@ -19,17 +19,16 @@ features = [ "codegen" ]
 #git = "https://github.com/williamvenner/tauri"
 #branch = "personal"
 
-[patch.crates-io.wry]
-git = "https://github.com/williamvenner/wry"
-branch = "personal"
-#path = "../../wry"
-
 [dependencies.tauri]
 features = ["api-all", "cli"]
 #version = "1.0.0-beta-rc.4"
 #path = "../../tauri/core/tauri"
 git = "https://github.com/williamvenner/tauri"
 branch = "personal"
+
+[dependencies.tao]
+git = "https://github.com/tauri-apps/tao"
+rev = "08c68d67"
 
 [build-dependencies]
 bindgen = "0.58.1"
@@ -41,7 +40,6 @@ git = "https://github.com/WilliamVenner/steamworks-rs"
 branch = "master"
 
 [dependencies]
-wry = "0.9.0"
 tauri-utils = "1.0.0-beta-rc.1"
 turbonone = "0.2.1"
 serde_json = "1.0.64"

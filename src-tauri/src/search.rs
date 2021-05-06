@@ -418,16 +418,16 @@ impl Search {
 }
 
 #[tauri::command]
-fn search(salt: u32, query: String) {
+pub fn search(salt: u32, query: String) {
 	search!().channel.data((salt, search!().quick(query)));
 }
 
 #[tauri::command]
-fn full_search(query: String) -> u32 {
+pub fn full_search(query: String) -> u32 {
 	search!().full(query)
 }
 
 #[tauri::command]
-fn search_channel() -> u32 {
+pub fn search_channel() -> u32 {
 	search!().channel.id
 }

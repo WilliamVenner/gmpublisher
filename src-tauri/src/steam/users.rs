@@ -98,6 +98,6 @@ impl Steam {
 }
 
 #[tauri::command]
-fn get_steam_user(steamid64: String) -> Option<SteamUser> {
+pub fn get_steam_user(steamid64: String) -> Option<SteamUser> {
 	Some(steam!().fetch_user(SteamId::from_raw(steamid64.parse::<u64>().ok()?)))
 }

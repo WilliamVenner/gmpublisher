@@ -1,11 +1,6 @@
 use std::path::PathBuf;
 
-use tauri::{InvokeMessage, Params};
-
-pub fn invoke_handler<M>() -> impl Fn(InvokeMessage<M>) + Send + Sync + 'static
-where
-	M: Params,
-{
+pub fn invoke_handler() -> impl Fn(tauri::Invoke<crate::webview::Params>) + Send + Sync + 'static {
 	tauri::generate_handler![
 		check_dir,
 		check_file,
@@ -77,16 +72,16 @@ pub fn check_dir(path: PathBuf) -> bool {
 }
 
 #[tauri::command]
-fn open(path: PathBuf) {
+pub fn open(path: PathBuf) {
 	crate::path::open(path);
 }
 
 #[tauri::command]
-fn open_file_location(path: PathBuf) {
+pub fn open_file_location(path: PathBuf) {
 	crate::path::open_file_location(path);
 }
 
 #[tauri::command]
-fn file_size(path: PathBuf) -> Option<u64> {
+pub fn file_size(path: PathBuf) -> Option<u64> {
 	path.metadata().ok().map(|metadata| metadata.len())
 }

@@ -218,13 +218,13 @@ macro_rules! transaction {
 }
 
 #[tauri::command]
-fn cancel_transaction(id: u32) {
+pub fn cancel_transaction(id: u32) {
 	if let Some(transaction) = TRANSACTIONS.find(id) {
 		transaction.cancel();
 	}
 }
 
 #[tauri::command]
-fn websocket() -> Option<u16> {
+pub fn websocket() -> Option<u16> {
 	TRANSACTIONS.websocket.as_ref().map(|socket| socket.port)
 }

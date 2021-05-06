@@ -10,7 +10,7 @@ use tauri::{
 
 use crate::{GMAFile, WorkshopItem};
 
-type Params = Args<String, String, EmbeddedAssets, Wry>;
+pub type Params = Args<String, String, EmbeddedAssets, Wry>;
 
 pub struct WrappedWebview {
 	pub window: RefCell<Option<Window<Params>>>,

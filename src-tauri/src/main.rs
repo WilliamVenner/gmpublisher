@@ -101,11 +101,14 @@ fn main() {
 				args.with_title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
 					.with_maximized(!cfg!(debug_assertions) && settings.window_maximized)
 					.with_resizable(true)
-					.with_inner_size(wry::application::dpi::LogicalSize {
-						width: settings.window_size.0,
-						height: settings.window_size.1,
-					})
-					.with_min_inner_size(wry::application::dpi::LogicalSize { width: 800., height: 600. }),
+					.with_inner_size(tauri::Size::Physical(tauri::PhysicalSize {
+						width: settings.window_size.0 as u32,
+						height: settings.window_size.1 as u32
+					}))
+					.with_min_inner_size(tauri::Size::Logical(tauri::LogicalSize {
+						width: 800.,
+						height: 600.
+					})),
 				attrs,
 			)
 		})

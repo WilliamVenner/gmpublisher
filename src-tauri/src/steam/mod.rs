@@ -271,12 +271,12 @@ impl Steam {
 }
 
 #[tauri::command]
-fn is_steam_connected() -> bool {
+pub fn is_steam_connected() -> bool {
 	steam!().connected()
 }
 
 #[tauri::command]
-fn get_current_user() -> (String, Option<crate::Base64Image>) {
+pub fn get_current_user() -> (String, Option<crate::Base64Image>) {
 	steam!().client_wait();
 	let user = steam!().fetch_user(steam!().client().steam_id);
 	(user.name, user.avatar)

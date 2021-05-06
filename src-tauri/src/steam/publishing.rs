@@ -359,7 +359,7 @@ impl Steam {
 }
 
 #[tauri::command]
-fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishError> {
+pub fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishError> {
 	if !path.is_dir() || !path.is_absolute() {
 		return Err(PublishError::InvalidContentPath);
 	}

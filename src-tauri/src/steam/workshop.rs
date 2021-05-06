@@ -339,17 +339,17 @@ pub fn browse_my_workshop(page: u32) -> Option<(u32, Vec<Addon>)> {
 }
 
 #[tauri::command]
-fn fetch_workshop_items(items: Vec<PublishedFileId>) {
+pub fn fetch_workshop_items(items: Vec<PublishedFileId>) {
 	steam!().fetch_workshop_items(items);
 }
 
 #[tauri::command]
-fn fetch_workshop_item(item: PublishedFileId) {
+pub fn fetch_workshop_item(item: PublishedFileId) {
 	steam!().fetch_workshop_items(vec![item]);
 }
 
 #[tauri::command]
-fn workshop_item_channel() -> u32 {
+pub fn workshop_item_channel() -> u32 {
 	steam!().workshop_channel.id
 }
 
