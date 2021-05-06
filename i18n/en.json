@@ -186,7 +186,8 @@
 		"npc": "NPC",
 		"tool": "Tool",
 		"effects": "Effects",
-		"model": "Model"
+		"model": "Model",
+		"entity": "Entity"
 	},
 
 	"tag_1": "Tag 1",

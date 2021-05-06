@@ -122,7 +122,7 @@
 	let tagChoiceContainer;
 	let chosenAddonTags = [null, null, null];
 	const addonTags = ['fun', 'roleplay', 'scenic', 'movie', 'realism', 'cartoon', 'water', 'comic', 'build'];
-	const addonTypes = ['ServerContent', 'gamemode', 'map', 'weapon', 'vehicle', 'npc', 'tool', 'effects', 'model'];
+	const addonTypes = ['ServerContent', 'gamemode', 'map', 'weapon', 'vehicle', 'npc', 'tool', 'effects', 'model', 'entity'];
 	function tagChosen() {
 		const chosen = [];
 		tagChoiceContainer.querySelectorAll(':scope > .tag-choice').forEach((choice, i) => {
