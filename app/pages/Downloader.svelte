@@ -81,6 +81,7 @@
 					type: JOB_TYPE_EXTRACT,
 				};
 				extractingJobs.push(job);
+				extractingJobs = extractingJobs;
 
 				transaction.listen(event => {
 					if (event.finished) {
@@ -284,22 +285,23 @@
 									</div>
 								</td>
 							</tr>
+						{:else}
+							{#each downloadingJobs as job}
+								{#if job.transaction.progress > 0 && job.transaction.progress < 100}
+									<DownloaderJob {job}/>
+								{/if}
+							{/each}
+							{#each downloadingJobs as job}
+								{#if job.transaction.progress <= 0 && !('error' in job.transaction)}
+									<DownloaderJob {job}/>
+								{/if}
+							{/each}
+							{#each downloadingJobs as job}
+								{#if 'error' in job.transaction}
+									<DownloaderJob {job}/>
+								{/if}
+							{/each}
 						{/if}
-						{#each downloadingJobs as job}
-							{#if job.transaction.progress > 0 && job.transaction.progress < 100}
-								<DownloaderJob {job}/>
-							{/if}
-						{/each}
-						{#each downloadingJobs as job}
-							{#if job.transaction.progress <= 0 && !('error' in job.transaction)}
-								<DownloaderJob {job}/>
-							{/if}
-						{/each}
-						{#each downloadingJobs as job}
-							{#if 'error' in job.transaction}
-								<DownloaderJob {job}/>
-							{/if}
-						{/each}
 					</tbody>
 				</table>
 			</div>
@@ -339,22 +341,23 @@
 									</div>
 								</td>
 							</tr>
+						{:else}
+							{#each extractingJobs as job}
+								{#if job.transaction.progress > 0 && job.transaction.progress < 100}
+									<DownloaderJob {job}/>
+								{/if}
+							{/each}
+							{#each extractingJobs as job}
+								{#if job.transaction.progress <= 0 && !('error' in job.transaction)}
+									<DownloaderJob {job}/>
+								{/if}
+							{/each}
+							{#each extractingJobs as job}
+								{#if job.transaction.progress >= 100 || 'error' in job.transaction}
+									<DownloaderJob {job}/>
+								{/if}
+							{/each}
 						{/if}
-						{#each extractingJobs as job}
-							{#if job.transaction.progress > 0 && job.transaction.progress < 100}
-								<DownloaderJob {job}/>
-							{/if}
-						{/each}
-						{#each extractingJobs as job}
-							{#if job.transaction.progress <= 0 && !('error' in job.transaction)}
-								<DownloaderJob {job}/>
-							{/if}
-						{/each}
-						{#each extractingJobs as job}
-							{#if job.transaction.progress >= 100 || 'error' in job.transaction}
-								<DownloaderJob {job}/>
-							{/if}
-						{/each}
 					</tbody>
 				</table>
 			</div>
