@@ -247,6 +247,6 @@
 	"sent_to_downloader": "Sent to Downloader",
 
 	"locating": "Locating",
-	"decompressing": "Decompressing",
+	"decompressing": "Decompressing {progress}",
 	"reading_metadata": "Reading Metadata"
 }

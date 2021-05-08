@@ -70,7 +70,8 @@
 		{/if}
 	</td>
 	<td class="speed">
-		{#if !job.transaction.finished && !job.transaction.error && job.transaction.progress > 0 && job.transaction.progress < 100 && !!job.size}
+		{#if !job.transaction.finished && !job.transaction.error && job.transaction.progress > 0 && job.transaction.progress < 100 && !!job.size && job.transaction.status !== 'decompressing'}
+			<!-- TODO accurate speed when decompressing -->
 			{calculateSpeed(job.timestamp, job.transaction.progress, job.size) + '/s'}
 		{/if}
 	</td>
@@ -92,7 +93,13 @@
 	{:else}
 		<td class="progress">
 			<div class="progress" style="width: calc({job.transaction.progress}% - .6rem)"></div>
-			<div class="pct">{job.transaction.progress === 0 ? $_(job.transaction.status ?? 'queued') : (job.transaction.progress + '%')}</div>
+			<div class="pct">
+				{#if job.transaction.status === 'decompressing'}
+					{$_('decompressing', { values: { progress: job.transaction.progress + '%' } })}
+				{:else}
+					{job.transaction.progress === 0 ? $_(job.transaction.status ?? 'queued') : (job.transaction.progress + '%')}
+				{/if}
+			</div>
 		</td>
 	{/if}
 </tr>

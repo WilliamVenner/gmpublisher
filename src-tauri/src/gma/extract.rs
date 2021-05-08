@@ -1,9 +1,4 @@
-use std::{
-	fs::{self, File},
-	io::{BufWriter, Cursor, Read, SeekFrom},
-	path::{Path, PathBuf},
-	sync::atomic::{AtomicUsize, Ordering},
-};
+use std::{fs::{self, File}, io::{BufWriter, Cursor, Read, SeekFrom}, path::{Path, PathBuf}, sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering}}};
 
 use crate::{app_data, transactions::Transaction};
 
@@ -64,24 +59,69 @@ impl Default for ExtractDestination {
 }
 
 impl GMAFile {
-	pub fn decompress<P: AsRef<Path>>(path: P) -> Result<GMAFile, GMAError> {
+	pub fn decompress<P: AsRef<Path>>(path: P, transaction: Transaction) -> Result<GMAFile, GMAError> {
 		main_thread_forbidden!();
 
-		// TODO somehow, in some really unsafe and stupid way, monitor the progress of decompression?
-
 		let input = File::open(path.as_ref())?;
+		let mut bytes_total = input.metadata().map(|metadata| metadata.len()).ok();
 
 		let lzma_decoder = xz2::stream::Stream::new_lzma_decoder(u64::MAX).map_err(|_| GMAError::LZMA)?;
 		let mut xz_decoder = xz2::read::XzDecoder::new_stream(input, lzma_decoder);
 
-		let mut output = Vec::new();
-		if let Err(err) = xz_decoder.read_to_end(&mut output) {
+		let mut output = if let Some(ref bytes_total) = bytes_total {
+			Vec::with_capacity((*bytes_total * 5) as usize)
+		} else {
+			Vec::new()
+		};
+
+		let result = if let Some(bytes_total) = bytes_total.take() {
+			transaction.data((turbonone!(), bytes_total));
+
+			let bytes_total_f = bytes_total as f64;
+
+			let complete = Arc::new(AtomicBool::new(false));
+			let complete_ref = complete.clone();
+
+			struct StupidlyUnsafeProgressMonitorPtr(*const xz2::read::XzDecoder<File>);
+			unsafe impl Sync for StupidlyUnsafeProgressMonitorPtr {}
+			unsafe impl Send for StupidlyUnsafeProgressMonitorPtr {}
+
+			let xz_decoder_ptr = StupidlyUnsafeProgressMonitorPtr(&xz_decoder as *const _);
+			rayon::spawn(move || while !complete_ref.load(Ordering::Acquire) {
+				let xz_decoder = unsafe { &*xz_decoder_ptr.0 };
+
+				let bytes_read = xz_decoder.total_in() as f64;
+				transaction.progress(bytes_read / bytes_total_f);
+
+				let decompressed_bytes = xz_decoder.total_out();
+				if decompressed_bytes > bytes_total {
+					transaction.data((turbonone!(), decompressed_bytes));
+				}
+
+				sleep_ms!(25);
+			});
+
+			let result = xz_decoder.read_to_end(&mut output);
+			complete.store(true, Ordering::Release);
+			result
+		} else {
+			xz_decoder.read_to_end(&mut output)
+		};
+
+		output.shrink_to_fit();
+
+		if let Err(err) = result {
 			if !matches!(err.kind(), std::io::ErrorKind::Other) {
 				return Err(GMAError::LZMA);
 			}
 		}
 
-		Ok(GMAFile::read_header(GMAReader::MemBuffer(Cursor::new(output.into())), path)?)
+		let decompressed_size = output.len() as u64;
+
+		let mut gma = GMAFile::read_header(GMAReader::MemBuffer(Cursor::new(output.into())), path)?;
+		gma.size = decompressed_size;
+
+		Ok(gma)
 	}
 
 	fn stream_entry_bytes_with_transaction(

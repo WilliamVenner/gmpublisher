@@ -119,8 +119,11 @@ impl Downloads {
 					Ok(gma) => gma,
 					Err(_) => {
 						transaction.status("decompressing");
-						match GMAFile::decompress(folder) {
-							Ok(gma) => gma,
+						match GMAFile::decompress(folder, transaction.clone()) {
+							Ok(gma) => {
+								transaction.progress_reset();
+								gma
+							},
 							Err(err) => return transaction.error(err.to_string(), turbonone!()),
 						}
 					},
