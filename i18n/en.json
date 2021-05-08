@@ -244,5 +244,9 @@
 	"open_image": "Open Image",
 	"copy_image_link": "Copy Image Link",
 	"download": "Download",
-	"sent_to_downloader": "Sent to Downloader"
+	"sent_to_downloader": "Sent to Downloader",
+
+	"locating": "Locating",
+	"decompressing": "Decompressing",
+	"reading_metadata": "Reading Metadata"
 }

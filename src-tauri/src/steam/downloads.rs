@@ -82,6 +82,7 @@ impl Downloads {
 	fn extract(folder: PathBuf, item: PublishedFileId, extract_destination: ExtractDestination) {
 		THREAD_POOL.spawn(move || {
 			let transaction = transaction!();
+			transaction.status("locating");
 
 			webview_emit!("ExtractionStarted", (transaction.id, turbonone!(), turbonone!(), Some(item)));
 
@@ -116,9 +117,12 @@ impl Downloads {
 			} else if folder.is_file() && crate::path::has_extension(&folder, "bin") {
 				match GMAFile::open(&folder) {
 					Ok(gma) => gma,
-					Err(_) => match GMAFile::decompress(folder) {
-						Ok(gma) => gma,
-						Err(err) => return transaction.error(err.to_string(), turbonone!()),
+					Err(_) => {
+						transaction.status("decompressing");
+						match GMAFile::decompress(folder) {
+							Ok(gma) => gma,
+							Err(err) => return transaction.error(err.to_string(), turbonone!()),
+						}
 					},
 				}
 			} else {
@@ -127,6 +131,7 @@ impl Downloads {
 
 			gma.id = Some(item);
 
+			transaction.status("reading_metadata");
 			transaction.data((Some(gma.metadata.as_ref().map(|metadata| metadata.title().to_owned())), gma.size));
 
 			if let Err(err) = gma.extract(extract_destination, &transaction, false) {

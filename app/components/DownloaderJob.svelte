@@ -92,7 +92,7 @@
 	{:else}
 		<td class="progress">
 			<div class="progress" style="width: calc({job.transaction.progress}% - .6rem)"></div>
-			<div class="pct">{job.transaction.progress === 0 ? $_('queued') : (job.transaction.progress + '%')}</div>
+			<div class="pct">{job.transaction.progress === 0 ? $_(job.transaction.status ?? 'queued') : (job.transaction.progress + '%')}</div>
 		</td>
 	{/if}
 </tr>
