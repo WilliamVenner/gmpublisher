@@ -175,20 +175,24 @@ impl Downloads {
 		let mut ids: Vec<PublishedFileId> = ids.into().into();
 		let extract_destination = Arc::new(app_data!().settings.read().extract_destination.to_owned());
 		let possible_collections: Vec<PublishedFileId> = {
-			let workshop_cache = &steam!().workshop.read().0;
-			let mut possible_collections = Vec::with_capacity(ids.len());
-			ids = ids
-				.into_iter()
-				.filter(|id| {
-					if workshop_cache.contains(id) {
-						true
-					} else {
-						possible_collections.push(*id);
-						false
-					}
-				})
-				.collect();
-			possible_collections
+			if let Some(workshop) = steam!().workshop.try_read_for(std::time::Duration::from_millis(51)) {
+				let workshop_cache = &workshop.0;
+				let mut possible_collections = Vec::with_capacity(ids.len());
+				ids = ids
+					.into_iter()
+					.filter(|id| {
+						if workshop_cache.contains(id) {
+							true
+						} else {
+							possible_collections.push(*id);
+							false
+						}
+					})
+					.collect();
+				possible_collections
+			} else {
+				std::mem::take(&mut ids)
+			}
 		};
 
 		if !possible_collections.is_empty() {
