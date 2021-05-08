@@ -16,11 +16,13 @@ lazy_static! {
 mod sys;
 
 pub(super) fn stdin() -> bool {
-	use tauri::api::clap::{App, Arg};
+	use clap::{App, Arg};
 
 	if !*CLI_MODE {
 		return false;
 	}
+
+	let temp_dir = std::env::temp_dir().join("gmpublisher");
 
 	let app = App::new("gmpublisher");
 
@@ -29,55 +31,55 @@ pub(super) fn stdin() -> bool {
 	.author("William Venner <william@venner.io>")
 	.about("Publish, extract and work with GMA files")
 	.args(&[
-		Arg::new("extract")
-		.short('e')
+		Arg::with_name("extract")
+		.short("e")
 		.long("extract")
 		.value_name("FILE")
 		.takes_value(true)
-		.about("Extracts a .GMA file"),
+		.help("Extracts a .GMA file"),
 		//.conflicts_with_all(&["update", "in", "changes", "icon"]),
 
-		Arg::new("out")
-		.short('o')
+		Arg::with_name("out")
+		.short("o")
 		.long("out")
 		.value_name("PATH")
 		.takes_value(true)
-		.about("Sets the output path for extracting GMAs. Defaults to the temp directory.")
+		.help("Sets the output path for extracting GMAs. Defaults to the temp directory.")
 		.requires("extract")
-		.default_missing_value_os(std::env::temp_dir().join("gmpublisher").as_os_str())
+		.default_value_os(temp_dir.as_os_str())
 		//.conflicts_with_all(&["update", "in", "changes", "icon"])
 	])
 	/*.args(&[
-		Arg::new("update")
+		Arg::with_name("update")
 		.short('u')
 		.long("update")
 		.value_name("PublishedFileId")
 		.takes_value(true)
-		.about("Publishes an update.")
+		.help("Publishes an update.")
 		.requires("in")
 		.conflicts_with_all(&["out", "extract"]),
 
-		Arg::new("in")
+		Arg::with_name("in")
 		.long("in")
 		.value_name("PATH")
 		.takes_value(true)
-		.about("Sets the directory the GMA for updating will be built from.")
+		.help("Sets the directory the GMA for updating will be built from.")
 		.requires("update")
 		.conflicts_with_all(&["out", "extract"]),
 
-		Arg::new("changes")
+		Arg::with_name("changes")
 		.long("changes")
 		.value_name("CHANGES")
 		.takes_value(true)
-		.about("Sets the changelog for an update.")
+		.help("Sets the changelog for an update.")
 		.requires("update")
 		.conflicts_with_all(&["out", "extract"]),
 
-		Arg::new("icon")
+		Arg::with_name("icon")
 		.long("icon")
 		.value_name("PATH")
 		.takes_value(true)
-		.about("Path to a (max 1 MB) JPG/PNG/GIF file for Workshop preview image updating.")
+		.help("Path to a (max 1 MB) JPG/PNG/GIF file for Workshop preview image updating.")
 		.requires("update")
 		.conflicts_with_all(&["out", "extract"])
 	])*/
