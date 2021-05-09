@@ -183,7 +183,7 @@ impl GameAddons {
 			}
 		});
 
-		{
+		let ids = {
 			let mut ids = Vec::new();
 
 			let mut pages = self.pages.write();
@@ -219,16 +219,17 @@ impl GameAddons {
 
 			*pages = pages_heap.into_sorted_vec();
 
-			steam!().fetch_workshop_items(ids);
-
 			search!().add_bulk(&pages);
 
 			println!("Discovered {} addons", paths.len());
-		}
+
+			ids
+		};
 
 		self.discovered.store(Discovered::Yes.into(), Ordering::Release);
 
 		browse_installed_addons(1); // Download the first page first
+		steam!().fetch_workshop_items(ids); // Download the rest in the background too
 	}
 
 	pub fn discover_addons(&self) {
