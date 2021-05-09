@@ -66,6 +66,10 @@ class Steam {
 		return this.InstalledAddons[page];
 	}
 
+	getSubscribedAddons(page) {
+		return new DeferredPromise(invoke("browse_subscribed_addons", { page }))
+	}
+
 	getAddon(path) {
 		if (this.Addons[path] == null) {
 			this.Addons[path] = new DeferredPromise(invoke("get_installed_addon", { path }));

@@ -24,6 +24,7 @@ pub mod downloads;
 pub mod publishing;
 pub mod users;
 pub mod workshop;
+pub mod subscriptions;
 
 pub use downloads::DOWNLOADS;
 

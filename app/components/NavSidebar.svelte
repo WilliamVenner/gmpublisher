@@ -19,11 +19,11 @@
 			name: 'size_analyzer',
 			component: AddonSizeAnalyzer,
 		},
-		/*
 		{
 			name: 'subscriptions',
 			component: Subscriptions,
 		},
+		/*
 		{
 			name: 'content_generator',
 			component: ContentGenerator,
@@ -48,7 +48,7 @@
 	import MyWorkshop from '../pages/MyWorkshop.svelte';
 	//import ContentGenerator from '../pages/ContentGenerator.svelte';
 	import SidebarItem from './SidebarItem.svelte';
-	//import Subscriptions from '../pages/Subscriptions.svelte';
+	import Subscriptions from '../pages/Subscriptions.svelte';
 	import Logo from './Logo.svelte';
 
 	function selectPage(page) {
