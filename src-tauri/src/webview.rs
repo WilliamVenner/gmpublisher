@@ -1,4 +1,4 @@
-use std::{cell::RefCell, sync::atomic::AtomicBool};
+use std::{cell::RefCell, mem::MaybeUninit, sync::atomic::AtomicBool};
 
 use crossbeam::channel::Sender;
 use serde::Serialize;
@@ -13,7 +13,7 @@ use crate::{GMAFile, WorkshopItem};
 pub type Params = Args<String, String, EmbeddedAssets, Wry>;
 
 pub struct WrappedWebview {
-	pub window: RefCell<Option<Window<Params>>>,
+	pub window: RefCell<MaybeUninit<Window<Params>>>,
 	pending: AtomicBool,
 	tx: Sender<Window<Params>>,
 }
@@ -22,7 +22,7 @@ unsafe impl Sync for WrappedWebview {}
 impl WrappedWebview {
 	pub fn pending() -> Self {
 		Self {
-			window: RefCell::new(None),
+			window: RefCell::new(MaybeUninit::uninit()),
 			tx: WrappedWebview::channel(),
 			pending: AtomicBool::new(true),
 		}
@@ -33,7 +33,7 @@ impl WrappedWebview {
 
 		std::thread::spawn(move || {
 			let window = rx.recv().unwrap();
-			*webview!().window.borrow_mut() = Some(window);
+			unsafe { webview!().window.borrow_mut().as_mut_ptr().write(window) };
 			webview!().pending.store(false, std::sync::atomic::Ordering::Release);
 		});
 
@@ -41,14 +41,18 @@ impl WrappedWebview {
 	}
 
 	pub fn init(&self, window: Window<Params>) {
-		ignore! { self.tx.send(window) };
+		self.tx.send(window).unwrap();
 	}
 
 	pub fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, payload: Option<D>) {
-		while self.pending.load(std::sync::atomic::Ordering::Acquire) {
+		ignore! { self.window().emit(&event.to_string(), payload) }
+	}
+
+	pub fn window(&self) -> &Window<Params> {
+		while self.pending.load(std::sync::atomic::Ordering::Relaxed) {
 			sleep_ms!(50);
 		}
-		ignore! { self.window.borrow().as_ref().unwrap().emit(&event.to_string(), payload) };
+		unsafe { &*self.window.borrow().as_ptr() }
 	}
 }
 

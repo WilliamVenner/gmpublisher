@@ -364,7 +364,7 @@ pub fn window_resized(width: f64, height: f64) {
 	{
 		let mut settings = app_data!().settings.write();
 		settings.window_size = (width, height);
-		settings.window_maximized = webview!().window.borrow().as_ref().unwrap().is_maximized().unwrap_or(false);
+		settings.window_maximized = webview!().window().is_maximized().unwrap_or(false);
 	}
 	ignore! { app_data!().settings.read().save() };
 }
