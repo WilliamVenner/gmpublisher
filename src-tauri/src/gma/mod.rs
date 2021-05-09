@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use steamworks::PublishedFileId;
 use thiserror::Error;
 
-use crate::{main_thread_forbidden, ArcBytes};
+use crate::{ArcBytes, game_addons::GameAddons, main_thread_forbidden};
 
 const GMA_HEADER: &'static [u8; 4] = b"GMAD";
 
@@ -260,6 +260,17 @@ impl GMAFile {
 					extracted_name.push('_');
 				}
 				first = false;
+			}
+		}
+
+		if self.id.is_none() {
+			if let Some(file_name) = self.path.file_name() {
+				let _file_name = file_name.to_string_lossy().to_lowercase();
+				let file_name = &_file_name[..(_file_name.len() - 4)];
+				let found_id = GameAddons::get_ws_id(file_name);
+				if found_id.is_some() {
+					self.id = found_id;
+				}
 			}
 		}
 

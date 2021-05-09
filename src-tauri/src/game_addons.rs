@@ -74,7 +74,7 @@ impl GameAddons {
 		Some((path, (&file_name[..(file_name.len() - 4)]).to_owned()))
 	}
 
-	fn get_ws_id<S: AsRef<str>>(_file_name: S) -> Option<PublishedFileId> {
+	pub fn get_ws_id<S: AsRef<str>>(_file_name: S) -> Option<PublishedFileId> {
 		let _file_name = _file_name.as_ref();
 		let file_name = _file_name.strip_prefix("ds_").unwrap_or(&_file_name);
 
