@@ -65,6 +65,12 @@
 		}
 		form.requestSubmit();
 	}
+
+	const extractOverwriteModes = [
+		['Overwrite', ['settings.extract_overwrite_mode.overwrite']],
+		['Recycle', ['settings.extract_overwrite_mode.recycle']],
+		['Delete', ['settings.extract_overwrite_mode.delete']]
+	];
 </script>
 
 <Modal id="settings" active={active} cancel={toggle}>
@@ -81,6 +87,7 @@
 			<div id="open-count">
 				<div>
 					<Setting id="language" type="select" value={AppSettings.language ?? 'default'} choices={languages} afterChange={chooseLanguage}>Language</Setting>
+					<Setting {afterChange} id="extract_overwrite_mode" type="select" value={AppSettings.extract_overwrite_mode} choices={extractOverwriteModes} tooltip={$_('settings.extract_overwrite_mode.tooltip')}>{$_('settings.extract_overwrite_mode.extract_overwrite_mode')}</Setting>
 					<Setting {afterChange} id="sounds" type="bool" value={AppSettings.sounds}>{$_('settings.general.sounds')}</Setting>
 				</div>
 				<div>{$_('open_count', { values: { count: AppData.open_count } })}</div>

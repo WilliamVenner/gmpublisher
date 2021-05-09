@@ -135,6 +135,14 @@
 			"settings": "Reset Settings",
 			"clear_temp": "Clear Temp Files",
 			"clear_user_data": "Clear User Data"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "Overwriting Behaviour",
+			"recycle": "Recycle",
+			"delete": "Delete",
+			"overwrite": "Overwrite",
+			"tooltip": "When extracting GMAs, what should gmpublisher do if the GMA's extraction directory already exists (the GMA has already been extracted before)?"
 		}
 	},
 

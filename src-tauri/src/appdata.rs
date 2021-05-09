@@ -7,7 +7,7 @@ use std::{
 	path::PathBuf,
 };
 
-use crate::{gma::ExtractDestination, webview_emit, RwLockCow};
+use crate::{gma::{ExtractionOverwriteMode, ExtractDestination}, webview_emit, RwLockCow};
 
 use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
@@ -89,6 +89,8 @@ pub struct Settings {
 	pub upscale_addon_icon: bool,
 
 	pub language: Option<String>,
+
+	pub extract_overwrite_mode: ExtractionOverwriteMode,
 }
 impl Default for Settings {
 	fn default() -> Self {
@@ -112,6 +114,8 @@ impl Default for Settings {
 			upscale_addon_icon: true,
 
 			language: None,
+
+			extract_overwrite_mode: ExtractionOverwriteMode::default(),
 		}
 	}
 }

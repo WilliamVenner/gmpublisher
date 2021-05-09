@@ -16,6 +16,18 @@ lazy_static! {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ExtractionOverwriteMode {
+	Overwrite,
+	Recycle,
+	Delete
+}
+impl Default for ExtractionOverwriteMode {
+    fn default() -> Self {
+        ExtractionOverwriteMode::Recycle
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExtractDestination {
 	Temp,
 	Downloads,
@@ -26,7 +38,7 @@ pub enum ExtractDestination {
 	NamedDirectory(PathBuf),
 }
 impl ExtractDestination {
-	fn into<S: AsRef<str>>(self, extracted_name: S) -> PathBuf {
+	fn prepare<S: AsRef<str>>(self, extracted_name: S) -> PathBuf {
 		use ExtractDestination::*;
 
 		let push_extracted_name = |mut path: PathBuf| {
@@ -34,7 +46,9 @@ impl ExtractDestination {
 			Some(path)
 		};
 
-		match self {
+		let recycle_existing = !matches!(self, Directory(_));
+
+		let mut path = match self {
 			Temp => None,
 
 			Directory(path) => Some(path),
@@ -49,7 +63,34 @@ impl ExtractDestination {
 
 			NamedDirectory(path) => push_extracted_name(path),
 		}
-		.unwrap_or_else(|| push_extracted_name(app_data!().temp_dir().to_owned()).unwrap())
+		.unwrap_or_else(|| push_extracted_name(app_data!().temp_dir().to_owned()).unwrap());
+
+		if recycle_existing && path.exists() {
+			let success = match &app_data!().settings.read().extract_overwrite_mode {
+			    ExtractionOverwriteMode::Overwrite => true,
+			    ExtractionOverwriteMode::Recycle => trash::delete(&path).is_ok(),
+			    ExtractionOverwriteMode::Delete => fs::remove_dir_all(&path).is_ok(),
+			};
+			if !success {
+				let dir_name = path.file_name().unwrap().to_string_lossy().to_string();
+				path.pop();
+
+				let mut i: u8 = 0;
+				while i < 255 {
+					i += 1;
+
+					path.push(format!("{} ({})", dir_name, i));
+
+					if !path.exists() {
+						break;
+					} else {
+						path.pop();
+					}
+				}
+			}
+		}
+
+		path
 	}
 }
 impl Default for ExtractDestination {
@@ -181,7 +222,7 @@ pub trait ExtractGMAMut {
 impl ExtractGMAImmut for GMAFile {
 	fn extract(&self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError> {
 		let result = THREAD_POOL.install(move || {
-			let dest_path = dest.into(&self.extracted_name);
+			let dest_path = dest.prepare(&self.extracted_name);
 			let entries_start = self.pointers.entries;
 
 			let entries = self.entries.as_ref().unwrap();

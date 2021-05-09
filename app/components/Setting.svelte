@@ -4,6 +4,8 @@
 	import * as dialog from '@tauri-apps/api/dialog';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { playSound } from "../sounds";
+	import { _ } from "svelte-i18n";
+	import { tippy } from '../tippy';
 
 	export let id;
 	export let type;
@@ -12,6 +14,7 @@
 	export let initial = null;
 	export let beforeChange = null;
 	export let afterChange = null;
+	export let tooltip = null;
 
 	if (!beforeChange && type === 'directory') {
 		beforeChange = async (before, after) => {
@@ -68,14 +71,20 @@
 	}
 </script>
 
-<setting>
+<setting use:tippy={tooltip}>
 	{#if type === 'bool'}
 		<div><Switch {id} {value} {beforeChange} {afterChange}><slot></slot></Switch></div>
 	{:else if type === 'select'}
 		<label class="name" for={id}><slot></slot></label>
 		<select {id} {value} on:change={beforeChange || afterChange ? change : null} on:blur={beforeChange || afterChange ? change : null}>
 			{#each choices as [key, label]}
-				<option value={key}>{label}</option>
+				<option value={key}>
+					{#if Array.isArray(label)}
+						{$_(label[0])}
+					{:else}
+						{label}
+					{/if}
+				</option>
 			{/each}
 		</select>
 	{:else}
