@@ -115,8 +115,8 @@ pub unsafe fn globber(_wild: &str, _str: &str) -> bool {
 			str = str.add(1);
 		} else {
 			wild = mp;
-			cp = cp.add(1);
 			str = cp;
+			cp = cp.add(1);
 		}
 	}
 
@@ -182,6 +182,8 @@ pub fn test_whitelist() {
 		"gamemodes/test/something.txt",
 		"gamemodes/test/content/sound/lol.wav",
 		"materials/lol.jpeg",
+		"gamemodes/the_gamemode_name/backgrounds/file_name.jpg",
+		"gamemodes/my_base_defence/backgrounds/1.jpg",
 	];
 
 	let bad: &'static [&'static str] = &[
@@ -201,6 +203,10 @@ pub fn test_whitelist() {
 
 	for good in ADDON_WHITELIST {
 		assert!(check(&good.replace('*', "test")));
+	}
+
+	for good in ADDON_WHITELIST {
+		assert!(check(&good.replace('*', "a")));
 	}
 
 	for bad in bad {
