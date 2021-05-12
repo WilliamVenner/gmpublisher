@@ -45,7 +45,7 @@ impl WrappedWebview {
 	}
 
 	pub fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, payload: Option<D>) {
-		ignore! { self.window().emit(&event.to_string(), payload) }
+		ignore! { self.window().emit(&event.to_string(), payload) };
 	}
 
 	pub fn window(&self) -> &Window<Params> {
