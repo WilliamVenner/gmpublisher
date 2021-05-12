@@ -126,8 +126,8 @@ pub unsafe fn globber(_wild: &str, _str: &str) -> bool {
 	*wild == 0
 }
 
-pub fn check<S: Into<String> + Clone>(str: &S) -> bool {
-	let mut string = str.clone().into();
+pub fn check<S: ToString>(str: &S) -> bool {
+	let mut string: String = str.to_string();
 	string.push('\0');
 
 	let str = string.as_str();
@@ -140,8 +140,8 @@ pub fn check<S: Into<String> + Clone>(str: &S) -> bool {
 	false
 }
 
-pub fn filter_default_ignored<S: Into<String> + Clone>(str: &S) -> bool {
-	let mut string = str.clone().into();
+pub fn filter_default_ignored<S: ToString>(str: &S) -> bool {
+	let mut string = str.to_string();
 	string.push('\0');
 
 	let str = string.as_str();
@@ -154,12 +154,12 @@ pub fn filter_default_ignored<S: Into<String> + Clone>(str: &S) -> bool {
 	true
 }
 
-pub fn is_ignored<S: Into<String> + Clone>(str: &S, ignore: &[String]) -> bool {
+pub fn is_ignored<S: ToString>(str: &S, ignore: &[String]) -> bool {
 	if ignore.is_empty() {
 		return false;
 	}
 
-	let mut string = str.clone().into();
+	let mut string = str.to_string();
 	string.push('\0');
 
 	let str = string.as_str();
