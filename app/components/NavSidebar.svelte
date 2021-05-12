@@ -19,10 +19,12 @@
 			name: 'size_analyzer',
 			component: AddonSizeAnalyzer,
 		},
+		/*
 		{
 			name: 'subscriptions',
 			component: Subscriptions,
 		},
+		*/
 		/*
 		{
 			name: 'content_generator',
