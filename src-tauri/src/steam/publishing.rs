@@ -474,6 +474,8 @@ pub fn publish(
 	let transaction = transaction!();
 	let id = transaction.id;
 
+	let is_updating = update_id.is_some();
+
 	rayon::spawn(move || {
 		let preview = match icon_path {
 			Some(icon_path) => {
@@ -488,7 +490,7 @@ pub fn publish(
 				}
 			}
 			None => {
-				if update_id.is_none() {
+				if !is_updating {
 					Some(WorkshopIcon::Default)
 				} else {
 					None
@@ -599,8 +601,10 @@ pub fn publish(
 			}
 			Err(error) => {
 				transaction.error(error.to_string(), turbonone!());
-				if let Some(id) = id {
-					steam!().client().ugc().delete_item(id, |_| {});
+				if !is_updating {
+					if let Some(id) = id {
+						steam!().client().ugc().delete_item(id, |_| {});
+					}
 				}
 			}
 		};
