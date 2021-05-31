@@ -22,8 +22,6 @@ pub(super) fn stdin() -> bool {
 		return false;
 	}
 
-	let temp_dir = std::env::temp_dir().join("gmpublisher");
-
 	let app = App::new("gmpublisher");
 
 	let matches = app
@@ -46,7 +44,6 @@ pub(super) fn stdin() -> bool {
 		.takes_value(true)
 		.help("Sets the output path for extracting GMAs. Defaults to the temp directory.")
 		.requires("extract")
-		.default_value_os(temp_dir.as_os_str())
 		//.conflicts_with_all(&["update", "in", "changes", "icon"])
 	])
 	/*.args(&[
