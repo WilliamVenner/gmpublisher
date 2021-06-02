@@ -205,6 +205,7 @@
 	#entries > table {
 		border-collapse: collapse;
 		width: 100%;
+		font-size: .9em;
 	}
 	#entries > table td {
 		padding: .6rem;
