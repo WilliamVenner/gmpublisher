@@ -1,138 +1,134 @@
 // https://github.com/garrynewman/bootil/blob/beb4cec8ad29533965491b767b177dc549e62d23/src/3rdParty/globber.cpp
 // https://github.com/Facepunch/gmad/blob/master/include/AddonWhiteList.h
 
-macro_rules! nul_str {
-	( $str:literal ) => {
-		concat!($str, "\0")
-	};
-}
-
 pub const DEFAULT_IGNORE: &'static [&'static str] = &[
-	nul_str!(".git/*"),
-	nul_str!("*.psd"),
-	nul_str!("*.pdn"),
-	nul_str!("*.xcf"),
-	nul_str!("*.svn"),
-	nul_str!(".gitignore"),
-	nul_str!(".vscode/*"),
-	nul_str!(".github/*"),
-	nul_str!(".editorconfig"),
-	nul_str!("README.md"),
-	nul_str!("README.txt"),
-	nul_str!("readme.txt"),
-	nul_str!("addon.json"),
-	nul_str!("addon.txt"),
-	nul_str!("addon.jpg"),
+	".git/*",
+	"*.psd",
+	"*.pdn",
+	"*.xcf",
+	"*.svn",
+	".gitignore",
+	".vscode/*",
+	".github/*",
+	".editorconfig",
+	"README.md",
+	"README.txt",
+	"readme.txt",
+	"addon.json",
+	"addon.txt",
+	"addon.jpg",
 ];
 
 const ADDON_WHITELIST: &'static [&'static str] = &[
-	nul_str!("lua/*.lua"),
-	nul_str!("scenes/*.vcd"),
-	nul_str!("particles/*.pcf"),
-	nul_str!("resource/fonts/*.ttf"),
-	nul_str!("scripts/vehicles/*.txt"),
-	nul_str!("resource/localization/*/*.properties"),
-	nul_str!("maps/*.bsp"),
-	nul_str!("maps/*.nav"),
-	nul_str!("maps/*.ain"),
-	nul_str!("maps/thumb/*.png"),
-	nul_str!("sound/*.wav"),
-	nul_str!("sound/*.mp3"),
-	nul_str!("sound/*.ogg"),
-	nul_str!("materials/*.vmt"),
-	nul_str!("materials/*.vtf"),
-	nul_str!("materials/*.png"),
-	nul_str!("materials/*.jpg"),
-	nul_str!("materials/*.jpeg"),
-	nul_str!("models/*.mdl"),
-	nul_str!("models/*.vtx"),
-	nul_str!("models/*.phy"),
-	nul_str!("models/*.ani"),
-	nul_str!("models/*.vvd"),
-	nul_str!("gamemodes/*/*.txt"),
-	nul_str!("gamemodes/*/*.fgd"),
-	nul_str!("gamemodes/*/logo.png"),
-	nul_str!("gamemodes/*/icon24.png"),
-	nul_str!("gamemodes/*/gamemode/*.lua"),
-	nul_str!("gamemodes/*/entities/effects/*.lua"),
-	nul_str!("gamemodes/*/entities/weapons/*.lua"),
-	nul_str!("gamemodes/*/entities/entities/*.lua"),
-	nul_str!("gamemodes/*/backgrounds/*.png"),
-	nul_str!("gamemodes/*/backgrounds/*.jpg"),
-	nul_str!("gamemodes/*/backgrounds/*.jpeg"),
-	nul_str!("gamemodes/*/content/models/*.mdl"),
-	nul_str!("gamemodes/*/content/models/*.vtx"),
-	nul_str!("gamemodes/*/content/models/*.phy"),
-	nul_str!("gamemodes/*/content/models/*.ani"),
-	nul_str!("gamemodes/*/content/models/*.vvd"),
-	nul_str!("gamemodes/*/content/materials/*.vmt"),
-	nul_str!("gamemodes/*/content/materials/*.vtf"),
-	nul_str!("gamemodes/*/content/materials/*.png"),
-	nul_str!("gamemodes/*/content/materials/*.jpg"),
-	nul_str!("gamemodes/*/content/materials/*.jpeg"),
-	nul_str!("gamemodes/*/content/scenes/*.vcd"),
-	nul_str!("gamemodes/*/content/particles/*.pcf"),
-	nul_str!("gamemodes/*/content/resource/fonts/*.ttf"),
-	nul_str!("gamemodes/*/content/scripts/vehicles/*.txt"),
-	nul_str!("gamemodes/*/content/resource/localization/*/*.properties"),
-	nul_str!("gamemodes/*/content/maps/*.bsp"),
-	nul_str!("gamemodes/*/content/maps/*.nav"),
-	nul_str!("gamemodes/*/content/maps/*.ain"),
-	nul_str!("gamemodes/*/content/maps/thumb/*.png"),
-	nul_str!("gamemodes/*/content/sound/*.wav"),
-	nul_str!("gamemodes/*/content/sound/*.mp3"),
-	nul_str!("gamemodes/*/content/sound/*.ogg"),
+	"lua/*.lua",
+	"scenes/*.vcd",
+	"particles/*.pcf",
+	"resource/fonts/*.ttf",
+	"scripts/vehicles/*.txt",
+	"resource/localization/*/*.properties",
+	"maps/*.bsp",
+	"maps/*.nav",
+	"maps/*.ain",
+	"maps/thumb/*.png",
+	"sound/*.wav",
+	"sound/*.mp3",
+	"sound/*.ogg",
+	"materials/*.vmt",
+	"materials/*.vtf",
+	"materials/*.png",
+	"materials/*.jpg",
+	"materials/*.jpeg",
+	"models/*.mdl",
+	"models/*.vtx",
+	"models/*.phy",
+	"models/*.ani",
+	"models/*.vvd",
+	"gamemodes/*/*.txt",
+	"gamemodes/*/*.fgd",
+	"gamemodes/*/logo.png",
+	"gamemodes/*/icon24.png",
+	"gamemodes/*/gamemode/*.lua",
+	"gamemodes/*/entities/effects/*.lua",
+	"gamemodes/*/entities/weapons/*.lua",
+	"gamemodes/*/entities/entities/*.lua",
+	"gamemodes/*/backgrounds/*.png",
+	"gamemodes/*/backgrounds/*.jpg",
+	"gamemodes/*/backgrounds/*.jpeg",
+	"gamemodes/*/content/models/*.mdl",
+	"gamemodes/*/content/models/*.vtx",
+	"gamemodes/*/content/models/*.phy",
+	"gamemodes/*/content/models/*.ani",
+	"gamemodes/*/content/models/*.vvd",
+	"gamemodes/*/content/materials/*.vmt",
+	"gamemodes/*/content/materials/*.vtf",
+	"gamemodes/*/content/materials/*.png",
+	"gamemodes/*/content/materials/*.jpg",
+	"gamemodes/*/content/materials/*.jpeg",
+	"gamemodes/*/content/scenes/*.vcd",
+	"gamemodes/*/content/particles/*.pcf",
+	"gamemodes/*/content/resource/fonts/*.ttf",
+	"gamemodes/*/content/scripts/vehicles/*.txt",
+	"gamemodes/*/content/resource/localization/*/*.properties",
+	"gamemodes/*/content/maps/*.bsp",
+	"gamemodes/*/content/maps/*.nav",
+	"gamemodes/*/content/maps/*.ain",
+	"gamemodes/*/content/maps/thumb/*.png",
+	"gamemodes/*/content/sound/*.wav",
+	"gamemodes/*/content/sound/*.mp3",
+	"gamemodes/*/content/sound/*.ogg",
 ];
 
 const WILD_BYTE: u8 = '*' as u8;
 const QUESTION_BYTE: u8 = '?' as u8;
 
-pub unsafe fn globber(_wild: &str, _str: &str) -> bool {
-	let mut cp: *const u8 = 0 as u8 as *const u8;
-	let mut mp: *const u8 = 0 as u8 as *const u8;
+pub fn globber(wild: &str, str: &str) -> bool {
+	let mut cp = 0;
+	let mut mp = 0;
+	let mut s = 0;
+	let mut w = 0;
+	let wild_len = wild.len();
+	let str_len = str.len();
+	let wild_bytes = wild.as_bytes();
+	let str_bytes = str.as_bytes();
 
-	let mut wild = _wild.as_ptr();
-	let mut str = _str.as_ptr();
-
-	while *str != 0 && *wild != WILD_BYTE {
-		if *wild != *str && *wild != QUESTION_BYTE {
+	while s != str_len && w != wild_len && wild_bytes[w] != WILD_BYTE {
+		if wild_bytes[w] != str_bytes[s] && wild_bytes[w] != QUESTION_BYTE {
 			return false;
 		}
-		wild = wild.add(1);
-		str = str.add(1);
+
+		s += 1;
+		w += 1;
 	}
 
-	while *str != 0 {
-		if *wild == WILD_BYTE {
-			wild = wild.add(1);
-			if *wild == 0 {
+	while s != str_len {
+		if wild_bytes.get(w).map(|c| *c == WILD_BYTE).unwrap_or(false) {
+			w += 1;
+			if w == wild_len {
 				return true;
 			}
-			mp = wild;
-			cp = str.add(1);
-		} else if *wild == *str || *wild == QUESTION_BYTE {
-			wild = wild.add(1);
-			str = str.add(1);
+
+			mp = w;
+			cp = s + 1;
+		} else if wild_bytes[w] == str_bytes[s] || wild_bytes[w] == QUESTION_BYTE {
+			s += 1;
+			w += 1;
 		} else {
-			wild = mp;
-			str = cp;
-			cp = cp.add(1);
+			w = mp;
+			s = cp;
+			cp += 1;
 		}
 	}
 
-	while *wild == WILD_BYTE {
-		wild = wild.add(1);
+	while w != wild_len && wild_bytes[w] == WILD_BYTE {
+		w += 1;
 	}
-	*wild == 0
+
+	wild_len == w
 }
 
-pub fn check<S: ToString>(str: &S) -> bool {
-	let mut string: String = str.to_string();
-	string.push('\0');
-
-	let str = string.as_str();
+pub fn check(str: &str) -> bool {
 	for glob in ADDON_WHITELIST {
-		if unsafe { globber(glob, str) } {
+		if globber(glob, str) {
 			return true;
 		}
 	}
@@ -140,13 +136,9 @@ pub fn check<S: ToString>(str: &S) -> bool {
 	false
 }
 
-pub fn filter_default_ignored<S: ToString>(str: &S) -> bool {
-	let mut string = str.to_string();
-	string.push('\0');
-
-	let str = string.as_str();
+pub fn filter_default_ignored(str: &str) -> bool {
 	for glob in DEFAULT_IGNORE {
-		if unsafe { globber(glob, str) } {
+		if globber(glob, str) {
 			return false;
 		}
 	}
@@ -154,18 +146,13 @@ pub fn filter_default_ignored<S: ToString>(str: &S) -> bool {
 	true
 }
 
-pub fn is_ignored<S: ToString>(str: &S, ignore: &[String]) -> bool {
+pub fn is_ignored(str: &str, ignore: &[String]) -> bool {
 	if ignore.is_empty() {
 		return false;
 	}
 
-	let mut string = str.to_string();
-	string.push('\0');
-
-	let str = string.as_str();
 	for glob in ignore {
-		debug_assert!(glob.ends_with('\0'));
-		if unsafe { globber(glob, str) } {
+		if globber(glob, str) {
 			return true;
 		}
 	}
@@ -244,6 +231,6 @@ pub fn test_ignore() {
 		assert!(is_ignored(&*ignored, &default_ignore));
 	}
 
-	assert!(is_ignored(&"lol.txt".to_string(), &["lol.txt\0".to_string()]));
+	assert!(is_ignored(&"lol.txt".to_string(), &["lol.txt".to_string()]));
 	assert!(!is_ignored(&"lol.txt".to_string(), &[]));
 }
