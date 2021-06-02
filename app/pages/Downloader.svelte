@@ -6,7 +6,7 @@
 </script>
 
 <script>
-	import { CloudDownload, Cross, Folder, FolderAdd, LinkChain } from 'akar-icons-svelte';
+	import { CloudDownload, Cross, Folder, FolderAdd, LinkChain, TextAlignCenter } from 'akar-icons-svelte';
 	import { _ } from 'svelte-i18n';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { listen } from '@tauri-apps/api/event';
@@ -18,6 +18,8 @@
 	import DownloaderJob from '../components/DownloaderJob.svelte';
 	import { Steam } from '../steam';
 	import { writable } from 'svelte/store';
+	import Modal from '../components/Modal.svelte';
+	import Timestamp from '../components/Timestamp.svelte';
 
 	let extractingJobs = [];
 	let downloadingJobs = [];
@@ -237,10 +239,44 @@
 		}
 	}
 
+	let downloaderLogs = [];
+	let logsActive = false;
+	function openLogs() {
+		logsActive = true;
+	}
+	function closeLogs() {
+		logsActive = false;
+	}
+
 	$: {
 		downloaderJobs.set(extractingWorkers + downloadingWorkers);
 	}
 </script>
+
+<Modal id="downloader-logs" active={logsActive} cancel={closeLogs}>
+	<table>
+		<thead>
+			<tr>
+				<th>{$_('time')}</th>
+				<th>{$_('id')}</th>
+				<th>{$_('log')}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{#if logsActive}
+				{#each downloaderLogs as log}
+					<tr>
+						<td><Timestamp unix={log.time}/></td>
+						<td>
+							{#if log.addonId} {log.addonId} {/if}
+						</td>
+						<td>{log.log}</td>
+					</tr>
+				{/each}
+			{/if}
+		</tbody>
+	</table>
+</Modal>
 
 <main class="hide-scroll">
 	<div id="top-controls">
@@ -250,6 +286,9 @@
 		<div id="download-input-container">
 			<input type="text" id="download-input" placeholder={$_('download-input')} on:paste={parseInput} on:change={parseInput} on:input={checkEmptyInput} on:focus={showFocusTip} on:blur={hideFocusTip}/>
 			<LinkChain size="1rem"/>
+		</div>
+		<div id="downloader-log-btn" class="icon-button" on:click={openLogs} use:tippyFollow={$_('logs')}>
+			<TextAlignCenter size="1.2rem"/>
 		</div>
 	</div>
 
@@ -528,8 +567,9 @@
 
 	#top-controls {
 		display: grid;
-		grid-template-columns: auto 1fr;
+		grid-template-columns: auto 1fr auto;
 		grid-template-rows: 1fr;
+		grid-gap: .75rem;
 		margin-bottom: 1.5rem;
 
 		position: sticky;
@@ -571,9 +611,6 @@
 	}
 	#download-input:focus + :global(.icon) {
 		opacity: 1;
-	}
-	#download {
-		margin-right: .75rem;
 	}
 
 	#layout .btn {
