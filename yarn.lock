@@ -823,7 +823,7 @@ fsevents@~2.3.1:
     rollup-plugin-terser: ^7.0.0
     sirv-cli: ^1.0.0
     steamid: ^1.1.3
-    svelte: ^3.0.0
+    svelte: ^3.38.2
     svelte-i18n: ^3.3.6
     tippy.js: ^6.3.1
   languageName: unknown
@@ -1912,10 +1912,10 @@ fsevents@~2.3.1:
   languageName: node
   linkType: hard
 
-"svelte@npm:^3.0.0":
-  version: 3.37.0
-  resolution: "svelte@npm:3.37.0"
-  checksum: fc7a1e9b641fbe938bd666b1d82433b5f262eb680635097bdf85f50753365c1fe5d51d387eadb3145b389df20f71e0576ba592cebfc44a2120971c96c4367f75
+"svelte@npm:^3.38.2":
+  version: 3.38.2
+  resolution: "svelte@npm:3.38.2"
+  checksum: e415be40336418f331e3531dfb842ac8298e4fb698702d60e4b7cad3975720e6965c281e435fcc4b94e2abca12121dd71274b23406bfe2aa203beeb8b533e5aa
   languageName: node
   linkType: hard
 

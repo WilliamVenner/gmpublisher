@@ -17,7 +17,7 @@
     "rollup-plugin-svelte": "^7.0.0",
     "rollup-plugin-svelte-svg": "^0.2.3",
     "rollup-plugin-terser": "^7.0.0",
-    "svelte": "^3.0.0"
+    "svelte": "^3.38.2"
   },
   "dependencies": {
     "@rollup/plugin-dynamic-import-vars": "^1.1.1",
