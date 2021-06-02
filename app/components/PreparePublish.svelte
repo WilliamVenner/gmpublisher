@@ -514,6 +514,7 @@
 		border-radius: .4rem;
 		overflow: hidden;
 		flex: 1;
+		flex-basis: 0;
 	}
 
 	input[type='text'] {
