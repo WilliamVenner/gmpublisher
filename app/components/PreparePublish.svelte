@@ -7,7 +7,7 @@
 	import { _ } from 'svelte-i18n';
 	import Modal from '../components/Modal.svelte';
 	import { CloudUpload, Cross, Folder, LinkOut } from 'akar-icons-svelte';
-	import { tippyFollow } from '../tippy';
+	import { tippyFollow, tippy } from '../tippy';
 	import * as dialog from '@tauri-apps/api/dialog';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { playSound } from '../sounds';
@@ -309,6 +309,39 @@
 
 		checkForm(false);
 	}));
+
+	async function publishIcon() {
+		if (!readyForPublish || $isPublishing || !gmaIconPath || !$updatingAddon) return;
+		$isPublishing = true;
+		playSound('success');
+
+		invoke('publish_icon', {
+
+			iconPath: gmaIconPath,
+			upscale: canUpscale && upscale.checked,
+			addonId: (await $updatingAddon).id,
+
+		}).then(transactionId => {
+			const transaction = new Transaction(transactionId, transaction => {
+				return $_(transaction.status ?? 'PUBLISH_PROCESSING_ICON', { values: {
+					pct: transaction.progress,
+					data: filesize((transaction.progress / 100) * gmaSize),
+					dataTotal: filesize(gmaSize)
+				}});
+			});
+
+			transaction.listen(event => {
+				if (event.finished) {
+					$remountAddonScroller = true;
+					Steam.MyWorkshop = [];
+				}
+
+				if (event.finished || event.error) {
+					$isPublishing = false;
+				}
+			});
+		});
+	}
 </script>
 
 <Modal id="prepare-publish" active={$preparePublish} cancel={togglePreparePublish}>
@@ -337,11 +370,16 @@
 				<div id="addon-icon"><img src="/img/gmpublisher_default_icon.png" bind:this={gmaIcon}/></div>
 			</div>
 		{/if}
-		{#if gmaIconBase64 && !$updatingAddon}
-			<div id="icon-browse" on:click={removeIcon}><Cross size="1rem"/>{$_('remove_icon')}</div>
-		{:else}
-			<div id="icon-browse" on:click={browseIcon}><Folder size="1rem"/>{$_('browse')}</div>
-		{/if}
+		<div id="icon-browse-container">
+			{#if gmaIconBase64 && !$updatingAddon}
+				<div id="icon-browse" on:click={removeIcon}><Cross size="1rem"/>{$_('remove_icon')}</div>
+			{:else}
+				<div id="icon-browse" on:click={browseIcon}><Folder size="1rem"/>{$_('browse')}</div>
+			{/if}
+			{#if $updatingAddon && !$isPublishing}
+				<div id="icon-publish" on:click={publishIcon} use:tippy={$_('publish_icon')} class:disabled={gmaIconPath == null}><CloudUpload size="1rem"/></div>
+			{/if}
+		</div>
 		<p>{$_('icon_instructions')}</p>
 		<div id="upscale-container">
 			<label class:disabled={!canUpscale}>
@@ -520,7 +558,13 @@
 		border: 1px solid #101010;
 		border-radius: .4rem;
 	}
+	#icon-browse-container {
+		display: flex;
+	}
 	#icon-browse {
+		flex: 1;
+	}
+	#icon-browse, #icon-publish {
 		cursor: pointer;
 		background: #313131;
 		box-shadow: 0px 0px 2px 0px rgb(0 0 0 / 40%);
@@ -530,7 +574,16 @@
 		align-items: center;
 		justify-content: center;
 	}
-	#icon-browse:active {
+	#icon-publish {
+		margin-left: .5rem;
+		background-color: var(--neutral);
+		transition: background-color .5s;
+	}
+	#icon-publish.disabled {
+		cursor: default;
+		background-color: #313131;
+	}
+	#icon-browse:active, #icon-publish:active {
 		background: #252525;
 	}
 	#icon-browse > :global(.icon) {

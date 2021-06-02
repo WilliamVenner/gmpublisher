@@ -263,5 +263,7 @@
 
 	"locating": "Locating",
 	"decompressing": "Decompressing {progress}",
-	"reading_metadata": "Reading Metadata"
+	"reading_metadata": "Reading Metadata",
+
+	"publish_icon": "Publish New Icon (Will NOT update the addon)"
 }

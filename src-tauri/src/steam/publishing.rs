@@ -230,7 +230,7 @@ pub enum WorkshopUpdateType {
 }
 
 impl Steam {
-	pub fn update(&self, id: PublishedFileId, details: WorkshopUpdateType, transaction: Transaction) -> Result<bool, PublishError> {
+	pub fn update(&self, id: PublishedFileId, details: WorkshopUpdateType, transaction: &Transaction) -> Result<bool, PublishError> {
 		use WorkshopUpdateType::*;
 
 		let result = Arc::new(Mutex::new(None));
@@ -329,7 +329,7 @@ impl Steam {
 		}
 	}
 
-	pub fn publish(&self, details: WorkshopUpdateType, transaction: Transaction) -> (Option<PublishedFileId>, Result<bool, PublishError>) {
+	pub fn publish(&self, details: WorkshopUpdateType, transaction: &Transaction) -> (Option<PublishedFileId>, Result<bool, PublishError>) {
 		debug_assert!(matches!(details, WorkshopUpdateType::Creation { .. }));
 
 		let published = Arc::new(Mutex::new(None));
@@ -355,6 +355,54 @@ impl Steam {
 		};
 
 		(Some(id), self.update(id, details, transaction))
+	}
+
+	pub fn update_icon(&self, addon_id: PublishedFileId, icon: WorkshopIcon, transaction: &Transaction) -> Result<bool, PublishError> {
+		let result = Arc::new(Mutex::new(None));
+		let result_ref = result.clone();
+		let update_handle = self.client()
+			.ugc()
+			.start_item_update(GMOD_APP_ID, addon_id)
+			.preview_path(&Into::<PathBuf>::into(icon))
+			.submit(None, move |result| {
+				*result_ref.lock() = Some(result);
+			});
+
+		let mut last_processed;
+		let result = loop {
+			let (processed, progress, total) = update_handle.progress();
+			last_processed = processed;
+			if !matches!(processed, steamworks::UpdateStatus::Invalid) {
+				transaction.status(match processed {
+					steamworks::UpdateStatus::Invalid => unreachable!(),
+					steamworks::UpdateStatus::PreparingConfig => "PUBLISH_PREPARING_CONFIG",
+					steamworks::UpdateStatus::PreparingContent => "PUBLISH_PREPARING_CONTENT",
+					steamworks::UpdateStatus::UploadingContent => "PUBLISH_UPLOADING_CONTENT",
+					steamworks::UpdateStatus::UploadingPreviewFile => "PUBLISH_UPLOADING_PREVIEW_FILE",
+					steamworks::UpdateStatus::CommittingChanges => "PUBLISH_COMMITTING_CHANGES",
+				});
+			}
+			if total == 0 || last_processed != processed {
+				transaction.progress_reset();
+			} else {
+				transaction.data(total);
+				transaction.progress(progress as f64 / total as f64);
+			}
+
+			if !result.is_locked() && result.lock().is_some() {
+				break Arc::try_unwrap(result).unwrap().into_inner().unwrap();
+			} else {
+				self.run_callbacks();
+			}
+		};
+
+		match result {
+			Ok((_, legal_agreement)) => {
+				transaction.progress(1.);
+				Ok(legal_agreement)
+			}
+			Err(error) => Err(PublishError::SteamError(error)),
+		}
 	}
 }
 
@@ -458,6 +506,42 @@ pub fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishEr
 
 		Err(PublishError::NotWhitelisted(failed))
 	}
+}
+
+#[tauri::command]
+pub fn publish_icon(
+	icon_path: PathBuf,
+	upscale: bool,
+	addon_id: PublishedFileId
+) -> u32 {
+	let transaction = transaction!();
+	let id = transaction.id;
+
+	rayon::spawn(move || {
+		let preview = match WorkshopIcon::new(icon_path, upscale) {
+			Ok(icon) => icon,
+			Err(error) => {
+				transaction.error(error.to_string(), turbonone!());
+				return;
+			}
+		};
+
+		let result = steam!().update_icon(addon_id, preview, &transaction);
+
+		match result {
+			Ok(legal_agreement) => {
+				if legal_agreement {
+					crate::path::open("https://steamcommunity.com/workshop/workshoplegalagreement");
+				}
+				transaction.finished(turbonone!());
+			}
+			Err(error) => {
+				transaction.error(error.to_string(), turbonone!());
+			}
+		};
+	});
+
+	id
 }
 
 #[tauri::command]
@@ -565,7 +649,7 @@ pub fn publish(
 						preview,
 						changes,
 					},
-					transaction.clone(),
+					&transaction,
 				),
 			)
 		} else {
@@ -577,7 +661,7 @@ pub fn publish(
 					addon_type,
 					preview: preview.unwrap(),
 				},
-				transaction.clone(),
+				&transaction,
 			)
 		};
 
