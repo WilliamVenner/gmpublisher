@@ -9,12 +9,6 @@ lazy_static! {
 	pub static ref CLI_MODE: bool = std::env::args_os().len() > 1;
 }
 
-// 1. CLI
-// 2. File associations
-// 3. Context menu option
-
-mod sys;
-
 pub(super) fn stdin() -> bool {
 	use clap::{App, Arg};
 
