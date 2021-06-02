@@ -1,24 +1,32 @@
 import { default as tippyJS, followCursor } from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 
-export function tippy(node, content) {
+function updateTippy(node, content, follow) {
 	if (node._tippy) node._tippy.destroy();
 	if (content) {
 		tippyJS(node, {
 			content,
-			interactive: false
-		});
-	}
-};
-
-export function tippyFollow(node, content) {
-	if (node._tippy) node._tippy.destroy();
-	if (content) {
-		tippyJS(node, {
-			content,
-			followCursor: true,
-			plugins: [followCursor],
+			followCursor: follow === true,
+			plugins: follow === true ? [followCursor] : undefined,
 			interactive: false,
 		});
 	}
+}
+
+export function tippy(node, content) {
+	updateTippy(node, content, false);
+	return {
+		update(content) {
+			updateTippy(node, content, false);
+		}
+	};
+};
+
+export function tippyFollow(node, content) {
+	updateTippy(node, content, true);
+	return {
+		update(content) {
+			updateTippy(node, content, true);
+		}
+	};
 };
