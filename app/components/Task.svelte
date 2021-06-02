@@ -146,7 +146,7 @@
 		border-radius: .4rem;
 		box-shadow: 0 0 6px 1px rgba(0, 0, 0, .35);
 		overflow: hidden;
-		background-color: #006cc7;
+		background-color: var(--neutral);
 
 		position: relative;
 		display: flex;
@@ -173,13 +173,13 @@
 		display: none;
 	}
 	.task.error > div {
-		background-color: #822828;
+		background-color: var(--error);
 	}
 	.task #progress {
 		position: absolute;
 		height: 100%;
 		/*transition: width .25s cubic-bezier(0.16, 1, 0.3, 1);*/
-		background-color: #30A560;
+		background-color: var(--success);
 		z-index: -1;
 	}
 	.task :global(img), .task :global(.icon) {

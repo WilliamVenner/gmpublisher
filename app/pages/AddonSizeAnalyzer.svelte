@@ -651,7 +651,7 @@
 		position: absolute;
 		z-index: -1;
 		height: calc(100% - .6rem);
-		background-color: #006cc7;
+		background-color: var(--neutral);
 		top: .3rem;
 		left: .3rem;
 	}

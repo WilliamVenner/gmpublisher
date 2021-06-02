@@ -143,6 +143,13 @@
 			"delete": "Delete",
 			"overwrite": "Overwrite",
 			"tooltip": "When extracting GMAs, what should gmpublisher do if the GMA's extraction directory already exists (the GMA has already been extracted before)?"
+		},
+
+		"accessibility": {
+			"accessibility": "Accessibility",
+			"color_error": "Error Color",
+			"color_success": "Success Color",
+			"color_neutral": "Neutral Color"
 		}
 	},
 

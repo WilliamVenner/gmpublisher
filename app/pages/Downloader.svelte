@@ -562,12 +562,12 @@
 		box-shadow: inset 0 0 0px 1.5px #127cff;
 	}
 	:global(#download-input.error) {
-		box-shadow: inset 0 0 0px 1.5px #6d0000 !important;
-		color: #a90000 !important;
+		box-shadow: inset 0 0 0px 1.5px var(--error-dark) !important;
+		color: var(--error) !important;
 	}
 	:global(#download-input.error + .icon) {
 		opacity: 1 !important;
-		color: #a90000 !important;
+		color: var(--error) !important;
 	}
 	#download-input:focus + :global(.icon) {
 		opacity: 1;

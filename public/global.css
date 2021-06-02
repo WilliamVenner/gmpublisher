@@ -1,5 +1,22 @@
 * { box-sizing: border-box }
 
+:root {
+	--neutral-custom: 207, 100%;
+	--neutral-custom-l: 39%;
+	--neutral: hsl(var(--neutral-custom), var(--neutral-custom-l));
+	--neutral-dark: hsl(var(--neutral-custom), calc(var(--neutral-custom-l) * .85));
+
+	--error-custom: 0, 100%;
+	--error-custom-l: 33%;
+	--error: hsl(var(--error-custom), var(--error-custom-l));
+	--error-dark: hsl(var(--error-custom), calc(var(--error-custom-l) * .75));
+
+	--success-custom: 145, 55%;
+	--success-custom-l: 42%;
+	--success: hsl(var(--success-custom), var(--success-custom-l));
+	--success-dark: hsl(var(--success-custom), calc(var(--success-custom-l) * .75));
+}
+
 *:not(.select) {
 	-webkit-user-select: none;
 	-moz-user-select: none;

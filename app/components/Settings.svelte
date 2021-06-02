@@ -47,6 +47,16 @@
 		form.requestSubmit();
 	}
 
+	function afterChangeColor() {
+		AppSettings[this.id] = parseInt(this.value.substr(1), 16);
+		form.requestSubmit();
+	}
+
+	function changeCustomColor() {
+		afterChangeColor.call(this);
+		updateCustomColor(this.id.substr('color_'.length), AppSettings[this.id]);
+	}
+
 	const languages = [
 		['default', 'Automatic'],
 		['en', 'English'],
@@ -78,6 +88,7 @@
 
 		<SidebarItem {activeItem} id="general">{$_('settings.general.general')}</SidebarItem>
 		<SidebarItem {activeItem} id="paths">{$_('settings.paths.paths')}</SidebarItem>
+		<SidebarItem {activeItem} id="accessibility">{$_('settings.accessibility.accessibility')}</SidebarItem>
 		<!-- TODO <SidebarItem {activeItem} id="resets">{$_('settings.resets.resets')}</SidebarItem>-->
 
 	</Sidebar>
@@ -97,6 +108,10 @@
 			<Setting {afterChange} id="downloads" type="directory" initial={AppData.downloads_dir} value={AppSettings.downloads}>{$_('settings.paths.downloads')}</Setting>
 			<Setting {afterChange} id="user_data" type="directory" initial={AppData.user_data_dir} value={AppSettings.user_data}>{$_('settings.paths.user_data')}</Setting>
 			<Setting {afterChange} id="temp" type="directory" initial={AppData.temp_dir} value={AppSettings.temp}>{$_('settings.paths.temp')}</Setting>
+		{:else if $activeItem === 'accessibility'}
+			<Setting afterChange={changeCustomColor} id="color_neutral" type="color" value={AppSettings.color_neutral}>{$_('settings.accessibility.color_neutral')}</Setting>
+			<Setting afterChange={changeCustomColor} id="color_success" type="color" value={AppSettings.color_success}>{$_('settings.accessibility.color_success')}</Setting>
+			<Setting afterChange={changeCustomColor} id="color_error" type="color" value={AppSettings.color_error}>{$_('settings.accessibility.color_error')}</Setting>
 		{:else if $activeItem === 'resets'}
 			<!-- TODO -->
 		{/if}

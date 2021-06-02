@@ -91,6 +91,10 @@ pub struct Settings {
 	pub language: Option<String>,
 
 	pub extract_overwrite_mode: ExtractionOverwriteMode,
+
+	pub color_neutral: u32,
+	pub color_error: u32,
+	pub color_success: u32,
 }
 impl Default for Settings {
 	fn default() -> Self {
@@ -116,6 +120,10 @@ impl Default for Settings {
 			language: None,
 
 			extract_overwrite_mode: ExtractionOverwriteMode::default(),
+
+			color_neutral: 28103,
+			color_error: 11010048,
+			color_success: 3188321,
 		}
 	}
 }

@@ -1,6 +1,7 @@
 window.__GMPUBLISHER__ = appDataCallback => {
 	__TAURI__.tauri.invoke('reloaded');
 
+	// TODO
 	{
 		__TAURI__.event.listen('tauri://file-drop', ({ payload: path }) => {
 			document.body.classList.remove('file-drop');

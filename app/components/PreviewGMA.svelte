@@ -315,7 +315,7 @@
 	.extract-btn {
 		padding: .7rem;
 		text-align: center;
-		background-color: #006cc7;
+		background-color: var(--neutral);
 		z-index: 3;
 		box-shadow: 0 0 5px rgba(0, 0, 0, .1);
 		cursor: pointer;

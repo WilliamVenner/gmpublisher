@@ -87,6 +87,9 @@
 				</option>
 			{/each}
 		</select>
+	{:else if type === 'color'}
+		<label class="name" for={id}><slot></slot></label>
+		<input type="color" {id} name={id} value={'#' + value.toString(16).toLowerCase().padStart(6, '0')} on:change={beforeChange || afterChange ? change : null} required={initial == null ? true : null}/>
 	{:else}
 		<label class="name" for={id}><slot></slot></label>
 		{#if type === 'directory'}
@@ -110,6 +113,20 @@
 	}
 	setting:not(:last-child) {
 		margin-bottom: 1.5rem;
+	}
+
+	input[type='color'] {
+		appearance: none;
+		font: inherit;
+		border-radius: 4px;
+		border: none;
+		background: rgba(255,255,255,.1);
+		box-shadow: 0px 0px 2px 0px rgb(0 0 0 / 40%);
+		color: #fff;
+		font-size: .85em;
+		width: 100%;
+		height: 2rem;
+		cursor: pointer;
 	}
 
 	input[type='text'] {

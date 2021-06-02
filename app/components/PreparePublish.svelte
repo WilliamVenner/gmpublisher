@@ -496,7 +496,7 @@
 	}
 	input[type='text'].error {
 		outline: none !important;
-		box-shadow: inset 0 0 0px 1.5px #a90000 !important;
+		box-shadow: inset 0 0 0px 1.5px var(--error) !important;
 	}
 	.path-container {
 		display: flex;
@@ -681,7 +681,7 @@
 	#publish-btn {
 		padding: .7rem;
 		text-align: center;
-		background-color: #006cc7;
+		background-color: var(--neutral);
 		z-index: 3;
 		box-shadow: 0 0 5px rgba(0, 0, 0, .1);
 		cursor: pointer;
