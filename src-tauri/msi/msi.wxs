@@ -23,10 +23,6 @@
 		<!-- Remove repair -->
 		<SetProperty Id="ARPNOMODIFY" Value="1" After="InstallValidate" Sequence="execute"/>
 
-		<UI>
-			<UIRef Id='WixUI_FeatureTree'/>
-		</UI>
-
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="$(var.PlatformProgramFilesFolder)" Name="PFiles">
 				<Directory Id="INSTALLDIR" Name="{{{product_name}}}"/>
@@ -37,14 +33,8 @@
 		</Directory>
 
 		<DirectoryRef Id="INSTALLDIR">
-			<Component Id="EXE" Guid="{{{path_component_guid}}}" Win64="$(var.Win64)">
+			<Component Id="ProgramBinary" Guid="{{{path_component_guid}}}" Win64="$(var.Win64)">
 				<File Id="EXE" Source="{{{app_exe_source}}}" KeyPath="yes" Checksum="yes"/>
-
-				<ProgId Id="gmpublisher.gma.Document" Description="GMA File">
-					<Extension Id="gma" ContentType="application/gma">
-						<Verb Id="open" Command="Open" TargetFile="EXE" Argument="-e &quot;%1&quot;" />
-					</Extension>
-				</ProgId>
 			</Component>
             {{#each binaries as |bin| ~}}
 			<Component Id="{{ bin.id }}" Guid="{{bin.guid}}" Win64="$(var.Win64)">
@@ -53,11 +43,28 @@
             {{/each~}}
             {{{resources}}}
 
-			<Component Id="Path" Guid="84932975-0618-4ce4-ad61-5bd4f5ff24ac">
-				<Environment Id="PATH" Name="PATH" Value="[INSTALLDIR]" Permanent="yes" Part="last" Action="set" System="yes" />
+			<Component Id="CMP_ReadFileShortcut" Guid="1AF06B42-CD42-4AED-959F-36DB5E512046">
+				<Shortcut Id="UninstallShortcut" Name="Uninstall {{{product_name}}}" Description="Uninstalls {{{product_name}}}" Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
+
+				<RemoveFolder Id="INSTALLDIR" On="uninstall" />
+
+				<RegistryValue Root="HKCR" Key="Software\{{{manufacturer}}}\{{{product_name}}}" Name="installed" Type="integer" Value="1" KeyPath="yes" />
 			</Component>
 
+			<!--
+			<Component Id="AddToPATH" Guid="84932975-0618-4ce4-ad61-5bd4f5ff24ac">
+				<CreateFolder />
+				<Environment Id="PATH" Name="PATH" Value="[INSTALLDIR]" Permanent="no" Part="last" Action="set" System="no" />
+			</Component>
+			-->
+
 			<Component Id="FileTypeAssociationsReg" Guid="968b7fdb-58b9-46d7-86da-76d031acefce">
+				<ProgId Id="gmpublisher.gma.Document" Description="GMA File">
+					<Extension Id="gma" ContentType="application/gma">
+						<Verb Id="open" Command="Open" TargetFile="EXE" Argument="-e &quot;%1&quot;" />
+					</Extension>
+				</ProgId>
+
 				<RegistryValue Root="HKLM" Key="SOFTWARE\gmpublisher\Capabilities" Name="ApplicationDescription" Value="gmpublisher" Type="string" />
 				<RegistryValue Root="HKLM" Key="SOFTWARE\gmpublisher\Capabilities" Name="ApplicationIcon" Value="[INSTALLDIR]gmpublisher,0" Type="string" />
 				<RegistryValue Root="HKLM" Key="SOFTWARE\gmpublisher\Capabilities" Name="ApplicationName" Value="gmpublisher" Type="string" />
@@ -66,7 +73,7 @@
 				<RegistryValue Root="HKLM" Key="SOFTWARE\gmpublisher\Capabilities\MIMEAssociations" Name="application/gma" Value="gmpublisher.gma.Document" Type="string" />
 				<RegistryValue Root="HKLM" Key="SOFTWARE\gmpublisher\Capabilities\shell\Open\command" Value="&quot;[INSTALLDIR]gmpublisher&quot; -e &quot;%1&quot;" Type="string" />
 
-				<RegistryValue Root="HKLM" Key="SOFTWARE\RegisteredApplications" Name="gmpublisher" Value="SOFTWARE\gmpublisher\Capabilities" Type="string" />
+				<RegistryValue Root="HKLM" Key="SOFTWARE\RegisteredApplications" Name="gmpublisher" Value="SOFTWARE\gmpublisher\Capabilities" Type="string" KeyPath="yes" />
 
 				<RegistryValue Root="HKLM" Key="SOFTWARE\Classes\gmpublisher.gma.Document" Name="GMA File" Value="Packed Garry's Mod Addon" Type="string" />
 				<RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.gma" Name="Content Type" Value="application/gma" Type="string" />
@@ -77,15 +84,6 @@
 
 				<RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\gmpublisher" Value="[!gmpublisher]" Type="string" />
 				<RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\gmpublisher" Name="Path" Value="[INSTALLDIR]" Type="string" />
-			</Component>
-
-			<Component Id="CMP_ReadFileShortcut" Guid="1AF06B42-CD42-4AED-959F-36DB5E512046">
-
-				<Shortcut Id="UninstallShortcut" Name="Uninstall {{{product_name}}}" Description="Uninstalls {{{product_name}}}" Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
-
-				<RemoveFolder Id="INSTALLDIR" On="uninstall" />
-
-				<RegistryValue Root="HKCR" Key="Software\{{{manufacturer}}}\{{{product_name}}}" Name="installed" Type="integer" Value="1" KeyPath="yes" />
 			</Component>
 		</DirectoryRef>
 
@@ -109,50 +107,34 @@
 		</Feature>
         {{/each~}}
 
-		<Feature Id="MainProgram" Title="Application" Description="Installs {{{product_name}}}." Level="1" ConfigurableDirectory="INSTALLDIR" AllowAdvertise="no" Display="expand" Absent="disallow">
+		<Feature Id="MainProgram" Title="Application" Description="Installs {{{product_name}}}." Level="1" ConfigurableDirectory="INSTALLDIR" AllowAdvertise="no" Absent="disallow" Display="expand">
+			<ComponentRef Id="CMP_ReadFileShortcut" />
+			<ComponentRef Id="ProgramBinary"/>
+			{{#each binaries as |bin| ~}}
+				<ComponentRef Id="{{ bin.id }}"/>
+			{{/each~}}
+			{{#each resource_file_ids as |resource_file_id| ~}}
+				<ComponentRef Id="{{ resource_file_id }}"/>
+			{{/each~}}
 
-			<Feature Id="ShortcutsFeature" Title="Shortcuts" Level="1" Display="hidden">
-				<ComponentRef Id="EXE"/>
-				<ComponentRef Id="CMP_ReadFileShortcut" />
+			<Feature Id="ShortcutsFeature" Title="Start Menu Shortcut" Description="Adds a shortcut to [ProductName] to the Start Menu." Level="1" Absent="allow" AllowAdvertise="no">
 				<ComponentRef Id="ApplicationShortcut" />
 			</Feature>
 
+			<!--
 			<Feature Id="Environment" Title="PATH Environment Variable" Description="Add the install location of the [ProductName] executable to the PATH system environment variable. This allows the [ProductName] executable to be called from any location." Level="1" Absent="allow" AllowAdvertise="no">
-				<ComponentRef Id="EXE"/>
-				<ComponentRef Id="Path"/>
-            {{#each binaries as |bin| ~}}
-				<ComponentRef Id="{{ bin.id }}"/>
-            {{/each~}}
+				<ComponentRef Id="AddToPATH"/>
 			</Feature>
+			-->
 
-			<Feature Id="FileTypeAssociations" Title="File Type Associations" Description="Associates .gma with gmpublisher for extractions" Level="1" AllowAdvertise="no">
+			<Feature Id="FileTypeAssociations" Title="File Type Associations" Description="Associates .gma with gmpublisher for extractions" Level="1" Absent="allow" AllowAdvertise="no">
 				<ComponentRef Id="FileTypeAssociationsReg"/>
 			</Feature>
-
-            {{#each resource_file_ids as |resource_file_id| ~}}
-			<ComponentRef Id="{{ resource_file_id }}"/>
-            {{/each~}}
 		</Feature>
 
-		<!--
-        <Feature Id="External" AllowAdvertise="no" Absent="disallow">
-            {{#each component_group_refs as |id| ~}}
-            <ComponentGroupRef Id="{{ id }}"/>
-            {{/each~}}
-            {{#each component_refs as |id| ~}}
-            <ComponentRef Id="{{ id }}"/>
-            {{/each~}}
-            {{#each feature_group_refs as |id| ~}}
-            <FeatureGroupRef Id="{{ id }}"/>
-            {{/each~}}
-            {{#each feature_refs as |id| ~}}
-            <FeatureRef Id="{{ id }}"/>
-            {{/each~}}
-            {{#each merge_refs as |id| ~}}
-            <MergeRef Id="{{ id }}"/>
-            {{/each~}}
-        </Feature>
-        -->
+		<UI>
+			<UIRef Id='WixUI_FeatureTree'/>
+		</UI>
 
 		<WixVariable Id='WixUILicenseRtf' Value='..\..\..\..\msi\License.rtf'/>
 
