@@ -4,12 +4,17 @@ import 'tippy.js/dist/tippy.css';
 function updateTippy(node, content, follow) {
 	if (node._tippy) node._tippy.destroy();
 	if (content) {
-		tippyJS(node, {
-			content,
-			followCursor: follow === true,
-			plugins: follow === true ? [followCursor] : undefined,
-			interactive: false,
-		});
+		tippyJS(node,
+			followCursor ? {
+				content,
+				followCursor: true,
+				plugins: [followCursor],
+				interactive: false,
+			} : {
+				content,
+				interactive: false,
+			}
+		);
 	}
 }
 
