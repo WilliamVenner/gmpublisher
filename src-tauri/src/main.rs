@@ -1,91 +1,127 @@
-#![cfg_attr(
-	all(not(debug_assertions), target_os = "windows"),
-	windows_subsystem = "windows"
-)]
+#![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
+#![feature(get_mut_unchecked)]
 
-use addon_size_analyzer::AddonSizeAnalyzer;
-use downloader::WorkshopDownloader;
-use tauri::{AppBuilder, Webview};
-extern crate webview_official;
+use tauri::Manager;
 
-mod util;
-pub(crate) use util::*;
-
-mod show;
-mod settings;
-
-mod appdata;
-use appdata::AppData;
-use appdata::AppDataPlugin;
-
-mod commands;
-
-mod workshop;
-use transactions::Transactions;
-use workshop::Workshop;
-
-mod base64_image;
-pub(crate) use base64_image::Base64Image;
-
-mod game_addons;
-use game_addons::GameAddons;
-
-mod addon_size_analyzer;
-
-mod downloader;
+mod build;
 
 #[macro_use]
-mod transactions;
+extern crate lazy_static;
+#[macro_use]
+extern crate turbonone;
 
-pub(crate) mod gma;
+#[macro_use]
+pub mod globals;
+pub use globals::*;
 
-use lazy_static::lazy_static;
-lazy_static! {
-	pub(crate) static ref WORKSHOP: RwLockDebug<Workshop> = RwLockDebug::new(match Workshop::init() {
-		Ok(workshop) => workshop,
-		Err(error) => {
-			show::panic(format!("Couldn't initialize the Steam API! Is Steam running?\nError: {:#?}", error));
-			panic!();
-		},
-	});
+#[macro_use]
+pub mod util;
+pub use util::*;
 
-	pub(crate) static ref WORKSHOP_DOWNLOADER: RwLockDebug<WorkshopDownloader> = RwLockDebug::new(WorkshopDownloader::init());
+#[macro_use]
+pub mod transactions;
+pub use transactions::Transaction;
 
-	pub(crate) static ref APP_DATA: RwLockDebug<AppData> = RwLockDebug::new(match AppData::init(WORKSHOP.read().unwrap().get_user()) {
-		Ok(app_data) => app_data,
-		Err(error) => {
-			show::panic(format!("{:#?}", error));
-			panic!();
+pub mod base64_image;
+pub use base64_image::Base64Image;
+
+pub mod appdata;
+pub use appdata::AppData;
+
+pub mod game_addons;
+pub use game_addons::GameAddons;
+
+pub mod addon_size_analyzer;
+pub use addon_size_analyzer::AddonSizeAnalyzer;
+
+pub mod gma;
+pub use gma::{GMAError, GMAFile, GMAMetadata};
+
+pub mod steam;
+pub use steam::workshop::WorkshopItem;
+
+pub mod octopus;
+pub use octopus::*;
+
+pub mod content_generator;
+pub mod search;
+pub mod webview;
+
+mod cli;
+mod commands;
+
+#[cfg(debug_assertions)]
+fn deadlock_watchdog() {
+	std::thread::spawn(move || loop {
+		sleep!(10);
+
+		let deadlocks = parking_lot::deadlock::check_deadlock();
+		if deadlocks.is_empty() {
+			continue;
+		}
+
+		println!("{} deadlocks detected", deadlocks.len());
+		for (i, threads) in deadlocks.iter().enumerate() {
+			println!("Deadlock #{}", i);
+			for t in threads {
+				println!("Thread Id {:#?}", t.thread_id());
+				println!("{:#?}", t.backtrace());
+			}
 		}
 	});
-
-	pub(crate) static ref GAME_ADDONS: RwLockDebug<GameAddons> = RwLockDebug::new(GameAddons::init());
-
-	pub(crate) static ref TRANSACTIONS: RwLockDebug<Transactions> = RwLockDebug::new(Transactions::init());
-
-	pub(crate) static ref ADDON_SIZE_ANALYZER: AddonSizeAnalyzer = AddonSizeAnalyzer::init();
 }
 
 fn main() {
-	// TODO use steam api to get gmod dir instead of steamlocate
+	#[cfg(debug_assertions)]
+	if build::bundler() {
+		return;
+	}
 
-	let window_size = APP_DATA.read().unwrap().settings.window_size.clone();
-	let mut first_setup = true;
-	let setup = move |webview: &mut Webview, _: String| {
-		webview.set_title(&format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")));
+	rayon::ThreadPoolBuilder::new().num_threads(*crate::NUM_THREADS).build_global().unwrap();
 
-		if first_setup {
-			webview.set_size(500, 500, webview_official::SizeHint::MIN);
-			webview.set_size(std::cmp::max(window_size.0, 500), std::cmp::max(window_size.1, 500), webview_official::SizeHint::NONE);
+	if cli::stdin() {
+		return;
+	}
 
-			drop(window_size);
-			first_setup = false;
-		}
-	};
+	println!("gmpublisher v{}", env!("CARGO_PKG_VERSION"));
 
-	AppBuilder::new()
-		.setup(setup)
-		.plugin(AppDataPlugin::init())
+	#[cfg(debug_assertions)]
+	deadlock_watchdog();
+
+	//ignore! { app_data::write_tauri_settings() };
+
+	globals::init_globals();
+
+	println!("Starting GUI...");
+
+	tauri::Builder::default()
+		.create_window("gmpublisher".to_string(), tauri::WindowUrl::default(), |args, attrs| {
+			let settings = APP_DATA.settings.read();
+			(
+				args.with_title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
+					.with_maximized(!cfg!(debug_assertions) && settings.window_maximized)
+					.with_resizable(true)
+					.with_inner_size(tauri::Size::Physical(tauri::PhysicalSize {
+						width: settings.window_size.0 as u32,
+						height: settings.window_size.1 as u32
+					}))
+					.with_min_inner_size(tauri::Size::Logical(tauri::LogicalSize {
+						width: 800.,
+						height: 600.
+					})),
+				attrs,
+			)
+		})
+		.setup(|app| {
+			let window = app.get_window(&"gmpublisher".to_string()).unwrap();
+			webview!().init(window);
+			Ok(())
+		})
+		.plugin(webview::ErrorReporter)
+		.plugin(appdata::Plugin)
 		.invoke_handler(commands::invoke_handler())
-		.build().run();
+		.run(tauri::generate_context!())
+		.unwrap();
+
+	println!("Goodbye!");
 }

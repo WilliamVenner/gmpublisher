@@ -1,0 +1,270 @@
+{
+	"LANGUAGE_NAME": "Русский",
+
+	"reset_settings": "Сбросить настройки",
+	"my_workshop": "Моя Мастерская",
+	"loading": "Загрузка...",
+	"gmod_dir": {
+		"name": "Директория Garry's Mod",
+		"fail": "Не удалось найти указанную Garry's Mod директорию.\nУбедитесь, что указанная директория содержит папку bin/, содержащую gmad и gmpublish."
+	},
+	"greetings": {
+		"morning": "Доброе утро, {name}!",
+		"morning.anon": "Доброе утро!",
+		"afternoon": "Добрый день, {name}!",
+		"afternoon.anon": "Добрый день!",
+		"evening": "Добрый вечер, {name}!",
+		"evening.anon": "Добрый вечер!"
+	},
+	"game": "Игра",
+	"filesystem": "Файловая система",
+	"github_star": "Поставить звёздочку",
+	"search": "Поиск...",
+	"showing_num_addons": "Показано {num} из {total} дополнений",
+	"extract_where_to": "Куда?",
+	"extract_overwrite_warning": "Существующие файлы будут перезаписаны.",
+	"extract_open_tip": "GMA файл будет распакован в ВРЕМЕННУЮ директорию и открыт.",
+	"browse": "Просмотреть...",
+	"addons_folder": "Дополнения",
+	"downloads_folder": "Загрузки",
+	"open": "Открыть",
+	"create_folder": "Создать папку",
+	"extract": "Извлечь",
+	"extracting": "Извлечение",
+	"extracting_progress": "Извлечение {pct}% ({data} / {dataTotal})",
+	"pack": "Pack",
+	"publish": "Опубликовать",
+	"update": "Обновить",
+	"size_analyzer": "Анализатор размера дополнения",
+	"name": "Название",
+	"cancel": "Отмена",
+	"done": "Выполнено",
+	"cancelled": "Отменено",
+	"size": "Размер",
+	"addon_type": "Тип",
+	"file_types": {
+		"folder": "Директория",
+
+		"vtf": "Valve Texture Format",
+		"vmt": "Valve Material Format",
+		"map": "Карта",
+		"ain": "Map AI Nodegraph",
+		"nav": "Map AI Navigation Mesh",
+		"ttf": "TrueType шрифт",
+		"vcd": "Valve Choreography Data",
+		"fgd": "Forge Game Data",
+		"pcf": "Файл частиц",
+		"lua": "Lua код",
+		"mdl": "Модель",
+		"vtx": "Model LOD Data",
+		"phy": "Model Physics Mesh",
+		"ani": "Model Animation Data",
+		"vvd": "Model Vertex Data",
+		"txt": "Текст",
+		"properties": "Настройки",
+
+		"audio": "Звук",
+		"image": "Изображение",
+		"unknown": "Неизвестно ({extension})"
+	},
+	"items_one": "1 предмет",
+	"items_num": "{n} предметов(а)",
+	"items_shown": "{n} показано",
+	"created": "Создано",
+	"updated": "Обновлено",
+	"author": "Автор",
+	"open_addon_location": "Открыть местоположение дополнения",
+
+	"downloader": "Загрузчик",
+	"download-input": "Вставьте ID предметов, ссылки, коллекции сюда...",
+	"download-input-tip": "СОВЕТ: Вы можете вставить сюда элементы, разделенные запятыми или новой строкой!",
+	"downloading": "Загрузка",
+	"log": "Log",
+	"waiting": "Ожидание",
+	"extraction_tip": "СОВЕТ: Вы можете перетащить GMA файл на этот экран, чтобы распаковать его.",
+	"set_destination": "Выберите Назначение",
+
+	"addon": "Дополнение",
+	"speed": "Скорость",
+	"total_filesize": "Всего",
+	"progress": "Прогресс",
+
+	"LOG_DOWNLOAD_STARTED": "Загрузка начата для {addon}",
+	"LOG_DOWNLOAD_FINISHED": "Загрузка завершена для {addon} за {time}",
+	"LOG_DOWNLOAD_FAILED": "Не удалось загрузить {addon} (\"{reason}\")",
+
+	"LOG_EXTRACT_STARTED": "Извлечение начато для {addon}",
+	"LOG_EXTRACT_FINISHED": "Извлечение завершено для {addon} за {time}",
+	"LOG_EXTRACT_FAILED": "Не удалось извлечь {addon} (\"{reason}\")",
+
+	"FS_ANALYZER_RENDERING": "Рендер...",
+	"FS_ANALYZER_CACHING": "Кеширование...",
+	"FS_ANALYZER_SERIALIZING": "Сериализация...",
+	"FS_ANALYZER_STEAM": "Скачивание данных Steam...",
+	"FS_ANALYZER_COMPUTING": "Вычисление...",
+	"FS_ANALYZER_TAGGIFYING": "Тегирование...",
+
+	"time_just_now": "Только что",
+	"click_to_open": "Нажмите, чтобы открыть!",
+	"content_generator": "Генератор содержания",
+	"installed_addons": "Установленные дополнения",
+
+	"steam_disconnected": "Отключен от серверов Steam",
+	"steam_connected": "Подключен к серверам Steam",
+
+	"publish_new": "Опубликовать новое...",
+
+	"settings": {
+		"saved": "Сохранено!",
+		"settings": "Настройки",
+
+		"paths": {
+			"paths": "Пути",
+			"user_data": "Путь к данным пользователя",
+			"gmod": "Путь установки Garry's Mod",
+			"temp": "Путь к временным файлам",
+			"downloads": "Путь загрузки"
+		},
+
+		"general": {
+			"general": "Общее",
+			"sounds": "Звуки"
+		},
+
+		"resets": {
+			"resets": "Сброс",
+			"settings": "Сброс настроек",
+			"clear_temp": "Очистить временные файлы",
+			"clear_user_data": "Очистить данные пользователя"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "Поведение при перезаписи",
+			"recycle": "Переработать",
+			"delete": "Удалить",
+			"overwrite": "Перезаписать",
+			"tooltip": "Что должен делать gmpublisher при извлечении GMA, если каталог извлечения GMA уже существует (GMA уже был извлечён ранее)?"
+		},
+
+		"accessibility": {
+			"accessibility": "Доступность",
+			"color_error": "Цвет ошибки",
+			"color_success": "Цвет успешного результата",
+			"color_neutral": "Нейтральный цвет"
+		}
+	},
+
+	"gma_type_name": "Упакованное дополнение Garry's Mod",
+	"downloading_tip": "Вы можете перетащить ссылки Мастерской Steam сюда, чтобы загрузить + извлечь их.",
+	"open_workshop": "Открытый Мастерскую",
+	"bulk_extract_gmas": "Массовое извлечение GMA",
+	"error": "Ошибка",
+	"queued": "В очереди",
+	"remove_all": "Удалить все",
+	"open_all": "Открыть все",
+
+	"ERR_UNKNOWN": "Неизвестная ошибка",
+	"ERR_NO_ADDONS_FOUND": "Дополнения не найдены",
+	"ERR_STEAM_ERROR": "Ошибка Steam: {data}",
+	"ERR_WHITELIST": "Эти записи не проходят через белый список типов/расположения файлов. Если это произошло неожиданно, вероятно, ваше дополнение имеет неправильную структуру файлов.\n\nЕсли вы хотите отфильтровать эти типы файлов из ваших GMA, добавьте их в список игнорируемых шаблонов файлов.\n\n{data}",
+	"ERR_IO_ERROR": "Ошибка I/O",
+	"ERR_PATH_IO_ERROR": "Ошибка I/O ({data})",
+	"ERR_GMA_FORMAT_ERROR": "Повреждённый файл GMA",
+	"ERR_GMA_INVALID_HEADER": "Недопустимый файл GMA",
+	"ERR_GMA_ENTRY_NOT_FOUND": "Запись не найдена",
+	"ERR_DOWNLOAD_MISSING": "Скачано, но файлы отсутствуют",
+	"ERR_ICON_TOO_LARGE": "Слишком большое изображение (> 1 МБ)",
+	"ERR_ICON_TOO_SMALL": "Изображение слишком маленькое (< 16 Б)",
+	"ERR_ICON_INVALID_FORMAT": "Изображение должно быть в формате JPG, PNG или GIF",
+	"ERR_LZMA": "Ошибка сжатия LZMA",
+	"ERR_DOWNLOAD_FAILED": "Скачивание не удалось",
+	"ERR_ITEM_NOT_FOUND": "Элемент не найден",
+	"ERR_ITEM_INACCESSIBLE": "Элемент недоступен",
+	"ERR_INVALID_CONTENT_PATH": "Этот путь к содержимому не существует, не является каталогом или у gmpublisher недостаточно прав для доступа к нему",
+	"ERR_MULTIPLE_GMAS": "В этом пути к содержимому найдено несколько файлов GMA",
+	"ERR_IMAGE_ERROR": "Ошибка изображения: {data}",
+	"ERR_DUPLICATE_ENTRIES": "В этом пути содержимого есть дублирующая запись ({data}). Все пути должны быть уникальными и с строчной буквы. Я кста использую arch",
+	"ERR_NO_ENTRIES": "В этом пути содержимого нет записей.",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Юридическое соглашение Мастерской не принято",
+
+	"icon_instructions": "Принимаемые форматы: JPG, PNG, GIF\nМакс. размер: 1 МБ\nРекомендуется: 512x512",
+	"addon_title": "Заголовок...",
+	"addon_path": "Путь к дополнению...",
+	"icon_file_pick": "Изображение Мастерской",
+	"remove_icon": "Удалить изображение",
+
+	"addon_types": {
+		"ServerContent": "Содержание сервера",
+		"gamemode": "Игровой режим",
+		"map": "Карта",
+		"weapon": "Оружие",
+		"vehicle": "Транспорт",
+		"npc": "NPC",
+		"tool": "Инструмент",
+		"effects": "Эффекты",
+		"model": "Модель",
+		"entity": "Энтити"
+	},
+
+	"tag_1": "Метка 1",
+	"tag_2": "Метка 2",
+	"tag_3": "Метка 3",
+
+	"addon_tags": {
+		"fun": "Fun",
+		"roleplay": "Roleplay",
+		"scenic": "Scenic",
+		"movie": "Movie",
+		"realism": "Realism",
+		"cartoon": "Cartoon",
+		"water": "Water",
+		"comic": "Comic",
+		"build": "Build"
+	},
+
+	"publish_exclamation": "Опубликовать!",
+	"update_exclamation": "Обновить!",
+	"add_ellipsis": "Добавить...",
+	"ignored_file_patterns": "Игнорируемые шаблоны файлов",
+	"show_more": "БОЛЬШЕ",
+	"ignored_for_convenience": "По умолчанию этот шаблон файла игнорируется для вашего удобства.",
+	"file_browser": "Просмотрщик файлов",
+	"file_browser_select": "Перетащите файл сюда или нажмите для просмотра",
+	"no_files_found": "Файлы не найдены",
+	"upscale_addon_icon": "Увеличить до 512x512",
+	"changelog": "Журнал изменений",
+	"update_warning": "Вы выпускаете ОБНОВЛЕНИЕ для {title} ({id})",
+
+	"PUBLISH_PACKING": "Упаковка {pct}% ({data} / {dataTotal})",
+	"PUBLISH_STARTING": "Начало публикации",
+	"PUBLISH_PREPARING_CONFIG": "Подготовка конфигурации",
+	"PUBLISH_PREPARING_CONTENT": "Подготовка содержимого",
+	"PUBLISH_UPLOADING_CONTENT": "Загрузка содержимого",
+	"PUBLISH_UPLOADING_PREVIEW_FILE": "Загрузка файла изображения",
+	"PUBLISH_COMMITTING_CHANGES": "Принятие изменений",
+	"PUBLISH_PROCESSING_ICON": "Обработка изображения",
+
+	"subscriptions": "Подписки",
+	"unsubscribe": "Отписаться",
+	"unsubscribe_all": "Отписаться от всех",
+	"unsubscribe_all_warning": "ВНИМАНИЕ: Это отпишет вас от ВСЕХ дополнений в Мастерской, на которые вы подписаны.",
+	"update_available": "Доступно новое обновление!\n{version}",
+	"workshop_page": "Страница в Мастерской",
+	"steam_workshop": "Мастерская Steam",
+	"open_count": "Вы открыли gmpublisher {count} раз(а)! Поздравляем!",
+	"enjoying_gmpublisher": "Нравится gmpublisher?",
+	"github_star_plz_i_need_a_job_maybe": "Если у вас есть аккаунт на GitHub, то поставьте звёздочку на моём %GitHub репозитории%, если моя работа помогла вам :D",
+	"vscode_glua_enhanced": "Если вы разработчик, вас также может заинтересовать моё расширение %VSCode GLua Enhanced%.",
+
+	"copy_link": "Скопировать ссылку",
+	"open_image": "Открыть изображение",
+	"copy_image_link": "Скопировать ссылку изображения",
+	"download": "Скачать",
+	"sent_to_downloader": "Отправить в загрузчик",
+
+	"locating": "Нахождение",
+	"decompressing": "Распаковка {progress}",
+	"reading_metadata": "Считывание метаданных",
+
+	"publish_icon": "Опубликовать новое изображение (НЕ обновит дополнение)"
+}

@@ -1,5 +1,22 @@
 * { box-sizing: border-box }
 
+:root {
+	--neutral-custom: 207, 100%;
+	--neutral-custom-l: 39%;
+	--neutral: hsl(var(--neutral-custom), var(--neutral-custom-l));
+	--neutral-dark: hsl(var(--neutral-custom), calc(var(--neutral-custom-l) * .85));
+
+	--error-custom: 0, 100%;
+	--error-custom-l: 33%;
+	--error: hsl(var(--error-custom), var(--error-custom-l));
+	--error-dark: hsl(var(--error-custom), calc(var(--error-custom-l) * .75));
+
+	--success-custom: 145, 55%;
+	--success-custom-l: 42%;
+	--success: hsl(var(--success-custom), var(--success-custom-l));
+	--success-dark: hsl(var(--success-custom), calc(var(--success-custom-l) * .75));
+}
+
 *:not(.select) {
 	-webkit-user-select: none;
 	-moz-user-select: none;
@@ -86,14 +103,8 @@ body::-webkit-scrollbar, .hide-scroll::-webkit-scrollbar { /* WebKit */
 .tippy-box[data-placement^='right'] > .tippy-arrow::before {
 	border-right-color: #0F0F0F !important;
 }
-
-@keyframes modal {
-	from {
-		transform: scale(0, 0);
-	}
-	to {
-		transform: scale(1, 1);
-	}
+.tippy-content {
+	white-space: pre-line;
 }
 
 .tag {
@@ -132,6 +143,21 @@ body::-webkit-scrollbar, .hide-scroll::-webkit-scrollbar { /* WebKit */
 }
 .tag:not(:last-child) {
 	margin-right: .4rem;
+}
+
+.icon-button {
+	cursor: pointer;
+	background: #313131;
+	box-shadow: 0px 0px 2px 0px rgb(0 0 0 / 40%);
+	border-radius: 4px;
+	padding: .9rem;
+}
+.icon-button > .icon {
+	opacity: .3;
+	transition: opacity .1s;
+}
+.icon-button:hover > .icon {
+	opacity: 1;
 }
 
 .tag.addon { color: #fff !important }

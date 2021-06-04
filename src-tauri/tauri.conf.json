@@ -1,59 +1,56 @@
 {
-	"build": {
-		"distDir": "../public",
-		"devPath": "http://localhost:5000",
-		"beforeDevCommand": "",
-		"beforeBuildCommand": "yarn run rollup -c rollup.config.js",
-		"withGlobalTauri": true
-	},
-	"ctx": {},
-	"tauri": {
-		"embeddedServer": {
-			"active": true
-		},
-		"bundle": {
-			"active": true,
-			"targets": "all",
-			"identifier": "venner.gmpublisher",
-			"icon": [
-				"icons/32x32.png",
-				"icons/128x128.png",
-				"icons/128x128@2x.png",
-				"icons/icon.icns",
-				"icons/icon.ico"
-			],
-			"resources": [],
-			"externalBin": [],
-			"copyright": "",
-			"category": "DeveloperTool",
-			"shortDescription": "",
-			"longDescription": "",
-			"deb": {
-				"depends": [],
-				"useBootstrapper": false
-			},
-			"osx": {
-				"frameworks": [],
-				"minimumSystemVersion": "",
-				"useBootstrapper": false
-			},
-			"exceptionDomain": ""
-		},
-		"allowlist": {
-			"all": true
-		},
-		"window": {
-			"title": "gmpublisher by Billy",
-			"width": 800,
-			"height": 600,
-			"resizable": true,
-			"fullscreen": false
-		},
-		"security": {
-			"csp": "default-src blob: data: filesystem: ws: http: https: 'unsafe-eval' 'unsafe-inline'"
-		},
-		"inliner": {
-			"active": true
-		}
-	}
+  "package": {
+    "productName": "gmpublisher",
+    "version": "2.5.1"
+  },
+  "build": {
+    "distDir": "../public",
+    "devPath": "http://localhost:5000",
+    "beforeDevCommand": "yarn dev",
+    "beforeBuildCommand": "yarn build",
+    "afterBuildCommand": "cargo run --manifest-path src-tauri/Cargo.toml -- bundle",
+    "withGlobalTauri": true
+  },
+  "tauri": {
+    "bundle": {
+      "active": true,
+      "targets": "all",
+      "identifier": "venner.gmpublisher",
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "resources": [],
+      "externalBin": [],
+      "copyright": "2021 William Venner",
+      "category": "DeveloperTool",
+      "shortDescription": "Garry's Mod Workshop Publishing Utility",
+      "longDescription": "Garry's Mod Workshop Publishing Utility",
+      "deb": {
+        "depends": [],
+        "useBootstrapper": false
+      },
+      "macOS": {
+        "frameworks": ["lib/steam_api/osx/libsteam_api.dylib"],
+        "minimumSystemVersion": "",
+        "useBootstrapper": false,
+        "exceptionDomain": ""
+      },
+      "windows": {
+        "wix": {
+          "template": "msi/msi.wxs"
+        }
+      }
+    },
+    "allowlist": {
+      "all": true
+    },
+    "windows": [],
+    "security": {
+      "csp": "default-src blob: data: filesystem: ws: http: https: 'unsafe-eval' 'unsafe-inline'"
+    }
+  }
 }

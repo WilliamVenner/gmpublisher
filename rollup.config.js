@@ -7,6 +7,19 @@ import json from '@rollup/plugin-json';
 import { terser } from 'rollup-plugin-terser';
 import css from 'rollup-plugin-css-only';
 import svelteSVG from "rollup-plugin-svelte-svg";
+import fs from 'fs';
+
+const appLanguages = {};
+{
+	const languageFiles = fs.readdirSync('./i18n');
+	let i = -1;
+	while (++i < languageFiles.length) {
+		const file = languageFiles[i];
+		const fileName = file.substr(0, file.length - 5);
+		const languageData = JSON.parse(fs.readFileSync('./i18n/' + file, { encoding: 'utf-8' }));
+		appLanguages[fileName] = languageData;
+	}
+}
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -38,7 +51,9 @@ export default {
 		format: 'iife',
 		name: 'app',
 		file: 'public/build/bundle.js',
-		inlineDynamicImports: true
+		inlineDynamicImports: true,
+
+		intro: `const APP_LANGUAGES = ${JSON.stringify(appLanguages)};`
 	},
 	plugins: [
 		replace({
@@ -65,9 +80,7 @@ export default {
 			browser: true,
 			dedupe: ['svelte']
 		}),
-		commonjs({
-			include: ['node_modules/**']
-		}),
+		commonjs(),
 
 		json(),
 

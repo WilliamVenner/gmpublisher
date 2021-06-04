@@ -1,15 +1,67 @@
 <script>
 	import { afterUpdate, onDestroy, onMount } from 'svelte';
-	import { _ } from 'svelte-i18n';
-	import { promisified, invoke } from 'tauri/api/tauri';
-	import Loading from '../components/Loading.svelte';
-	import Dead from '../../public/img/dead.svg';
-	import { Transaction } from '../transactions.js';
-	import filesize from 'filesize';
-	import tippy from 'tippy.js';
-	import { modals } from '../modals.js';
-	import PreviewGMA from '../modals/PreviewGMA.svelte';
 	import { writable } from 'svelte/store';
+	import { _ } from 'svelte-i18n';
+	import { invoke } from '@tauri-apps/api/tauri';
+	import { Transaction } from '../transactions.js';
+	import tippy from 'tippy.js';
+	import filesize from 'filesize';
+	import Loading from '../components/Loading.svelte';
+	import Dead from '../components/Dead.svelte';
+	import { Steam } from '../steam';
+	import PreviewGMA from '../components/PreviewGMA.svelte';
+	import { registerContext } from '../components/ContextMenu.svelte';
+
+	let workshopDataIndex = [];
+	let workshopDataIDIndex = [];
+	let workshopDataPromises = {};
+	let workshopDataReceived = false;
+	onMount(() => {
+		workshopDataIndex = [];
+		workshopDataIDIndex = [];
+		workshopDataPromises = {};
+		workshopDataReceived = false;
+	});
+
+	function imageLoaded() {
+		if (workshopItemReceivedReady) {
+			loadFrame();
+		} else {
+			clearTimeout(workshopItemImageTimeout);
+			workshopItemImageTimeout = setTimeout(imageLoaded, 100);
+		}
+	}
+
+	function loadFrame() {
+		workshopItemReceivedReady = false;
+
+		clearTimeout(workshopItemImageTimeout);
+
+		updateCanvas();
+		requestAnimationFrame(frame);
+	}
+
+	function frame() {
+		workshopItemReceivedReady = true;
+	}
+
+	let workshopItemImageCache = {};
+	let workshopItemReceivedReady = true;
+	let workshopItemImageTimeout;
+	function workshopItemReceived(item, w, h) {
+		if (item.previewUrl) {
+			const image = new Image(w, h);
+			workshopItemImageCache[item.id] = image;
+			image.onload = imageLoaded;
+			image.src = item.previewUrl;
+		}
+
+		if (workshopItemReceivedReady) {
+			loadFrame();
+		}
+
+		return item;
+	}
 
 	const tagCache = {}; let tagCacheId = 0;
 	function getTagId(tag) {
@@ -42,7 +94,7 @@
 		return tagColors[tag];
 	}
 
-	let container;
+	let sizeRef;
 
 	let addonsCanvas; let addonsCtx;
 	let tagsCanvas; let tagsCtx;
@@ -57,17 +109,17 @@
 	let treemap;
 
 	const DeadSVG = new Image();
-	DeadSVG.src = '/img/dead-canvas.svg';
+	// TODO DeadSVG.src = '/img/dead-canvas.svg';
+	DeadSVG.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48' fill='none'%3E%3Cpath stroke='%23212121' stroke-width='3' stroke-linecap='square' d='M1.5 8.5v34h45v-28m-3-3h-10v-3m-3-3h-10m15 6h-18v-3m-3-3h-10'/%3E%3Cpath stroke='%23212121' stroke-width='2' stroke-linecap='square' d='M12 35h2m2-2h12m2 2h3m2 2h3M11 21h0m0 4h0m4 0h0m0-4h0m-2 2h0m20-2h0m0 4h0m4 0h0m0-4h0m-2 2h0'/%3E%3C/svg%3E";
 
 	function analyze() {
 		transaction?.cancel();
 
-		treemapBounds[0] = container.clientWidth;
-		treemapBounds[1] = container.clientHeight;
+		treemapBounds[0] = sizeRef.clientWidth;
+		treemapBounds[1] = sizeRef.clientHeight;
 
-		promisified({
+		invoke('addon_size_analyzer', {
 
-			cmd: 'analyzeAddonSizes',
 			w: treemapBounds[0],
 			h: treemapBounds[1]
 
@@ -87,15 +139,19 @@
 					$progressMsg = transaction.status;
 					transaction = transaction;
 				});
-			});
+			}).then(updateCanvas);
 		});
 	}
 
 	let resizedTimeout;
 	function resized() {
-		if (treemapBounds[0] !== container.clientWidth || treemapBounds[1] !== container.clientHeight) {
+		if (!sizeRef) return;
+		if (treemapBounds[0] !== sizeRef.clientWidth || treemapBounds[1] !== sizeRef.clientHeight) {
 			clearTimeout(resizedTimeout);
-			resizedTimeout = setTimeout(analyze, 1000);
+			resizedTimeout = setTimeout(() => {
+				transaction?.cancel();
+				analyze();
+			}, 1000);
 		}
 	}
 
@@ -105,7 +161,7 @@
 
 	const hangingLetters = ['g','j','p','q','y']; // stupid hack for annoying canvas text rendering
 
-	async function findHoveredAddon(e, shouldSelect) {
+	function findHoveredAddon(e, shouldSelect) {
 		if (!addonsKdTree) return;
 
 		const { offsetX, offsetY } = e;
@@ -134,7 +190,7 @@
 
 			const x = square.x + offsetX + (padding || 0);
 			const y = square.y + offsetY + (padding || 0);
-			
+
 			const halfW = square.w / 2;
 			const halfH = square.h / 2;
 
@@ -142,7 +198,7 @@
 			const centerY = y + halfH;
 
 			if (tag) {
-				
+
 				let padding = Math.ceil((Math.min(square.w, square.h) * 0.05)) / 2;
 
 				const tagColor = getTagColor(tag);
@@ -166,7 +222,7 @@
 					hanging,
 				};
 				drawTag(tag);
-				
+
 				if (Array.isArray(data)) {
 					processTreemap(data, x, y, padding, getTagId(tag));
 				}
@@ -175,20 +231,32 @@
 
 			} else {
 
-				if (data.preview_url) {
+				while (true) {
+					if (!workshopDataReceived) {
 
-					const image = new Image(square.w, square.h);
-					image.onload = () => {
-						addonsCtx.globalCompositeOperation = 'destination-over';
-							addonsCtx.drawImage(image, x, y, square.w, square.h);
-						addonsCtx.globalCompositeOperation = 'source-over';
+						const index = workshopDataIndex.push(
+							!!data.installed.id ?
+							Steam.getWorkshopAddon(data.installed.id).then(item => workshopItemReceived(item, square.w, square.h))
+							: Promise.resolve(null)
+						) - 1;
+
+						workshopDataPromises[index] = data.installed.id;
+						workshopDataIDIndex[data.installed.id] = index;
+
+					} else if (!!data.installed.id) {
+
+						if (data.installed.id in workshopItemImageCache) {
+							addonsCtx.globalCompositeOperation = 'destination-over';
+								addonsCtx.drawImage(workshopItemImageCache[data.installed.id], x, y, square.w, square.h);
+							addonsCtx.globalCompositeOperation = 'source-over';
+
+							break;
+						}
+
 					}
-					image.src = data.preview_url;
-
-				} else {
 
 					addonsCtx.globalCompositeOperation = 'destination-over';
-						const size = square.w * .25;
+						const size = Math.min(square.w, square.h) * .4;
 						const halfSize = size / 2;
 						addonsCtx.drawImage(DeadSVG, centerX - halfSize, centerY - halfSize, size, size);
 
@@ -196,6 +264,7 @@
 						addonsCtx.fillRect(x, y, square.w, square.h);
 					addonsCtx.globalCompositeOperation = 'source-over';
 
+					break;
 				}
 
 			}
@@ -243,7 +312,7 @@
 				tagsCtx.rotate(canvasRotation);
 			tagsCtx.translate(-x, -y);
 		}
-		
+
 		tagsCtx.font = textSize + 'px sans-serif';
 		tagsCtx.fillStyle = '#fff';
 		tagsCtx.strokeStyle = '#000';
@@ -271,13 +340,14 @@
 
 	function updateCanvas() {
 		if (!bgCanvas || !tagsCanvas || !treemap) return;
+
 		addonsKdTree = null;
 		addonsKdTreePoints = [];
 		addonsKdMaxDist = 0;
 
 		const scale = window.devicePixelRatio;
-		const width = container.clientWidth * scale;
-		const height = container.clientHeight * scale;
+		const width = sizeRef.clientWidth * scale;
+		const height = sizeRef.clientHeight * scale;
 
 		bgCanvas.width = Math.floor(width);
 		bgCanvas.height = Math.floor(height);
@@ -305,19 +375,33 @@
 
 		processTreemap(treemap, 0, 0);
 
-		treemap = null;
-
 		addonsKdTree = new kdTree(addonsKdTreePoints, (a, b) => {
 			return ((a.x - b.x) ** 2) + ((a.y - b.y) ** 2);
 		}, ['x', 'y']);
+
+		if (workshopDataIndex != false && !workshopDataReceived) {
+			workshopDataReceived = true;
+
+			Promise.allSettled(workshopDataIndex, () => {
+				treemap = null;
+				updateCanvas();
+			});
+		}
 	}
 
 	onMount(analyze);
-	afterUpdate(updateCanvas);
 	onDestroy(() => {
 		clearTimeout(resizedTimeout);
 		transaction?.cancel();
-		invoke({ cmd: 'freeAddonSizeAnalyzer' });
+	});
+
+	let canvasesBinded = false;
+	afterUpdate(() => {
+		let _canvasesBinded = !bgCanvas || !tagsCanvas || !treemap;
+		if (canvasesBinded !== _canvasesBinded) {
+			updateCanvas();
+			canvasesBinded = _canvasesBinded;
+		}
 	});
 
 	let popper;
@@ -337,17 +421,28 @@
 	function selectHoveredSquare(addon) {
 		if (!addon) {
 
-			updateTagCanvas();
+			if (popper._tippy.state.isVisible) {
+				updateTagCanvas();
 
-			popper.style.width = '0';
-			popper.style.height = '0';
-			popper._tippy.hide();
+				const top = parseFloat(popper.style.top ?? 0) ?? 0;
+				const left = parseFloat(popper.style.left ?? 0) ?? 0;
+				const width = parseFloat(popper.style.width ?? 0) ?? 0;
+				const height = parseFloat(popper.style.height ?? 0) ?? 0;
+
+				popper.style.top = (top + (height / 2)) + 'px';
+				popper.style.left = (left + (width / 2)) + 'px';
+				popper.style.width = '0';
+				popper.style.height = '0';
+				popper._tippy.hide();
+			}
 
 		} else {
 
-			popperName.textContent = addon.gma.name ?? addon.gma.extracted_name;
-			popperSize.textContent = filesize(Number(addon.gma.size));
-			
+			let workshopData = workshopDataPromises[workshopDataIDIndex[addon.installed.id ?? -1] ?? -1];
+
+			popperName.textContent = ((workshopData && typeof workshopData === 'object' ? workshopData.dead : true) ? (addon.installed.title ?? addon.installed.extractedName) : workshopData.title) ?? addon.installed.id;
+			popperSize.textContent = filesize(Number(addon.installed.size));
+
 			const tagName = lookupTagName(addon.tagId);
 			updateTagCanvas(tagName);
 			popperType.setAttribute('class', 'tag ' + tagName);
@@ -363,20 +458,18 @@
 			popper._tippy.show();
 
 		}
-		
+
 		return addon;
 	}
 
+	let previewingGMA = false;
+	const promises = writable([new Promise(() => {}), new Promise(() => {})]);
 	async function openHoveredAddon(e) {
-		let addon = await findHoveredAddon(e, false);
+		let addon = findHoveredAddon(e, false);
 		selectHoveredSquare();
 		if (addon) {
-			$modals = [...$modals, {
-				component: PreviewGMA,
-				props: {
-					gmaData: addon.gma
-				}
-			}];
+			previewingGMA = true;
+			$promises = [addon.installed.id ? Steam.getWorkshopAddon(addon.installed.id) : null, Promise.resolve(addon.installed)];
 		}
 	}
 
@@ -402,31 +495,38 @@
 		progressLog.prepend(elem);
 	});
 	onMount(() => $progressMsg = $progressMsg);
+
+	let contextListener;
+	onMount(() => {
+		registerContext(contextListener, e => {
+			const hovered = findHoveredAddon(e, false);
+			if (hovered) {
+				return [Steam.getWorkshopAddon(hovered.installed.id), Promise.resolve(hovered.installed), true];
+			}
+		});
+	});
 </script>
 
 <svelte:window on:resize={resized}/>
 
+<PreviewGMA active={previewingGMA} {promises} cancel={() => previewingGMA = false}/>
+
 <div id="popper-content" bind:this={popperContent}>
-	<table class="popper-content">
-		<tbody>
-			<tr>
-				<th>{$_('name')}</th>
-				<td bind:this={popperName}></td>
-			</tr>
-			<tr>
-				<th>{$_('addon_type')}</th>
-				<td><div bind:this={popperType}></div></td>
-			</tr>
-			<tr>
-				<th>{$_('size')}</th>
-				<td bind:this={popperSize}></td>
-			</tr>
-		</tbody>
-	</table>
+	<div class="popper-content">
+		<div>{$_('name')}</div>
+		<div bind:this={popperName}></div>
+
+		<div>{$_('addon_type')}</div>
+		<div><div bind:this={popperType}></div></div>
+
+		<div>{$_('size')}</div>
+		<div bind:this={popperSize}></div>
+	</div>
 </div>
 
-<main bind:this={container}>
-	<script src="/js/lib/k-d-tree.min.js"></script>
+<main on:mouseout={() => selectHoveredSquare()} bind:this={contextListener}>
+	<div bind:this={sizeRef} id="size-ref"></div>
+
 	<div id="popper" bind:this={popper}></div>
 
 	{#await loading}
@@ -451,24 +551,36 @@
 			on:click={openHoveredAddon}
 		></canvas>
 	{:catch}
-		<Dead/>
+		<Dead size="2rem"/>
+		<div id="error">{$_('ERR_NO_ADDONS_FOUND')}</div>
 	{/await}
 </main>
 
 <style>
+	#size-ref {
+		position: absolute;
+		grid-row: 1;
+		grid-column: 1;
+		width: calc(100% - 1.5rem);
+		height: calc(100% - 1.5rem);
+		pointer-events: none;
+		opacity: 0;
+	}
+
 	main {
 		background-color: #1a1a1a;
 		border-radius: .3rem;
 		box-shadow: 0 0 0 #000 inset;
 
 		width: 100%;
-		height: calc(100% - 1.5rem);
-		max-height: calc(100% - 1.5rem);
-		min-height: calc(100% - 1.5rem);
+		height: 100%;
+		max-height: 100%;
+		min-height: 100%;
+		padding: 1.5rem;
 
 		display: grid;
-		grid-template-columns: 1fr;
-		grid-template-rows: 1fr;
+		grid-template-columns: 100%;
+		grid-template-rows: 100%;
 
 		position: relative;
 	}
@@ -484,7 +596,12 @@
 		position: absolute;
 		width: 0;
 		height: 0;
+		left: 0;
+		top: 0;
 		pointer-events: none;
+
+		margin-left: 1.5rem;
+		margin-top: 1.5rem;
 
 		transition: width .1s, height .1s, top .1s, left .1s, right .1s, bottom .1s;
 	}
@@ -493,6 +610,14 @@
 	}
 	:global(.popper-content) {
 		text-align: left;
+		display: grid;
+		grid-gap: .5rem;
+		max-width: 100%;
+		word-break: break-word;
+		width: 100%;
+		min-width: 0;
+		grid-template-rows: auto auto auto;
+		grid-template-columns: max-content 1fr;
 	}
 
 	#loading {
@@ -510,6 +635,8 @@
 		display: inline-block;
 		position: relative;
 		width: 15%;
+		min-width: 250px;
+		max-width: calc(100% - 2rem);
 		background-color: rgba(0,0,0,.4);
 		z-index: 1;
 		color: #fff;
@@ -524,7 +651,7 @@
 		position: absolute;
 		z-index: -1;
 		height: calc(100% - .6rem);
-		background-color: #006cc7;
+		background-color: var(--neutral);
 		top: .3rem;
 		left: .3rem;
 	}
@@ -532,7 +659,7 @@
 	#progress-log {
 		text-shadow: 0px 1px 0px rgba(0, 0, 0, 0.6);
 		text-align: center;
-		max-height: 1rem;
+		max-height: 0;
 	}
 	#progress-log :global(.log:not(:last-child)) {
 		margin-bottom: .5rem;

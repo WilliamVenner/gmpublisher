@@ -1,8 +1,6 @@
 /node_modules/
 /public/build/
-dist/
-.DS_Store
-index.tauri.html
+
 .yarn/*
 !.yarn/patches
 !.yarn/releases
@@ -10,3 +8,7 @@ index.tauri.html
 !.yarn/sdks
 !.yarn/versions
 .pnp.*
+
+.DS_Store
+
+!.vscode

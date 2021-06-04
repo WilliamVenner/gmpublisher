@@ -1,18 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<meta charset='utf-8'>
-	<meta name='viewport' content='width=device-width,initial-scale=1'>
+	<head>
+		<meta charset='utf-8'>
+		<meta name='viewport' content='width=device-width,initial-scale=1'>
 
-	<title>Svelte app</title>
+		<title>gmpublisher</title>
 
-	<link rel='icon' type='image/png' href='/favicon.png'>
-	<link rel='stylesheet' href='/global.css'>
-	<link rel='stylesheet' href='/build/bundle.css'>
+		<link rel="preload" href="/global.css" as="style">
+		<link rel="preload" href="/build/bundle.css" as="style">
+		<link rel="preload" href="/build/bundle.js" as="script">
 
-	<script defer src='/build/bundle.js'></script>
-</head>
+		<link rel="preload" href="/sound/alert.wav" as="audio">
+		<link rel="preload" href="/sound/error.wav" as="audio">
+		<link rel="preload" href="/sound/success.wav" as="audio">
+		<link rel="preload" href="/sound/btn_on.ogg" as="audio">
+		<link rel="preload" href="/sound/btn_off.ogg" as="audio">
 
-<body>
-</body>
+		<link rel='icon' type='image/png' href='/favicon.png'>
+		<link rel='stylesheet' href='/global.css'>
+		<link rel='stylesheet' href='/css/lib/prism.css'>
+		<link rel='stylesheet' href='/build/bundle.css'>
+
+		<script defer src='/js/lib/prism.min.js'></script>
+		<script defer src='/js/lib/k-d-tree.min.js'></script>
+		<script defer src='/build/bundle.js'></script>
+	</head>
+	<body></body>
 </html>

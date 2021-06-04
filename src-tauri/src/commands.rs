@@ -1,206 +1,89 @@
 use std::path::PathBuf;
-use serde::Deserialize;
-use steamworks::PublishedFileId;
-use tauri::Webview;
 
-use crate::show;
-use crate::workshop;
-use crate::settings;
-use crate::game_addons;
-use crate::util;
-use crate::downloader;
-
-#[derive(Deserialize)]
-#[serde(tag="cmd", rename_all="camelCase")]
-enum Command {
-	CancelTransaction {
-		id: usize
-	},
-	
-	OpenFile { // TODO rename to OpenURL
-		path: String
-	},
-	OpenFolder {
-		path: PathBuf
-	},
-
-	UpdateSettings {
-		settings: String
-	},
-
-	WorkshopBrowser {
-		page: u32,
-		callback: String,
-		error: String
-	},
-	GetWorkshopMetadata {
-		id: PublishedFileId,
-		callback: String,
-		error: String
-	},
-	GetWorkshopUploader {
-		id: PublishedFileId,
-		callback: String,
-		error: String
-	},
-
-	GameAddonsBrowser {
-		page: u32,
-		callback: String,
-		error: String
-	},
-	GmaMetadata {
-		path: PathBuf,
-		id: Option<PublishedFileId>,
-		callback: String,
-		error: String
-	},
-
-	PreviewGma {
-		path: PathBuf,
-		id: Option<PublishedFileId>,
-		callback: String,
-		error: String
-	},
-	OpenGmaPreviewEntry {
-		entry_path: String,
-		callback: String,
-		error: String
-	},
-	ExtractGma {
-		path: Option<PathBuf>,
-		named_dir: bool,
-		tmp: bool,
-		downloads: bool,
-		addons: bool,
-		callback: String,
-		error: String
-	},
-
-	PromptPathDialog {
-		multiple: bool,
-		directory: bool,
-		save: bool,
-		default_path: Option<String>,
-		filter: Option<String>,
-		callback: String,
-		error: String
-	},
-	
-	AnalyzeAddonSizes {
-		callback: String,
-		error: String,
-		w: f64,
-		h: f64
-	},
-	FreeAddonSizeAnalyzer,
-
-	DownloadWorkshop {
-		callback: String,
-		error: String,
-
-		ids: Vec<String>,
-		
-		path: Option<PathBuf>,
-		named_dir: bool,
-		tmp: bool,
-		downloads: bool,
-		addons: bool,
-	},
-
-	LoadAsset
+pub fn invoke_handler() -> impl Fn(tauri::Invoke<crate::webview::Params>) + Send + Sync + 'static {
+	tauri::generate_handler![
+		check_dir,
+		check_file,
+		open,
+		open_file_location,
+		file_size,
+		crate::webview::reloaded,
+		crate::webview::js_error,
+		crate::webview::error,
+		crate::webview::info,
+		crate::webview::warn,
+		crate::transactions::websocket,
+		crate::transactions::cancel_transaction,
+		crate::appdata::update_settings,
+		crate::appdata::validate_gmod,
+		crate::appdata::window_resized,
+		crate::game_addons::browse_installed_addons,
+		crate::game_addons::get_installed_addon,
+		crate::game_addons::downloader_extract_gmas,
+		crate::steam::is_steam_connected,
+		crate::steam::get_current_user,
+		crate::steam::users::get_steam_user,
+		crate::steam::workshop::fetch_workshop_items,
+		crate::steam::workshop::fetch_workshop_item,
+		crate::steam::workshop::browse_my_workshop,
+		crate::steam::workshop::workshop_item_channel,
+		crate::steam::downloads::workshop_download,
+		crate::steam::publishing::verify_whitelist,
+		crate::steam::publishing::publish,
+		crate::steam::publishing::verify_icon,
+		crate::steam::publishing::publish_icon,
+		crate::steam::subscriptions::browse_subscribed_addons,
+		crate::addon_size_analyzer::addon_size_analyzer,
+		crate::content_generator::get_content_generator_manifests,
+		crate::content_generator::update_content_generator_manifest,
+		crate::gma::preview::preview_gma,
+		crate::gma::preview::extract_preview_entry,
+		crate::gma::preview::extract_preview_gma,
+		crate::gma::extract::extract_gma,
+		crate::search::search,
+		crate::search::search_channel,
+		crate::search::full_search,
+	]
 }
 
-pub(crate) fn invoke_handler<'a>() -> impl FnMut(&mut Webview<'_>, &str) -> Result<(), String> + 'static {
-	move |webview: &mut Webview, arg: &str| {
-		#[cfg(debug_assertions)]
-		println!("{}", arg);
-		
-		match serde_json::from_str(arg) {
-			Err(error) => {
-				show::error(format!("Invoke handler ERROR:\n{:#?}", error));
-				Err(error.to_string())
-			},
-			Ok(cmd) => {
-				use Command::*;
-				match match cmd {
-					CancelTransaction { id } => {
-						crate::TRANSACTIONS.write().unwrap().cancel(id);
-						Ok(())
-					},
+pub fn free_caches() {
+	crate::game_addons::free_caches();
+	crate::steam::workshop::free_caches();
+	search!().clear();
+}
 
-					OpenFile { path } => {
-						show::open(&path);
-						Ok(())
-					},
-
-					OpenFolder { path } => {
-						match show::open_file_location(path.as_os_str().to_string_lossy().to_string()) {
-							Ok(_) => Ok(()),
-							Err(error) => Err(format!("{:?}", error))
-						}
-					},
-
-					PromptPathDialog { callback, error, multiple, directory, save, default_path, filter } => {
-						util::prompt_path_dialog(callback, error, webview, multiple, directory, save, default_path, filter)
-					},
-
-					WorkshopBrowser { page, callback, error } => {
-						workshop::browse(callback, error, webview, page)
-					},
-					GetWorkshopMetadata { callback, error, id } => {
-						game_addons::get_gma_ws_metadata(callback, error, webview, id)
-					},
-					GetWorkshopUploader { callback, error, id } => {
-						game_addons::get_gma_ws_uploader(callback, error, webview, id)
-					},
-
-					UpdateSettings { settings } => {
-						settings::invoke_handler(webview, settings)
-					},
-
-					GameAddonsBrowser { page, callback, error } => {
-						if crate::APP_DATA.read().unwrap().gmod.is_some() {
-							game_addons::browse(callback, error, webview, page)
-						} else {
-							Err("Garry's Mod not found".to_string()) // TODO
-						}
-					},
-					GmaMetadata { callback, error, path, id } => {
-						game_addons::get_gma_metadata(callback, error, webview, path, id)
-					},
-					
-					PreviewGma { callback, error, path, id } => {
-						game_addons::preview_gma(callback, error, webview, path, id)
-					},
-					OpenGmaPreviewEntry { callback, error, entry_path } => {
-						game_addons::open_gma_preview_entry(callback, error, webview, entry_path)
-					},
-					ExtractGma { callback, error, path, named_dir, tmp, downloads, addons } => {
-						game_addons::extract_gma_preview(callback, error, webview, path, named_dir, tmp, downloads, addons)
-					},
-
-					AnalyzeAddonSizes { callback, error, w, h } => {
-						crate::ADDON_SIZE_ANALYZER.compute(callback, error, webview, w, h)
-					},
-					FreeAddonSizeAnalyzer => {
-						crate::ADDON_SIZE_ANALYZER.free();
-						Ok(())
-					},
-
-					DownloadWorkshop { callback, error, ids, path, named_dir, tmp, downloads, addons } => {
-						downloader::download(callback, error, webview, ids, path, named_dir, tmp, downloads, addons)
-					},
-
-					LoadAsset => { Ok(()) },
-
-					#[allow(unreachable_patterns)]
-					_ => Err("Unknown command".to_string())
-				} {
-					Ok(_) => Ok(()),
-					Err(error) => { show::error(format!("{:#?}", error)); Ok(()) }
+#[tauri::command]
+pub fn check_file(path: PathBuf, extension: Option<String>) -> bool {
+	path.is_absolute()
+		&& path.is_file()
+		&& match extension {
+			Some(extension) => {
+				if let Some(picked_extension) = path.extension() {
+					extension.eq_ignore_ascii_case(&picked_extension.to_string_lossy())
+				} else {
+					false
 				}
 			}
+			None => true,
 		}
-	}
+}
+
+#[tauri::command]
+pub fn check_dir(path: PathBuf) -> bool {
+	path.is_absolute() && path.is_dir()
+}
+
+#[tauri::command]
+pub fn open(path: PathBuf) {
+	crate::path::open(path);
+}
+
+#[tauri::command]
+pub fn open_file_location(path: PathBuf) {
+	crate::path::open_file_location(path);
+}
+
+#[tauri::command]
+pub fn file_size(path: PathBuf) -> Option<u64> {
+	path.metadata().ok().map(|metadata| metadata.len())
 }

@@ -1,489 +1,357 @@
-use std::{collections::{HashMap}, fs::{DirEntry}, mem::MaybeUninit, path::PathBuf, sync::{RwLock, mpsc::{self, Receiver, Sender}}};
-use anyhow::anyhow;
+use std::{
+	collections::{BinaryHeap, HashMap},
+	fs::DirEntry,
+	path::{Path, PathBuf},
+	sync::{
+		atomic::{AtomicU8, Ordering},
+		mpsc, Arc,
+	},
+	time::SystemTime,
+};
 
+use lazy_static::lazy_static;
+use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
+use rayon::ThreadPool;
+use serde::ser::SerializeTuple;
 use steamworks::PublishedFileId;
-use tauri::Webview;
 
-use crate::{util, gma::{ExtractDestination, GMAFile, GMAReadError}, transactions::Transactions, workshop::{WorkshopItem}};
-use super::show;
+use crate::{game_addons, gma::extract::ExtractGMAMut, webview::Addon, GMAFile};
 
-use crate::transaction_data;
-
-pub(crate) struct GameAddons {
-	pub(crate) total: u32,
-	pub(crate) previewing: Option<PathBuf>,
-	pub(crate) gma_cache: Option<GMACache>,
+lazy_static! {
+	static ref DISCOVERY_POOL: ThreadPool = thread_pool!(3);
 }
 
-#[derive(Default)]
-pub(crate) struct GMACache {
-	pub(crate) installed_gmas: Vec<(PathBuf, Option<PublishedFileId>)>,
-	pub(crate) installed_ids: Vec<(PathBuf, PublishedFileId)>,
-	pub(crate) metadata: RwLock<HashMap<PathBuf, GMAFile>>,
-	pub(crate) ws_metadata: RwLock<HashMap<PublishedFileId, Option<WorkshopItem>>>,
+#[repr(u8)]
+enum Discovered {
+	No = 0,
+	Discovering = 1,
+	Yes = 2,
 }
-impl GMACache {
-	pub(crate) fn gma_metadata(&self, path: &PathBuf, id: Option<PublishedFileId>) -> Result<GMAFile, GMAReadError> {
-		let r_lock = self.metadata.read().unwrap();
-		if let Some(cached) = r_lock.get(path) {
-			Ok(cached.clone())
-		} else {
-			drop(r_lock);
-
-			let mut gma = GMAFile::new(path, id)?;
-			gma.entries()?;
-			gma.metadata()?;
-
-			let mut metadata_cache = self.metadata.write().unwrap();
-			metadata_cache.insert(path.clone(), gma.clone());
-
-			Ok(gma)
-		}
+impl From<u8> for Discovered {
+	#[inline(always)]
+	fn from(n: u8) -> Self {
+		unsafe { std::mem::transmute(n) }
 	}
-
-	pub(crate) fn ws_metadata(&self, id: PublishedFileId, fetch_owner: bool) -> Option<WorkshopItem> {
-		let r_lock = self.ws_metadata.read().unwrap();
-
-		if let Some(cached) = r_lock.get(&id).cloned() {
-
-			if !fetch_owner || cached.is_none() { return cached }
-
-			let item = cached.as_ref().unwrap();
-			if item.owner.is_none() && item.steamid.is_some() {
-
-				drop(item); drop(r_lock);
-
-				let workshop = crate::WORKSHOP.write().unwrap();
-				let steam_user = workshop.query_user(item.steamid.unwrap());
-
-				let mut ws_metadata_cache = self.ws_metadata.write().unwrap();
-				let mut item = ws_metadata_cache.get_mut(&id).unwrap().as_mut().unwrap();
-				item.owner = Some(steam_user);
-				
-				Some(item.clone())
-
-			} else {
-				cached
-			}
-
-		} else {
-
-			drop(r_lock);
-
-			let workshop = crate::WORKSHOP.write().unwrap();
-			let mut ws_addon = workshop.get_item(id).unwrap().ok()?;
-			
-			if fetch_owner {
-				if let Some(ws_addon) = &mut ws_addon {
-					if let Some(steamid) = ws_addon.steamid {
-						ws_addon.owner = Some(workshop.query_user(steamid));
-					}
-				}
-			}
-
-			let mut ws_metadata_cache = self.ws_metadata.write().unwrap();
-			ws_metadata_cache.insert(id, ws_addon.clone());
-
-			ws_addon
-
-		}
+}
+impl Into<u8> for Discovered {
+	#[inline(always)]
+	fn into(self) -> u8 {
+		unsafe { std::mem::transmute(self) }
 	}
+}
+
+#[derive(Debug)]
+pub struct GameAddons {
+	discovered: AtomicU8,
+	paths: RwLock<HashMap<PathBuf, Arc<Addon>>>,
+	pages: RwLock<Vec<Arc<Addon>>>,
+	external: RwLock<HashMap<PathBuf, Option<Arc<Addon>>>>,
 }
 
 impl GameAddons {
-	pub(crate) fn init() -> GameAddons {
+	pub fn init() -> GameAddons {
 		GameAddons {
-			total: 0,
-			gma_cache: None,
-			previewing: None
+			discovered: AtomicU8::new(Discovered::No.into()),
+			paths: RwLock::new(HashMap::new()),
+			pages: RwLock::new(Vec::new()),
+			external: RwLock::new(HashMap::new()),
 		}
 	}
-}
 
-pub(crate) fn cache_addon_paths() -> bool {
-	let app_data = crate::APP_DATA.read().unwrap();
-	let dir = app_data.gmod.as_ref().unwrap().to_owned();
+	fn gma_check(entry: Result<DirEntry, std::io::Error>) -> Option<(PathBuf, String)> {
+		let path = entry.ok()?.path();
+		if !path.is_file() {
+			return None;
+		}
 
-	let game_addons = crate::GAME_ADDONS.read().unwrap();
-	if let None = game_addons.gma_cache {
-		drop(game_addons);
+		let extension = path.extension()?.to_string_lossy().to_lowercase();
+		if extension != "gma" {
+			return None;
+		}
 
-		let (tx_modified_path_id, rx): (Sender<(u64, PathBuf, Option<PublishedFileId>)>, Receiver<(u64, PathBuf, Option<PublishedFileId>)>) = mpsc::channel();
-		let local_files = std::thread::spawn(move || {
-			let mut modified_times: (Vec<u64>, Vec<u64>) = (Vec::new(), Vec::new());
-			let mut local_files: Vec<(PathBuf, Option<PublishedFileId>)> = Vec::new();
-			let mut installed_ids: Vec<(PathBuf, PublishedFileId)> = Vec::new();
-			loop {
-				let (modified, path, id) = match rx.recv() {
-					Ok(data) => data,
-					Err(_) => break
+		let file_name = path.file_name()?.to_string_lossy().to_string();
+
+		Some((path, (&file_name[..(file_name.len() - 4)]).to_owned()))
+	}
+
+	pub fn get_ws_id<S: AsRef<str>>(_file_name: S) -> Option<PublishedFileId> {
+		let _file_name = _file_name.as_ref();
+		let file_name = _file_name.strip_prefix("ds_").unwrap_or(&_file_name);
+
+		if let Ok(id) = str::parse::<u64>(file_name) {
+			return Some(PublishedFileId(id));
+		}
+
+		let id = GameAddons::extract_suffix_ws_id(file_name);
+		if id == 0 {
+			None
+		} else {
+			Some(PublishedFileId(id))
+		}
+	}
+
+	fn extract_suffix_ws_id<S: AsRef<str>>(file_name: S) -> u64 {
+		let mut id = 0u64;
+		for char in file_name.as_ref()
+			.chars()
+			.rev() // Reverse iterator so we're looking at the suffix (the PublishedFileId)
+			.take_while(|c| c.is_digit(10))
+			.collect::<Vec<char>>()
+			.into_iter()
+			.rev()
+		{
+			match id.checked_add(char::to_digit(char, 10).unwrap() as u64) {
+				None => return 0,
+				Some(id_op) => match 10_u64.checked_mul(id_op) {
+					None => return 0,
+					Some(id_op) => id = id_op,
+				},
+			}
+		}
+		id
+	}
+
+	pub fn refresh(&self) {
+		self.discovered.store(Discovered::Discovering.into(), Ordering::Release);
+
+		let mut gmod = if let Some(gmod) = app_data!().gmod_dir() {
+			gmod
+		} else {
+			*self.paths.write() = HashMap::new();
+			*self.pages.write() = Vec::new();
+
+			self.discovered.store(Discovered::No.into(), Ordering::Release);
+			return;
+		};
+
+		let addons_dir = gmod.join("GarrysMod/addons");
+
+		gmod.push("GarrysMod/cache/workshop");
+		let cache_dir = gmod;
+
+		let (tx_metadata, rx_metadata) = mpsc::channel();
+		let (tx, rx) = mpsc::channel();
+
+		let tx_addons_metadata = tx_metadata.clone();
+		DISCOVERY_POOL.spawn(move || {
+			let addons = match addons_dir.read_dir() {
+				Ok(addons) => addons,
+				Err(_) => return,
+			};
+
+			for (path, _file_name) in addons.filter_map(GameAddons::gma_check) {
+				let file_name = _file_name.strip_prefix("ds_").unwrap_or(&_file_name);
+				let id = GameAddons::extract_suffix_ws_id(file_name);
+
+				tx_addons_metadata
+					.send((path, if id == 0 { None } else { Some(PublishedFileId(id / 10)) }))
+					.unwrap();
+			}
+		});
+
+		let tx_cache_metadata = tx_metadata;
+		DISCOVERY_POOL.spawn(move || {
+			let cache = match cache_dir.read_dir() {
+				Ok(cache) => cache,
+				Err(_) => return,
+			};
+
+			for (path, file_name) in cache.filter_map(GameAddons::gma_check) {
+				let id = match str::parse::<u64>(&file_name) {
+					Ok(id) => Some(PublishedFileId(id)),
+					Err(_ok) => None,
+				};
+
+				tx_cache_metadata.send((path, id)).unwrap();
+			}
+		});
+
+		DISCOVERY_POOL.spawn(move || {
+			while let Ok((path, id)) = rx_metadata.recv() {
+				let mut gma = match GMAFile::open(&path) {
+					Ok(gma) => gma,
+					Err(_) => continue,
 				};
 
 				if let Some(id) = id {
-					let pos = match modified_times.1.binary_search(&modified) {
-						Ok(pos) => pos,
-						Err(pos) => pos
-					};
-
-					modified_times.1.insert(pos, modified);
-					installed_ids.insert(pos, (path.clone(), id));
+					gma.set_ws_id(id);
 				}
 
-				let pos = match modified_times.0.binary_search(&modified) {
-					Ok(pos) => pos,
-					Err(pos) => pos
-				};
+				ignore! { gma.metadata() };
 
-				modified_times.0.insert(pos, modified);
-				local_files.insert(pos, (path, id));
-			}
-			(local_files, installed_ids)
-		});
-
-		let (tx_entry_id, rx): (Sender<(DirEntry, Option<PublishedFileId>)>, Receiver<(DirEntry, Option<PublishedFileId>)>) = mpsc::channel();
-		std::thread::spawn(move || {
-			loop {
-				let (entry, id) = match rx.recv() {
-					Ok(data) => data,
-					Err(_) => break
-				};
-
-				let mut canonicalized = entry.path();
-				canonicalized = dunce::canonicalize(canonicalized.clone()).unwrap_or(canonicalized);
-
-				tx_modified_path_id.send((util::get_modified_time(&entry).unwrap_or(0), canonicalized, id)).unwrap();
+				tx.send(gma).unwrap();
 			}
 		});
 
-		{
-			let dir = dir.clone();
-			let tx_entry_id = tx_entry_id.clone();
-			std::thread::spawn(move || {
-				match dir.join("GarrysMod/addons").read_dir() {
-					Ok(addons_gmas) => 'paths:
+		let ids = {
+			let mut ids = Vec::new();
 
-					for (entry, file_name) in addons_gmas.filter_map(|r| {
-						let entry = r.ok()?;
-						if entry.path().is_file() {
-							let file_name = entry.file_name().to_string_lossy().strip_suffix(".gma").map(ToOwned::to_owned)?;
-							Some(
-								(entry, file_name)
-							)
-						} else {
-							None
-						}
+			let mut pages = self.pages.write();
+			*pages = Vec::new();
+
+			let mut paths = self.paths.write();
+			*paths = HashMap::new();
+
+			let mut pages_heap = BinaryHeap::new();
+
+			while let Ok(mut gma) = rx.recv() {
+				let modified = gma
+					.path
+					.metadata()
+					.and_then(|metadata| {
+						metadata
+							.modified()
+							.map(|x| Some(x.duration_since(SystemTime::UNIX_EPOCH).map(|dur| dur.as_secs()).unwrap_or(0)))
 					})
+					.unwrap_or(None);
+				gma.modified = modified;
 
-					{
-
-						let mut id = 0u64;
-
-						for char in file_name.chars()
-							.rev() // Reverse iterator so we're looking at the suffix (the PublishedFileId)
-							.take_while(|c| c.is_digit(10)) // Only capture digits
-							.collect::<Vec<char>>()
-							.into_iter()
-							.rev() // Reverse again
-						{
-							match id.checked_add(char::to_digit(char, 10).unwrap() as u64) { None => continue 'paths, Some(id_op) => {
-								match 10_u64.checked_mul(id_op) { None => continue 'paths, Some(id_op) => {
-									id = id_op;
-								}}
-							}}
-						}
-
-						if id == 0 {
-							tx_entry_id.send((entry, None)).unwrap();
-						} else {
-							tx_entry_id.send((entry, Some(PublishedFileId(id / 10)))).unwrap();
-						}
-
-					},
-
-					Err(error) => show::panic(format!("Failed to scan game directory for workshop addons!\n{:#?}", error))
+				if let Some(id) = gma.id {
+					ids.push(id);
 				}
-			});
-		}
 
-		std::thread::spawn(move || {
-			match dir.join("GarrysMod/cache/workshop").read_dir() {
-				Ok(entries) => for r in entries {
-					let entry = if r.is_ok() { r.unwrap() } else { continue };
-					if entry.path().extension().unwrap_or_default() != "gma" { continue }
-				
-					match str::parse::<u64>(match entry.file_name().to_str() {
-						Some(id) => id.strip_suffix(".gma").unwrap_or(id),
-						None => continue
-					}) {
-						Ok(id) => tx_entry_id.send((entry, Some(PublishedFileId(id)))).unwrap(),
-						Err(ok) => tx_entry_id.send((entry, None)).unwrap(),
-					};
-				},
+				let path = gma.path.to_owned();
+				let gma: Arc<Addon> = Arc::new(gma.into());
 
-				Err(error) => show::panic(format!("Failed to scan game directory for workshop addons!\n{:#?}", error))
+				pages_heap.push(gma.clone());
+				paths.insert(path, gma);
 			}
-		});
 
-		let mut gma_cache = GMACache::default();
-		let (installed_gmas, installed_ids) = local_files.join().unwrap();
-		gma_cache.installed_gmas = installed_gmas;
-		gma_cache.installed_ids = installed_ids;
+			*pages = pages_heap.into_sorted_vec();
 
-		let mut game_addons = crate::GAME_ADDONS.write().unwrap();
-		game_addons.total = gma_cache.installed_gmas.len() as u32;
-		game_addons.gma_cache = Some(gma_cache);
+			search!().add_bulk(&pages);
 
-		false
+			println!("Discovered {} addons", paths.len());
 
-	} else {
-		true
+			ids
+		};
+
+		self.discovered.store(Discovered::Yes.into(), Ordering::Release);
+
+		browse_installed_addons(1); // Download the first page first
+		steam!().fetch_workshop_items(ids); // Download the rest in the background too
+	}
+
+	pub fn discover_addons(&self) {
+		main_thread_forbidden!();
+
+		match self.discovered.load(Ordering::Acquire).into() {
+			Discovered::Yes => {}
+			Discovered::No => self.refresh(),
+			Discovered::Discovering => loop {
+				sleep_ms!(25);
+				game_addons!().discover_addons();
+			},
+		}
+	}
+
+	pub fn from_path<P: AsRef<Path>>(&self, path: P) -> Option<Arc<Addon>> {
+		self.discover_addons();
+		self.paths.read().get(path.as_ref()).cloned()
+	}
+
+	pub fn get_addons(&self) -> RwLockReadGuard<Vec<Arc<Addon>>> {
+		self.discover_addons();
+		self.pages.read()
 	}
 }
 
-pub(crate) fn browse(resolve: String, reject: String, webview: &mut Webview<'_>, page: u32) -> Result<(), String> {
-	tauri::execute_promise(webview, move || {
+#[derive(Debug)]
+pub struct InstalledAddonsPage(usize, MappedRwLockReadGuard<'static, [Arc<Addon>]>);
+impl serde::Serialize for InstalledAddonsPage {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		let mut tup = serializer.serialize_tuple(2)?;
+		tup.serialize_element(&self.0)?;
+		tup.serialize_element(self.1.as_ref())?;
+		tup.end()
+	}
+}
 
-		cache_addon_paths();
-		
-		let game_addons = crate::GAME_ADDONS.read().unwrap();
-		let gma_cache = game_addons.gma_cache.as_ref().unwrap();
-		
-		let page_items: Vec<(PathBuf, PublishedFileId)> = gma_cache.installed_ids.iter().skip(((page - 1) * 50) as usize).take(50).cloned().collect();
+#[tauri::command]
+pub fn browse_installed_addons(page: u32) -> InstalledAddonsPage {
+	game_addons!().discover_addons();
 
-		// FIXME: Duplicate Ids cause issues with this
+	let start = ((page.max(1) - 1) as usize) * crate::steam::RESULTS_PER_PAGE;
+	InstalledAddonsPage(
+		game_addons!().paths.read().len(),
+		RwLockReadGuard::map(game_addons!().pages.read(), |read| {
+			steam!().fetch_workshop_items(
+				read.iter()
+					.skip(start)
+					.take(crate::steam::RESULTS_PER_PAGE)
+					.filter_map(|x| x.installed().id)
+					.collect(),
+			);
+			&read[start..(start + crate::steam::RESULTS_PER_PAGE).min(read.len())]
+		}),
+	)
+}
 
-		Ok(match crate::WORKSHOP.read().unwrap().get_items(
-			page_items.iter().map(|entry| entry.1).collect()
-		).unwrap() {
-			Ok(data) => (
-				game_addons.total,
-				data.1.into_iter().enumerate().map(|(i, item)| (page_items[i].0.clone(), item)).collect::<Vec<(PathBuf, WorkshopItem)>>()
-			),
+#[tauri::command]
+pub fn get_installed_addon(path: PathBuf) -> Option<Arc<Addon>> {
+	game_addons!().discover_addons();
+
+	if let Some(cached) = game_addons!().external.read().get(&path) {
+		return cached.clone();
+	}
+
+	if path.is_absolute() && path.is_file() && crate::path::has_extension(&path, "gma") {
+		match GMAFile::open(&path) {
+			Ok(mut gma) => {
+				if let Some(id) = GameAddons::get_ws_id(path.file_name().unwrap().to_string_lossy()) {
+					gma.set_ws_id(id);
+				}
+
+				ignore! { gma.metadata() };
+
+				let gma = Arc::new(Addon::Installed(gma));
+				game_addons!().external.write().insert(path, Some(gma.clone()));
+				Some(gma)
+			}
 			Err(_) => {
-				// TODO spawn a thread which reads metadata
-				(
-					game_addons.total,
-					page_items.into_iter().map(|(path, id)| (path, WorkshopItem::from(id))).collect::<Vec<(PathBuf, WorkshopItem)>>()
-				)
-			},
-		})
-		
-	}, resolve, reject);
-	Ok(())
-}
-
-pub(crate) fn get_gma_metadata(resolve: String, reject: String, webview: &mut Webview<'_>, path: PathBuf, id: Option<PublishedFileId>) -> Result<(), String> {
-	cache_addon_paths();
-	
-	tauri::execute_promise(webview, move || {
-		
-		crate::GAME_ADDONS.read().unwrap()
-			.gma_cache.as_ref().unwrap()
-			.gma_metadata(&path, id)
-			.map(|t| t.clone())
-			.map_err(|_| {
-				anyhow!(
-					path.file_name()
-						.and_then(|s| Some(s.to_string_lossy().to_string()))
-						.unwrap_or_else(|| {
-							id
-								.and_then(|id| Some(id.0.to_string()))
-								.unwrap_or_else(|| path.to_string_lossy().to_string())
-						})
-				)
-			})
-		
-	}, resolve, reject);
-	Ok(())
-}
-
-pub(crate) fn get_gma_ws_uploader(resolve: String, reject: String, webview: &mut Webview<'_>, id: PublishedFileId) -> Result<(), String> {
-	cache_addon_paths();
-
-	tauri::execute_promise(webview, move || {
-
-		Ok(
-			crate::GAME_ADDONS.read().unwrap()
-				.gma_cache.as_ref().unwrap()
-				.ws_metadata(id, true)
-				.unwrap_or_else(|| id.into())
-				.owner
-		)
-
-	}, resolve, reject);
-
-	Ok(())
-}
-
-pub(crate) fn get_gma_ws_metadata(resolve: String, reject: String, webview: &mut Webview<'_>, id: PublishedFileId) -> Result<(), String> {
-	cache_addon_paths();
-
-	tauri::execute_promise(webview, move || {
-
-		Ok(
-			crate::GAME_ADDONS.read().unwrap()
-				.gma_cache.as_ref().unwrap()
-				.ws_metadata(id, false)
-				.unwrap_or_else(|| id.into())
-		)
-
-	}, resolve, reject);
-
-	Ok(())
-}
-
-pub(crate) fn preview_gma(resolve: String, reject: String, webview: &mut Webview<'_>, path: PathBuf, id: Option<PublishedFileId>) -> Result<(), String> {
-	cache_addon_paths();
-
-	tauri::execute_promise(webview, move || {
-
-		let result = {
-			crate::GAME_ADDONS.read().unwrap()
-			.gma_cache.as_ref().unwrap()
-			.gma_metadata(&path, id)
-			.map_err(|_| anyhow!(""))
-			.map(|f| f.clone())
-		};
-
-		if result.is_ok() {
-			crate::GAME_ADDONS.write().unwrap().previewing = Some(path.clone());
+				game_addons!().external.write().insert(path, None);
+				None
+			}
 		}
-		
-		result
-		
-	}, resolve, reject);
-
-	Ok(())
+	} else {
+		None
+	}
 }
 
-pub(crate) fn open_gma_preview_entry(resolve: String, reject: String, webview: &mut Webview<'_>, entry_path: String) -> Result<(), String> {
-	if crate::GAME_ADDONS.read().unwrap().previewing.is_none() { return Ok(()) }
-
-	let webview_mut = webview.as_mut();
-
-	tauri::execute_promise(webview, move || {
-
-		let transaction = Transactions::new(webview_mut);
-		let id = transaction.id;
-
-		std::thread::spawn(move || {
-			let progress_transaction = transaction.build();
-			let channel = progress_transaction.channel();
-
-			let game_addons = crate::GAME_ADDONS.read().unwrap();
-			let preview_path = game_addons.previewing.as_ref().unwrap();
-
-			match game_addons.gma_cache.as_ref().unwrap().gma_metadata(preview_path, None) {
-				Err(error) => channel.error(&format!("{}", error), transaction_data!(())),
-
-				Ok(preview_gma) => {
-					let extract_dest = preview_gma.extract_entry(
-						entry_path,
-						ExtractDestination::Temp
-					).unwrap();
-		
-					channel.finish(transaction_data!(()));
-		
-					show::open(extract_dest.to_str().unwrap());
-				},
+#[tauri::command]
+pub fn downloader_extract_gmas(paths: Vec<PathBuf>) {
+	let destination = &app_data!().settings.read().extract_destination;
+	for path in paths.into_iter() {
+		if path.is_file()
+			&& match path.extension() {
+				Some(extension) => extension.to_string_lossy().eq_ignore_ascii_case("gma"),
+				None => false,
+			} {
+			if let Ok(mut gma) = GMAFile::open(&path) {
+				let transaction = transaction!();
+				webview_emit!(
+					"ExtractionStarted",
+					(
+						transaction.id,
+						Some(path.clone()),
+						path.file_name().map(|x| x.to_string_lossy().to_string()).unwrap(),
+						gma.id
+					)
+				);
+				transaction.data((turbonone!(), path.metadata().map(|metadata| metadata.len()).unwrap_or(0)));
+				ignore! { gma.extract(destination.clone(), &transaction, false) };
 			}
-		});
-		
-		Ok(id)
-		
-	}, resolve, reject);
-
-	Ok(())
+		}
+	}
 }
 
-// TODO change all args to resolve, reject, webview, ...
-
-pub(crate) fn extract_gma_preview(resolve: String, reject: String, webview: &mut Webview<'_>, path: Option<PathBuf>, named_dir: bool, tmp: bool, downloads: bool, addons: bool) -> Result<(), String> {
-	if crate::GAME_ADDONS.read().unwrap().previewing.is_none() { return Ok(()) }
-
-	let save_destination_path = path.is_some();
-	let webview_mut = webview.as_mut();
-
-	tauri::execute_promise(webview, move || {
-		
-		let transaction = Transactions::new(webview_mut.clone());
-		let id = transaction.id;
-
-		std::thread::spawn(move || {
-			let transaction = transaction.build();
-			let channel = transaction.channel();
-
-			let mut use_named_dir = named_dir;
-
-			let dest = match tmp {
-				true => ExtractDestination::Temp,
-				false => {
-					let mut check_exists = true;
-					let mut discriminated_path = MaybeUninit::<PathBuf>::uninit();
-					unsafe {
-						if addons {
-							use_named_dir = true;
-							*discriminated_path.as_mut_ptr() = crate::APP_DATA.read().unwrap().gmod.as_ref().unwrap().join("garrysmod/addons");
-						} else if downloads {
-							use_named_dir = true;
-							*discriminated_path.as_mut_ptr() = dirs::download_dir().unwrap();
-						} else {
-							check_exists = false;
-							*discriminated_path.as_mut_ptr() = path.unwrap();
-						}
-					}
-	
-					let discriminated_path = unsafe { discriminated_path.assume_init() };
-					if discriminated_path.is_absolute() && (!check_exists || discriminated_path.exists()) {
-						match use_named_dir {
-							true => ExtractDestination::NamedDirectory(discriminated_path),
-							false => ExtractDestination::Directory(discriminated_path)
-						}
-					} else {
-						channel.error("ERR_EXTRACT_INVALID_DEST", transaction_data!(())); // TODO internationalize
-						return;
-					}
-				}
-			};
-
-			match 
-				{
-					let game_addons = crate::GAME_ADDONS.read().unwrap();
-					let preview_path = game_addons.previewing.as_ref().unwrap();
-
-					game_addons.gma_cache.as_ref().unwrap().gma_metadata(preview_path, None)
-						.and_then(|preview_gma| {
-							let channel = transaction.channel();
-							preview_gma.extract(dest, Some(Box::new(move |progress| channel.progress(progress))))
-						})
-				}
-			{
-				Ok(mut path) => {
-					show::open(&path.to_string_lossy().to_string());
-
-					channel.finish(transaction_data!(()));
-					
-					if save_destination_path {
-						if use_named_dir { path.pop(); }
-						let mut app_data = crate::APP_DATA.write().unwrap();
-						let settings = &mut app_data.settings;
-						if let Err(_) = settings.destinations.binary_search(&path) {
-							settings.destinations.push(path);
-							if let Ok(_) = settings.save(None) {
-								settings.send(webview_mut);
-							} else {
-								settings.destinations.pop();
-							}
-						}
-					}
-				},
-				Err(err) => channel.error("ERR_EXTRACT_IO_ERROR", transaction_data!(format!("{}", err)))
-			}
-		});
-
-		Ok(id)
-
-	}, resolve, reject);
-
-	Ok(())
+pub fn free_caches() {
+	let mut paths = crate::game_addons!().paths.write();
+	let mut pages = crate::game_addons!().pages.write();
+	*paths = HashMap::new();
+	*pages = Vec::new();
+	crate::game_addons!().discovered.store(Discovered::No.into(), Ordering::Release);
 }

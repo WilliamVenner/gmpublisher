@@ -1,34 +1,35 @@
 <svelte:options accessors={true}/>
 
 <script>
-	import { writable } from "svelte/store";
 	import { Cross, Check, CircleAlert } from "akar-icons-svelte";
 	import { tippyFollow } from '../tippy.js';
 	import { _ } from 'svelte-i18n';
+	import { translateError } from '../i18n';
 	import { taskHeight, tasksMax, tasks, tasksNum } from '../transactions.js';
-	import { onDestroy } from "svelte";
+	import { onDestroy, onMount } from "svelte";
+	import Loading from './Loading.svelte';
 
 	export let transaction;
 	export let statusTextFn;
 	export let pos;
 
-	export let expired = writable(false);
-	export let destroyed = writable(false);
+	export let expired = false;
+	export let destroyed = false;
 
-	const progress = writable(0);
-	const error = writable(null);
-	const finished = writable(false); // TODO remove all these pointless stores
-	const cancelled = writable(false);
+	let progress = 0;
+	let error = null;
+	let finished = false;
+	let cancelled = false;
 
 	let taskElem;
 
-	const y = writable(0);
+	let y = 0;
 	export let shift = () => {
 		let swingPos = pos;
 		if ($tasksNum < $tasksMax)
 			swingPos = (($tasksMax - $tasksNum) + pos);
-		
-		$y = (swingPos * taskHeight) + (swingPos * (taskHeight / 2));
+
+		y = (swingPos * taskHeight) + (swingPos * (taskHeight / 2));
 	}
 	shift();
 	let subscriptions = [tasksNum.subscribe(shift), tasksMax.subscribe(shift), tasks.subscribe(shift)];
@@ -39,49 +40,56 @@
 	}
 
 	function destroy() {
-		if ($destroyed) return;
+		if (destroyed) return;
 		unsubscribe();
-		$destroyed = true;
+		destroyed = true;
 		$tasks = $tasks;
 	}
 	onDestroy(destroy);
 
 	function expire() {
-		if ($destroyed || $expired) return;
-		$expired = true;
+		if (destroyed || expired) return;
+		expired = true;
 		setTimeout(destroy, 500);
 	}
 
 	function finish() {
-		if ($finished || $destroyed || $expired) return;
-		$finished = true;
+		if (finished || destroyed || expired) return;
+		finished = true;
 		let delay = setTimeout(expire, 2500);
 		subscriptions.push(() => clearTimeout(delay));
 	}
 
 	function cancel() {
-		if ($finished || $cancelled || $destroyed || $expired) return;
-		$cancelled = true;
+		if (finished || cancelled || destroyed || expired) return;
+		cancelled = true;
 		transaction.cancel();
 		finish();
 	}
 
 	let statusText;
-	transaction.listen(event => {
-		if ('progress' in event) {
-			$progress = event.progress;
-		} else if (event.finished) {
+	onMount(() => {
+		if (!transaction) {
+			// Task message
 			finish();
-		} else if (event.error) {
-			$error = [event.error, event.data];
-			finish();
-		} else if (event.cancelled) {
-			$cancelled = true;
-			expire();
-		}
+		} else {
+			transaction?.listen(event => {
+				if ('progress' in event) {
+					progress = event.progress;
+				} else if (event.finished) {
+					finish();
+				} else if (event.error) {
+					error = [event.error, event.data];
+					finish();
+				} else if (event.cancelled) {
+					cancelled = true;
+					expire();
+				}
 
-		if (!$finished && !$cancelled && statusText) {
-			statusText.textContent = statusTextFn(transaction);
+				if (!finished && !cancelled && statusText) {
+					statusText.textContent = statusTextFn(transaction);
+				}
+			});
 		}
 	});
 
@@ -89,31 +97,32 @@
 	// TODO internationalize error strings
 </script>
 
-<div bind:this={taskElem} class="task" class:error={$error || $cancelled} class:pending={!$finished} style="transform: translateY({$y}px)" class:expired={$expired}>
+<div bind:this={taskElem} class="task" class:error={error || cancelled} class:pending={!finished} style="transform: translateY({y}px)" class:expired={expired}>
 	<div>
-		{#if !$error && !$cancelled}
-			<div id="progress" style="width: {$finished ? 100 : $progress}%"></div>
+		{#if !error && !cancelled}
+			<div id="progress" style="width: {finished ? 100 : progress}%"></div>
 		{/if}
 		<div id="content">
 			<div id="status">
-				<img id="loading" src="/img/loading.svg" alt="Loading"/>
+				<Loading inline={true}/>
 				<Check id="finished" stroke-width="3"/>
 				<CircleAlert id="error" stroke-width="3"/>
 			</div>
-			{#if $error}
-				{$_($error[0])}
-				{#if $error[1]}
-					({$error[1]})
-				{/if}
-			{:else if $cancelled}
+			{#if error}
+				{translateError(...error)}
+			{:else if cancelled}
 				{$_('cancelled')}
-			{:else if $finished}
-				{$_('done')}
-			{:else}
+			{:else if finished}
+				{#if transaction}
+					{$_('done')}
+				{:else}
+					{statusTextFn}
+				{/if}
+			{:else if transaction}
 				<span bind:this={statusText}>{statusTextFn({ progress: 0 })}</span>
 			{/if}
 		</div>
-		{#if !$finished && !$cancelled && !$expired}
+		{#if transaction && !finished && !cancelled && !expired}
 			<div id="cancel" use:tippyFollow={$_('cancel')} on:click={cancel}><Cross id="cancel" stroke-width="3"/></div>
 		{/if}
 	</div>
@@ -137,12 +146,12 @@
 		border-radius: .4rem;
 		box-shadow: 0 0 6px 1px rgba(0, 0, 0, .35);
 		overflow: hidden;
-		background-color: #006cc7;
-		
+		background-color: var(--neutral);
+
 		position: relative;
 		display: flex;
 		align-items: center;
-		
+
 		transition: transform .5s, opacity .5s;
 		transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -164,13 +173,13 @@
 		display: none;
 	}
 	.task.error > div {
-		background-color: #822828;
+		background-color: var(--error);
 	}
 	.task #progress {
 		position: absolute;
 		height: 100%;
 		/*transition: width .25s cubic-bezier(0.16, 1, 0.3, 1);*/
-		background-color: #30A560;
+		background-color: var(--success);
 		z-index: -1;
 	}
 	.task :global(img), .task :global(.icon) {
@@ -204,7 +213,7 @@
 		margin-right: .5rem;
 	}
 
-	.task #status #loading {
+	.task #status :global(.loading) {
 		grid-row: 1;
 		grid-column: 1;
 		transition: transform .5s, opacity .5s;
@@ -218,7 +227,7 @@
 		opacity: 0;
 		transform: scale(0, 0) rotate(-90deg);
 	}
-	.task:not(.pending) #status #loading {
+	.task:not(.pending) #status :global(.loading) {
 		opacity: 0;
 		transform: scale(0, 0);
 	}

@@ -1,53 +1,82 @@
 [package]
 name = "gmpublisher"
-version = "1.0.0"
-description = "A Tauri App"
+version = "2.5.1"
+description = "gmpublisher"
 authors = [ "William Venner <william@venner.io>" ]
 license = "GPL-3.0"
 repository = "https://github.com/WilliamVenner/gmpublisher"
 default-run = "gmpublisher"
 edition = "2018"
-build = "src/build.rs"
-
-[build-dependencies]
-bindgen = "0.57.0"
-
-[dependencies]
-steamworks = { git = "https://github.com/WilliamVenner/steamworks-rs.git", branch = "master", features = [ "serde" ] }
-byteorder = "1.4.2"
-image = "0.23.13"
-base64 = "0.13.0"
-webview_official = "0.0.4"
-steamlocate = "0.1.3"
-anyhow = "1.0.38"
-dirs = "3.0.1"
-msgbox = "0.6.0"
-opener = "0.4.1"
-serde_json = "1.0"
-serde = { version = "1.0", features = [ "derive", "rc" ] }
-tauri = { version = "0.11.1", features = [ "all-api" ] }
-lazy_static = "1.4.0"
-num_cpus = "1.13.0"
-erased-serde = "0.3.13"
-chardetng = "0.1.10"
-sysinfo = "0.16.4"
-dunce = "1.0.1"
-thiserror = "1.0"
-crossbeam = "0.8.0"
-indexmap = "1.6.2"
-backtrace = "0.3"
-
-[target."cfg(windows)".build-dependencies]
-winres = "0.1"
-
-[features]
-embedded-server = [ "tauri/embedded-server" ]
-no-server = [ "tauri/no-server" ]
-
-[[bin]]
-name = "gmpublisher"
-path = "src/main.rs"
+build = "src/build/build.rs"
 
 [profile.release]
 lto = true
 codegen-units = 1
+
+[build-dependencies.tauri-build]
+version = "1.0.0-beta-rc.1"
+features = [ "codegen" ]
+#git = "https://github.com/williamvenner/tauri"
+#branch = "personal"
+
+[dependencies.tauri]
+features = ["api-all"]
+#version = "1.0.0-beta-rc.4"
+#path = "../../tauri/core/tauri"
+git = "https://github.com/williamvenner/tauri"
+branch = "personal"
+
+[dependencies.tao]
+git = "https://github.com/tauri-apps/tao"
+rev = "08c68d67"
+
+[build-dependencies]
+bindgen = "0.58.1"
+
+[dependencies.steamworks]
+features = [ "serde" ]
+#path = "../../steamworks-rs"
+git = "https://github.com/WilliamVenner/steamworks-rs"
+branch = "master"
+
+[dependencies]
+tauri-utils = "1.0.0-beta-rc.1"
+turbonone = "0.2.1"
+serde_json = "1.0.64"
+serde = { version = "1.0.125", features = [ "derive", "rc" ] }
+rayon = "1.5.0"
+parking_lot = { version = "0.11.1", features = [ "serde", "deadlock_detection" ] }
+xz2 = "0.1.6"
+indexmap = "1.6.2"
+dunce = "1.0.1"
+lazy_static = "1.4.0"
+dirs = "3.0.1"
+anyhow = "1.0.40"
+image = "0.23.14"
+base64 = "0.13.0"
+atomic_refcell = "0.1.7"
+thiserror = "1.0.24"
+chardetng = "0.1.10"
+byteorder = "1.4.3"
+walkdir = "2.3.2"
+crc32fast = "1.2.1"
+path-slash = "0.1.4"
+erased-serde = "0.3.13"
+derive_more = "0.99.13"
+crossbeam = "0.8.0"
+backtrace = "0.3.56"
+steamlocate = "0.1.4"
+chrono = { version = "0.4.19", features = [ "serde" ] }
+bincode = "1.3.3"
+dirs-next = "2.0.0"
+opener = "0.4.1"
+websocket = "0.26.2"
+fuzzy-matcher = "0.3.7"
+num_cpus = "1"
+once_cell = "1.7.2"
+clap = "2.33.3"
+trash = "2.0.1"
+
+[features]
+default = [ "custom-protocol" ]
+custom-protocol = [ "tauri/custom-protocol" ]
