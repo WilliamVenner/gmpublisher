@@ -308,10 +308,7 @@ impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
 		sanitized.sanitize();
 		*app_data!().settings.write() = sanitized;
 
-		let mut default_ignore: Vec<String> = crate::gma::DEFAULT_IGNORE
-			.iter()
-			.map(|glob| (&glob[0..glob.len() - 1]).to_string())
-			.collect::<Vec<String>>();
+		let mut default_ignore = crate::gma::DEFAULT_IGNORE.to_vec();
 		default_ignore.sort();
 
 		app_data!().open_count.increment();

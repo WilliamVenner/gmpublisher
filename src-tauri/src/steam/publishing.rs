@@ -420,10 +420,6 @@ pub fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishEr
 		.ignore_globs
 		.iter()
 		.cloned()
-		.map(|mut glob| {
-			glob.push('\0');
-			glob
-		})
 		.collect();
 
 	let mut size = 0;
