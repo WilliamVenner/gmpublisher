@@ -1,7 +1,6 @@
 {
 	"LANGUAGE_NAME": "Русский",
 
-	"settings": "Настройки",
 	"reset_settings": "Сбросить настройки",
 	"my_workshop": "Моя Мастерская",
 	"loading": "Загрузка...",
@@ -106,7 +105,7 @@
 	"FS_ANALYZER_TAGGIFYING": "Тегирование...",
 
 	"time_just_now": "Только что",
-	"click_to_open": "Нажмите, чтобы открыть!"
+	"click_to_open": "Нажмите, чтобы открыть!",
 	"content_generator": "Генератор содержания",
 	"installed_addons": "Установленные дополнения",
 
