@@ -1499,7 +1499,7 @@ dependencies = [
 
 [[package]]
 name = "gmpublisher"
-version = "2.5.0"
+version = "2.5.1"
 dependencies = [
  "anyhow",
  "atomic_refcell",
