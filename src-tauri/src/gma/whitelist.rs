@@ -7,6 +7,8 @@ pub const DEFAULT_IGNORE: &'static [&'static str] = &[
 	"*.pdn",
 	"*.xcf",
 	"*.svn",
+	"*.ini",
+	".DS_Store",
 	".gitignore",
 	".vscode/*",
 	".github/*",
