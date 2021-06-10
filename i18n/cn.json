@@ -1,0 +1,269 @@
+{
+	"LANGUAGE_NAME": "简体中文",
+
+	"my_workshop": "我的创意工坊物品",
+	"loading": "载入中...",
+	"gmod_dir": {
+		"name": "Garry's Mod 目录",
+		"fail": "你所指定的 Garry's Mod 目录不是有效路径.\n请确认你所选择的目录包含 bin/ 文件夹, 其中包含gmad和gmpublish."
+	},
+	"greetings": {
+		"morning": "早安, {name}!",
+		"morning.anon": "早安!",
+		"afternoon": "下午好, {name}!",
+		"afternoon.anon": "下午好!",
+		"evening": "晚上好, {name}!",
+		"evening.anon": "晚上好!"
+	},
+	"game": "游戏",
+	"filesystem": "文件系统",
+	"github_star": "Star on GitHub",
+	"search": "搜索...",
+	"showing_num_addons": "显示了 {num} 个物品, 共 {total} 个物品",
+	"extract_where_to": "解压到哪里?",
+	"extract_overwrite_warning": "已存在的文件将会被覆写.",
+	"extract_open_tip": "GMA将会解压至临时文件夹并自动前往所在位置.",
+	"browse": "浏览...",
+	"addons_folder": "模组文件夹",
+	"downloads_folder": "下载文件夹",
+	"open": "打开",
+	"create_folder": "新建文件夹",
+	"extract": "解压",
+	"extracting": "正在解压",
+	"extracting_progress": "已完成 {pct}% ({data} / {dataTotal})",
+	"pack": "打包",
+	"publish": "发布",
+	"update": "更新",
+	"size_analyzer": "模组大小分析",
+	"name": "名称",
+	"cancel": "取消",
+	"done": "完成",
+	"cancelled": "已取消",
+	"size": "大小",
+	"addon_type": "类型",
+	"file_types": {
+		"folder": "文件夹",
+
+		"vtf": "Valve Texture Format",
+		"vmt": "Valve Material Format",
+		"map": "Map",
+		"ain": "Map AI Nodegraph",
+		"nav": "Map AI Navigation Mesh",
+		"ttf": "TrueType Font",
+		"vcd": "Valve Choreography Data",
+		"fgd": "Forge Game Data",
+		"pcf": "Particles File",
+		"lua": "Lua Code",
+		"mdl": "Model",
+		"vtx": "Model LOD Data",
+		"phy": "Model Physics Mesh",
+		"ani": "Model Animation Data",
+		"vvd": "Model Vertex Data",
+		"txt": "文本文档",
+		"properties": "Properties",
+
+		"audio": "音频",
+		"image": "图像",
+		"unknown": "未知扩展 ({extension})"
+	},
+	"items_one": "1 个文件(夹)",
+	"items_num": "共 {n} 个文件(夹)",
+	"items_shown": "显示了 {n} 个文件(夹)",
+	"created": "创建时间",
+	"updated": "更新时间",
+	"author": "作者",
+	"open_addon_location": "打开模组文件所在位置",
+
+	"downloader": "模组下载器",
+	"download-input": "粘贴创意工坊ID, 链接, 合集链接在此...",
+	"download-input-tip": "提示: 你可以使用逗号或换行来粘贴多个内容!",
+	"downloading": "正在下载",
+	"log": "日志",
+	"waiting": "等待中",
+	"extraction_tip": "你可以将GMA文件拖拽至这里来解压它们.",
+	"set_destination": "设置解压位置",
+
+	"addon": "模组",
+	"speed": "下载速度",
+	"total_filesize": "总大小",
+	"progress": "进度",
+
+	"LOG_DOWNLOAD_STARTED": "开始下载 {addon}",
+	"LOG_DOWNLOAD_FINISHED": "下载完成 {addon}, 使用时长 {time}",
+	"LOG_DOWNLOAD_FAILED": "下载失败 {addon} (\"{reason}\")",
+
+	"LOG_EXTRACT_STARTED": "开始解压 {addon}",
+	"LOG_EXTRACT_FAILED": "解压失败 {addon} (\"{reason}\")",
+	"LOG_EXTRACT_FINISHED": "解压完成 {addon}, 使用时长 {time}",
+
+	"FS_ANALYZER_RENDERING": "正在渲染...",
+	"FS_ANALYZER_SERIALIZING": "序列化...",
+	"FS_ANALYZER_STEAM": "下载Steam数据...",
+	"FS_ANALYZER_COMPUTING": "计算中...",
+	"FS_ANALYZER_TAGGIFYING": "分类中...",
+	"FS_ANALYZER_DISCOVERING": "探索中...",
+
+	"time_just_now": "刚刚",
+	"click_to_open": "点击打开!",
+	"content_generator": "模组生成器",
+	"installed_addons": "已安装的模组",
+
+	"steam_disconnected": "已从Steam服务器断开",
+	"steam_connected": "已连接到Steam服务器",
+
+	"publish_new": "发布新模组...",
+
+	"settings": {
+		"saved": "已保存!",
+		"settings": "设置",
+
+		"paths": {
+			"paths": "路径设置",
+			"user_data": "用户数据路径",
+			"gmod": "Garry's Mod 安装路径",
+			"temp": "临时路径",
+			"downloads": "下载路径"
+		},
+
+		"general": {
+			"general": "普通设置",
+			"sounds": "音效"
+		},
+
+		"resets": {
+			"resets": "重设",
+			"settings": "重设设置",
+			"clear_temp": "清理临时文件",
+			"clear_user_data": "清理用户数据"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "覆写行为",
+			"recycle": "回收",
+			"delete": "删除",
+			"overwrite": "覆写",
+			"tooltip": "解压GMA时, 在目录已经存在时gmpublisher应该怎么做 (GMA文件之前已经被解压过)?"
+		},
+
+		"accessibility": {
+			"accessibility": "可访问性",
+			"color_error": "错误颜色",
+			"color_success": "成功颜色",
+			"color_neutral": "正常颜色"
+		}
+	},
+
+	"gma_type_name": "打包后的Garry's Mod模组文件",
+	"downloading_tip": "你可以拖动Steam创意工坊链接到这里来下载并解压它们.",
+	"open_workshop": "打开Workshop",
+	"bulk_extract_gmas": "手动选择GMA文件",
+	"error": "错误",
+	"queued": "等待",
+	"remove_all": "移除所有",
+	"open_all": "打开所有",
+
+	"ERR_UNKNOWN": "未知错误",
+	"ERR_NO_ADDONS_FOUND": "未找到模组文件",
+	"ERR_STEAM_ERROR": "Steam错误: {data}",
+	"ERR_WHITELIST": "文件结构未通过文件类型/位置白名单. 如果这是预料以外的, 你的模组文件结构可能不符合要求.\n\n如果你想要从你的GMA里过滤这些文件类型, 把它们添加到忽略文件后缀列表内.\n\n{data}",
+	"ERR_IO_ERROR": "I/O 错误",
+	"ERR_PATH_IO_ERROR": "I/O 错误 ({data})",
+	"ERR_GMA_FORMAT_ERROR": "损坏的GMA文件",
+	"ERR_GMA_INVALID_HEADER": "无效的GMA文件",
+	"ERR_GMA_ENTRY_NOT_FOUND": "GMA文件入口未找到",
+	"ERR_DOWNLOAD_MISSING": "已下载, 但是文件未找到",
+	"ERR_ICON_TOO_LARGE": "图标大小过大 (> 1 MB)",
+	"ERR_ICON_TOO_SMALL": "图标大小过小 (< 16 B)",
+	"ERR_ICON_INVALID_FORMAT": "图标文件必须是JPG, PNG 或 GIF",
+	"ERR_LZMA": "LZMA压缩错误",
+	"ERR_DOWNLOAD_FAILED": "下载失败",
+	"ERR_ITEM_NOT_FOUND": "物品未找到",
+	"ERR_ITEM_INACCESSIBLE": "物品不可访问",
+	"ERR_INVALID_CONTENT_PATH": "内容路径未找到, 可能为非文件夹或gmpublisher没有权限来访问",
+	"ERR_MULTIPLE_GMAS": "在该内容路径里发现了多个GMA文件",
+	"ERR_IMAGE_ERROR": "图像错误: {data}",
+	"ERR_DUPLICATE_ENTRIES": "在此内容路径内发现了重复的条目 ({data}). 所有路径都必须是独一无二并且全小写.",
+	"ERR_NO_ENTRIES": "此内容路径中没有任何条目.",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "未能通过创意工坊规则协议",
+
+	"icon_instructions": "可接受的格式: JPG, PNG, GIF\n最大文件大小: 1 MB\n推荐分辨率: 512x512",
+	"addon_title": "标题...",
+	"addon_path": "模组路径...",
+	"icon_file_pick": "创意工坊图标",
+	"remove_icon": "移除图标",
+
+	"addon_types": {
+		"ServerContent": "服务器内容",
+		"gamemode": "游戏模式",
+		"map": "地图",
+		"weapon": "武器",
+		"vehicle": "载具",
+		"npc": "NPC",
+		"tool": "工具",
+		"effects": "效果",
+		"model": "模型",
+		"entity": "实体"
+	},
+
+	"tag_1": "标签 1",
+	"tag_2": "标签 2",
+	"tag_3": "标签 3",
+
+	"addon_tags": {
+		"fun": "Fun",
+		"roleplay": "Roleplay",
+		"scenic": "Scenic",
+		"movie": "Movie",
+		"realism": "Realism",
+		"cartoon": "Cartoon",
+		"water": "Water",
+		"comic": "Comic",
+		"build": "Build"
+	},
+
+	"publish_exclamation": "发布!",
+	"update_exclamation": "升级!",
+	"add_ellipsis": "添加...",
+	"ignored_file_patterns": "无视文件后缀",
+	"show_more": "SHOW MORE",
+	"ignored_for_convenience": "为了便捷, 这些文件类型将默认被无视.",
+	"file_browser": "文件浏览器",
+	"file_browser_select": "将文件拖拽至此或浏览",
+	"no_files_found": "未找到任何文件",
+	"upscale_addon_icon": "缩放至512x512",
+	"changelog": "更新日志",
+	"update_warning": "你正准备推送升级至物品 {title} ({id})",
+
+	"PUBLISH_PACKING": "正在打包 {pct}% ({data} / {dataTotal})",
+	"PUBLISH_STARTING": "开始发布",
+	"PUBLISH_PREPARING_CONFIG": "准备配置文件...",
+	"PUBLISH_PREPARING_CONTENT": "正在准备内容...",
+	"PUBLISH_UPLOADING_CONTENT": "正在上传内容...",
+	"PUBLISH_UPLOADING_PREVIEW_FILE": "上传预览文件...",
+	"PUBLISH_COMMITTING_CHANGES": "正在应用更改...",
+	"PUBLISH_PROCESSING_ICON": "正在处理图标...",
+
+	"subscriptions": "已订阅的物品",
+	"unsubscribe": "取消订阅",
+	"unsubscribe_all": "取消所有订阅",
+	"unsubscribe_all_warning": "警告: 该操作将会取消你在创意工坊上的所有订阅.",
+	"update_available": "有新版本可用!\n{version}",
+	"workshop_page": "创意工坊页面",
+	"steam_workshop": "Steam创意工坊",
+	"open_count": "你已经打开了gmpublisher {count} 次! 恭喜!",
+	"enjoying_gmpublisher": "喜欢gmpublisher吗?",
+	"github_star_plz_i_need_a_job_maybe": "如果你有GitHub账户的话, 并且我的软件给你提供很大帮助的话, 考虑一下给 %GitHub repository% 点个Star :D",
+	"vscode_glua_enhanced": "如果你是开发者的话, 你或许对我的 %VSCode GLua Enhanced% 扩展感兴趣.",
+
+	"copy_link": "复制链接",
+	"open_image": "打开图像",
+	"copy_image_link": "复制图像链接",
+	"download": "下载",
+	"sent_to_downloader": "添加至下载列表",
+
+	"locating": "正在定位",
+	"decompressing": "正在解压 {progress}",
+	"reading_metadata": "读取元数据...",
+
+	"publish_icon": "更换新图标 (不会更新模组)"
+}
