@@ -155,7 +155,7 @@
 
 	"gma_type_name": "打包后的Garry's Mod模组文件",
 	"downloading_tip": "你可以拖动Steam创意工坊链接到这里来下载并解压它们.",
-	"open_workshop": "打开Workshop",
+	"open_workshop": "打开创意工坊",
 	"bulk_extract_gmas": "手动选择GMA文件",
 	"error": "错误",
 	"queued": "等待",
@@ -184,7 +184,7 @@
 	"ERR_IMAGE_ERROR": "图像错误: {data}",
 	"ERR_DUPLICATE_ENTRIES": "在此内容路径内发现了重复的条目 ({data}). 所有路径都必须是独一无二并且全小写.",
 	"ERR_NO_ENTRIES": "此内容路径中没有任何条目.",
-	"ERR_WORKSHOP_LEGAL_AGREEMENT": "未能通过创意工坊规则协议",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "违反了创意工坊规则",
 
 	"icon_instructions": "可接受的格式: JPG, PNG, GIF\n最大文件大小: 1 MB\n推荐分辨率: 512x512",
 	"addon_title": "标题...",
