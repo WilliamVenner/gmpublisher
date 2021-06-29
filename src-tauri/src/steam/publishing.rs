@@ -119,7 +119,7 @@ impl ContentPath {
 	}
 }
 
-const WORKSHOP_ICON_MAX_SIZE: u64 = 1000000;
+const WORKSHOP_ICON_MAX_SIZE: u64 = 1048576;
 const WORKSHOP_ICON_MIN_SIZE: u64 = 16;
 const WORKSHOP_DEFAULT_ICON: &'static [u8] = include_bytes!("../../../public/img/gmpublisher_default_icon.png");
 
