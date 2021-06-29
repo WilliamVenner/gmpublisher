@@ -135,6 +135,21 @@
 			"settings": "Réinitialiser les paramètres",
 			"clear_temp": "Effacer les fichiers temporaires",
 			"clear_user_data": "Effacer les données de l'utilisateur"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "Comportement de réécriture des données",
+			"recycle": "Recycler",
+			"delete": "Supprimer",
+			"overwrite": "Remplacer",
+			"tooltip": "Lors de l'extraction des GMAs, que doit faire gmpublisher si le répertoire d'extraction du GMA existe déjà (le GMA a déjà été extrait auparavant) ?"
+		},
+
+		"accessibility": {
+			"accessibility": "Accessibilité",
+			"color_error": "Couleur d'erreur",
+			"color_success": "Couleur de réussite",
+			"color_neutral": "Couleur neutre"
 		}
 	},
 
@@ -186,7 +201,8 @@
 		"npc": "PNJ",
 		"tool": "Outil",
 		"effects": "Effets",
-		"model": "Modèle"
+		"model": "Modèle",
+		"entity": "Entité"
 	},
 
 	"tag_1": "Étiquette 1",
@@ -237,5 +253,17 @@
 	"open_count": "Vous avez ouvert gmpublisher {count} fois ! Félicitations !",
 	"enjoying_gmpublisher": "Vous appréciez gmpublisher ?",
 	"github_star_plz_i_need_a_job_maybe": "Si vous avez un compte GitHub, pensez à déposer une étoile sur le %dépôt GitHub% si mon travail vous a aidé :D",
-	"vscode_glua_enhanced": "Si vous êtes un développeur, vous pouvez également être intéressé par mon extension %VSCode GLua Enhanced%."
+	"vscode_glua_enhanced": "Si vous êtes un développeur, vous pouvez également être intéressé par mon extension %VSCode GLua Enhanced%.",
+
+	"copy_link": "Copier le lien",
+	"open_image": "Ouvrir l'image",
+	"copy_image_link": "Copier le lien de l'image",
+	"download": "Télécharger",
+	"sent_to_downloader": "Envoyé au téléchargement",
+
+	"locating": "Localisation",
+	"decompressing": "Décompression {progress}",
+	"reading_metadata": "Lecture des métadonnées",
+
+	"publish_icon": "Publier une nouvelle icône (ceci ne mettra PAS à jour l'addon)"
 }
