@@ -39,6 +39,10 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 ![](https://user-images.githubusercontent.com/14863743/115976530-d7297e00-a566-11eb-9fe0-113c59ce49ce.png) Spanish
 
+![](https://user-images.githubusercontent.com/14863743/123729167-754e0300-d88c-11eb-9dae-6fb82e0ca0ce.png) Chinese
+
+![](https://user-images.githubusercontent.com/14863743/123729280-9dd5fd00-d88c-11eb-8aee-0360615d4d57.png) Dutch
+
 [Want to translate gmpublisher to your language?](https://github.com/WilliamVenner/gmpublisher/tree/master/i18n)
 
 ## Requirements
