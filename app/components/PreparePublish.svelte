@@ -116,6 +116,7 @@
 			pathFailMessage = null;
 			tippyFollow(pathInputContainer, pathFailMessage);
 			pathValue = '';
+			checkForm(false);
 		}
 	}
 
