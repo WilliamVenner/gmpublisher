@@ -312,7 +312,7 @@
 	}));
 
 	async function publishIcon() {
-		if (!readyForPublish || $isPublishing || !gmaIconPath || !$updatingAddon) return;
+		if ($isPublishing || !gmaIconPath || !$updatingAddon) return;
 		$isPublishing = true;
 		playSound('success');
 
