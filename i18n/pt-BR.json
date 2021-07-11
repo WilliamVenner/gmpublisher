@@ -1,5 +1,5 @@
 {
-	"LANGUAGE_NAME": "Português (Brasileiro)",
+	"LANGUAGE_NAME": "Português (Brasil)",
 
 	"my_workshop": "Minha Oficina",
 	"loading": "Carregando...",
@@ -135,6 +135,21 @@
 			"settings": "Redefinir configurações",
 			"clear_temp": "Limpar arquivos temporários",
 			"clear_user_data": "Limpar dados do usuário"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "Comportamento de sobrescrita",
+			"recycle": "Reciclar",
+			"delete": "Excluir",
+			"overwrite": "Sobrescrever",
+			"tooltip": "Ao extrair GMAs, o que o gmpublisher deve fazer se o diretório de extração do GMA já existir (o GMA já foi extraído antes)?"
+		},
+
+		"accessibility": {
+			"accessibility": "Acessibilidade",
+			"color_error": "Cor de erro",
+			"color_success": "Cor de êxito",
+			"color_neutral": "Cor neutra"
 		}
 	},
 
@@ -186,7 +201,8 @@
 		"npc": "NPC",
 		"tool": "Tool",
 		"effects": "Effects",
-		"model": "Model"
+		"model": "Model",
+		"entity": "Entity"
 	},
 
 	"tag_1": "Tag 1",
@@ -237,5 +253,17 @@
 	"open_count": "Você abriu o gmpublisher {count} vezes! Parabéns!",
 	"enjoying_gmpublisher": "Está gostando do gmpublisher?",
 	"github_star_plz_i_need_a_job_maybe": "Se você tem uma conta no GitHub, considere adicionar uma estrela no %repositório do GitHub% se o meu trabalho o ajudou :D",
-	"vscode_glua_enhanced": "Se você é um desenvolvedor, também pode estar interessado na minha extensão %VSCode GLua Enhanced%."
+	"vscode_glua_enhanced": "Se você é um desenvolvedor, também pode estar interessado na minha extensão %VSCode GLua Enhanced%.",
+
+	"copy_link": "Copiar link",
+	"open_image": "Abrir imagem",
+	"copy_image_link": "Copiar link da imagem",
+	"download": "Download",
+	"sent_to_downloader": "Enviar para Downloader",
+
+	"locating": "Localização",
+	"decompressing": "Descomprimindo {progress}",
+	"reading_metadata": "Lendo metadados",
+
+	"publish_icon": "Publicar novo ícone (NÃO atualizará o addon)"
 }
