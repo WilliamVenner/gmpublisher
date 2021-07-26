@@ -419,7 +419,11 @@ pub fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishEr
 		.read()
 		.ignore_globs
 		.iter()
-		.cloned()
+		.map(|x| {
+			let mut x = x.to_string();
+			x.push('\0');
+			x
+		})
 		.collect();
 
 	let mut size = 0;
@@ -601,7 +605,11 @@ pub fn publish(
 					title: title.clone(),
 					addon_type: addon_type.clone(),
 					tags: tags.clone(),
-					ignore: app_data!().settings.read().ignore_globs.to_owned(),
+					ignore: app_data!().settings.read().ignore_globs.iter().map(|x| {
+						let mut x = x.to_string();
+						x.push('\0');
+						x
+					}).collect(),
 				}),
 				entries: None,
 				pointers: GMAFilePointers::default(),

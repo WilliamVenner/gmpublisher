@@ -16,15 +16,22 @@ pub const DEFAULT_IGNORE: &'static [&'static str] = globbers!(
 	"*.xcf",
 	"*.svn",
 	"*.ini",
+	"*.rtf",
+	"*.pdf",
 	".DS_Store",
 	".gitignore",
 	".vscode/*",
 	".github/*",
 	".vs/*",
 	".editorconfig",
-	"README.md",
-	"README.txt",
-	"readme.txt",
+	"LICENSE",
+	"LICENSE.*",
+	"license",
+	"license.*",
+	"README",
+	"README.*",
+	"readme",
+	"readme.*",
 	"addon.json",
 	"addon.txt",
 	"addon.jpg"
@@ -101,7 +108,7 @@ pub fn globber(_wild: &str, _str: &str) -> bool {
 		let mut str = _str.as_ptr();
 
 		while *str != 0 && *wild != WILD_BYTE {
-			if !(*wild).eq_ignore_ascii_case(&*str) && *wild != QUESTION_BYTE {
+			if *wild != *str && *wild != QUESTION_BYTE {
 				return false;
 			}
 			wild = wild.add(1);
@@ -116,7 +123,7 @@ pub fn globber(_wild: &str, _str: &str) -> bool {
 				}
 				mp = wild;
 				cp = str.add(1);
-			} else if (*wild).eq_ignore_ascii_case(&*str) || *wild == QUESTION_BYTE {
+			} else if *wild == *str || *wild == QUESTION_BYTE {
 				wild = wild.add(1);
 				str = str.add(1);
 			} else {
