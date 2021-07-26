@@ -11,6 +11,10 @@ extern crate lazy_static;
 extern crate turbonone;
 
 #[macro_use]
+mod logging;
+pub use logging::*;
+
+#[macro_use]
 pub mod globals;
 pub use globals::*;
 

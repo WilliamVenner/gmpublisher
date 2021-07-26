@@ -177,12 +177,12 @@ pub fn error(message: String) {
 
 #[tauri::command]
 pub fn info(message: String) {
-	eprintln!("[WebView] [INFO] {}", message);
+	println!("[WebView] [INFO] {}", message);
 }
 
 #[tauri::command]
 pub fn warn(message: String) {
-	eprintln!("[WebView] [WARN] {}", message);
+	println!("[WebView] [WARN] {}", message);
 }
 
 static mut RELOADED: AtomicBool = AtomicBool::new(false);
