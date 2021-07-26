@@ -10,7 +10,7 @@ edition = "2018"
 build = "src/build/build.rs"
 
 [profile.release]
-lto = true
+lto = 'thin'
 codegen-units = 1
 
 [build-dependencies.tauri-build]
