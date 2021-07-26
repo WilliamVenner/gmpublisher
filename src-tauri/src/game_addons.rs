@@ -342,7 +342,7 @@ pub fn downloader_extract_gmas(paths: Vec<PathBuf>) {
 					)
 				);
 				transaction.data((turbonone!(), path.metadata().map(|metadata| metadata.len()).unwrap_or(0)));
-				ignore! { gma.extract(destination.clone(), &transaction, false) };
+				ignore! { gma.extract(destination.clone(), &transaction, false, true) };
 			}
 		}
 	}

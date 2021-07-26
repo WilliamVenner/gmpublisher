@@ -92,7 +92,7 @@ pub(super) fn stdin() -> bool {
 				None => ExtractDestination::Temp,
 			};
 
-			if let Err(err) = gma.extract(dest, &transaction!(), true) {
+			if let Err(err) = gma.extract(dest, &transaction!(), true, true) {
 				eprintln!("Error: {:#?}", err);
 			}
 		}

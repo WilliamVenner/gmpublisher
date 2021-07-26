@@ -137,7 +137,7 @@ impl Downloads {
 			transaction.status("reading_metadata");
 			transaction.data((Some(gma.metadata.as_ref().map(|metadata| metadata.title().to_owned())), gma.size));
 
-			if let Err(err) = gma.extract(extract_destination, &transaction, false) {
+			if let Err(err) = gma.extract(extract_destination, &transaction, false, true) {
 				transaction.error(err.to_string(), turbonone!());
 			}
 		});
