@@ -709,6 +709,7 @@
 	}
 	#ignore > .hide-scroll {
 		flex: 1;
+		flex-basis: 0;
 		overflow: auto;
 		margin-top: 1rem;
 		background-color: #292929;
