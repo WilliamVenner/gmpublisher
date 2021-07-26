@@ -97,6 +97,8 @@ impl Searchable for WorkshopItem {
 	fn search_item(&self) -> Option<SearchItem> {
 		let mut terms = self.tags.clone();
 
+		terms.push(self.id.0.to_string());
+
 		if let Some(steamid) = &self.steamid {
 			terms.push(steamid.raw().to_string());
 			terms.push(steamid.steamid32());
@@ -112,7 +114,7 @@ impl Searchable for WorkshopItem {
 }
 impl Searchable for GMAFile {
 	fn search_item(&self) -> Option<SearchItem> {
-		let (label, terms) = match &self.metadata {
+		let (label, mut terms) = match &self.metadata {
 			Some(metadata) => {
 				let mut terms = metadata.tags().cloned().unwrap_or_default();
 				if let Some(addon_type) = metadata.addon_type() {
@@ -128,6 +130,10 @@ impl Searchable for GMAFile {
 				}
 			}
 		};
+
+		if let Some(id) = self.id {
+			terms.push(id.0.to_string());
+		}
 
 		Some(SearchItem::new(
 			SearchItemSource::InstalledAddons(

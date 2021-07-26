@@ -31,12 +31,17 @@
 	let isSearching = false;
 	let searchInput;
 	function updateSearch() {
-		const query = this.value.trim();
+		var query = this.value.trim();
 		if (query.length === 0) {
 			searchResults = [];
 			isLoading = false;
 			isSearching = false;
 		} else {
+			const steamLink = query.match(/https?:\/\/(?:www\.)?steamcommunity\.com\/sharedfiles\/filedetails\/[?&]id=(\d+)/i);
+			if (steamLink) {
+				query = steamLink[1];
+			}
+
 			invoke('search', { salt: getSalt(), query });
 			if (!isSearching) isLoading = true;
 			isSearching = true;
@@ -108,7 +113,7 @@
 
 <main class:results={searchResults.length > 0}>
 	<div id="input-container">
-		<input type="text" id="search" placeholder={$_('search')} on:input={updateSearch} bind:this={searchInput}/>
+		<input type="text" id="search" placeholder={$_('search')} on:input={updateSearch} on:paste={updateSearch} on:change={updateSearch} on:keydown={updateSearch} bind:this={searchInput}/>
 		{#if isSearching}
 			<span id="cancel-search" on:click={clearSearch}><Cross size="1rem"/></span>
 		{:else}
