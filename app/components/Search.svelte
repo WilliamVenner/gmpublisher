@@ -37,7 +37,7 @@
 			isLoading = false;
 			isSearching = false;
 		} else {
-			const steamLink = query.match(/https?:\/\/(?:www\.)?steamcommunity\.com\/sharedfiles\/filedetails\/[?&]id=(\d+)/i);
+			const steamLink = query.match(/https?:\/\/(?:www\.)?steamcommunity\.com\/sharedfiles\/filedetails\/.*?[?&]id=(\d+)/i);
 			if (steamLink) {
 				query = steamLink[1];
 			}
