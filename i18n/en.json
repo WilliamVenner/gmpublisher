@@ -265,5 +265,7 @@
 	"decompressing": "Decompressing {progress}",
 	"reading_metadata": "Reading Metadata",
 
-	"publish_icon": "Publish New Icon (Will NOT update the addon)"
+	"publish_icon": "Publish New Icon (Will NOT update the addon)",
+
+	"copy_path": "Copy Path"
 }
