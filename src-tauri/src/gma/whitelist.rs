@@ -12,6 +12,7 @@ pub const DEFAULT_IGNORE: &'static [&'static str] = &[
 	".gitignore",
 	".vscode/*",
 	".github/*",
+	".vs/*",
 	".editorconfig",
 	"README.md",
 	"README.txt",
@@ -173,6 +174,7 @@ pub fn test_whitelist() {
 		"materials/lol.jpeg",
 		"gamemodes/the_gamemode_name/backgrounds/file_name.jpg",
 		"gamemodes/my_base_defence/backgrounds/1.jpg",
+		"GAMEMODES/MY_BASE_DEFENCE/BACKGROUNDS/1.JPG",
 	];
 
 	let bad: &'static [&'static str] = &[
