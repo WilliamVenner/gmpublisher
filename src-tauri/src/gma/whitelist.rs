@@ -101,7 +101,7 @@ pub fn globber(_wild: &str, _str: &str) -> bool {
 		let mut str = _str.as_ptr();
 
 		while *str != 0 && *wild != WILD_BYTE {
-			if *wild != *str && *wild != QUESTION_BYTE {
+			if !(*wild).eq_ignore_ascii_case(&*str) && *wild != QUESTION_BYTE {
 				return false;
 			}
 			wild = wild.add(1);
@@ -116,7 +116,7 @@ pub fn globber(_wild: &str, _str: &str) -> bool {
 				}
 				mp = wild;
 				cp = str.add(1);
-			} else if *wild == *str || *wild == QUESTION_BYTE {
+			} else if (*wild).eq_ignore_ascii_case(&*str) || *wild == QUESTION_BYTE {
 				wild = wild.add(1);
 				str = str.add(1);
 			} else {
@@ -187,6 +187,7 @@ pub fn test_whitelist() {
 		"materials/lol.jpeg",
 		"gamemodes/the_gamemode_name/backgrounds/file_name.jpg",
 		"gamemodes/my_base_defence/backgrounds/1.jpg",
+		"GAMEMODES/MY_BASE_DEFENCE/BACKGROUNDS/1.JPG",
 	];
 
 	let bad: &'static [&'static str] = &[
