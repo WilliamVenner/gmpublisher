@@ -1,3 +1,5 @@
+use std::{fs::OpenOptions, panic::PanicInfo};
+
 use crossbeam::channel::Sender;
 
 use crate::{ignore, app_data};
@@ -8,22 +10,28 @@ pub enum LogMessage {
 }
 
 lazy_static! {
+	static ref LOGS_DIR: std::path::PathBuf = {
+		let mut logs = app_data!().temp_dir().to_path_buf();
+		logs.push("logs");
+		logs
+	};
+}
+
+lazy_static! {
 	pub static ref LOG_CHANNEL: Sender<LogMessage> = {
 		let (tx, rx) = crossbeam::channel::unbounded();
 		std::thread::spawn(move || {
 			use std::{fs::File, io::Write};
 
-			let mut logs = app_data!().temp_dir().to_path_buf();
-			logs.push("logs");
-			if let Err(err) = std::fs::create_dir_all(&logs) {
+			if let Err(err) = std::fs::create_dir_all(&*LOGS_DIR) {
 				return std::eprintln!("Failed to create logs directory: {:#?}", err);
 			}
 
-			let mut stdout = match File::create(logs.join("stdout.log")) {
+			let mut stdout = match File::create(LOGS_DIR.join("stdout.log")) {
 				Ok(f) => f,
 				Err(err) => return std::eprintln!("Failed to open stdout log file: {:#?}", err)
 			};
-			let mut stderr = match File::create(logs.join("stderr.log")) {
+			let mut stderr = match File::create(LOGS_DIR.join("stderr.log")) {
 				Ok(f) => f,
 				Err(err) => return std::eprintln!("Failed to open stderr log file: {:#?}", err)
 			};
@@ -61,4 +69,17 @@ macro_rules! eprintln {
 		std::eprintln!("{}", &log);
 		crate::ignore! { crate::logging::LOG_CHANNEL.send(crate::logging::LogMessage::Stderr(log)) };
 	};
+}
+
+pub fn panic(panic: &PanicInfo) {
+	use std::io::Write;
+
+	let backtrace = backtrace::Backtrace::new();
+
+	if let Ok(mut f) = OpenOptions::new().append(true).create(true).open(LOGS_DIR.join("stderr.log")) {
+		f.sync_data().ok();
+		write!(f, "\n\n!!!!!!!!!!!!! PANIC !!!!!!!!!!!!!\n{}\n{:#?}\n\n", panic, &backtrace).ok();
+	}
+
+	std::eprintln!("{}\n{:#?}", panic, backtrace);
 }

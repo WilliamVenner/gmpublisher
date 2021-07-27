@@ -16,6 +16,9 @@ pub(super) fn stdin() -> bool {
 		return false;
 	}
 
+	// Remove the logging::panic() hook
+	let _ = std::panic::take_hook();
+
 	let app = App::new("gmpublisher");
 
 	let matches = app
