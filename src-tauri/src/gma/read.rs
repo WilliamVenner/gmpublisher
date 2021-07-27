@@ -115,10 +115,37 @@ impl GMAFile {
 			let mut entries = HashMap::new();
 			let mut entry_cursor = 0;
 
-			while handle.read_u32::<LittleEndian>()? != 0 {
+			'read_entries: while handle.read_u32::<LittleEndian>()? != 0 {
 				let path = handle.read_nt_string()?;
 				let size = handle.read_i64::<LittleEndian>()? as u64;
 				let crc = handle.read_u32::<LittleEndian>()?;
+
+				// Detect ../ and skip this entry if found to prevent directory traversal attack
+				{
+					let mut dots = 0;
+					for byte in path.as_bytes() {
+						const DOT: u8 = '.' as u8;
+						const FORWARDS_SLASH: u8 = '/' as u8;
+						const BACKWARDS_SLASH: u8 = '\\' as u8;
+
+						match *byte {
+							DOT => if dots == 2 {
+								dots = 0;
+							} else {
+								dots += 1;
+							},
+							FORWARDS_SLASH | BACKWARDS_SLASH => {
+								if dots == 2 {
+									eprintln!("Illegal GMA entry: {}", path);
+									continue 'read_entries;
+								} else {
+									dots = 0;
+								}
+							}
+							_ => dots = 0,
+						}
+					}
+				}
 
 				let entry = GMAEntry {
 					path: path.clone(),

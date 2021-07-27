@@ -82,7 +82,7 @@ pub(super) fn stdin() -> bool {
 		let extract_path = PathBuf::from(extract_path);
 
 		if !extract_path.is_file() {
-			eprintln!("Invalid GMA file path provided.");
+			std::eprintln!("Invalid GMA file path provided.");
 			return true;
 		}
 
@@ -93,7 +93,7 @@ pub(super) fn stdin() -> bool {
 			};
 
 			if let Err(err) = gma.extract(dest, &transaction!(), true, true) {
-				eprintln!("Error: {:#?}", err);
+				std::eprintln!("Error: {:#?}", err);
 			}
 		}
 	}

@@ -248,8 +248,10 @@ impl ExtractGMAImmut for GMAFile {
 				if let GMAMetadata::Standard { .. } = metadata {
 					if let Ok(json) = serde_json::ser::to_string_pretty(metadata) {
 						dest_path.push("addon.json");
+						if let Some(parent) = dest_path.parent() {
+							ignore! { fs::create_dir_all(parent) };
+						}
 						ignore! { fs::write(dest_path, json.as_bytes()) };
-						//dest_path.pop();
 					}
 				}
 			};
