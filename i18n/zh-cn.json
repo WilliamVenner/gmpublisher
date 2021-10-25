@@ -44,27 +44,27 @@
 	"file_types": {
 		"folder": "文件夹",
 
-		"vtf": "Valve Texture Format",
-		"vmt": "Valve Material Format",
-		"map": "Map",
-		"ain": "Map AI Nodegraph",
-		"nav": "Map AI Navigation Mesh",
-		"ttf": "TrueType Font",
+		"vtf": "Valve 贴图文件",
+		"vmt": "Valve 材质文件",
+		"map": "地图",
+		"ain": "地图AI路径点文件",
+		"nav": "地图AI导航网文件",
+		"ttf": "字体文件",
 		"vcd": "Valve Choreography Data",
 		"fgd": "Forge Game Data",
-		"pcf": "Particles File",
-		"lua": "Lua Code",
-		"mdl": "Model",
-		"vtx": "Model LOD Data",
-		"phy": "Model Physics Mesh",
-		"ani": "Model Animation Data",
-		"vvd": "Model Vertex Data",
+		"pcf": "粒子效果文件",
+		"lua": "Lua代码",
+		"mdl": "模型",
+		"vtx": "LOD模型数据",
+		"phy": "模型物理数据文件",
+		"ani": "模型动作数据",
+		"vvd": "模型顶点数据文件",
 		"txt": "文本文档",
 		"properties": "Properties",
 
 		"audio": "音频",
 		"image": "图像",
-		"unknown": "未知扩展 ({extension})"
+		"unknown": "未知文件 ({extension})"
 	},
 	"items_one": "1 个文件(夹)",
 	"items_num": "共 {n} 个文件(夹)",
@@ -165,7 +165,7 @@
 	"ERR_UNKNOWN": "未知错误",
 	"ERR_NO_ADDONS_FOUND": "未找到模组文件",
 	"ERR_STEAM_ERROR": "Steam错误: {data}",
-	"ERR_WHITELIST": "文件结构未通过文件类型/位置白名单. 如果这是预料以外的, 你的模组文件结构可能不符合要求.\n\n如果你想要从你的GMA里过滤这些文件类型, 把它们添加到忽略文件后缀列表内.\n\n{data}",
+	"ERR_WHITELIST": "文件结构未通过文件类型/位置白名单. 如果这是预料以外的, 你的模组文件结构可能不符合要求.\n\n如果你想要从你的GMA里过滤这些文件类型, 把它们添加到忽略文件列表内.\n\n{data}",
 	"ERR_IO_ERROR": "I/O 错误",
 	"ERR_PATH_IO_ERROR": "I/O 错误 ({data})",
 	"ERR_GMA_FORMAT_ERROR": "损坏的GMA文件",
@@ -224,9 +224,9 @@
 	"publish_exclamation": "发布!",
 	"update_exclamation": "升级!",
 	"add_ellipsis": "添加...",
-	"ignored_file_patterns": "无视文件后缀",
-	"show_more": "SHOW MORE",
-	"ignored_for_convenience": "为了便捷, 这些文件类型将默认被无视.",
+	"ignored_file_patterns": "忽略文件",
+	"show_more": "显示更多",
+	"ignored_for_convenience": "为了便捷, 这些文件将默认忽略.",
 	"file_browser": "文件浏览器",
 	"file_browser_select": "将文件拖拽至此或浏览",
 	"no_files_found": "未找到任何文件",
@@ -265,5 +265,7 @@
 	"decompressing": "正在解压 {progress}",
 	"reading_metadata": "读取元数据...",
 
-	"publish_icon": "更换新图标 (不会更新模组)"
+	"publish_icon": "更换新图标 (不会更新模组)",
+
+    "copy_path": "复制路径"
 }
