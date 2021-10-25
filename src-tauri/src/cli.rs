@@ -16,6 +16,9 @@ pub(super) fn stdin() -> bool {
 		return false;
 	}
 
+	// Remove the logging::panic() hook
+	let _ = std::panic::take_hook();
+
 	let app = App::new("gmpublisher");
 
 	let matches = app
@@ -82,7 +85,7 @@ pub(super) fn stdin() -> bool {
 		let extract_path = PathBuf::from(extract_path);
 
 		if !extract_path.is_file() {
-			eprintln!("Invalid GMA file path provided.");
+			std::eprintln!("Invalid GMA file path provided.");
 			return true;
 		}
 
@@ -92,8 +95,8 @@ pub(super) fn stdin() -> bool {
 				None => ExtractDestination::Temp,
 			};
 
-			if let Err(err) = gma.extract(dest, &transaction!(), true) {
-				eprintln!("Error: {:#?}", err);
+			if let Err(err) = gma.extract(dest, &transaction!(), true, true) {
+				std::eprintln!("Error: {:#?}", err);
 			}
 		}
 	}

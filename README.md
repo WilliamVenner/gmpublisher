@@ -2,8 +2,6 @@
 
 # ⚙️ gmpublisher
 
-#### Currently in **Beta** development.
-
 A powerful and feature-packed Workshop publisher for Garry's Mod is finally here!
 
 [Click for downloads](https://github.com/WilliamVenner/gmpublisher/releases)
@@ -22,8 +20,6 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 * Works without an Internet connection
 * CLI interface
 * (Windows) .GMA file type association for quick extraction
-* (Coming soon) Manage Steam Workshop subscriptions
-* (Coming soon) resource.AddWorkshop generator
 
 ## Languages
 
@@ -43,6 +39,10 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 ![](https://user-images.githubusercontent.com/14863743/115976530-d7297e00-a566-11eb-9fe0-113c59ce49ce.png) Spanish
 
+![](https://user-images.githubusercontent.com/14863743/123729167-754e0300-d88c-11eb-9dae-6fb82e0ca0ce.png) Chinese
+
+![](https://user-images.githubusercontent.com/14863743/123729280-9dd5fd00-d88c-11eb-8aee-0360615d4d57.png) Dutch
+
 [Want to translate gmpublisher to your language?](https://github.com/WilliamVenner/gmpublisher/tree/master/i18n)
 
 ## Requirements
@@ -59,7 +59,7 @@ Windows, macOS or Linux
 * Made using [Rust](https://www.rust-lang.org/) (backend) and [Svelte](https://svelte.dev/) (frontend)
 * This is not an Electron app; this is a [Tauri](https://github.com/tauri-apps/tauri) app. Big thanks to all the contributors to Tauri for their amazing work on finally killing Electron for good.
 * gmpublisher uses the fantastic [steamworks-rs](https://crates.io/crates/steamworks) library for interfacing with the [Steamworks SDK](https://partner.steamgames.com/doc/api)
-* The program is only about ~10 MB (which is probably just a lot of [panic unwinding traces](https://doc.rust-lang.org/nomicon/unwinding.html)!)
+* The program is only about ~10 MB
 
 ## Media
 

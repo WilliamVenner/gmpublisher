@@ -18,7 +18,7 @@ use steamworks::PublishedFileId;
 use crate::{game_addons, gma::extract::ExtractGMAMut, webview::Addon, GMAFile};
 
 lazy_static! {
-	static ref DISCOVERY_POOL: ThreadPool = thread_pool!(3);
+	static ref DISCOVERY_POOL: ThreadPool = thread_pool!(4);
 }
 
 #[repr(u8)]
@@ -111,6 +111,10 @@ impl GameAddons {
 		id
 	}
 
+	fn get_workshop_content_dir<P: AsRef<Path>>(gmod: P) -> Option<PathBuf> {
+		Some(gmod.as_ref().parent()?.parent()?.join("workshop/content/4000"))
+	}
+
 	pub fn refresh(&self) {
 		self.discovered.store(Discovered::Discovering.into(), Ordering::Release);
 
@@ -124,6 +128,8 @@ impl GameAddons {
 			return;
 		};
 
+		let workshop_content_dir = GameAddons::get_workshop_content_dir(&gmod);
+
 		let addons_dir = gmod.join("GarrysMod/addons");
 
 		gmod.push("GarrysMod/cache/workshop");
@@ -131,6 +137,40 @@ impl GameAddons {
 
 		let (tx_metadata, rx_metadata) = mpsc::channel();
 		let (tx, rx) = mpsc::channel();
+
+		if let Some(workshop_content_dir) = workshop_content_dir {
+			let tx_workshop_content_metadata = tx_metadata.clone();
+			DISCOVERY_POOL.spawn(move || {
+				let addons = match workshop_content_dir.read_dir() {
+					Ok(addons) => addons,
+					Err(_) => return,
+				};
+
+				for (id, mut read_dir) in addons.filter_map(|entry| {
+					entry.ok().and_then(|entry| if entry.file_type().ok()?.is_dir() {
+						let read_dir = entry.path().read_dir().ok()?;
+						let id = entry.file_name().to_string_lossy().parse::<u64>().ok()?;
+						Some((id, read_dir))
+					} else {
+						None
+					})
+				}) {
+					if let Some(gma_path) = {
+						read_dir.find_map(|entry| {
+							entry.ok().and_then(|entry| {
+								if entry.file_type().ok()?.is_file() && entry.path().extension().and_then(|x| x.to_str())? == "gma" {
+									Some(entry.path().to_path_buf())
+								} else {
+									None
+								}
+							})
+						})
+					} {
+						tx_workshop_content_metadata.send((gma_path, if id == 0 { None } else { Some(PublishedFileId(id)) })).unwrap();
+					}
+				}
+			});
+		}
 
 		let tx_addons_metadata = tx_metadata.clone();
 		DISCOVERY_POOL.spawn(move || {
@@ -342,7 +382,7 @@ pub fn downloader_extract_gmas(paths: Vec<PathBuf>) {
 					)
 				);
 				transaction.data((turbonone!(), path.metadata().map(|metadata| metadata.len()).unwrap_or(0)));
-				ignore! { gma.extract(destination.clone(), &transaction, false) };
+				ignore! { gma.extract(destination.clone(), &transaction, false, true) };
 			}
 		}
 	}

@@ -116,6 +116,7 @@
 			pathFailMessage = null;
 			tippyFollow(pathInputContainer, pathFailMessage);
 			pathValue = '';
+			checkForm(false);
 		}
 	}
 
@@ -311,7 +312,7 @@
 	}));
 
 	async function publishIcon() {
-		if (!readyForPublish || $isPublishing || !gmaIconPath || !$updatingAddon) return;
+		if ($isPublishing || !gmaIconPath || !$updatingAddon) return;
 		$isPublishing = true;
 		playSound('success');
 
@@ -708,6 +709,7 @@
 	}
 	#ignore > .hide-scroll {
 		flex: 1;
+		flex-basis: 0;
 		overflow: auto;
 		margin-top: 1rem;
 		background-color: #292929;

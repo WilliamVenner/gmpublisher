@@ -44,6 +44,8 @@ impl GMAFile {
 
 		f.write(GMA_HEADER)?;
 
+		f.write_u8(3)?; // gma version
+
 		// steamid [unused]
 		f.write_u64::<LittleEndian>(0)?;
 

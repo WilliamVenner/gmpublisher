@@ -1,27 +1,43 @@
 // https://github.com/garrynewman/bootil/blob/beb4cec8ad29533965491b767b177dc549e62d23/src/3rdParty/globber.cpp
 // https://github.com/Facepunch/gmad/blob/master/include/AddonWhiteList.h
 
-pub const DEFAULT_IGNORE: &'static [&'static str] = &[
+macro_rules! globbers {
+	($($glob:literal),*) => {
+		&[
+			$(concat!($glob, '\0')),*
+		]
+	};
+}
+
+pub const DEFAULT_IGNORE: &'static [&'static str] = globbers!(
 	".git/*",
 	"*.psd",
 	"*.pdn",
 	"*.xcf",
 	"*.svn",
 	"*.ini",
+	"*.rtf",
+	"*.pdf",
 	".DS_Store",
 	".gitignore",
 	".vscode/*",
 	".github/*",
+	".vs/*",
 	".editorconfig",
-	"README.md",
-	"README.txt",
-	"readme.txt",
+	"LICENSE",
+	"LICENSE.*",
+	"license",
+	"license.*",
+	"README",
+	"README.*",
+	"readme",
+	"readme.*",
 	"addon.json",
 	"addon.txt",
-	"addon.jpg",
-];
+	"addon.jpg"
+);
 
-const ADDON_WHITELIST: &'static [&'static str] = &[
+const ADDON_WHITELIST: &'static [&'static str] = globbers!(
 	"lua/*.lua",
 	"scenes/*.vcd",
 	"particles/*.pcf",
@@ -77,60 +93,59 @@ const ADDON_WHITELIST: &'static [&'static str] = &[
 	"gamemodes/*/content/maps/thumb/*.png",
 	"gamemodes/*/content/sound/*.wav",
 	"gamemodes/*/content/sound/*.mp3",
-	"gamemodes/*/content/sound/*.ogg",
-];
+	"gamemodes/*/content/sound/*.ogg"
+);
 
 const WILD_BYTE: u8 = '*' as u8;
 const QUESTION_BYTE: u8 = '?' as u8;
 
-pub fn globber(wild: &str, str: &str) -> bool {
-	let mut cp = 0;
-	let mut mp = 0;
-	let mut s = 0;
-	let mut w = 0;
-	let wild_len = wild.len();
-	let str_len = str.len();
-	let wild_bytes = wild.as_bytes();
-	let str_bytes = str.as_bytes();
+pub fn globber(_wild: &str, _str: &str) -> bool {
+	unsafe {
+		let mut cp: *const u8 = 0 as u8 as *const u8;
+		let mut mp: *const u8 = 0 as u8 as *const u8;
 
-	while s != str_len && w != wild_len && wild_bytes[w] != WILD_BYTE {
-		if wild_bytes[w] != str_bytes[s] && wild_bytes[w] != QUESTION_BYTE {
-			return false;
-		}
+		let mut wild = _wild.as_ptr();
+		let mut str = _str.as_ptr();
 
-		s += 1;
-		w += 1;
-	}
-
-	while s != str_len {
-		if wild_bytes.get(w).map(|c| *c == WILD_BYTE).unwrap_or(false) {
-			w += 1;
-			if w == wild_len {
-				return true;
+		while *str != 0 && *wild != WILD_BYTE {
+			if *wild != *str && *wild != QUESTION_BYTE {
+				return false;
 			}
-
-			mp = w;
-			cp = s + 1;
-		} else if wild_bytes[w] == str_bytes[s] || wild_bytes[w] == QUESTION_BYTE {
-			s += 1;
-			w += 1;
-		} else {
-			w = mp;
-			s = cp;
-			cp += 1;
+			wild = wild.add(1);
+			str = str.add(1);
 		}
-	}
 
-	while w != wild_len && wild_bytes[w] == WILD_BYTE {
-		w += 1;
-	}
+		while *str != 0 {
+			if *wild == WILD_BYTE {
+				wild = wild.add(1);
+				if *wild == 0 {
+					return true;
+				}
+				mp = wild;
+				cp = str.add(1);
+			} else if *wild == *str || *wild == QUESTION_BYTE {
+				wild = wild.add(1);
+				str = str.add(1);
+			} else {
+				wild = mp;
+				str = cp;
+				cp = cp.add(1);
+			}
+		}
 
-	wild_len == w
+		while *wild == WILD_BYTE {
+			wild = wild.add(1);
+		}
+		*wild == 0
+	}
 }
 
 pub fn check(str: &str) -> bool {
+	let mut str = str.to_string();
+	str.push('\0');
+
 	for glob in ADDON_WHITELIST {
-		if globber(glob, str) {
+		if globber(glob, &str) {
 			return true;
 		}
 	}
@@ -139,8 +154,11 @@ pub fn check(str: &str) -> bool {
 }
 
 pub fn filter_default_ignored(str: &str) -> bool {
+	let mut str = str.to_string();
+	str.push('\0');
+
 	for glob in DEFAULT_IGNORE {
-		if globber(glob, str) {
+		if globber(glob, &str) {
 			return false;
 		}
 	}
@@ -153,8 +171,11 @@ pub fn is_ignored(str: &str, ignore: &[String]) -> bool {
 		return false;
 	}
 
+	let mut str = str.to_string();
+	str.push('\0');
+
 	for glob in ignore {
-		if globber(glob, str) {
+		if globber(glob, &str) {
 			return true;
 		}
 	}
@@ -173,6 +194,7 @@ pub fn test_whitelist() {
 		"materials/lol.jpeg",
 		"gamemodes/the_gamemode_name/backgrounds/file_name.jpg",
 		"gamemodes/my_base_defence/backgrounds/1.jpg",
+		"GAMEMODES/MY_BASE_DEFENCE/BACKGROUNDS/1.JPG",
 	];
 
 	let bad: &'static [&'static str] = &[

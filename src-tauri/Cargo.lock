@@ -1499,7 +1499,7 @@ dependencies = [
 
 [[package]]
 name = "gmpublisher"
-version = "2.5.1"
+version = "2.7.1"
 dependencies = [
  "anyhow",
  "atomic_refcell",
@@ -3920,22 +3920,6 @@ dependencies = [
 [[package]]
 name = "tauri-codegen"
 version = "1.0.0-beta-rc.1"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#b05bb3d64aa1ddcebf1e5b1fc9c97196c807cb19"
-dependencies = [
- "blake3",
- "proc-macro2",
- "quote 1.0.9",
- "serde",
- "serde_json",
- "tauri-utils 1.0.0-beta-rc.1 (git+https://github.com/williamvenner/tauri?branch=personal)",
- "thiserror",
- "walkdir",
- "zstd 0.8.0+zstd.1.4.9",
-]
-
-[[package]]
-name = "tauri-codegen"
-version = "1.0.0-beta-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15e1584330f194c375dff4583bdd9cc9dd31dc47b485e089d0571f9009216ba"
 dependencies = [
@@ -3948,6 +3932,22 @@ dependencies = [
  "thiserror",
  "walkdir",
  "zstd 0.7.0+zstd.1.4.9",
+]
+
+[[package]]
+name = "tauri-codegen"
+version = "1.0.0-beta-rc.1"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#b05bb3d64aa1ddcebf1e5b1fc9c97196c807cb19"
+dependencies = [
+ "blake3",
+ "proc-macro2",
+ "quote 1.0.9",
+ "serde",
+ "serde_json",
+ "tauri-utils 1.0.0-beta-rc.1 (git+https://github.com/williamvenner/tauri?branch=personal)",
+ "thiserror",
+ "walkdir",
+ "zstd 0.8.0+zstd.1.4.9",
 ]
 
 [[package]]
@@ -3991,23 +3991,6 @@ dependencies = [
 [[package]]
 name = "tauri-utils"
 version = "1.0.0-beta-rc.1"
-source = "git+https://github.com/williamvenner/tauri?branch=personal#b05bb3d64aa1ddcebf1e5b1fc9c97196c807cb19"
-dependencies = [
- "html5ever",
- "kuchiki",
- "phf",
- "proc-macro2",
- "quote 1.0.9",
- "serde",
- "serde_json",
- "thiserror",
- "url 2.2.1",
- "zstd 0.8.0+zstd.1.4.9",
-]
-
-[[package]]
-name = "tauri-utils"
-version = "1.0.0-beta-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a896f622a51ae93bd77aa7aa02b4bbd1dd4982932551ea3319f04ffdf82fbe8f"
 dependencies = [
@@ -4020,6 +4003,23 @@ dependencies = [
  "thiserror",
  "url 2.2.1",
  "zstd 0.7.0+zstd.1.4.9",
+]
+
+[[package]]
+name = "tauri-utils"
+version = "1.0.0-beta-rc.1"
+source = "git+https://github.com/williamvenner/tauri?branch=personal#b05bb3d64aa1ddcebf1e5b1fc9c97196c807cb19"
+dependencies = [
+ "html5ever",
+ "kuchiki",
+ "phf",
+ "proc-macro2",
+ "quote 1.0.9",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "url 2.2.1",
+ "zstd 0.8.0+zstd.1.4.9",
 ]
 
 [[package]]

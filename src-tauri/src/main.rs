@@ -11,6 +11,10 @@ extern crate lazy_static;
 extern crate turbonone;
 
 #[macro_use]
+mod logging;
+pub use logging::*;
+
+#[macro_use]
 pub mod globals;
 pub use globals::*;
 
@@ -76,6 +80,8 @@ fn main() {
 	if build::bundler() {
 		return;
 	}
+
+	std::panic::set_hook(Box::new(|panic| logging::panic(panic)));
 
 	rayon::ThreadPoolBuilder::new().num_threads(*crate::NUM_THREADS).build_global().unwrap();
 

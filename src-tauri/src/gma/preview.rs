@@ -65,7 +65,7 @@ pub fn extract_preview_gma(gma_path: PathBuf, dest: ExtractDestination) -> Optio
 
 		let gma_ref = gma.clone();
 		rayon::spawn(move || {
-			ignore! { gma_ref.extract(dest, &transaction, true) };
+			ignore! { gma_ref.extract(dest, &transaction, true, true) };
 		});
 
 		Some(id)

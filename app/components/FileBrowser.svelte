@@ -3,7 +3,7 @@
 	import { _ } from 'svelte-i18n';
 	import filesize from 'filesize';
 	import { tippyFollow } from '../tippy.js';
-	import { ChevronUp, Folder, FolderAdd } from 'akar-icons-svelte';
+	import { ChevronUp, Copy, Folder, FolderAdd } from 'akar-icons-svelte';
 	import { afterUpdate, onDestroy } from 'svelte';
 	import Dead from './Dead.svelte';
 	import * as dialog from '@tauri-apps/api/dialog';
@@ -119,6 +119,16 @@
 		});
 	}
 
+	function copy() {
+		let path = pathContainer.innerText.trim();
+		if (path.length > 0) {
+			if (PATH_SEPARATOR !== '/') {
+				path = path.replace(/\//g, PATH_SEPARATOR);
+			}
+			navigator.clipboard.writeText(path);
+		}
+	}
+
 	if (browsePath) initBrowser();
 	if (entriesList && entriesList.subscribe) {
 		onDestroy(entriesList.subscribe(initBrowser));
@@ -136,6 +146,7 @@
 					{browsePath.replace(/\\/g, '/')}
 				{/if}
 			</div>
+			<div id="copy" class="control" on:click={copy} use:tippyFollow={$_('copy_path')}><Copy size="1rem"/></div>
 			<div id="open" class="control" on:click={open} use:tippyFollow={$_('open_addon_location')}><Folder size="1rem"/></div>
 		{:else}
 			<div id="path" class="select hide-scroll" bind:this={pathContainer}>
@@ -264,6 +275,9 @@
 		position: relative;
 		box-sizing: content-box;
 		width: 1rem;
+	}
+	#nav .control:not(:last-child) {
+		padding-right: 0;
 	}
 	#nav .control :global(.icon) {
 		position: absolute;

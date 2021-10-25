@@ -205,7 +205,7 @@ impl GMAFile {
 }
 
 pub trait ExtractGMAImmut {
-	fn extract(&self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError>;
+	fn extract(&self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool, ignore_whitelist: bool) -> Result<PathBuf, GMAError>;
 	fn extract_entry(&self, entry_path: String, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError>;
 	fn extract_entry_with_handle(
 		&self,
@@ -216,11 +216,11 @@ pub trait ExtractGMAImmut {
 	) -> Result<PathBuf, GMAError>;
 }
 pub trait ExtractGMAMut {
-	fn extract(&mut self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError>;
+	fn extract(&mut self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool, ignore_whitelist: bool) -> Result<PathBuf, GMAError>;
 	fn extract_entry(&mut self, entry_path: String, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError>;
 }
 impl ExtractGMAImmut for GMAFile {
-	fn extract(&self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError> {
+	fn extract(&self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool, ignore_whitelist: bool) -> Result<PathBuf, GMAError> {
 		let result = THREAD_POOL.install(move || {
 			let dest_path = dest.prepare(&self.extracted_name);
 			let entries_start = self.pointers.entries;
@@ -248,8 +248,10 @@ impl ExtractGMAImmut for GMAFile {
 				if let GMAMetadata::Standard { .. } = metadata {
 					if let Ok(json) = serde_json::ser::to_string_pretty(metadata) {
 						dest_path.push("addon.json");
+						if let Some(parent) = dest_path.parent() {
+							ignore! { fs::create_dir_all(parent) };
+						}
 						ignore! { fs::write(dest_path, json.as_bytes()) };
-						//dest_path.pop();
 					}
 				}
 			};
@@ -259,7 +261,7 @@ impl ExtractGMAImmut for GMAFile {
 				.try_for_each(|(entry_path, entry)| -> Result<(), GMAError> {
 					let mut handle = self.read()?;
 
-					if whitelist::check(entry_path) {
+					if ignore_whitelist || whitelist::check(entry_path) {
 						if transaction.aborted() {
 							return Err(GMAError::Cancelled);
 						}
@@ -342,10 +344,10 @@ impl ExtractGMAImmut for GMAFile {
 	}
 }
 impl ExtractGMAMut for GMAFile {
-	fn extract(&mut self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError> {
+	fn extract(&mut self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool, ignore_whitelist: bool) -> Result<PathBuf, GMAError> {
 		THREAD_POOL.install(move || {
 			self.entries()?;
-			(&*self).extract(dest, transaction, open_after_extract)
+			(&*self).extract(dest, transaction, open_after_extract, ignore_whitelist)
 		})
 	}
 	fn extract_entry(&mut self, entry_path: String, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError> {
@@ -365,7 +367,7 @@ pub fn extract_gma(gma_path: PathBuf, dest: ExtractDestination) -> Option<u32> {
 	let id = transaction.id;
 
 	rayon::spawn(move || {
-		ignore! { gma.extract(dest, &transaction, true) };
+		ignore! { gma.extract(dest, &transaction, true, true) };
 	});
 
 	Some(id)

@@ -1,0 +1,269 @@
+{
+	"LANGUAGE_NAME": "Nederlands",
+
+	"my_workshop": "Mijn Workshop",
+	"loading": "Laden...",
+	"gmod_dir": {
+		"name": "Garry's Mod Map",
+		"fail": "Kon geen valide Garry's Mod map vinden waar je hebt aangegeven.\nZorg er voor dat de map een bin/ map heeft met daarin twee mappen genaamd gmad en gmpublish."
+	},
+	"greetings": {
+		"morning": "Goede morgen, {name}!",
+		"morning.anon": "Goede morgen!",
+		"afternoon": "Goede middag, {name}!",
+		"afternoon.anon": "Goede middag!",
+		"evening": "Goede avond, {name}!",
+		"evening.anon": "Goede avond!"
+	},
+	"game": "Spel",
+	"filesystem": "Bestandssysteem",
+	"github_star": "Geef een ster op GitHub",
+	"search": "Zoeken...",
+	"showing_num_addons": "Geeft {num} van de {total} addons weer",
+	"extract_where_to": "Waarheen?",
+	"extract_overwrite_warning": "Bestaande bestanden worden overgeschreven.",
+	"extract_open_tip": "De GMA wordt uitgepakt naar een TIJDELIJKE map en geopend.",
+	"browse": "Bladeren...",
+	"addons_folder": "Addons",
+	"downloads_folder": "Downloads",
+	"open": "Open",
+	"create_folder": "Map creëren",
+	"extract": "Pak uit",
+	"extracting": "Uitpakken",
+	"extracting_progress": "{pct}% uitgepakt ({data} / {dataTotal})",
+	"pack": "Pakket",
+	"publish": "Publiceren",
+	"update": "Updaten",
+	"size_analyzer": "Addon Grootte Analysator",
+	"name": "Naam",
+	"cancel": "Annuleren",
+	"done": "Klaar",
+	"cancelled": "Geannuleerd",
+	"size": "Grootte",
+	"addon_type": "Type",
+	"file_types": {
+		"folder": "Map",
+
+		"vtf": "Valve Texture Format",
+		"vmt": "Valve Material Format",
+		"map": "Map",
+		"ain": "Map AI Nodegraph",
+		"nav": "Map AI Navigation Mesh",
+		"ttf": "TrueType Font",
+		"vcd": "Valve Choreography Data",
+		"fgd": "Forge Game Data",
+		"pcf": "Particles File",
+		"lua": "Lua Code",
+		"mdl": "Model",
+		"vtx": "Model LOD Data",
+		"phy": "Model Physics Mesh",
+		"ani": "Model Animation Data",
+		"vvd": "Model Vertex Data",
+		"txt": "Text",
+		"properties": "Eigenschappen",
+
+		"audio": "Audio",
+		"image": "Afbeelding",
+		"unknown": "Onbekend ({extension})"
+	},
+	"items_one": "1 item",
+	"items_num": "{n} items",
+	"items_shown": "{n} weergegeven",
+	"created": "Gecreëerd",
+	"updated": "Geupdated",
+	"author": "Auteur",
+	"open_addon_location": "Open Addon Locatie",
+
+	"downloader": "Downloader",
+	"download-input": "Plak Workshop IDs, links, collecties hierin...",
+	"download-input-tip": "TIP: Je kunt hier met komma's of niewe regels gescheiden dingen plakken!",
+	"downloading": "Downloaden",
+	"log": "Log",
+	"waiting": "Wachten",
+	"extraction_tip": "Je kunt op dit scherm GMA bestanden slepen om ze direct uit te pakken.",
+	"set_destination": "Bestemming instellen",
+
+	"addon": "Addon",
+	"speed": "Snelheid",
+	"total_filesize": "Totaal",
+	"progress": "Vooruitgang",
+
+	"LOG_DOWNLOAD_STARTED": "Download gestart voor {addon}",
+	"LOG_DOWNLOAD_FINISHED": "Download klaar voor {addon} in {time}",
+	"LOG_DOWNLOAD_FAILED": "Download GEFAALD voor {addon} (\"{reason}\")",
+
+	"LOG_EXTRACT_STARTED": "Uitpakking gestart voor {addon}",
+	"LOG_EXTRACT_FAILED": "Uitpakking GEFAALD voor {addon} (\"{reason}\")",
+	"LOG_EXTRACT_FINISHED": "Uitpakking klaar voor {addon} in {time}",
+
+	"FS_ANALYZER_RENDERING": "Renderen...",
+	"FS_ANALYZER_SERIALIZING": "Serializen...",
+	"FS_ANALYZER_STEAM": "Steam Data Downloaden...",
+	"FS_ANALYZER_COMPUTING": "Berekenen...",
+	"FS_ANALYZER_TAGGIFYING": "Taggiferen...",
+	"FS_ANALYZER_DISCOVERING": "Ontdekken...",
+
+	"time_just_now": "Nu",
+	"click_to_open": "Klik om te openen!",
+	"content_generator": "Content Generator",
+	"installed_addons": "Geïnstalleerde Addons",
+
+	"steam_disconnected": "Verbinding met Steam Servers verbroken.",
+	"steam_connected": "Verbonden met Steam Servers.",
+
+	"publish_new": "Nieuwe publiceren...",
+
+	"settings": {
+		"saved": "Opgeslagen!",
+		"settings": "Instellingen",
+
+		"paths": {
+			"paths": "Paden",
+			"user_data": "Gebruikersdatapad",
+			"gmod": "Garry's Mod Installatiepad",
+			"temp": "Tijdelijke pad",
+			"downloads": "Downloads pad"
+		},
+
+		"general": {
+			"general": "Algemeen",
+			"sounds": "Geluiden"
+		},
+
+		"resets": {
+			"resets": "Resets",
+			"settings": "Reset Instellingen",
+			"clear_temp": "Tijdelijke Bestanden Opschonen",
+			"clear_user_data": "Gebruikersdata Opschonen"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "Gedrag overschrijven",
+			"recycle": "Recyclen",
+			"delete": "Verwijderen",
+			"overwrite": "Overschrijven",
+			"tooltip": "Wat moet gmpublisher doen als de GMA's uitpakmap al bestaat bij het uitpakken van GMA's (de GMA is eerder uitgepakt)?"
+		},
+
+		"accessibility": {
+			"accessibility": "Toegankelijkheid",
+			"color_error": "Error Kleur",
+			"color_success": "Succes Kleur",
+			"color_neutral": "Neutrale Kleur"
+		}
+	},
+
+	"gma_type_name": "Ingepakte Garry's Mod Addon",
+	"downloading_tip": "Je kunt Steam Workshop links op dit scherm slepen om ze te downloaden + uit te pakken.",
+	"open_workshop": "Workshop Openen",
+	"bulk_extract_gmas": "Pak massaal GMA's uit",
+	"error": "Error",
+	"queued": "In wachtrij",
+	"remove_all": "Verwijder Alles",
+	"open_all": "Open Alles",
+
+	"ERR_UNKNOWN": "Onkebende Fout",
+	"ERR_NO_ADDONS_FOUND": "Geen Addons Gevonden",
+	"ERR_STEAM_ERROR": "Steam Error: {data}",
+	"ERR_WHITELIST": "Deze bestanden zitten niet in de bestands type/locatie whitelist. Als dit onverwachts is, dan heeft jouw addon waarschijnlijk een foute bestandsstructuur.\n\nAls je deze bestanden wilt filteren van je GMA's, voeg ze toe aan je genegeerde bestandspatronen.\n\n{data}",
+	"ERR_IO_ERROR": "I/O Error",
+	"ERR_PATH_IO_ERROR": "I/O Error ({data})",
+	"ERR_GMA_FORMAT_ERROR": "Beschadigde GMA bestand",
+	"ERR_GMA_INVALID_HEADER": "Ongeldige GMA bestand",
+	"ERR_GMA_ENTRY_NOT_FOUND": "Bestand niet gevonden",
+	"ERR_DOWNLOAD_MISSING": "Gedownload, maar de bestanden zijn niet gevonden",
+	"ERR_ICON_TOO_LARGE": "Icoon te groot (> 1 MB)",
+	"ERR_ICON_TOO_SMALL": "Icoon to klein (< 16 B)",
+	"ERR_ICON_INVALID_FORMAT": "Icoon moet een JPG, PNG of GIF zijn",
+	"ERR_LZMA": "LZMA Compressiefout",
+	"ERR_DOWNLOAD_FAILED": "Download gefaald",
+	"ERR_ITEM_NOT_FOUND": "Item Niet Gevonden",
+	"ERR_ITEM_INACCESSIBLE": "Item Ontoegankelijk",
+	"ERR_INVALID_CONTENT_PATH": "Deze content pad bestaat niet, is geen map of gmpublisher heeft geen rechten om het te openen",
+	"ERR_MULTIPLE_GMAS": "Meerdere GMA bestanden gevonden in deze content pad",
+	"ERR_IMAGE_ERROR": "Afbeeldingsfout: {data}",
+	"ERR_DUPLICATE_ENTRIES": "Er is een identiek bestand ({data}) in deze contentpad. Alle paden moeten uniek zijn en in kleine letters. i use arch btw",
+	"ERR_NO_ENTRIES": "Er zijn geen bestanden in deze content pad.",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Workshop overeenkomsten niet geaccepteerd",
+
+	"icon_instructions": "Geaccepteerde formaten: JPG, PNG, GIF\nMax Grootte: 1 MB\nAanbevolen: 512x512",
+	"addon_title": "Titel...",
+	"addon_path": "Addon Pad...",
+	"icon_file_pick": "Workshop Icoon",
+	"remove_icon": "Verwijder icoon",
+
+	"addon_types": {
+		"ServerContent": "Server Content",
+		"gamemode": "Gamemode",
+		"map": "Map",
+		"weapon": "Weapon",
+		"vehicle": "Vehicle",
+		"npc": "NPC",
+		"tool": "Tool",
+		"effects": "Effects",
+		"model": "Model",
+		"entity": "Entity"
+	},
+
+	"tag_1": "Tag 1",
+	"tag_2": "Tag 2",
+	"tag_3": "Tag 3",
+
+	"addon_tags": {
+		"fun": "Fun",
+		"roleplay": "Roleplay",
+		"scenic": "Scenic",
+		"movie": "Movie",
+		"realism": "Realism",
+		"cartoon": "Cartoon",
+		"water": "Water",
+		"comic": "Comic",
+		"build": "Build"
+	},
+
+	"publish_exclamation": "Publiceer!",
+	"update_exclamation": "Update!",
+	"add_ellipsis": "Voeg toe...",
+	"ignored_file_patterns": "Bestandspatronen genegeerd",
+	"show_more": "MEER",
+	"ignored_for_convenience": "Dit bestandspatroon wordt standaard genegeerd om het makkelijker te maken.",
+	"file_browser": "Bestandsverkenner",
+	"file_browser_select": "Sleep hier een bestand of klik om te bladeren",
+	"no_files_found": "Geen bestanden gevonden",
+	"upscale_addon_icon": "Schalen naar 512x512",
+	"changelog": "Wijzigingslog",
+	"update_warning": "Je bent een update aan het pushen naar {title} ({id})",
+
+	"PUBLISH_PACKING": "Inpakkken {pct}% ({data} / {dataTotal})",
+	"PUBLISH_STARTING": "Publiceren Starten",
+	"PUBLISH_PREPARING_CONFIG": "Config Voorbereiden",
+	"PUBLISH_PREPARING_CONTENT": "Content Voorbereiden",
+	"PUBLISH_UPLOADING_CONTENT": "Content Uploaden",
+	"PUBLISH_UPLOADING_PREVIEW_FILE": "Voorbeeldweergavebestand Uploaden",
+	"PUBLISH_COMMITTING_CHANGES": "Veranderingen Vastleggen",
+	"PUBLISH_PROCESSING_ICON": " Icoon Verwerken",
+
+	"subscriptions": "Abonnementen",
+	"unsubscribe": "Afmelden",
+	"unsubscribe_all": "Alles Afmelden",
+	"unsubscribe_all_warning": "WAARSCHUWING: Dit zal je afmelden van ALLE Workshop addons waarvoor je geabonneerd bent.",
+	"update_available": "Nieuwe Update Beschikbaar!\n{version}",
+	"workshop_page": "Workshop Pagina",
+	"steam_workshop": "Steam Workshop",
+	"open_count": "Je hebt gmpublisher {count} keer geopend! Gefeliciteerd!",
+	"enjoying_gmpublisher": "Blij met gmpublisher?",
+	"github_star_plz_i_need_a_job_maybe": "Als je een GitHub accout hebt, laat alsjeblieft een ster achter bij de %GitHub repository% als mijn werk jou heeft geholpen :D",
+	"vscode_glua_enhanced": "Als je een ontwikkelaar bent, dan ben je misschien ook geïnteresseerd in mijn %VSCode GLua Enhanced% extensie.",
+
+	"copy_link": "Kopieer Link",
+	"open_image": "Open Afbeelding",
+	"copy_image_link": "Kopieer Afbeelding Link",
+	"download": "Download",
+	"sent_to_downloader": "Naar Downloader Gestuurd",
+
+	"locating": "Lokaliseren",
+	"decompressing": "Dekompresseren {progress}",
+	"reading_metadata": "Metadata Lezen",
+
+	"publish_icon": "Nieuwe Icoon Publiceren (Zal de addon NIET updaten)"
+}
