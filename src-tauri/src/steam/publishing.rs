@@ -605,11 +605,7 @@ pub fn publish(
 					title: title.clone(),
 					addon_type: addon_type.clone(),
 					tags: tags.clone(),
-					ignore: app_data!().settings.read().ignore_globs.iter().map(|x| {
-						let mut x = x.to_string();
-						x.push('\0');
-						x
-					}).collect(),
+					ignore: app_data!().settings.read().ignore_globs.clone(),
 				}),
 				entries: None,
 				pointers: GMAFilePointers::default(),
