@@ -79,7 +79,7 @@ impl GMAFile {
 
 			let (tx, rx) = crossbeam::channel::unbounded();
 
-			let root_path_strip_len = src_path.to_string_lossy().len() + 1;
+			let root_path_strip_len = src_path.to_string_lossy().len();
 
 			let mut total = 0.;
 			for (path, relative_path) in WalkDir::new(src_path).into_iter().filter_map(|entry| {
@@ -87,10 +87,9 @@ impl GMAFile {
 					if entry.file_type().is_file() {
 						let path = entry.into_path();
 
-						let mut relative_path = path.to_slash_lossy().to_lowercase();
-						{
-							relative_path.drain(0..root_path_strip_len);
-						}
+						let relative_path = path.to_slash_lossy()[root_path_strip_len..].trim_matches('/').to_lowercase();
+
+						println!("relative_path {}", relative_path);
 
 						if whitelist::check(&relative_path) {
 							return Some((path, relative_path));
