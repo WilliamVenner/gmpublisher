@@ -49,6 +49,8 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 Windows, macOS or Linux
 
+Linux users will need to install `libgtksourceview-3.0-1`
+
 ## Tutorials
 
 [DanFMN - Fastest Way to Upload a Garry's Mod Addon To Workshop](https://youtu.be/_syLXTFXmgM)
