@@ -156,8 +156,6 @@ impl Steam {
 					backlog.push_back(data);
 				}
 
-				drop(workshop);
-
 				while !backlog.is_empty() {
 					let backlog_len = backlog.len();
 					let mut queue = backlog.split_off((steamworks::RESULTS_PER_PAGE as usize).min(backlog_len));

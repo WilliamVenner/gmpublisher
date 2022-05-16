@@ -42,7 +42,7 @@ impl GMAFile {
 			GMAMetadata::Standard { title, .. } => (title.as_str(), Some(metadata)),
 		};
 
-		f.write(GMA_HEADER)?;
+		f.write_all(GMA_HEADER)?;
 
 		f.write_u8(3)?; // gma version
 
@@ -141,7 +141,7 @@ impl GMAFile {
 			i += 1;
 
 			f.write_u32::<LittleEndian>(i as u32)?;
-			f.write(&path)?;
+			f.write_all(&path)?;
 			f.write_u8(0)?;
 			f.write_i64::<LittleEndian>(contents.len() as i64)?;
 			f.write_u32::<LittleEndian>(crc32)?;
@@ -155,7 +155,7 @@ impl GMAFile {
 		f.write_u32::<LittleEndian>(0)?;
 
 		for contents in entries_buf.into_iter() {
-			f.write(&contents)?;
+			f.write_all(&contents)?;
 		}
 
 		let written = f.buffer();

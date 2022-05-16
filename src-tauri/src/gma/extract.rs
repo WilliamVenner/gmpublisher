@@ -56,6 +56,7 @@ impl ExtractDestination {
 			Addons => app_data!().gmod_dir().and_then(|mut path| {
 				path.push("GarrysMod");
 				path.push("addons");
+				path.push(extracted_name.as_ref());
 				Some(path)
 			}),
 

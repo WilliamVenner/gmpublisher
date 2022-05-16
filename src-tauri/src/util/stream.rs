@@ -109,7 +109,7 @@ pub trait NTStringReader: BufRead + Seek {
 
 pub trait NTStringWriter: Write {
 	fn write_nt_string<S: AsRef<str>>(&mut self, str: S) -> Result<(), std::io::Error> {
-		self.write(str.as_ref().as_bytes())?;
+		self.write_all(str.as_ref().as_bytes())?;
 		self.write_u8(0)?;
 		Ok(())
 	}

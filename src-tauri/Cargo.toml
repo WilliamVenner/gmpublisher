@@ -37,7 +37,7 @@ bindgen = "0.58.1"
 features = [ "serde" ]
 #path = "../../steamworks-rs"
 git = "https://github.com/WilliamVenner/steamworks-rs"
-branch = "master"
+branch = "personal-2"
 
 [dependencies]
 tauri-utils = "1.0.0-beta-rc.1"

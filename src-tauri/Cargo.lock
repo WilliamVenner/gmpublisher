@@ -185,29 +185,6 @@ dependencies = [
 
 [[package]]
 name = "bindgen"
-version = "0.57.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd4865004a46a0aafb2a0a5eb19d3c9fc46ee5f063a6cfc605c69ac9ecf5263d"
-dependencies = [
- "bitflags 1.2.1",
- "cexpr",
- "clang-sys",
- "clap",
- "env_logger",
- "lazy_static",
- "lazycell",
- "log 0.4.14",
- "peeking_take_while",
- "proc-macro2",
- "quote 1.0.9",
- "regex",
- "rustc-hash",
- "shlex 0.1.1",
- "which 3.1.1",
-]
-
-[[package]]
-name = "bindgen"
 version = "0.58.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f8523b410d7187a43085e7e064416ea32ded16bd0a4e6fc025e21616d01258f"
@@ -225,7 +202,7 @@ dependencies = [
  "quote 1.0.9",
  "regex",
  "rustc-hash",
- "shlex 1.0.0",
+ "shlex",
  "which 3.1.1",
 ]
 
@@ -1506,7 +1483,7 @@ dependencies = [
  "backtrace",
  "base64 0.13.0",
  "bincode",
- "bindgen 0.58.1",
+ "bindgen",
  "byteorder",
  "chardetng",
  "chrono",
@@ -3487,12 +3464,6 @@ dependencies = [
 
 [[package]]
 name = "shlex"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fdf1b9db47230893d76faad238fd6097fd6d6a9245cd7a4d90dbd639536bbd2"
-
-[[package]]
-name = "shlex"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42a568c8f2cd051a4d283bd6eb0343ac214c1b0f1ac19f93e1175b2dee38c73d"
@@ -3602,7 +3573,7 @@ dependencies = [
 [[package]]
 name = "steamworks"
 version = "0.7.0"
-source = "git+https://github.com/WilliamVenner/steamworks-rs?branch=master#50eda62454e0e973742c3246a401c7a2440b7f23"
+source = "git+https://github.com/WilliamVenner/steamworks-rs?branch=personal-2#d0cb49130546540c37f8eb0ce71be9deb576b78b"
 dependencies = [
  "bitflags 1.2.1",
  "lazy_static",
@@ -3614,9 +3585,9 @@ dependencies = [
 [[package]]
 name = "steamworks-sys"
 version = "0.7.0"
-source = "git+https://github.com/WilliamVenner/steamworks-rs?branch=master#50eda62454e0e973742c3246a401c7a2440b7f23"
+source = "git+https://github.com/WilliamVenner/steamworks-rs?branch=personal-2#d0cb49130546540c37f8eb0ce71be9deb576b78b"
 dependencies = [
- "bindgen 0.57.0",
+ "bindgen",
 ]
 
 [[package]]
