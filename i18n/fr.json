@@ -97,11 +97,11 @@
 	"LOG_EXTRACT_FINISHED": "Extraction terminé de {addon} en {time}",
 
 	"FS_ANALYZER_RENDERING": "Rendu...",
-	"FS_ANALYZER_CACHING": "Mise en cache...",
 	"FS_ANALYZER_SERIALIZING": "Sérialisation...",
 	"FS_ANALYZER_STEAM": "Téléchargement des données Steam...",
 	"FS_ANALYZER_COMPUTING": "Calcul...",
 	"FS_ANALYZER_TAGGIFYING": "Étiquetage...",
+	"FS_ANALYZER_DISCOVERING": "Découverte...",
 
 	"time_just_now": "À l'instant",
 	"click_to_open": "Cliquez pour ouvrir !",
@@ -138,18 +138,11 @@
 		},
 
 		"extract_overwrite_mode": {
-			"extract_overwrite_mode": "Comportement de réécriture des données",
+			"extract_overwrite_mode": "Comportement de réécriture",
 			"recycle": "Recycler",
 			"delete": "Supprimer",
-			"overwrite": "Remplacer",
-			"tooltip": "Lors de l'extraction des GMAs, que doit faire gmpublisher si le répertoire d'extraction du GMA existe déjà (le GMA a déjà été extrait auparavant) ?"
-		},
-
-		"accessibility": {
-			"accessibility": "Accessibilité",
-			"color_error": "Couleur d'erreur",
-			"color_success": "Couleur de réussite",
-			"color_neutral": "Couleur neutre"
+			"overwrite": "Réécrire",
+			"tooltip": "Lors de l'extraction de GMAs, que doit faire gmpublisher si le répertoire d'extraction du GMA existe déjà (le GMA a déjà été extrait auparavant) ?"
 		}
 	},
 
@@ -259,11 +252,9 @@
 	"open_image": "Ouvrir l'image",
 	"copy_image_link": "Copier le lien de l'image",
 	"download": "Télécharger",
-	"sent_to_downloader": "Envoyé au téléchargement",
+	"sent_to_downloader": "Envoyé en téléchargement",
 
-	"locating": "Localisation",
+	"locating": "Repérage",
 	"decompressing": "Décompression {progress}",
-	"reading_metadata": "Lecture des métadonnées",
-
-	"publish_icon": "Publier une nouvelle icône (ceci ne mettra PAS à jour l'addon)"
+	"reading_metadata": "Lecture des métadonnées"
 }
