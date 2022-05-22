@@ -1,16 +1,14 @@
 {
 	"LANGUAGE_NAME": "Deutsch",
 
-	"settings": "Einstellungen",
-	"reset_settings": "Einstellungen zurücksetzen",
 	"my_workshop": "Mein Workshop",
 	"loading": "Laden...",
 	"gmod_dir": {
 		"name": "Garry's Mod Ordner",
-		"fail": "Der angegebene Ordner konnte nicht gefunden werden.\nStelle sicher, dass der von dir angegebene Ordner einen bin/ Ordner enthält."
+		"fail": "Failed to find a valid Garry's Mod directory where you've specified.\nMake sure the directory contains a bin/ folder which contains gmad and gmpublish."
 	},
 	"greetings": {
-		"morning": "Guten Morgen, {name}!",
+        "morning": "Guten Morgen, {name}!",
 		"morning.anon": "Guten Morgen!",
 		"afternoon": "Guten Tag, {name}!",
 		"afternoon.anon": "Guten Tag!",
@@ -19,14 +17,14 @@
 	},
 	"game": "Spiel",
 	"filesystem": "Dateisystem",
-	"github_star": "Star on GitHub",
+	"github_star": "Mit einem Stern auf GitHub bewerten",
 	"search": "Suchen...",
 	"showing_num_addons": "Zeige {num} von {total} Addons",
 	"extract_where_to": "Wohin?",
-	"extract_overwrite_warning": "Existierende Dateien werden überschrieben.",
-	"extract_open_tip": "Das GMA wird in ein TEMPORÄRES Verzeichnis extrahiert und geöffnet.",
-	"browse": "Durchsuchen...",
-	"addons_folder": "Addo-ns",
+	"extract_overwrite_warning": "Bereits vorhandene Dateien werden überschrieben.",
+	"extract_open_tip": "Die GMA-Datei wird in ein TEMPORÄRES Verzeichnes extrahiert und geöffnet.",
+	"browse": "Dursuchen...",
+	"addons_folder": "Addons",
 	"downloads_folder": "Downloads",
 	"open": "Öffnen",
 	"create_folder": "Ordner erstellen",
@@ -36,7 +34,7 @@
 	"pack": "Pack",
 	"publish": "Veröffentlichen",
 	"update": "Aktualisieren",
-	"size_analyzer": "Addon Size Analyzer",
+	"size_analyzer": "Addon Größen Analysator",
 	"name": "Name",
 	"cancel": "Abbrechen",
 	"done": "Fertig",
@@ -62,45 +60,212 @@
 		"ani": "Model Animation Data",
 		"vvd": "Model Vertex Data",
 		"txt": "Text",
-		"properties": "Properties",
+		"properties": "Eigenschaften",
 
 		"audio": "Audio",
-		"image": "Image",
-		"unknown": "Unknown ({extension})"
+		"image": "Bild",
+		"unknown": "Unbekannt ({extension})"
 	},
 	"items_one": "1 item",
 	"items_num": "{n} items",
-	"items_shown": "{n} angezeigt",
+	"items_shown": "{n} gezeigt",
 	"created": "Erstellt",
 	"updated": "Aktualisiert",
 	"author": "Autor",
-	"open_addon_location": "Öffne Addon-Verzeichnis",
+	"open_addon_location": "Addon-Verzeichnis öffnen",
 
 	"downloader": "Downloader",
-	"download-input": "Füge Workshop IDs, Links, Kollektionen hier ein...",
-	"download-input-tip": "TIPP: Du kannst mehrere Einträge kommasepariert oder mit einer neuen Zeile hier einfügen!",
+	"download-input": "Füge Workshop IDs, Links und Kollektionen hier ein...",
+	"download-input-tip": "HINWEIS: Du kannst mehere Einträge durch Kommata oder Zeilenumbrüche hier einfügen!",
 	"downloading": "Herunterladen",
 	"log": "Log",
 	"waiting": "Warten",
-	"extraction_tip": "TIPP: Du kannst GMA Dateien in dieses Fenster ziehen um sie direkt zu extrahieren.",
-	"set_destination": "Zielordner festlegen",
+	"extraction_tip": "You can drag and drop GMA files onto this screen to directly extract them.",
+	"set_destination": "Set Destination",
 
 	"addon": "Addon",
 	"speed": "Geschwindigkeit",
-	"total_filesize": "Total",
+	"total_filesize": "Insgesamt",
 	"progress": "Fortschritt",
 
 	"LOG_DOWNLOAD_STARTED": "Download von {addon} gestartet",
 	"LOG_DOWNLOAD_FINISHED": "Download von {addon} nach {time} abgeschlossen",
 	"LOG_DOWNLOAD_FAILED": "Download von {addon} FEHLGESCHLAGEN (\"{reason}\")",
-	"LOG_EXTRACT_STARTED": "Extrahieren von {addon} gestartet",
-	"LOG_EXTRACT_FINISHED": "Extrahieren von {addon} nach {time} abgeschlossen",
-	"LOG_EXTRACT_FAILED": "Extrahieren von {addon} FEHLGESCHLAGEN (\"{reason}\")",
 
-	"FS_ANALYZER_RENDERING": "Rendering...",
-	"FS_ANALYZER_CACHING": "Caching...",
-	"FS_ANALYZER_SERIALIZING": "Serializing...",
-	"FS_ANALYZER_STEAM": "Downloading Steam Data...",
-	"FS_ANALYZER_COMPUTING": "Computing...",
-	"FS_ANALYZER_TAGGIFYING": "Taggifying..."
+	"LOG_EXTRACT_STARTED": "Entpacken von {addon} gestartet",
+	"LOG_EXTRACT_FAILED": "Entpacken von {addon}  fehlgeschlagen (\"{reason}\")",
+	"LOG_EXTRACT_FINISHED": "Entpacken von {addon} nach {time} abgeschlossen",
+
+	"FS_ANALYZER_RENDERING": "Rendern...",
+	"FS_ANALYZER_SERIALIZING": "Serialisierung...",
+	"FS_ANALYZER_STEAM": "Herunterladen von Steam Daten...",
+	"FS_ANALYZER_COMPUTING": "Berechnen...",
+	"FS_ANALYZER_TAGGIFYING": "Kennzeichnung...",
+	"FS_ANALYZER_DISCOVERING": "Entdecken...",
+
+	"time_just_now": "Jetzt",
+	"click_to_open": "Klicke zum öffnen!",
+	"content_generator": "Inhalt Generator",
+	"installed_addons": "Installierte Addons",
+
+	"steam_disconnected": "Verbindung zu den Steam Servern unterbrochen",
+	"steam_connected": "Verbindung zu den Steam Servern hergestellt",
+
+	"publish_new": "Neu veröffentlichen...",
+
+	"settings": {
+		"saved": "Gespeichert!",
+		"settings": "Einstellungen",
+
+		"paths": {
+			"paths": "Pfade",
+			"user_data": "Nutzer Daten Pfad",
+			"gmod": "Garry's Mod Installations Pfad",
+			"temp": "Temporärer Pfad",
+			"downloads": "Download Pfad"
+		},
+
+		"general": {
+			"general": "Allgemein",
+			"sounds": "Sounds"
+		},
+
+		"resets": {
+			"resets": "Zurücksetzungen",
+			"settings": "Zurücksetzungs Einstellungen",
+			"clear_temp": "Temporäre Dateien löschen",
+			"clear_user_data": "Nutzer Daten löschen"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "Überschreibungs Verhalten",
+			"recycle": "Recyclen",
+			"delete": "Löschen",
+			"overwrite": "Überschreiben",
+			"tooltip": "Was soll gmpublisher beim Extrahieren von GMAs tun, wenn das Extraktionsverzeichnis der GMAs bereits existiert (die GMA wurde bereits zuvor entpackt)?"
+		},
+
+		"accessibility": {
+			"accessibility": "Barrierefreiheit",
+			"color_error": "Fehler Farbe",
+			"color_success": "Erfolg Farbe",
+			"color_neutral": "Neutrale Farbe"
+		}
+	},
+
+	"gma_type_name": "Archiviertes Garry's Mod Addon",
+	"downloading_tip": "Du kannst Steam Workshop-Links auf diesen Bereich ziehen, um sie herunterzuladen und zu entpacken",
+	"open_workshop": "Workshop öffnen",
+	"bulk_extract_gmas": "Massen Entpacken der GMAs",
+	"error": "Fehler",
+	"queued": "In Warteschlange gestellt",
+	"remove_all": "Alles entfernen",
+	"open_all": "Alles öffnen",
+
+	"ERR_UNKNOWN": "Unbekannter Fehler",
+	"ERR_NO_ADDONS_FOUND": "Keine Addons gefunden",
+	"ERR_STEAM_ERROR": "Steam Fehler: {data}",
+	"ERR_WHITELIST": "Diese Einträge bestehen die Whitelist für Dateitypen und -orte nicht. Wenn dies unerwartet war, hat das Addon wahrscheinlich eine falsche Dateistruktur.\n\nWenn du diese Dateitypen aus deinen GMAs filtern möchtest, füge diese zu den Ignorierten Dateitypen hinzu.\n\n{data}",
+	"ERR_IO_ERROR": "I/O Fehler",
+	"ERR_PATH_IO_ERROR": "I/O Fehler ({data})",
+	"ERR_GMA_FORMAT_ERROR": "Beschädigte GMA Datei",
+	"ERR_GMA_INVALID_HEADER": "Ungültige GMA Datei",
+	"ERR_GMA_ENTRY_NOT_FOUND": "Eintrag nicht gefunden",
+	"ERR_DOWNLOAD_MISSING": "Heruntergeladen, aber es fehlen Dateien",
+	"ERR_ICON_TOO_LARGE": "Icon zu groß (> 1 MB)",
+	"ERR_ICON_TOO_SMALL": "Icon zu klein (< 16 B)",
+	"ERR_ICON_INVALID_FORMAT": "Das Icon muss ein JPG, PNG oder GIF sein",
+	"ERR_LZMA": "LZMA Komprimierungs Fehler",
+	"ERR_DOWNLOAD_FAILED": "Download fehlgeschlagen",
+	"ERR_ITEM_NOT_FOUND": "Item nicht gefunden",
+	"ERR_ITEM_INACCESSIBLE": "Item unzugänglich",
+	"ERR_INVALID_CONTENT_PATH": "Dieser Inhaltspfad existiert nicht, ist kein Verzeichnis oder gmpublisher hat nicht genügend Rechte, um darauf zuzugreifen",
+	"ERR_MULTIPLE_GMAS": "Mehrere GMA-Dateien in diesem Inhaltspfad gefunden",
+	"ERR_IMAGE_ERROR": "Bild Fehler: {data}",
+	"ERR_DUPLICATE_ENTRIES": "Es gibt einen doppelten Eintrag ({data}) in diesem Inhaltspfad. Alle Pfade müssen einzigartig sein und klein geschrieben werden. (Ich benutze Arch Linux)",
+	"ERR_NO_ENTRIES": "Es sind keine Einträge in diesem Inhaltspfad vorhanden",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Workshop Rechtsvereinbarung nicht akzeptiert",
+
+	"icon_instructions": "Gültige Formate: JPG, PNG, GIF\nMaximale Größe: 1 MB\nEmpfohlen: 512x512",
+	"addon_title": "Titel...",
+	"addon_path": "Addon Pfad...",
+	"icon_file_pick": "Workshop Icon",
+	"remove_icon": "Icon entfernen",
+
+	"addon_types": {
+		"ServerContent": "Server Content",
+		"gamemode": "Gamemode",
+		"map": "Map",
+		"weapon": "Weapon",
+		"vehicle": "Vehicle",
+		"npc": "NPC",
+		"tool": "Tool",
+		"effects": "Effects",
+		"model": "Model",
+		"entity": "Entity"
+	},
+
+	"tag_1": "Attribut 1",
+	"tag_2": "Attribut 2",
+	"tag_3": "Attribut 3",
+
+	"addon_tags": {
+		"fun": "Fun",
+		"roleplay": "Roleplay",
+		"scenic": "Scenic",
+		"movie": "Movie",
+		"realism": "Realism",
+		"cartoon": "Cartoon",
+		"water": "Water",
+		"comic": "Comic",
+		"build": "Build"
+	},
+
+	"publish_exclamation": "Veröffentlichen!",
+	"update_exclamation": "Aktualisieren!",
+	"add_ellipsis": "Hinzufügen...",
+	"ignored_file_patterns": "Ignorierte Dateitypen",
+	"show_more": "Mehr Anzeigen",
+	"ignored_for_convenience": "Dieser Dateityp wird zu deiner Bequemlichkeit standardmäßig ignoriert.",
+	"file_browser": "Dateibrowser",
+	"file_browser_select": "Lege hier eine Datei ab oder klicke zum Durchsuchen",
+	"no_files_found": "Keine Dateien gefunden",
+	"upscale_addon_icon": "Auf 512x512 skalieren",
+	"changelog": "Änderungsprotokoll",
+	"update_warning": "Du führst ein UPDATE für {title} ({id}) durch.",
+
+	"PUBLISH_PACKING": "Archivieren {pct}% ({data} / {dataTotal})",
+	"PUBLISH_STARTING": "Veröffentlichen starten",
+	"PUBLISH_PREPARING_CONFIG": "Konfiguration vorbereiten",
+	"PUBLISH_PREPARING_CONTENT": "Inhalt vorbereiten",
+	"PUBLISH_UPLOADING_CONTENT": "Inhalt hochladen",
+	"PUBLISH_UPLOADING_PREVIEW_FILE": "Vorschau Datei hochladen",
+	"PUBLISH_COMMITTING_CHANGES": "Änderungen übermitteln",
+	"PUBLISH_PROCESSING_ICON": "Icon verarbeiten",
+
+	"subscriptions": "Abonnements",
+	"unsubscribe": "Deabonnieren",
+	"unsubscribe_all": "Alle deabonnieren",
+	"unsubscribe_all_warning": "WARNUNG: Dadurch werden ALLE Workshop-Addons deabonniert.",
+	"update_available": "Neue Aktualisierung verfügbar!\n{version}",
+	"workshop_page": "Workshop Seite",
+	"steam_workshop": "Steam Workshop",
+	"open_count": "Du hast gmpublisher {count} mal geöffnet! Glückwunsch!",
+	"enjoying_gmpublisher": "Gefällt dir gmpublisher?",
+	"github_star_plz_i_need_a_job_maybe": "Wenn du ein GitHub-Account hast, kannst du gerne einen Stern bei der %GitHub-Repository% hinterlassen, wenn dir meine Arbeit geholfen hat :D",
+	"vscode_glua_enhanced": "Wenn du ein Entwickler bist, könnte dich auch meine %VSCode GLua Enhanced% Erweiterung interessieren.",
+
+	"copy_link": "Link kopieren",
+	"open_image": "Bild öffnen",
+	"copy_image_link": "Bild Link kopieren",
+	"download": "Herunterladen",
+	"sent_to_downloader": "An den Downloader gesendet",
+
+	"locating": "Suche",
+	"decompressing": "Dekomprimierung {progress}",
+	"reading_metadata": "Metadata lesen",
+
+	"publish_icon": "Neues Icon veröffentlichen (Dies wird das Addon NICHT aktualisieren)",
+
+	"copy_path": "Pfad kopieren"
 }
