@@ -74,7 +74,7 @@
 	"open_addon_location": "Eklenti Lokasyonunu Aç",
 
 	"downloader": "İndirici",
-	"download-input": "Atölye ID'lerini, linkleri, koleksiyonları buraya yapıştır...",
+	"download-input": "Atölye ID'lerini, bağlantıları, koleksiyonları buraya yapıştır...",
 	"download-input-tip": "İPUCU: Buraya virgülle ayrılmış veya satırsonu (newline) ile ayrılmış öğeleri yapıştırabilirsiniz!",
 	"downloading": "İndiriliyor",
 	"log": "Kayıt",
@@ -107,8 +107,8 @@
 	"content_generator": "İçerik Üretici",
 	"installed_addons": "Kurulu Eklentiler",
 
-	"steam_disconnected": "Steam Sunucularına Bağlantı Kesildi",
-	"steam_connected": "Steam Sunucularına Bağlanıldı",
+	"steam_disconnected": "Steam Sunucuları ile Bağlantı Kesildi",
+	"steam_connected": "Steam Sunucuları ile Bağlantı Kuruldu",
 
 	"publish_new": "Yeni Yayınla...",
 
@@ -117,11 +117,11 @@
 		"settings": "Ayarlar",
 
 		"paths": {
-			"paths": "Lokasyonlar",
-			"user_data": "Kullanıcı Verisi Lokasyonu",
-			"gmod": "Garry's Mod Kurulumu Lokasyonu",
-			"temp": "Temp Lokasyonu",
-			"downloads": "İndirilenler Lokasyonu"
+			"paths": "Path'ler",
+			"user_data": "Kullanıcı Verisi Path'i",
+			"gmod": "Garry's Mod Kurulumu Path'i",
+			"temp": "Temp Path'i",
+			"downloads": "İndirilenler Path'i"
 		},
 
 		"general": {
@@ -141,7 +141,7 @@
 			"recycle": "Yeniden Kullan",
 			"delete": "Sil",
 			"overwrite": "Üzerine Yaz",
-			"tooltip": "GMA dosyalarını çıkarırken, çıkarılan dizin halihazırda varsa (GMA daha önce çıkarıldıysa) gmpublishler ne yapmalı?"
+			"tooltip": "GMA dosyalarını çıkarırken, çıkarılan dizin halihazırda mevcutsa (GMA daha önce çıkarıldıysa) gmpublishler ne yapmalı?"
 		},
 
 		"accessibility": {
@@ -153,18 +153,18 @@
 	},
 
 	"gma_type_name": "Paketlenmiş Garry's Mod Eklentisi",
-	"downloading_tip": "Çıkarıp yüklemek için Steam Atölyesi linklerini sürükle-bırak yapabilirsin.",
+	"downloading_tip": "Çıkarıp yüklemek için Steam Atölyesi bağlantılarını sürükle-bırak yapabilirsin.",
 	"open_workshop": "Atölyeyi Aç",
 	"bulk_extract_gmas": "GMA'ları Toplu Çıkar",
 	"error": "Hata",
-	"queued": "Sırada",
+	"queued": "Sıraya Alındı",
 	"remove_all": "Hepsini Kaldır",
 	"open_all": "Hepsini Aç",
 
 	"ERR_UNKNOWN": "Bilinmeyen Hata",
 	"ERR_NO_ADDONS_FOUND": "Eklenti Bulunamadı",
 	"ERR_STEAM_ERROR": "Steam Hatası: {data}",
-	"ERR_WHITELIST": "Bu girdiler dosya tip/lokasyon whitelist'inden geçmiyor. Eğer bu beklemediğiniz bir durumsa, muhtemelen eklentinizin dosya yapısı yanlış.\n\nEğer bu dosya türlerini GMA'larınızdan filtrelemek isterseniz, onları Yok Sayılan Dosya Kalıpları'na ekleyebilirsiniz.\n\n{data}",
+	"ERR_WHITELIST": "Bu girdiler dosya tip/lokasyon whitelist'inden geçmiyor. Eğer bu beklemediğiniz bir durumsa, muhtemelen eklentinizin dosya yapısı yanlış.\n\nEğer bu dosya türlerini GMA'larınızdan filtrelemek isterseniz, onları Yok Sayılan Dosya Kalıplarına ekleyebilirsiniz.\n\n{data}",
 	"ERR_IO_ERROR": "G/Ç Hatası",
 	"ERR_PATH_IO_ERROR": "G/Ç Hatası ({data})",
 	"ERR_GMA_FORMAT_ERROR": "Bozuk GMA Dosyası",
@@ -178,21 +178,21 @@
 	"ERR_DOWNLOAD_FAILED": "İndirme Başarısız Oldu",
 	"ERR_ITEM_NOT_FOUND": "Eşya Bulunamadı",
 	"ERR_ITEM_INACCESSIBLE": "Eşya Ulaşılamaz",
-	"ERR_INVALID_CONTENT_PATH": "Bu içerik lokasyonu mevcut değil, dizin değil veya gmpublisher'ın erişim yetkisi yok",
-	"ERR_MULTIPLE_GMAS": "İçerik lokasyonunda birden fazla GMA dosyası bulundu",
+	"ERR_INVALID_CONTENT_PATH": "Bu içerik path'i mevcut değil, dizin değil veya gmpublisher'ın erişim yetkisi yok",
+	"ERR_MULTIPLE_GMAS": "İçerik path'inde birden fazla GMA dosyası bulundu",
 	"ERR_IMAGE_ERROR": "İmaj Hatası: {data}",
-	"ERR_DUPLICATE_ENTRIES": "İçerik lokasyonunda ({data}) girdinin kopyası var. Bütün lokasyonlar eşsiz ve küçük harfli olmalıdır. i use arch btw",
-	"ERR_NO_ENTRIES": "Bu içeirk lokasyonunda girdi yok.",
-	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Atölye Yasal Anlaşması kabul edilmedi",
+	"ERR_DUPLICATE_ENTRIES": "İçerik path'inde ({data}) aynı girdiden iki tane var. Bütün path'ler eşsiz ve küçük harfli olmalıdır. i use arch btw",
+	"ERR_NO_ENTRIES": "Bu içerik path'inde girdi yok.",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Atölye Anlaşması kabul edilmedi",
 
-	"icon_instructions": "Kabul Edilen Dosya Türleri: JPG, PNG, GIF\nMaks Boyut: 1 MB\nTavsiye Edilen: 512x512",
+	"icon_instructions": "Kabul Edilen Dosya Türleri: JPG, PNG, GIF\nMaksimum Boyut: 1 MB\nTavsiye Edilen: 512x512",
 	"addon_title": "Başlık...",
-	"addon_path": "Eklenti Lokasyonu...",
+	"addon_path": "Eklenti Path'i...",
 	"icon_file_pick": "Atölye İkonu",
 	"remove_icon": "İkonu Kaldır",
 
 	"addon_types": {
-		"ServerContent": "Sunucu Content",
+		"ServerContent": "Server Content",
 		"gamemode": "Gamemode",
 		"map": "Map",
 		"weapon": "Weapon",
@@ -225,7 +225,7 @@
 	"add_ellipsis": "Ekle...",
 	"ignored_file_patterns": "Yok Sayılan Dosya Kalıpları",
 	"show_more": "DAHA FAZLA GÖSTER",
-	"ignored_for_convenience": "Kolaylığınız için bu dosya kalıbı yok sayılıyor.",
+	"ignored_for_convenience": "Kolaylığınız için bu dosya kalıbı varsayılan olarak yok sayılıyor.",
 	"file_browser": "Dosyalara Göz At",
 	"file_browser_select": "Göz atmak için tıkla veya bir dosya bırak",
 	"no_files_found": "Dosya Bulunamadı",
@@ -266,5 +266,5 @@
 
 	"publish_icon": "Yeni İkon Yayınla (Eklentiyi Güncellemeyecek)",
 
-	"copy_path": "Lokasyonu Kopyala"
+	"copy_path": "Path'i Kopyala"
 }
