@@ -336,7 +336,7 @@
 									<div>
 										<div><img src="/img/dog_sleep.gif"/></div>
 										<div>{$_('waiting')}</div>
-										<div class="tip">{$_('extraction_tip')}</div>
+										<!--<div class="tip">{$_('extraction_tip')}</div>-->
 										<div class="btn" on:click={openDestination}>{$_('set_destination')}</div>
 									</div>
 								</td>
