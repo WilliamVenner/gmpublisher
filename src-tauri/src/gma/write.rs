@@ -89,7 +89,7 @@ impl GMAFile {
 			let root_path_strip_len = src_path.to_string_lossy().len();
 
 			let mut total = 0.;
-			for (path, relative_path) in WalkDir::new(src_path).into_iter().filter_map(|entry| {
+			for (path, relative_path) in WalkDir::new(src_path).follow_links(true).into_iter().filter_map(|entry| {
 				entry.ok().and_then(|entry| {
 					if entry.file_type().is_file() {
 						let path = entry.into_path();
