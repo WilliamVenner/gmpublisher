@@ -100,6 +100,10 @@ const WILD_BYTE: u8 = '*' as u8;
 const QUESTION_BYTE: u8 = '?' as u8;
 
 pub fn globber(_wild: &str, _str: &str) -> bool {
+	debug_assert!(_wild.ends_with('\0'), "wild must be null terminated");
+	debug_assert!(!_wild.ends_with("\0\0"), "wild is double null terminated");
+	debug_assert!(_str.ends_with('\0'), "str must be null terminated");
+	debug_assert!(!_str.ends_with("\0\0"), "str is double null terminated");
 	unsafe {
 		let mut cp: *const u8 = 0 as u8 as *const u8;
 		let mut mp: *const u8 = 0 as u8 as *const u8;
@@ -194,7 +198,6 @@ pub fn test_whitelist() {
 		"materials/lol.jpeg",
 		"gamemodes/the_gamemode_name/backgrounds/file_name.jpg",
 		"gamemodes/my_base_defence/backgrounds/1.jpg",
-		"GAMEMODES/MY_BASE_DEFENCE/BACKGROUNDS/1.JPG",
 	];
 
 	let bad: &'static [&'static str] = &[
@@ -209,15 +212,15 @@ pub fn test_whitelist() {
 	];
 
 	for good in good {
-		assert!(check(&*good));
+		assert!(check(&*good), "{}", good);
 	}
 
 	for good in ADDON_WHITELIST {
-		assert!(check(&good.replace('*', "test")));
+		assert!(check(&good.replace('*', "test").strip_suffix('\0').unwrap()));
 	}
 
 	for good in ADDON_WHITELIST {
-		assert!(check(&good.replace('*', "a")));
+		assert!(check(&good.replace('*', "a").strip_suffix('\0').unwrap()));
 	}
 
 	for bad in bad {
@@ -255,6 +258,8 @@ pub fn test_ignore() {
 		assert!(is_ignored(&*ignored, &default_ignore));
 	}
 
-	assert!(is_ignored(&"lol.txt".to_string(), &["lol.txt".to_string()]));
+	assert!(is_ignored(&"lol.txt".to_string(), &["lol.txt\0".to_string()]));
+	assert!(is_ignored(&"lua/hello.lua".to_string(), &["lua/*.lua\0".to_string()]));
+	assert!(is_ignored(&"lua/hello.lua".to_string(), &["lua/*\0".to_string()]));
 	assert!(!is_ignored(&"lol.txt".to_string(), &[]));
 }

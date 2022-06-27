@@ -36,6 +36,13 @@ impl GMAFile {
 		let src_path = src_path.as_ref();
 
 		let metadata = self.metadata.as_ref().expect("Expected metadata to be set");
+		let ignore = metadata.ignore().map(|ignore| {
+			ignore.into_iter().map(|ignore| {
+				let mut ignore = ignore.to_owned();
+				ignore.push('\0');
+				ignore
+			}).collect::<Vec<_>>().into_boxed_slice()
+		});
 
 		let (title, addon_json) = match metadata {
 			GMAMetadata::Legacy { title, .. } => (title.as_str(), None),
@@ -89,9 +96,12 @@ impl GMAFile {
 
 						let relative_path = path.to_slash_lossy()[root_path_strip_len..].trim_matches('/').to_lowercase();
 
-						println!("relative_path {}", relative_path);
-
 						if whitelist::check(&relative_path) {
+							if let Some(ref ignore) = ignore {
+								if whitelist::is_ignored(&relative_path, ignore) {
+									return None;
+								}
+							}
 							return Some((path, relative_path));
 						} else {
 							transaction.data(("ERR_WHITELIST", relative_path));
