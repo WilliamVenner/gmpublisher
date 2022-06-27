@@ -151,22 +151,17 @@
 		}
 
 		var ids = Object.keys(ids);
-		if (ids.length !== input.split('\n').length) {
-			this.classList.add('error');
-			playSound('error');
-		} else {
-			if (e.clipboardData) {
-				e.preventDefault();
-				e.stopPropagation();
-			}
-
-			this.classList.remove('error');
-			this.value = '';
-
-			invoke('workshop_download', { ids: ids.map(id => parseInt(id)) });
-
-			playSound('success');
+		if (e.clipboardData) {
+			e.preventDefault();
+			e.stopPropagation();
 		}
+
+		this.classList.remove('error');
+		this.value = '';
+
+		invoke('workshop_download', { ids: ids.map(id => parseInt(id)) });
+
+		playSound('success');
 	}
 	function checkEmptyInput() {
 		if (this.value.length === 0)
