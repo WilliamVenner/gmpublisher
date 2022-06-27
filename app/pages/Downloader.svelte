@@ -129,8 +129,8 @@
 		}
 	}
 
-	const RE_DELIMETERS = /(?:, *|\n+|\t+)/g;
-	const RE_WORKSHOP_ID = /^(\d+)|(?:https?:\/\/(?:www\.)?steamcommunity\.com\/sharedfiles\/filedetails\/?.*(?:\?|&)id=(\d+)(?=$|&))/gmi;
+	const RE_DELIMETERS = /(?:, *|\n+|\t+| +)/g;
+	const RE_WORKSHOP_ID = /^(\d+)|(?:https?:\/\/(?:www\.)?steamcommunity\.com\/(?:sharedfiles\/filedetails|workshop(?:\/filedetails)?)(?:\/?.*(?:\?|&)id=(\d+)(?=$|&)|\/(\d+)$))/gmi;
 	function parseInput(e) {
 		let input = this.value;
 		if (e.clipboardData) {
@@ -145,7 +145,7 @@
 		var ids = {};
 		var result;
 		while ((result = RE_WORKSHOP_ID.exec(input)) !== null) {
-			const id = result[1] ?? result[2];
+			const id = result[1] ?? result[2] ?? result[3];
 			if (!id || id in ids || !parseInt(id)) continue;
 			ids[id] = true;
 		}
