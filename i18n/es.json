@@ -135,6 +135,21 @@
 			"settings": "Reiniciar Ajustes",
 			"clear_temp": "Borrar Archivos Temporales",
 			"clear_user_data": "Borrar Datos del Usuario"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "Sobrescribiendo Comportamiento",
+			"recycle": "Reciclar",
+			"delete": "Eliminar",
+			"overwrite": "Sobrescribir",
+			"tooltip": "¿Al extraer GMAs, qué debe de hacer gmpublisher si el directorio de extracción de GMAs ya existe (el GMA ya ha sido extraido anteriormente)?"
+		},
+
+		"accessibility": {
+			"accessibility": "Accesibilidad",
+			"color_error": "Color de Error",
+			"color_success": "Color de Éxito",
+			"color_neutral": "Color Neutral"
 		}
 	},
 
@@ -186,7 +201,8 @@
 		"npc": "NPC",
 		"tool": "Herramienta",
 		"effects": "Efecto",
-		"model": "Modelo"
+		"model": "Modelo",
+		"entity": "Entidad"
 	},
 
 	"tag_1": "Etiqueta 1",
@@ -237,5 +253,19 @@
 	"open_count": "¡Has abierto gmpublisher {count} veces! ¡Felicidades!",
 	"enjoying_gmpublisher": "¿Estás disfrutando gmpublisher?",
 	"github_star_plz_i_need_a_job_maybe": "Sí tu tienes un cuenta de GitHub, considera poniendo un estrella en el %Repositorio de GitHub% sí mí trabajo te ayudo :D",
-	"vscode_glua_enhanced": "Sí eres un desarrollador, a lo mejor estarás interesado en mí %VSCode GLua Enhanced% extensión."
+	"vscode_glua_enhanced": "Sí eres un desarrollador, a lo mejor estarás interesado en mí %VSCode GLua Enhanced% extensión.",
+
+	"copy_link": "Copiar Link",
+	"open_image": "Abrir Imagen",
+	"copy_image_link": "Copiar Link de la Imagen",
+	"download": "Descargar",
+	"sent_to_downloader": "Enviar al Descargador",
+
+	"locating": "Localizando",
+	"decompressing": "Descomprimiendo {progress}",
+	"reading_metadata": "Leyendo Metadata",
+
+	"publish_icon": "Publicar Nuevo Icono (No actualizará el addon)",
+
+	"copy_path": "Copiar Ruta"
 }
