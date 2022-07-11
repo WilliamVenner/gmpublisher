@@ -148,7 +148,7 @@
 			"accessibility": "Erişilebilirlik",
 			"color_error": "Hata Rengi",
 			"color_success": "Başarı Rengi",
-			"color_neutral": "Nötr Renk"
+			"color_neutral": "Doğal Rengi"
 		}
 	},
 
@@ -192,16 +192,16 @@
 	"remove_icon": "İkonu Kaldır",
 
 	"addon_types": {
-		"ServerContent": "Server Content",
-		"gamemode": "Gamemode",
-		"map": "Map",
-		"weapon": "Weapon",
-		"vehicle": "Vehicle",
+		"ServerContent": "Sunucu İçeriği",
+		"gamemode": "Oyun Modu",
+		"map": "Harita",
+		"weapon": "Silah",
+		"vehicle": "Araç",
 		"npc": "NPC",
-		"tool": "Tool",
-		"effects": "Effects",
+		"tool": "Araç",
+		"effects": "Effektler",
 		"model": "Model",
-		"entity": "Entity"
+		"entity": "Varlık"
 	},
 
 	"tag_1": "Etiket 1",
@@ -209,15 +209,15 @@
 	"tag_3": "Etiket 3",
 
 	"addon_tags": {
-		"fun": "Fun",
-		"roleplay": "Roleplay",
-		"scenic": "Scenic",
-		"movie": "Movie",
-		"realism": "Realism",
-		"cartoon": "Cartoon",
-		"water": "Water",
-		"comic": "Comic",
-		"build": "Build"
+		"fun": "Eğlence",
+		"roleplay": "Rol yapma",
+		"scenic": "Sahne",
+		"movie": "Film",
+		"realism": "Gerçekçilik",
+		"cartoon": "Çizgi Film",
+		"water": "Su",
+		"comic": "Komik",
+		"build": "İnşa"
 	},
 
 	"publish_exclamation": "Yayınla!",
