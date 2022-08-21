@@ -254,7 +254,7 @@ impl Steam {
 					.title(&title)
 					.preview_path(&Into::<PathBuf>::into(preview))
 					.tags(tags)
-					.description("Uploaded with [url=https://gmpublisher.download]gmpublisher[/url]")
+					.description("Uploaded with [url=https://github.com/WilliamVenner/gmpublisher]gmpublisher[/url]")
 					.submit(None, move |result| {
 						*result_ref.lock() = Some(result);
 					})
