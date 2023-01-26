@@ -43,7 +43,11 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 ![](https://user-images.githubusercontent.com/14863743/123729280-9dd5fd00-d88c-11eb-8aee-0360615d4d57.png) Dutch
 
-[Want to translate gmpublisher to your language?](https://github.com/WilliamVenner/gmpublisher/tree/master/i18n)
+### Want to translate gmpublisher to your language?
+
+1. Create an empty JSON in https://github.com/WilliamVenner/gmpublisher/tree/master/i18n. 
+2. Update the [inlang.config.js](./inlang.config.js) file to include the new language. 
+3. Open https://inlang.com/editor/github.com/WilliamVenner/gmpublisher
 
 ## Requirements
 
