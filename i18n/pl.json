@@ -40,7 +40,7 @@
   "size": "Wielkość",
   "addon_type": "Typ",
   "file_types": {
-    "folder": "Folder",
+    "folder": "Teczka",
     "vtf": "Valve Texture Format",
     "vmt": "Valve Material Format",
     "map": "Map",
