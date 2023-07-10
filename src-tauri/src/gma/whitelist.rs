@@ -20,6 +20,7 @@ pub const DEFAULT_IGNORE: &'static [&'static str] = globbers!(
 	"*.pdf",
 	".DS_Store",
 	".gitignore",
+	".gitmodules",
 	".vscode/*",
 	".github/*",
 	".vs/*",
