@@ -31,7 +31,7 @@
 	"extract": "추출",
 	"extracting": "추출중",
 	"extracting_progress": "추출 {pct}% ({data} / {dataTotal})",
-	"pack": "Pack",
+	"pack": "포장",
 	"publish": "업로드",
 	"update": "업데이트",
 	"size_analyzer": "애드온 크기 분석",
