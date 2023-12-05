@@ -46,6 +46,7 @@ const ADDON_WHITELIST: &'static [&'static str] = globbers!(
 	"scripts/vehicles/*.txt",
 	"resource/localization/*/*.properties",
 	"maps/*.bsp",
+	"maps/*.lmp",
 	"maps/*.nav",
 	"maps/*.ain",
 	"maps/thumb/*.png",
@@ -57,6 +58,7 @@ const ADDON_WHITELIST: &'static [&'static str] = globbers!(
 	"materials/*.png",
 	"materials/*.jpg",
 	"materials/*.jpeg",
+	"materials/colorcorrection/*.raw",
 	"models/*.mdl",
 	"models/*.vtx",
 	"models/*.phy",
@@ -83,6 +85,7 @@ const ADDON_WHITELIST: &'static [&'static str] = globbers!(
 	"gamemodes/*/content/materials/*.png",
 	"gamemodes/*/content/materials/*.jpg",
 	"gamemodes/*/content/materials/*.jpeg",
+	"gamemodes/*/content/materials/colorcorrection/*.raw",
 	"gamemodes/*/content/scenes/*.vcd",
 	"gamemodes/*/content/particles/*.pcf",
 	"gamemodes/*/content/resource/fonts/*.ttf",
@@ -94,7 +97,27 @@ const ADDON_WHITELIST: &'static [&'static str] = globbers!(
 	"gamemodes/*/content/maps/thumb/*.png",
 	"gamemodes/*/content/sound/*.wav",
 	"gamemodes/*/content/sound/*.mp3",
-	"gamemodes/*/content/sound/*.ogg"
+	"gamemodes/*/content/sound/*.ogg",
+
+	// static version of the data/ folder
+	// (because you wouldn't be able to modify these)
+	"data_static/*.txt",
+	"data_static/*.dat",
+	"data_static/*.json",
+	"data_static/*.xml",
+	"data_static/*.csv",
+	"data_static/*.dem",
+	"data_static/*.vcd",
+
+	"data_static/*.vtf",
+	"data_static/*.vmt",
+	"data_static/*.png",
+	"data_static/*.jpg",
+	"data_static/*.jpeg",
+
+	"data_static/*.mp3",
+	"data_static/*.wav",
+	"data_static/*.ogg"
 );
 
 const WILD_BYTE: u8 = '*' as u8;
