@@ -54,6 +54,11 @@
 			registerContext(addonElement, workshop, installed, !!installedData);
 		});
 	}
+
+	let addonPreviewLoading = true;
+	function addonPreviewLoaded() {
+		addonPreviewLoading = false;
+	}
 </script>
 
 <main class="addon" class:previewing={previewing} on:click={e => onClick(e, workshop, installed)} bind:this={addonElement}>
@@ -102,9 +107,9 @@
 				<div id="preview" class="dead"><Loading size="2rem"/></div>
 			{:then workshop}
 				{#if workshop.previewUrl}
-					<div id="preview" class="loading">
+					<div id="preview" class:loading={addonPreviewLoading}>
 						<Loading size="2rem"/>
-						<img src={workshop.previewUrl} alt="Preview" onload="this.parentElement?.classList.remove('loading')"/>
+						<img src={workshop.previewUrl} alt="Preview" on:load={addonPreviewLoaded}/>
 					</div>
 				{:else}
 					<div id="preview" class="dead"><Dead size="4rem"/></div>
