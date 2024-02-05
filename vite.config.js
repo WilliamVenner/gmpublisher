@@ -17,7 +17,7 @@ const appLanguages = {};
 	}
 }
 
-const production = !process.env.ROLLUP_WATCH;
+const production = process.env.TAURI_DEBUG != "true";
 
 console.log('production', production);
 
