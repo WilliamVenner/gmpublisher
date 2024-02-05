@@ -1,7 +1,7 @@
 {
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "node src-tauri/lib/steam_api/copySteamApi.js && npm run dev",
+    "beforeBuildCommand": "node src-tauri/lib/steam_api/copySteamApi.js && npm run build",
     "devPath": "http://localhost:1420",
     "distDir": "../dist",
     "withGlobalTauri": true
