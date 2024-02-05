@@ -69,8 +69,8 @@ window.DEFAULT_IGNORE_GLOBS = JSON.parse('{$_DEFAULT_IGNORE_GLOBS_$}');
 let resizeTimeout;
 function resized() {
 	window.__TAURI__.invoke("window_resized", {
-		width: window.outerWidth,
-		height: window.outerHeight
+		width: window.innerWidth,
+		height: window.innerHeight
 	});
 }
 window.addEventListener('resize', e => {

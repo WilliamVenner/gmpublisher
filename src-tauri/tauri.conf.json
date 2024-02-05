@@ -1,61 +1,70 @@
 {
-  "build": {
-    "beforeDevCommand": "node src-tauri/copySharedLibs.js && npm run dev",
-    "beforeBuildCommand": "node src-tauri/copySharedLibs.js && npm run build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": true
-  },
-  "package": {
-    "productName": "gmpublisher",
-    "version": "2.10.0"
-  },
-  "tauri": {
-    "bundle": {
-      "active": true,
-      "targets": ["deb", "appimage", "msi", "app"],
-      "identifier": "venner.gmpublisher",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.ico"
-      ],
-      "resources": [],
-      "externalBin": [],
-      "copyright": "2021 William Venner",
-      "category": "DeveloperTool",
-      "shortDescription": "Garry's Mod Workshop Publishing Utility",
-      "longDescription": "Garry's Mod Workshop Publishing Utility",
-      "deb": {
-        "depends": []
-      },
-      "macOS": {
-        "frameworks": ["lib/steam_api/osx/libsteam_api.dylib"],
-        "minimumSystemVersion": "",
-        "exceptionDomain": ""
-      },
-      "windows": {
-        "wix": {
-          "template": "msi/msi.wxs"
-        }
-      }
-    },
-    "allowlist": {
-      "all": true
-    },
-    "windows": [
-      {
-        "label": "gmpublisher",
-        "title": "gmpublisher",
-        "width": 800,
-        "height": 600,
-        "resizable": true,
-        "fullscreen": false
-      }
-    ],
-    "security": {
-      "csp": "default-src blob: data: filesystem: ws: http: https: 'unsafe-eval' 'unsafe-inline'"
-    }
-  }
+	"build": {
+		"beforeDevCommand": "node src-tauri/copySharedLibs.js && npm run dev",
+		"beforeBuildCommand": "node src-tauri/copySharedLibs.js && npm run build",
+		"devPath": "http://localhost:1420",
+		"distDir": "../dist",
+		"withGlobalTauri": true
+	},
+	"package": {
+		"productName": "gmpublisher",
+		"version": "2.10.0"
+	},
+	"tauri": {
+		"bundle": {
+			"active": true,
+			"targets": [
+				"deb",
+				"appimage",
+				"msi",
+				"app"
+			],
+			"identifier": "venner.gmpublisher",
+			"icon": [
+				"icons/32x32.png",
+				"icons/128x128.png",
+				"icons/128x128@2x.png",
+				"icons/icon.ico"
+			],
+			"resources": [],
+			"externalBin": [],
+			"copyright": "2021 William Venner",
+			"category": "DeveloperTool",
+			"shortDescription": "Garry's Mod Workshop Publishing Utility",
+			"longDescription": "Garry's Mod Workshop Publishing Utility",
+			"deb": {
+				"depends": []
+			},
+			"macOS": {
+				"frameworks": [
+					"lib/steam_api/redistributable_bin/osx/libsteam_api.dylib"
+				],
+				"minimumSystemVersion": "",
+				"exceptionDomain": ""
+			},
+			"windows": {
+				"wix": {
+					"template": "msi/msi.wxs"
+				}
+			}
+		},
+		"allowlist": {
+			"all": true
+		},
+		"windows": [
+			{
+				"label": "gmpublisher",
+				"title": "gmpublisher",
+				"width": 800,
+				"height": 600,
+				"minWidth": 800,
+				"minHeight": 600,
+				"resizable": true,
+				"fullscreen": false
+			}
+		],
+		"security": {
+			"csp": "default-src blob: data: filesystem: ws: http: https: 'unsafe-eval' 'unsafe-inline'"
+		}
+	}
 }

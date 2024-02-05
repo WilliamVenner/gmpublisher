@@ -7,7 +7,10 @@ use std::{
 	path::PathBuf,
 };
 
-use crate::{gma::{ExtractionOverwriteMode, ExtractDestination}, webview_emit, RwLockCow};
+use crate::{
+	gma::{ExtractDestination, ExtractionOverwriteMode},
+	webview_emit, RwLockCow,
+};
 
 use crate::GMOD_APP_ID;
 use lazy_static::lazy_static;
@@ -308,7 +311,7 @@ impl<R: tauri::Runtime> tauri::plugin::Plugin<R> for Plugin {
 		*app_data!().settings.write() = sanitized;
 
 		// Trim off nul byte
-		let mut default_ignore: Vec<String> = crate::gma::DEFAULT_IGNORE.iter().map(|x| x[0..x.len()-1].to_string()).collect();
+		let mut default_ignore: Vec<String> = crate::gma::DEFAULT_IGNORE.iter().map(|x| x[0..x.len() - 1].to_string()).collect();
 		default_ignore.sort();
 
 		app_data!().open_count.increment();
@@ -369,10 +372,16 @@ pub fn validate_gmod(mut path: PathBuf) -> bool {
 }
 
 #[tauri::command]
-pub fn window_resized(width: f64, height: f64) {
+pub fn window_resized(window: tauri::Window, width: f64, height: f64) {
 	{
 		let mut settings = app_data!().settings.write();
-		settings.window_size = (width, height);
+
+		settings.window_size = window
+			.outer_size()
+			.and_then(|size| Ok(size.to_logical(window.scale_factor()?)))
+			.map(|size| (size.width, size.height))
+			.unwrap_or((width, height));
+
 		settings.window_maximized = webview!().window().is_maximized().unwrap_or(false);
 	}
 	ignore! { app_data!().settings.read().save() };
