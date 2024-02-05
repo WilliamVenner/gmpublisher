@@ -6,6 +6,7 @@ authors = [ "William Venner <william@venner.io>" ]
 license = "GPL-3.0"
 repository = "https://github.com/WilliamVenner/gmpublisher"
 edition = "2021"
+publish = false
 
 [profile.release]
 #lto = "thin"
