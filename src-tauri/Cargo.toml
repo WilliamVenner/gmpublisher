@@ -57,12 +57,7 @@ clap = "2.33.3"
 trash = "2.0.1"
 ureq = { version = "2.9.4", features = ["native-tls"] }
 regex = "1"
-
-[dependencies.steamworks]
-features = [ "serde" ]
-#path = "../../steamworks-rs"
-git = "https://github.com/WilliamVenner/steamworks-rs"
-branch = "personal-2"
+steamworks = { version = "0.10", features = ["serde"] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

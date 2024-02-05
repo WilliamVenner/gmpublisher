@@ -15,6 +15,11 @@ extern CGameEngineGL *g_engine;		// so glmgr (which is C++) can call up to the g
 #pragma clang diagnostic warning "-Wint-to-pointer-cast"
 #endif
 
+#ifdef OSX
+// Debugger - 10.8
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 
 //===============================================================================
 
@@ -1752,7 +1757,7 @@ void	GLMContext::QueryShaderPair( int index, GLMShaderPairInfo *infoOut )
 	}
 	else
 	{
-		memset( infoOut, sizeof( *infoOut ), 0 );
+		memset( infoOut, 0, sizeof( *infoOut ) );
 		infoOut->m_status = -1;
 	}
 }

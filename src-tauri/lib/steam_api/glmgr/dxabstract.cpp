@@ -18,6 +18,10 @@
 #endif
 
 #include <Carbon/Carbon.h>
+
+// Debugger - 10.8
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 #endif
 
 #ifdef USE_ACTUAL_DX

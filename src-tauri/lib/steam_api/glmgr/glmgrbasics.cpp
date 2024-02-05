@@ -7,6 +7,11 @@
 #include "glmgrbasics.h"
 #include "dxabstract.h"
 
+#ifdef OSX
+// Debugger - 10.8
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #if __MAC_OS_X_VERSION_MAX_ALLOWED <= __MAC_10_6
 #include <OpenGL/CGLProfiler.h>
 #include <OpenGL/CGLProfilerFunctionEnum.h>

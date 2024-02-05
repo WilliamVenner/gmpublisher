@@ -310,7 +310,11 @@ inline void GLMDebugger( void )
 {
 	if (GLMDebugChannelMask() & (1<<eDebugger))
 	{
+#if defined( OSX ) && defined( __aarch64__ )
+		__builtin_debugtrap();
+#else
 		asm ( "int $3" );
+#endif
 	}
 	
 	if (GLMDebugChannelMask() & (1<<eGLProfiler))

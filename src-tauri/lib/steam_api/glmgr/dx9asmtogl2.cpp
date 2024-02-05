@@ -5,6 +5,11 @@
 #include "dxabstract.h"
 #include "dx9asmtogl2.h"
 
+#ifdef OSX
+// Debugger - 10.8
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 
 void Error( const char *fmt, ... )
 {

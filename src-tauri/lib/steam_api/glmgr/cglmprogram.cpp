@@ -8,6 +8,11 @@
 #include "cglmprogram.h"
 #include "dxabstract.h"
 
+#ifdef OSX
+// Debugger - 10.8
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 //===============================================================================
 
 #if 0
@@ -1276,7 +1281,7 @@ void	CGLMShaderPairCache::QueryShaderPair( int index, GLMShaderPairInfo *infoOut
 	if ( (index<0) || ( index >= (m_rows*m_ways) ) )
 	{
 		// no such location
-		memset( infoOut, sizeof(*infoOut), 0 );
+		memset( infoOut, 0, sizeof(*infoOut) );
 		
 		infoOut->m_status = -1;
 	}
@@ -1301,7 +1306,7 @@ void	CGLMShaderPairCache::QueryShaderPair( int index, GLMShaderPairInfo *infoOut
 		else
 		{
 			// not
-			memset( infoOut, sizeof(*infoOut), 0 );
+			memset( infoOut, 0, sizeof(*infoOut) );
 			infoOut->m_status = 0;
 		}
 	}

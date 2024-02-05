@@ -8,6 +8,11 @@
 #include "cglmtex.h"
 #include "dxabstract.h"
 
+#ifdef OSX
+// Debugger - 10.8
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 //===============================================================================
 
 #define TEXSPACE_LOGGING 0

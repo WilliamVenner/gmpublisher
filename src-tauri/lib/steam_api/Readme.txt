@@ -1,12 +1,121 @@
 ================================================================
 
-Copyright © 1996-2020, Valve Corporation, All rights reserved.
+Copyright © 1996-2022, Valve Corporation, All rights reserved.
 
 ================================================================
 
 
 Welcome to the Steamworks SDK.  For documentation please see our partner 
 website at: http://partner.steamgames.com
+
+----------------------------------------------------------------
+v1.54 16th June 2022
+----------------------------------------------------------------
+
+ISteamFriends
+* Added various functions to retrieve equipped Steam Community profile items and their properties
+** RequestEquippedProfileItems – requests information on what Steam Community profile items a user has equipped.  Will send callback EquippedProfileItems_t.
+** BHasEquippedProfileItem – after calling RequestEquippedProfileItems, returns true/false depending on whether a user has a ECommunityProfileItemType equipped or not
+** GetProfileItemPropertyString – returns a string property given a ECommunityProfileItemType and ECommunityProfileItemProperty
+** GetProfileItemPropertyUint – returns an unsigned integer property given a ECommunityProfileItemType and ECommunityProfileItemProperty
+* Added callback EquippedProfileItemsChanged_t for when a user's equipped Steam Community profile items have changed.  This will be sent for the current user and for their friends.
+
+Spacewar example:
+* Added examples for how to interact with various overlay related functions (e.g. ActivateGameOverlay, ActivateGameOverlayToUser, ActivateGameOverlayToWebPage, ActivateGameOverlayToStore, ActivateGameOverlayInviteDialogConnectString)
+* Fixed Steam Input example code not working on Linux
+
+----------------------------------------------------------------
+v1.53a 11th December 2021
+----------------------------------------------------------------
+
+macOS
+* Fixed libsdkencryptedappticket.dylib to include arm64 support
+
+----------------------------------------------------------------
+v1.53 23th November 2021
+----------------------------------------------------------------
+
+SteamNetworkingSockets:
+* Added support for connections to have multiple streams of messages, known as "lanes," with mechanisms to control bandwidth utilization and head-of-line blocking between lanes.
+* Added the "FakeIP" system, which can be useful to add P2P networking or Steam Datagram Relay support to games while retaining the assumption that network hosts are identified by an IPv4 address.  Added steamnetworkingfakeip.h and ISteamNetworkingFakeUDPPort
+* Simplified interface for iterating config values.
+* Added SteamNetConnectionInfo_t::m_nFlags, which have misc info about a connection.
+
+ISteamInput
+* Added Steam Deck values to the EInputActionOrigin and ESteamInputType origins
+
+ISteamUGC:
+* Added SetTimeCreatedDateRange and SetTimeUpdatedDateRange
+
+ISteamUtils:
+* Added DismissFloatingGamepadTextInput
+
+Flat Interface:
+* For each interface accessor, there is now an inline, unversioned accessor that calls the versioned accessor exported by the .dll.  This reduces the number of changes that need to be made when updating the SDK and accessing the flat interface directly, while still retaining version safety.
+
+General:
+* Removed definitions for many internal callback IDs that are not needed by general users of the SDK.
+
+Spacewar example:
+* Added CItemStore, which demonstrates how to interact with an in-game store
+
+----------------------------------------------------------------
+v1.52 14th September 2021
+----------------------------------------------------------------
+
+ISteamInput
+* Added support for bundling Steam Input API configurations w/ game depots. Allows developers to use the same configuration file across public/private AppIDs, check configurations into their revision control systems, more easily juggle changes between beta branches, and ensure game/config changes are done in-sync.
+* Added new glyph API support for SVG glyphs and multiple sizes of PNG files. Note: these images will be added in a subsequent Steam Beta Client release.
+* Added support for callbacks for action state changes, controller connect/disconnect, and controller mapping changes.
+* Added BNewDataAvailable function to reduce need to manually compare action data between frames.
+* Added BWaitForData helper function to wait on an event set when controller data is updated.
+* Added functions for getting the localized string for action names (GetStringForDigitalActionName and GetStringForAnalogActionName).
+* Added function to poll current Steam Input enable settings by controller type (GetSessionInputConfigurationSettings).
+
+ISteamGameServer
+* Renamed EnableHeartbeats to SetAdvertiseServerActive.
+* Deprecated the following methods (they have been renamed to *_DEPRECATED and will be removed in a future SDK update):
+** SendUserConnectAndAuthenticate
+** SendUserDisconnect
+** SetMasterServerHeartbeatInterval
+** ForceMasterServerHeartbeat
+
+ISteamRemoteStorage
+* Added GetLocalFileChangeCount and GetLocalFileChange which allows for iterating over Steam Cloud files that have changed locally after the initial sync on app start, when supported by the app.  The callback notification is RemoteStorageLocalFileChange_t.
+* Added BeginFileWriteBatch and EndFileWriteBatch to hint to Steam that a set of files should be written to Steam Cloud together (e.g. a game save that requires updating more than one file).
+* Removed the following unused callbacks: RemoteStorageAppSyncedClient_t, RemoteStorageAppSyncedServer_t, RemoteStorageAppSyncProgress_t, and RemoteStorageAppSyncStatusCheck_t.
+
+ISteamUGC
+* Added ability to sort by "time last updated" (k_EUGCQuery_RankedByLastUpdatedDate).
+* Added ShowWorkshopEULA and GetWorkshopEULAStatus, which allows a game to have a separate EULA for the Steam Workshop.
+* Added UserSubscribedItemsListChanged_t callback.
+* Added WorkshopEULAStatus_t callback, which will be sent asynchronously after calling GetWorkshopEULAStatus.
+
+ISteamUser
+* Deprecated InitiateGameConnection and TerminateGameConnection (renamed to *_DEPRECATED).  Please migrate to BeginAuthSession and EndAuthSession.
+
+ISteamUtils
+* Added IsSteamRunningOnSteamDeck - Can be used to optimize the experience of the game on Steam Deck, such as scaling the UI appropriately, applying performance related settings, etc.
+* Added SetGameLauncherMode - In game launchers that don't have controller support you can call this to have Steam Input translate the controller input into mouse/kb to navigate the launcher.
+* Added AppResumingFromSuspend_t callback - Sent after the device returns from sleep/suspend mode.
+* Added ShowFloatingGamepadTextInput - Activates the modal gamepad input keyboard which pops up over game content and sends OS keyboard keys directly to the game. Note: Currently this is only implemented in the Steam Deck UI.
+* Added FloatingGamepadTextInputDismissed_t callback - Sent after the floating gamepad input keyboard displayed via ShowFloatingGamepadTextInput has been dismissed.
+
+macOS
+* Added i386/x86_64/arm64 universal builds of libsdkencryptedappticket.dylib and libsteam_api.dylib
+
+Steamworks Example Project
+* Updated project to illustrate new Steam Input changes
+* Updated to build properly with macOS 11 SDK for arm64
+* Updated Windows project files to Visual Studio 2015
+* Windows project files now target Windows 8.1
+* Windows project files now set include and library path using DXSDK_DIR
+
+Misc.
+* ISteamAppList - Added m_iInstallFolderIndex to SteamAppInstalled_t and SteamAppUninstalled_t callbacks.
+* ISteamApps - Removed unused SteamGameServerApps() accessor.
+* CSteamGameServerAPIContext - removed SteamApps() accessor.
+* Cleanup of types and enums that were unnecessarily in the SDK.
 
 
 ----------------------------------------------------------------

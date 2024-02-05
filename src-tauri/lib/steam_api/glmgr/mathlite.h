@@ -8,7 +8,12 @@
 #include <float.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined( OSX ) && defined( __aarch64__ )
+#include <simd/simd.h>
+#else
 #include <xmmintrin.h>
+#endif
 
 //-----------------------------------------------------------------------------
 // macros
@@ -128,16 +133,24 @@ inline void SinCos( float radians, float *sine, float *cosine )
 #ifndef FastSqrt
 inline float FastSqrt( float x )
 {
+#if defined( OSX ) && defined( __aarch64__ )
+	return simd::sqrt( x );
+#else
 	__m128 root = _mm_sqrt_ss( _mm_load_ss( &x ) );
 	return *( reinterpret_cast<float *>( &root ) );
+#endif
 }
 #endif
 
 inline float FastRSqrtFast( float x )
 {
+#if defined( OSX ) && defined( __aarch64__ )
+	return simd::fast::rsqrt( x );
+#else
 	// use intrinsics
 	__m128 rroot = _mm_rsqrt_ss( _mm_load_ss( &x ) );
 	return *( reinterpret_cast<float *>( &rroot ) );
+#endif
 }
 // Single iteration NewtonRaphson reciprocal square root:
 // 0.5 * rsqrtps * (3 - x * rsqrtps(x) * rsqrtps(x)) 	

@@ -8,6 +8,11 @@
 #include "glmdisplay.h"
 #include "cglmbuffer.h"
 
+#ifdef OSX
+// Debugger - 10.8
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 //    void BindBufferARB(enum target, uint buffer);
 //    void DeleteBuffersARB(sizei n, const uint *buffers);
 //    void GenBuffersARB(sizei n, uint *buffers);

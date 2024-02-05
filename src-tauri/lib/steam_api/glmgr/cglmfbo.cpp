@@ -8,7 +8,10 @@
 #include "cglmfbo.h"
 //   #include "../shaderapidx9/dxabstract.h"
 
-
+#ifdef OSX
+// Debugger - 10.8
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 CGLMFBO::CGLMFBO( GLMContext *ctx )
 {

@@ -17,6 +17,10 @@
 //#include "tier1/utllinkedlist.h"
 #include "glmgr.h"
 
+// Debugger - 10.8
+// CGDisplayModeCopyPixelEncoding - 10.11
+// CGDisplayIOServicePort - 10.9
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 //===============================================================================
 

@@ -255,65 +255,65 @@ enum { k_iSteamBillingCallbacks = 400 };
 enum { k_iSteamMatchmakingCallbacks = 500 };
 enum { k_iSteamContentServerCallbacks = 600 };
 enum { k_iSteamUtilsCallbacks = 700 };
-enum { k_iClientFriendsCallbacks = 800 };
-enum { k_iClientUserCallbacks = 900 };
 enum { k_iSteamAppsCallbacks = 1000 };
 enum { k_iSteamUserStatsCallbacks = 1100 };
 enum { k_iSteamNetworkingCallbacks = 1200 };
 enum { k_iSteamNetworkingSocketsCallbacks = 1220 };
 enum { k_iSteamNetworkingMessagesCallbacks = 1250 };
 enum { k_iSteamNetworkingUtilsCallbacks = 1280 };
-enum { k_iClientRemoteStorageCallbacks = 1300 };
-enum { k_iClientDepotBuilderCallbacks = 1400 };
+enum { k_iSteamRemoteStorageCallbacks = 1300 };
 enum { k_iSteamGameServerItemsCallbacks = 1500 };
-enum { k_iClientUtilsCallbacks = 1600 };
 enum { k_iSteamGameCoordinatorCallbacks = 1700 };
 enum { k_iSteamGameServerStatsCallbacks = 1800 };
 enum { k_iSteam2AsyncCallbacks = 1900 };
 enum { k_iSteamGameStatsCallbacks = 2000 };
-enum { k_iClientHTTPCallbacks = 2100 };
-enum { k_iClientScreenshotsCallbacks = 2200 };
+enum { k_iSteamHTTPCallbacks = 2100 };
 enum { k_iSteamScreenshotsCallbacks = 2300 };
-enum { k_iClientAudioCallbacks = 2400 };
-enum { k_iClientUnifiedMessagesCallbacks = 2500 };
+// NOTE: 2500-2599 are reserved
 enum { k_iSteamStreamLauncherCallbacks = 2600 };
-enum { k_iClientControllerCallbacks = 2700 };
 enum { k_iSteamControllerCallbacks = 2800 };
-enum { k_iClientParentalSettingsCallbacks = 2900 };
-enum { k_iClientDeviceAuthCallbacks = 3000 };
-enum { k_iClientNetworkDeviceManagerCallbacks = 3100 };
-enum { k_iClientMusicCallbacks = 3200 };
-enum { k_iClientRemoteClientManagerCallbacks = 3300 };
-enum { k_iClientUGCCallbacks = 3400 };
+enum { k_iSteamUGCCallbacks = 3400 };
 enum { k_iSteamStreamClientCallbacks = 3500 };
-enum { k_IClientProductBuilderCallbacks = 3600 };
-enum { k_iClientShortcutsCallbacks = 3700 };
-enum { k_iClientRemoteControlManagerCallbacks = 3800 };
 enum { k_iSteamAppListCallbacks = 3900 };
 enum { k_iSteamMusicCallbacks = 4000 };
 enum { k_iSteamMusicRemoteCallbacks = 4100 };
-enum { k_iClientVRCallbacks = 4200 };
-enum { k_iClientGameNotificationCallbacks = 4300 }; 
 enum { k_iSteamGameNotificationCallbacks = 4400 }; 
 enum { k_iSteamHTMLSurfaceCallbacks = 4500 };
-enum { k_iClientVideoCallbacks = 4600 };
-enum { k_iClientInventoryCallbacks = 4700 };
-enum { k_iClientBluetoothManagerCallbacks = 4800 };
-enum { k_iClientSharedConnectionCallbacks = 4900 };
+enum { k_iSteamVideoCallbacks = 4600 };
+enum { k_iSteamInventoryCallbacks = 4700 };
 enum { k_ISteamParentalSettingsCallbacks = 5000 };
-enum { k_iClientShaderCallbacks = 5100 };
 enum { k_iSteamGameSearchCallbacks = 5200 };
 enum { k_iSteamPartiesCallbacks = 5300 };
-enum { k_iClientPartiesCallbacks = 5400 };
 enum { k_iSteamSTARCallbacks = 5500 };
-enum { k_iClientSTARCallbacks = 5600 };
 enum { k_iSteamRemotePlayCallbacks = 5700 };
-enum { k_iClientCompatCallbacks = 5800 };
 enum { k_iSteamChatCallbacks = 5900 };
+// NOTE: Internal "IClientXxx" callback IDs go in clientenums.h
 
 #ifdef _MSVC_VER
 #pragma warning( pop )
 #endif
+
+// Macros used to annotate various Steamworks interfaces to generate the
+// flat API
+#ifdef API_GEN
+# define STEAM_CLANG_ATTR(ATTR) __attribute__((annotate( ATTR )))
+#else
+# define STEAM_CLANG_ATTR(ATTR)
+#endif
+
+#define STEAM_OUT_STRUCT() STEAM_CLANG_ATTR( "out_struct: ;" )
+#define STEAM_OUT_STRING() STEAM_CLANG_ATTR( "out_string: ;" )
+#define STEAM_OUT_ARRAY_CALL(COUNTER,FUNCTION,PARAMS) STEAM_CLANG_ATTR( "out_array_call:" #COUNTER "," #FUNCTION "," #PARAMS ";" )
+#define STEAM_OUT_ARRAY_COUNT(COUNTER, DESC) STEAM_CLANG_ATTR( "out_array_count:" #COUNTER  ";desc:" #DESC )
+#define STEAM_ARRAY_COUNT(COUNTER) STEAM_CLANG_ATTR( "array_count:" #COUNTER ";" )
+#define STEAM_ARRAY_COUNT_D(COUNTER, DESC) STEAM_CLANG_ATTR( "array_count:" #COUNTER ";desc:" #DESC )
+#define STEAM_BUFFER_COUNT(COUNTER) STEAM_CLANG_ATTR( "buffer_count:" #COUNTER ";" )
+#define STEAM_OUT_BUFFER_COUNT(COUNTER) STEAM_CLANG_ATTR( "out_buffer_count:" #COUNTER ";" )
+#define STEAM_OUT_STRING_COUNT(COUNTER) STEAM_CLANG_ATTR( "out_string_count:" #COUNTER ";" )
+#define STEAM_DESC(DESC) STEAM_CLANG_ATTR("desc:" #DESC ";")
+#define STEAM_CALL_RESULT(RESULT_TYPE) STEAM_CLANG_ATTR("callresult:" #RESULT_TYPE ";")
+#define STEAM_CALL_BACK(RESULT_TYPE) STEAM_CLANG_ATTR("callback:" #RESULT_TYPE ";")
+#define STEAM_FLAT_NAME(NAME) STEAM_CLANG_ATTR("flat_name:" #NAME ";")
 
 // CSteamAPIContext encapsulates the Steamworks API global accessors into
 // a single object.
@@ -391,7 +391,6 @@ public:
 	ISteamHTTP *SteamHTTP() const						{ return m_pSteamHTTP; }
 	ISteamInventory *SteamInventory() const				{ return m_pSteamInventory; }
 	ISteamUGC *SteamUGC() const							{ return m_pSteamUGC; }
-	ISteamApps *SteamApps() const						{ return m_pSteamApps; }
 
 private:
 	ISteamClient				*m_pSteamClient;
@@ -402,7 +401,6 @@ private:
 	ISteamHTTP					*m_pSteamHTTP;
 	ISteamInventory				*m_pSteamInventory;
 	ISteamUGC					*m_pSteamUGC;
-	ISteamApps					*m_pSteamApps;
 };
 
 
