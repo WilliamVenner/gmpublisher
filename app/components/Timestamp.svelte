@@ -8,7 +8,7 @@
 	export let absolute = false;
 	export let elapsed = false;
 
-	const date = new DateTime.fromSeconds(unix);
+	const date = DateTime.fromSeconds(unix);
 
 	let interval;
 	onDestroy(() => window.clearInterval(interval));
