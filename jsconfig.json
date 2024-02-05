@@ -28,5 +28,5 @@
    * Use global.d.ts instead of compilerOptions.types
    * to avoid limiting type declarations.
    */
-  "include": ["public/**/*.d.ts", "public/**/*.js", "app/**/*.svelte"],
+  "include": ["public/**/*.d.ts", "public/**/*.js", "app/**/*.svelte"]
 }

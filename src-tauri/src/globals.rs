@@ -75,4 +75,8 @@ pub(super) fn init_globals() {
 		lazy_static::initialize(&GAME_ADDONS);
 		GAME_ADDONS.discover_addons();
 	});
+
+	rayon::spawn(|| {
+		lazy_static::initialize(&crate::gma::whitelist::ADDON_WHITELIST);
+	});
 }

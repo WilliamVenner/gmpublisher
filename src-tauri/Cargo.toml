@@ -52,6 +52,8 @@ num_cpus = "1"
 once_cell = "1.7.2"
 clap = "2.33.3"
 trash = "2.0.1"
+ureq = { version = "2.9.4", features = ["native-tls"] }
+regex = "1"
 
 [dependencies.steamworks]
 features = [ "serde" ]

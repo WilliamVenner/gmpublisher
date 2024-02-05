@@ -1,6 +1,8 @@
 // https://github.com/garrynewman/bootil/blob/beb4cec8ad29533965491b767b177dc549e62d23/src/3rdParty/globber.cpp
 // https://github.com/Facepunch/gmad/blob/master/include/AddonWhiteList.h
 
+use std::time::Duration;
+
 macro_rules! globbers {
 	($($glob:literal),*) => {
 		&[
@@ -38,7 +40,7 @@ pub const DEFAULT_IGNORE: &'static [&'static str] = globbers!(
 	"addon.jpg"
 );
 
-const ADDON_WHITELIST: &'static [&'static str] = globbers!(
+const ADDON_WHITELIST_OFFLINE: &'static [&'static str] = globbers!(
 	"lua/*.lua",
 	"scenes/*.vcd",
 	"particles/*.pcf",
@@ -98,9 +100,6 @@ const ADDON_WHITELIST: &'static [&'static str] = globbers!(
 	"gamemodes/*/content/sound/*.wav",
 	"gamemodes/*/content/sound/*.mp3",
 	"gamemodes/*/content/sound/*.ogg",
-
-	// static version of the data/ folder
-	// (because you wouldn't be able to modify these)
 	"data_static/*.txt",
 	"data_static/*.dat",
 	"data_static/*.json",
@@ -108,17 +107,69 @@ const ADDON_WHITELIST: &'static [&'static str] = globbers!(
 	"data_static/*.csv",
 	"data_static/*.dem",
 	"data_static/*.vcd",
-
 	"data_static/*.vtf",
 	"data_static/*.vmt",
 	"data_static/*.png",
 	"data_static/*.jpg",
 	"data_static/*.jpeg",
-
 	"data_static/*.mp3",
 	"data_static/*.wav",
 	"data_static/*.ogg"
 );
+
+lazy_static! {
+	pub static ref ADDON_WHITELIST: &'static [&'static str] = download_addon_whitelist();
+}
+
+fn download_addon_whitelist() -> &'static [&'static str] {
+	if std::env::var_os("ADDON_WHITELIST_OFFLINE").is_some() {
+		return ADDON_WHITELIST_OFFLINE;
+	}
+
+	ureq::get("https://raw.githubusercontent.com/Facepunch/gmad/master/include/AddonWhiteList.h")
+		.timeout(Duration::from_secs(2))
+		.call()
+		.map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))
+		.and_then(|response| response.into_string())
+		.and_then(|response| {
+			let mut wildcard = Vec::new();
+
+			let captures = regex::Regex::new(r#"static +const +char\* +Wildcard\s*\[\s*\]\s*=\s*\{\s*([\s\S]*?)\s*NULL,?\s*};"#)
+				.unwrap()
+				.captures(response.leak())
+				.and_then(|captures| captures.get(1))
+				.ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse addon whitelist"))?;
+
+			for line in captures.as_str().lines() {
+				let line = line.trim();
+				if line.is_empty() {
+					continue;
+				} else if line == "NULL" {
+					break;
+				} else if line.get(0..1) == Some("\"") && line.get(line.len() - 2..line.len()) == Some("\",") {
+					wildcard.push(&*format!("{}\0", &line[1..line.len() - 2]).leak());
+				}
+			}
+
+			if wildcard.is_empty() {
+				return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse addon whitelist (empty)"));
+			}
+
+			if !wildcard.contains(&"lua/*.lua\0") {
+				// This should definitely be in there, so if it isn't, something has gone wrong. Probably.
+				return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse addon whitelist (missing lua/*.lua)"));
+			}
+
+			println!("Downloaded up to date addon whitelist: {wildcard:#?}");
+
+			Ok(&*wildcard.leak())
+		})
+		.map_err(|err| {
+			eprintln!("Failed to download addon whitelist: {:#?}", err);
+			err
+		})
+		.unwrap_or(ADDON_WHITELIST_OFFLINE)
+}
 
 const WILD_BYTE: u8 = '*' as u8;
 const QUESTION_BYTE: u8 = '?' as u8;
@@ -172,7 +223,7 @@ pub fn check(str: &str) -> bool {
 	let mut str = str.to_string();
 	str.push('\0');
 
-	for glob in ADDON_WHITELIST {
+	for glob in ADDON_WHITELIST.iter() {
 		if globber(glob, &str) {
 			return true;
 		}
