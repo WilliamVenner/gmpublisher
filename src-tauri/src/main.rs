@@ -1,5 +1,4 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
-#![feature(get_mut_unchecked)]
 
 use tauri::Manager;
 
@@ -101,26 +100,29 @@ fn main() {
 	println!("Starting GUI...");
 
 	tauri::Builder::default()
-		.create_window("gmpublisher".to_string(), tauri::WindowUrl::default(), |args, attrs| {
-			let settings = APP_DATA.settings.read();
-			(
-				args.with_title(format!("gmpublisher v{}", env!("CARGO_PKG_VERSION")))
-					.with_maximized(!cfg!(debug_assertions) && settings.window_maximized)
-					.with_resizable(true)
-					.with_inner_size(tauri::Size::Physical(tauri::PhysicalSize {
-						width: settings.window_size.0 as u32,
-						height: settings.window_size.1 as u32
-					}))
-					.with_min_inner_size(tauri::Size::Logical(tauri::LogicalSize {
-						width: 800.,
-						height: 600.
-					})),
-				attrs,
-			)
-		})
 		.setup(|app| {
-			let window = app.get_window(&"gmpublisher".to_string()).unwrap();
+			let settings = APP_DATA.settings.read();
+
+			let window = app.get_window("gmpublisher").unwrap();
+
+			window.set_title(&format!("gmpublisher v{}", env!("CARGO_PKG_VERSION"))).ok();
+			
+			window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+				width: settings.window_size.0 as u32,
+				height: settings.window_size.1 as u32
+			})).ok();
+
+			window.set_min_size(Some(tauri::Size::Logical(tauri::LogicalSize {
+				width: 800.,
+				height: 600.
+			}))).ok();
+
+			if !cfg!(debug_assertions) && settings.window_maximized {
+				window.maximize().ok();
+			}
+
 			webview!().init(window);
+
 			Ok(())
 		})
 		.plugin(webview::ErrorReporter)

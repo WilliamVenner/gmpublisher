@@ -1,9 +1,8 @@
 use std::{
-	path::PathBuf,
-	sync::{
+	cell::UnsafeCell, path::PathBuf, sync::{
 		atomic::{AtomicBool, AtomicU32, AtomicU8},
 		Arc,
-	},
+	}
 };
 
 use parking_lot::RwLock;
@@ -28,12 +27,23 @@ pub enum SearchItemSource {
 
 #[derive(Debug)]
 pub struct SearchItem {
-	pub label: String,
-	pub terms: Vec<String>,
+	pub label: UnsafeCell<String>,
+	pub terms: UnsafeCell<Vec<String>>,
 	pub timestamp: u64,
 	pub len: usize,
 	pub source: SearchItemSource,
 }
+impl SearchItem {
+	pub fn label(&self) -> &str {
+		unsafe { &*self.label.get() }
+	}
+
+	pub fn terms(&self) -> &[String] {
+		unsafe { &*self.terms.get() }
+	}
+}
+unsafe impl Send for SearchItem {}
+unsafe impl Sync for SearchItem {}
 impl PartialOrd for SearchItem {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
 		let cmp1 = self.timestamp.partial_cmp(&other.timestamp).map(|ord| ord.reverse());
@@ -71,8 +81,8 @@ impl SearchItem {
 
 		SearchItem {
 			len: terms.iter().map(|x| x.len()).reduce(|a, b| a.max(b)).unwrap_or(0).max(label.len()),
-			label,
-			terms,
+			label: UnsafeCell::new(label),
+			terms: UnsafeCell::new(terms),
 			timestamp: timestamp.into(),
 			source,
 		}
@@ -84,7 +94,7 @@ impl Serialize for SearchItem {
 		S: serde::Serializer,
 	{
 		let mut tup = serializer.serialize_tuple(2)?;
-		tup.serialize_element(&self.label)?;
+		tup.serialize_element(self.label())?;
 		tup.serialize_element(&self.source)?;
 		tup.end()
 	}
@@ -302,13 +312,13 @@ impl Search {
 
 				let mut winner = None;
 
-				if search_item.label.len() >= query.len() {
-					if let Some(score) = self.matcher.fuzzy_match(&search_item.label, &query) {
+				if search_item.label().len() >= query.len() {
+					if let Some(score) = self.matcher.fuzzy_match(search_item.label(), &query) {
 						winner = Some(score);
 					}
 				}
 
-				for term in search_item.terms.iter() {
+				for term in search_item.terms().iter() {
 					if term.len() < query.len() {
 						continue;
 					}
@@ -387,13 +397,13 @@ impl Search {
 
 					let mut winner = None;
 
-					if search_item.label.len() >= query.len() {
-						if let Some(score) = self.matcher.fuzzy_match(&search_item.label, &query) {
+					if search_item.label().len() >= query.len() {
+						if let Some(score) = self.matcher.fuzzy_match(search_item.label(), &query) {
 							winner = Some(score);
 						}
 					}
 
-					for term in search_item.terms.iter() {
+					for term in search_item.terms().iter() {
 						if term.len() < query.len() {
 							continue;
 						}

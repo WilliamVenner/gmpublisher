@@ -1,15 +1,14 @@
 {
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist",
+    "withGlobalTauri": true
+  },
   "package": {
     "productName": "gmpublisher",
-    "version": "2.9.2"
-  },
-  "build": {
-    "distDir": "../public",
-    "devPath": "http://localhost:5000",
-    "beforeDevCommand": "yarn dev",
-    "beforeBuildCommand": "yarn build",
-    "afterBuildCommand": "cargo run --manifest-path src-tauri/Cargo.toml -- bundle",
-    "withGlobalTauri": true
+    "version": "2.9.4"
   },
   "tauri": {
     "bundle": {
@@ -29,13 +28,11 @@
       "shortDescription": "Garry's Mod Workshop Publishing Utility",
       "longDescription": "Garry's Mod Workshop Publishing Utility",
       "deb": {
-        "depends": [],
-        "useBootstrapper": false
+        "depends": []
       },
       "macOS": {
         "frameworks": ["lib/steam_api/osx/libsteam_api.dylib"],
         "minimumSystemVersion": "",
-        "useBootstrapper": false,
         "exceptionDomain": ""
       },
       "windows": {
@@ -47,7 +44,16 @@
     "allowlist": {
       "all": true
     },
-    "windows": [],
+    "windows": [
+      {
+        "label": "gmpublisher",
+        "title": "gmpublisher",
+        "width": 800,
+        "height": 600,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
     "security": {
       "csp": "default-src blob: data: filesystem: ws: http: https: 'unsafe-eval' 'unsafe-inline'"
     }

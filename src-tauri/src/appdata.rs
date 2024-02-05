@@ -14,7 +14,6 @@ use lazy_static::lazy_static;
 use parking_lot::{RwLock, RwLockReadGuard};
 use serde::{Deserialize, Serialize};
 use steamworks::PublishedFileId;
-use tauri::Params;
 
 lazy_static! {
 	static ref USER_DATA_DIR: PathBuf = dirs_next::data_dir()
@@ -302,7 +301,7 @@ const PATH_SEPARATOR: char = '\\';
 const PATH_SEPARATOR: char = '/';
 
 pub struct Plugin;
-impl<M: Params + 'static> tauri::plugin::Plugin<M> for Plugin {
+impl<R: tauri::Runtime> tauri::plugin::Plugin<R> for Plugin {
 	fn initialization_script(&self) -> Option<String> {
 		let mut sanitized = app_data!().settings.read().clone();
 		sanitized.sanitize();

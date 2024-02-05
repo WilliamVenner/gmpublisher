@@ -190,10 +190,12 @@ impl Steam {
 											crate::search::SearchItemSource::InstalledAddons(_, id) => id.as_ref().unwrap().cmp(&item.id),
 											_ => unreachable!(),
 										}) {
-											let search_item = unsafe { Arc::get_mut_unchecked(&mut search_installed_addons[pos]) };
-											if search_item.label != item.title {
-												search_item.terms.push(std::mem::take(&mut search_item.label));
-												search_item.label = item.title.to_owned();
+											let search_item = &search_installed_addons[pos];
+											if search_item.label() != item.title {
+												let terms = unsafe { &mut *search_item.terms.get() };
+												let label = unsafe { &mut *search_item.label.get() };
+												terms.push(std::mem::take(label));
+												*label = item.title.to_owned();
 											}
 										}
 

@@ -3,9 +3,9 @@ import { get } from 'svelte/store';
 import en from '../i18n/en.json';
 
 {
-	for (let file in APP_LANGUAGES) {
+	for (let file in window.APP_LANGUAGES) {
 		if (file === 'en') continue;
-		addMessages(file, APP_LANGUAGES[file]);
+		addMessages(file, window.APP_LANGUAGES[file]);
 	}
 	addMessages('en', en);
 
@@ -35,7 +35,7 @@ export function translateError(error, data) {
 }
 
 export function switchLanguage(switchLocale) {
-	const newLocale = switchLocale in APP_LANGUAGES ? switchLocale : (getLocaleFromNavigator() ?? 'en');
+	const newLocale = switchLocale in window.APP_LANGUAGES ? switchLocale : (getLocaleFromNavigator() ?? 'en');
 	locale.set(newLocale);
 	console.report('info', `Switched to locale: ${newLocale}`);
 }

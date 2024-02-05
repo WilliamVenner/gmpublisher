@@ -72,7 +72,7 @@ a.nostyle {
 }
 
 body, .hide-scroll {
-    overflow: scroll;
+    overflow: auto;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none;  /* Internet Explorer 10+ */
 }

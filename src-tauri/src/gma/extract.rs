@@ -129,18 +129,22 @@ impl GMAFile {
 			unsafe impl Send for StupidlyUnsafeProgressMonitorPtr {}
 
 			let xz_decoder_ptr = StupidlyUnsafeProgressMonitorPtr(&xz_decoder as *const _);
-			rayon::spawn(move || while !complete_ref.load(Ordering::Acquire) {
-				let xz_decoder = unsafe { &*xz_decoder_ptr.0 };
+			rayon::spawn(move || {
+				#[allow(clippy::redundant_locals)]
+				let xz_decoder_ptr = xz_decoder_ptr;
+				while !complete_ref.load(Ordering::Acquire) {
+					let xz_decoder = unsafe { &*xz_decoder_ptr.0 };
 
-				let bytes_read = xz_decoder.total_in() as f64;
-				transaction.progress(bytes_read / bytes_total_f);
+					let bytes_read = xz_decoder.total_in() as f64;
+					transaction.progress(bytes_read / bytes_total_f);
 
-				let decompressed_bytes = xz_decoder.total_out();
-				if decompressed_bytes > bytes_total {
-					transaction.data((turbonone!(), decompressed_bytes));
+					let decompressed_bytes = xz_decoder.total_out();
+					if decompressed_bytes > bytes_total {
+						transaction.data((turbonone!(), decompressed_bytes));
+					}
+
+					sleep_ms!(25);
 				}
-
-				sleep_ms!(25);
 			});
 
 			let result = xz_decoder.read_to_end(&mut output);

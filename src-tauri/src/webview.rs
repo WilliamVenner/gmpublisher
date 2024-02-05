@@ -2,20 +2,14 @@ use std::{cell::RefCell, mem::MaybeUninit, sync::atomic::AtomicBool};
 
 use crossbeam::channel::Sender;
 use serde::Serialize;
-use tauri::{
-	api::assets::EmbeddedAssets,
-	runtime::{flavors::wry::Wry, Args},
-	Window,
-};
+use tauri::{Window, Wry};
 
 use crate::{GMAFile, WorkshopItem};
 
-pub type Params = Args<String, String, EmbeddedAssets, Wry>;
-
 pub struct WrappedWebview {
-	pub window: RefCell<MaybeUninit<Window<Params>>>,
+	pub window: RefCell<MaybeUninit<Window<Wry>>>,
 	pending: AtomicBool,
-	tx: Sender<Window<Params>>,
+	tx: Sender<Window<Wry>>,
 }
 unsafe impl Send for WrappedWebview {}
 unsafe impl Sync for WrappedWebview {}
@@ -28,7 +22,7 @@ impl WrappedWebview {
 		}
 	}
 
-	fn channel() -> Sender<Window<Params>> {
+	fn channel() -> Sender<Window<Wry>> {
 		let (tx, rx) = crossbeam::channel::bounded(1);
 
 		std::thread::spawn(move || {
@@ -40,15 +34,15 @@ impl WrappedWebview {
 		tx
 	}
 
-	pub fn init(&self, window: Window<Params>) {
+	pub fn init(&self, window: Window<Wry>) {
 		self.tx.send(window).unwrap();
 	}
 
 	pub fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, payload: Option<D>) {
-		ignore! { self.window().emit(&event.to_string(), payload) };
+		ignore! { self.window().emit(&event.to_string(), &payload) };
 	}
 
-	pub fn window(&self) -> &Window<Params> {
+	pub fn window(&self) -> &Window<Wry> {
 		while self.pending.load(std::sync::atomic::Ordering::Relaxed) {
 			sleep_ms!(50);
 		}
@@ -149,7 +143,7 @@ impl PartialEq for Addon {
 impl Eq for Addon {}
 
 pub struct ErrorReporter;
-impl<M: tauri::Params + 'static> tauri::plugin::Plugin<M> for ErrorReporter {
+impl<R: tauri::Runtime> tauri::plugin::Plugin<R> for ErrorReporter {
 	fn initialization_script(&self) -> Option<String> {
 		Some(include_str!("../../app/plugins/ErrorReporter.js").replacen(
 			"{$_DEBUG_MODE_$}",

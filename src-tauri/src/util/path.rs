@@ -139,7 +139,7 @@ pub fn has_extension<P: AsRef<Path>, S: AsRef<str>>(path: P, extension: S) -> bo
 pub fn open<P: AsRef<Path>>(path: P) {
 	let path = path.as_ref();
 	if let Err(_) = opener::open(path) {
-		tauri::api::dialog::message("File", path.to_string_lossy());
+		tauri::api::dialog::message(None::<&tauri::Window<tauri::Wry>>, "File", path.to_string_lossy());
 	}
 }
 
@@ -160,6 +160,6 @@ pub fn open_file_location<P: AsRef<Path>>(path: P) {
 		#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 		Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported OS"))
 	})() {
-		tauri::api::dialog::message("File Location", path.to_string());
+		tauri::api::dialog::message(None::<&tauri::Window<tauri::Wry>>, "File Location", path.to_string());
 	}
 }

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-pub fn invoke_handler() -> impl Fn(tauri::Invoke<crate::webview::Params>) + Send + Sync + 'static {
-	tauri::generate_handler![
+pub fn invoke_handler() -> impl Fn(tauri::Invoke<tauri::Wry>) + Send + Sync + 'static {
+	let handler: fn(tauri::Invoke<tauri::Wry>) = tauri::generate_handler![
 		check_dir,
 		check_file,
 		open,
@@ -43,7 +43,24 @@ pub fn invoke_handler() -> impl Fn(tauri::Invoke<crate::webview::Params>) + Send
 		crate::search::search,
 		crate::search::search_channel,
 		crate::search::full_search,
-	]
+	];
+
+	// This weirdness is needed because when gmpublisher was written,
+	// commands were sent from another thread. This is no longer the case,
+	// and there are many main-thread-not-allowed debug assertions littered
+	// all over the codebase, so we just set up a channel and invoke the commands
+	// from another thread to work around this.
+	let (tx, rx) = std::sync::mpsc::sync_channel(0);
+
+	std::thread::spawn(move || {
+		while let Ok(invoke) = rx.recv() {
+			handler(invoke);
+		}
+	});
+
+	move |invoke| {
+		tx.send(invoke).unwrap();
+	}
 }
 
 pub fn free_caches() {
