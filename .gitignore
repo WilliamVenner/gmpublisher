@@ -26,3 +26,4 @@ dist-ssr
 /public/build/
 /public/dist/
 /src-tauri/target/
+WixTools/

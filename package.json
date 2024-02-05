@@ -13,7 +13,6 @@
     "@tauri-apps/api": "^1.5.2"
   },
   "devDependencies": {
-    "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-replace": "^5.0.5",
     "@sveltejs/vite-plugin-svelte": "^3.0.1",
     "@tauri-apps/cli": "^1.5.8",
