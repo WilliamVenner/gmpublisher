@@ -16,6 +16,6 @@ if (process.platform === "win32") {
 fs.mkdirSync('src-tauri/target/debug', { recursive: true });
 fs.mkdirSync('src-tauri/target/release', { recursive: true });
 
-const path = `src-tauri/lib/steam_api/${steamApiDir}/${steamApiFile}`;
+const path = `src-tauri/lib/steam_api/redistributable_bin/${steamApiDir}/${steamApiFile}`;
 fs.copyFileSync(path, 'src-tauri/target/debug/' + steamApiFile);
 fs.copyFileSync(path, 'src-tauri/target/release/' + steamApiFile);

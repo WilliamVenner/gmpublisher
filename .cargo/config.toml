@@ -1,0 +1,2 @@
+[env]
+STEAM_SDK_LOCATION = { value = "src-tauri/lib/steam_api", relative = true }
