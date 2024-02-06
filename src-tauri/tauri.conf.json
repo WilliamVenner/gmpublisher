@@ -1,6 +1,9 @@
 {
 	"build": {
-		"beforeDevCommand": "node src-tauri/copySharedLibs.js && npm run dev",
+		"beforeDevCommand": {
+			"script": "node src-tauri/copySharedLibs.js && npm run dev",
+			"wait": true
+		},
 		"beforeBuildCommand": "node src-tauri/copySharedLibs.js && npm run build",
 		"devPath": "http://localhost:1420",
 		"distDir": "../dist",
@@ -14,8 +17,6 @@
 		"bundle": {
 			"active": true,
 			"targets": [
-				"deb",
-				"appimage",
 				"msi",
 				"app"
 			],
@@ -34,13 +35,6 @@
 			"longDescription": "Garry's Mod Workshop Publishing Utility",
 			"deb": {
 				"depends": []
-			},
-			"macOS": {
-				"frameworks": [
-					"lib/steam_api/redistributable_bin/osx/libsteam_api.dylib"
-				],
-				"minimumSystemVersion": "",
-				"exceptionDomain": ""
 			},
 			"windows": {
 				"wix": {

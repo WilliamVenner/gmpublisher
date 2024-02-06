@@ -1,6 +1,9 @@
 name: build
 
-on: [push, pull_request]
+on:
+  push:
+    tags:
+      - "*.*.*"
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,45 +14,77 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
-    
-    - name: Install GUI
-      run: sudo apt-get install libgtk-3-dev
-      
-    - name: Setup Node & Yarn
-      run: yarn install
-    
-    - name: Install Tauri Bundler
-      run: cargo install tauri-bundler --force
-    
+
+    - name: Install system dependencies
+      run: |
+        sudo apt update
+        sudo apt install libwebkit2gtk-4.0-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+    - name: Install NPM dependencies
+      run: npm install
+
     - name: Build
-      run: yarn run tauri build --release
-  
+      run: npm run tauri build -- -v
+
+    - name: Prepare ZIP
+      run: |
+        cd src-tauri/target/release
+        zip -r gmpublisher_linux64.zip gmpublisher libsteam_api.so
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: src-tauri/target/release/gmpublisher_linux64.zip
+        fail_on_unmatched_files: true
+
   build_windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
-      
-    - name: Setup Node & Yarn
-      run: yarn install
-    
-    - name: Install Tauri Bundler
-      run: cargo install tauri-bundler --force
-        
+
+    - name: Install NPM dependencies
+      run: npm install
+
     - name: Build
-      run: yarn run tauri build --release
-  
+      run: npm run tauri build -- -v
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: src-tauri/target/release/bundle/wix/gmpublisher_*.*.*_x64_en-US.msi
+        fail_on_unmatched_files: true
+
   build_macos:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
-      
-    - name: Setup Node & Yarn
-      run: yarn install
-    
-    - name: Install Tauri Bundler
-      run: cargo install tauri-bundler --force
-        
+
+    - name: Install NPM dependencies
+      run: npm install
+
     - name: Build
-      run: yarn run tauri build --release
+      run: npm run tauri build -- -v
+
+    - name: Copy Steamworks SDK to bundle
+      run: cp src-tauri/lib/steam_api/redistributable_bin/osx/libsteam_api.dylib src-tauri/target/release/bundle/macos/gmpublisher.app/Contents/MacOS/libsteam_api.dylib
+
+    - name: Prepare ZIP
+      run: |
+        cd src-tauri/target/release/bundle/macos
+        zip -r gmpublisher_macOS.app.zip gmpublisher.app
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: src-tauri/target/release/bundle/macos/gmpublisher_macOS.app.zip
+        fail_on_unmatched_files: true
