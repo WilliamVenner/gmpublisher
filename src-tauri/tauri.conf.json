@@ -1,9 +1,6 @@
 {
 	"build": {
-		"beforeDevCommand": {
-			"script": "node src-tauri/copySharedLibs.js && npm run dev",
-			"wait": true
-		},
+		"beforeDevCommand": "node src-tauri/copySharedLibs.js && npm run dev",
 		"beforeBuildCommand": "node src-tauri/copySharedLibs.js && npm run build",
 		"devPath": "http://localhost:1420",
 		"distDir": "../dist",
