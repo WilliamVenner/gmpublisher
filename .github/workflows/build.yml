@@ -62,7 +62,7 @@ jobs:
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
-        files: src-tauri/target/release/bundle/wix/gmpublisher_*.*.*_x64_en-US.msi
+        files: src-tauri/target/release/bundle/msi/gmpublisher_*.msi
         fail_on_unmatched_files: true
 
   build_macos:
