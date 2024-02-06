@@ -49,7 +49,7 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 Windows, macOS or Linux
 
-Linux users will need to install `libgtksourceview-3.0-1`
+Linux users may need to install additional dependencies.
 
 ## Tutorials
 
