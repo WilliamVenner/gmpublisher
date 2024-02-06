@@ -9,11 +9,9 @@ edition = "2021"
 publish = false
 
 [profile.release]
-#lto = "thin"
-#codegen-units = 1
-lto = false
-codegen-units = 32
-opt-level = 0
+lto = "thin"
+codegen-units = 1
+strip = true
 
 [build-dependencies]
 tauri-build = { version = "1.5", features = ["codegen"] }
