@@ -31,8 +31,8 @@
 			"externalBin": [],
 			"copyright": "2021 William Venner",
 			"category": "DeveloperTool",
-			"shortDescription": "Garry's Mod Workshop Publishing Utility",
-			"longDescription": "Garry's Mod Workshop Publishing Utility",
+			"shortDescription": "Garrys Mod Workshop Publishing Utility",
+			"longDescription": "Garrys Mod Workshop Publishing Utility",
 			"deb": {
 				"depends": []
 			},
@@ -56,9 +56,6 @@
 				"resizable": true,
 				"fullscreen": false
 			}
-		],
-		"security": {
-			"csp": "default-src blob: data: filesystem: ws: http: https: 'unsafe-eval' 'unsafe-inline'"
-		}
+		]
 	}
 }
