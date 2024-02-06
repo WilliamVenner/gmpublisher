@@ -56,6 +56,8 @@ jobs:
 
     - name: Build
       run: npm run tauri build -- -v
+      env:
+        RUSTFLAGS: -Ctarget-feature=+crt-static
 
     - name: Release
       uses: softprops/action-gh-release@v1
