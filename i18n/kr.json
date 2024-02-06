@@ -1,0 +1,271 @@
+{
+	"LANGUAGE_NAME": "한국어",
+
+	"my_workshop": "내 창작마당",
+	"loading": "로딩...",
+	"gmod_dir": {
+		"name": "게리모드 경로",
+		"fail": "게리모드의 경로를 찾지 못하였습니다.\n디렉토리에 gmad 및 gmpublish가 포함된 bin/폴더가 포함되어 있는지 확인하여주십시요."
+	},
+	"greetings": {
+		"morning": "좋은 아침입니다, {name}!",
+		"morning.anon": "좋은 아침입니다!",
+		"afternoon": "오늘 하루 수고하셨습니다, {name}!",
+		"afternoon.anon": "오늘 하루 수고하셨습니다!",
+		"evening": "좋은 하루 되세요, {name}!",
+		"evening.anon": "좋은 하루 되세요!"
+	},
+	"game": "게임",
+	"filesystem": "파일 시스템",
+	"github_star": "깃허브 스타",
+	"search": "검색...",
+	"showing_num_addons": "{total}개의 애드온 중 {num}개를 표시",
+	"extract_where_to": "어디로?",
+	"extract_overwrite_warning": "추출한 파일은 기존 파일을 덮어씁니다.",
+	"extract_open_tip": "GMA는 임시 폴더에 추출되고 열립니다.",
+	"browse": "경로...",
+	"addons_folder": "애드온 설치",
+	"downloads_folder": "다운로드 폴더",
+	"open": "열기",
+	"create_folder": "폴더 생성",
+	"extract": "추출",
+	"extracting": "추출중",
+	"extracting_progress": "추출 {pct}% ({data} / {dataTotal})",
+	"pack": "포장",
+	"publish": "업로드",
+	"update": "업데이트",
+	"size_analyzer": "애드온 크기 분석",
+	"name": "이름",
+	"cancel": "취소",
+	"done": "완료",
+	"cancelled": "취소됨",
+	"size": "용량",
+	"addon_type": "타입",
+	"file_types": {
+		"folder": "폴더",
+
+		"vtf": "Valve Texture Format",
+		"vmt": "Valve Material Format",
+		"map": "Map",
+		"ain": "Map AI Nodegraph",
+		"nav": "Map AI Navigation Mesh",
+		"ttf": "TrueType Font",
+		"vcd": "Valve Choreography Data",
+		"fgd": "Forge Game Data",
+		"pcf": "Particles File",
+		"lua": "Lua Code",
+		"mdl": "Model",
+		"vtx": "Model LOD Data",
+		"phy": "Model Physics Mesh",
+		"ani": "Model Animation Data",
+		"vvd": "Model Vertex Data",
+		"txt": "Text",
+		"properties": "Properties",
+
+		"audio": "오디오",
+		"image": "이미지",
+		"unknown": "Unknown ({extension})"
+	},
+	"items_one": "항목 1개",
+	"items_num": "항목 {n}개",
+	"items_shown": "{n}개 표시",
+	"created": "게시일",
+	"updated": "업데이트일",
+	"author": "제작자",
+	"open_addon_location": "애드온 폴더 열기",
+
+	"downloader": "다운로더",
+	"download-input": "창작마당 id나 링크, 컬렉션 링크를 여기에 넣어주세요...",
+	"download-input-tip": "TIP: 쉼표 구분이나 줄로 구분된 항목을 붙여넣을 수 있습니다.",
+	"downloading": "다운로드 중",
+	"log": "로그",
+	"waiting": "대기중",
+	"extraction_tip": "GMA 파일을 이 화면으로 끌어다 놓아서 직접 추출할 수 있습니다.",
+	"set_destination": "경로 설정",
+
+	"addon": "애드온",
+	"speed": "속도",
+	"total_filesize": "용량",
+	"progress": "진행률",
+
+	"LOG_DOWNLOAD_STARTED": "{addon} 의 다운로드 시작",
+	"LOG_DOWNLOAD_FINISHED": "{time} 만에 {addon} 다운로드 완료",
+	"LOG_DOWNLOAD_FAILED": "{addon} 의 다운로드 실패 (\"{reason}\")",
+
+	"LOG_EXTRACT_STARTED": "{addon} 의 추출 시작",
+	"LOG_EXTRACT_FAILED": "{addon} 의 추출 실패 (\"{reason}\")",
+	"LOG_EXTRACT_FINISHED": "{time} 만에 {addon} 의 추출 성공",
+
+	"FS_ANALYZER_RENDERING": "렌더링...",
+	"FS_ANALYZER_SERIALIZING": "직렬화...",
+	"FS_ANALYZER_STEAM": "스팀 데이터 다운로드...",
+	"FS_ANALYZER_COMPUTING": "연산...",
+	"FS_ANALYZER_TAGGIFYING": "태그 지정...",
+	"FS_ANALYZER_DISCOVERING": "파일 검색...",
+
+	"time_just_now": "지금 당장",
+	"click_to_open": "클릭하여 여세요!",
+	"content_generator": "콘텐츠 생성기",
+	"installed_addons": "설치된 애드온",
+
+	"steam_disconnected": "스팀 서버와 연결이 끊겼습니다.",
+	"steam_connected": "스팀 서버와 연결되었습니다.",
+
+	"publish_new": "새 애드온...",
+
+	"settings": {
+		"saved": "저장됨!",
+		"settings": "설정",
+
+		"paths": {
+			"paths": "경로",
+			"user_data": "유저 데이터 경로",
+			"gmod": "게리모드 설치 경로",
+			"temp": "임시 경로",
+			"downloads": "다운로드"
+		},
+
+		"general": {
+			"general": "일반",
+			"sounds": "효과음"
+		},
+
+		"resets": {
+			"resets": "리셋",
+			"settings": "설정 리셋",
+			"clear_temp": "임시 파일 정리",
+			"clear_user_data": "유저 데이터 정리"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "덮어쓰기 동작",
+			"recycle": "재사용",
+			"delete": "삭제",
+			"overwrite": "덮어쓰기",
+			"tooltip": "GMA를 추출할 때, 이미 추출한 GMA 라면 어떻게 동작 해야 할까요?"
+		},
+
+		"accessibility": {
+			"accessibility": "접근성",
+			"color_error": "에러 색깔",
+			"color_success": "성공 색깔",
+			"color_neutral": "중립 색깔"
+		}
+	},
+
+	"gma_type_name": "Packed Garry's Mod Addon",
+	"downloading_tip": "스팀 창작마당 링크를 가져와 다운로드 및 추출을 할수있습니다.",
+	"open_workshop": "창작마당 열기",
+	"bulk_extract_gmas": "GMA 대량 추출",
+	"error": "에러",
+	"queued": "대기중",
+	"remove_all": "전부 지우기",
+	"open_all": "전부 열기",
+
+	"ERR_UNKNOWN": "알수없는 에러",
+	"ERR_NO_ADDONS_FOUND": "애드온 찾지 못함",
+	"ERR_STEAM_ERROR": "스팀 에러: {data}",
+	"ERR_WHITELIST": "이러한 항목은 파일 형식/위치 화이트리스트를 통과하지 못합니다. 예기치 않은 경우 애드온에 잘못된 파일 구조가 있을 수 있습니다.\n\nGMA에서 이러한 파일 형식을 필터링하려면 파일 무시 패턴을 추가해야합니다.\n\n{data}",
+	"ERR_IO_ERROR": "I/O 에러",
+	"ERR_PATH_IO_ERROR": "I/O 에러 ({data})",
+	"ERR_GMA_FORMAT_ERROR": "손상된 GMA 파일",
+	"ERR_GMA_INVALID_HEADER": "잘못된 GMA 파일",
+	"ERR_GMA_ENTRY_NOT_FOUND": "엔트리 찾지 못함",
+	"ERR_DOWNLOAD_MISSING": "다운로드 하였지만, 파일이 없습니다.",
+	"ERR_ICON_TOO_LARGE": "아이콘이 너무 큽니다 (> 1 MB)",
+	"ERR_ICON_TOO_SMALL": "아이콘이 너무 작습니다. (< 16 B)",
+	"ERR_ICON_INVALID_FORMAT": "아이콘은 JPG, PNG 또는 GIF를 지원합니다.",
+	"ERR_LZMA": "LZMA 압축 에러",
+	"ERR_DOWNLOAD_FAILED": "다운로드 실패",
+	"ERR_ITEM_NOT_FOUND": "파일 찾지 못함",
+	"ERR_ITEM_INACCESSIBLE": "접근할 수 없는 콘텐츠",
+	"ERR_INVALID_CONTENT_PATH": "해당 콘텐츠 경로가 없거나, gmpublisher가 접근할 수 있는 권한이 부족합니다.",
+	"ERR_MULTIPLE_GMAS": "해당 콘텐츠 경로에서 다수의 GMA 파일을 발견하였습니다.",
+	"ERR_IMAGE_ERROR": "이미지 에러: {data}",
+	"ERR_DUPLICATE_ENTRIES": "이 콘텐츠 경로에 중복된 항목 ({data}) 이 있습니다. 모든 경로는 고유하고 소문자여야 합니다.",
+	"ERR_NO_ENTRIES": "이 콘텐츠 경로에 항목이 없습니다.",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "창작마당 이용약관에 승인되지 않음.",
+
+	"icon_instructions": "허용된 포맷: JPG, PNG, GIF\n최대 용량: 1 MB\n권장 해상도: 512x512",
+	"addon_title": "제목...",
+	"addon_path": "애드온 경로...",
+	"icon_file_pick": "워크샵 아이콘",
+	"remove_icon": "아이콘 삭제",
+
+	"addon_types": {
+		"ServerContent": "Server Content",
+		"gamemode": "Gamemode",
+		"map": "Map",
+		"weapon": "Weapon",
+		"vehicle": "Vehicle",
+		"npc": "NPC",
+		"tool": "Tool",
+		"effects": "Effects",
+		"model": "Model",
+		"entity": "Entity"
+	},
+
+	"tag_1": "태그 1",
+	"tag_2": "태그 2",
+	"tag_3": "태그 3",
+
+	"addon_tags": {
+		"fun": "Fun",
+		"roleplay": "Roleplay",
+		"scenic": "Scenic",
+		"movie": "Movie",
+		"realism": "Realism",
+		"cartoon": "Cartoon",
+		"water": "Water",
+		"comic": "Comic",
+		"build": "Build"
+	},
+
+	"publish_exclamation": "업로드!",
+	"update_exclamation": "업데이트!",
+	"add_ellipsis": "추가...",
+	"ignored_file_patterns": "파일 무시 패턴",
+	"show_more": "더보기",
+	"ignored_for_convenience": "이 파일 패턴은 사용자의 편의를 위해 기본적으로 무시됩니다.",
+	"file_browser": "파일 브라우저",
+	"file_browser_select": "파일을 여기에 놓던가 경로를 선택 해 주세요.",
+	"no_files_found": "파일을 찾지못함.",
+	"upscale_addon_icon": "512x512로 해상도 늘리기",
+	"changelog": "변경내역",
+	"update_warning": "{title} ({id})에 업데이트를 하였습니다.",
+
+	"PUBLISH_PACKING": "패킹 {pct}% ({data} / {dataTotal})",
+	"PUBLISH_STARTING": "업로드 시작",
+	"PUBLISH_PREPARING_CONFIG": "구성 준비...",
+	"PUBLISH_PREPARING_CONTENT": "콘텐츠 준비...",
+	"PUBLISH_UPLOADING_CONTENT": "콘텐츠 업로드...",
+	"PUBLISH_UPLOADING_PREVIEW_FILE": "미리보기 파일 업로드...",
+	"PUBLISH_COMMITTING_CHANGES": "변경 사항 커밋",
+	"PUBLISH_PROCESSING_ICON": "아이콘 처리",
+
+	"subscriptions": "구독",
+	"unsubscribe": "구독 취소",
+	"unsubscribe_all": "전체 구독 취소",
+	"unsubscribe_all_warning": "주의: 이것은 게리모드의 모든 구독을 취소합니다.",
+	"update_available": "새 업데이트 발견!\n{version}",
+	"workshop_page": "창작마당 페이지",
+	"steam_workshop": "스팀 창작마당",
+	"open_count": "축하드립니다! gmpublisher를 {count}번 열었습니다!",
+	"enjoying_gmpublisher": "gmpublisher를 즐기셨나요?",
+	"github_star_plz_i_need_a_job_maybe": "깃허브 계정이 있으신가요, 만약 저의 작업이 도움이 되었다면 %GitHub repository% 에 별을 주시는 것을 고려하여 주십시요.",
+	"vscode_glua_enhanced": "만약 개발자라면, 저의 %VSCode GLua Enhanced% 확장에도 관심이 있으실겁니다.",
+
+	"copy_link": "링크 복사",
+	"open_image": "이미지 열기",
+	"copy_image_link": "이미지 링크 복사",
+	"download": "다운로드",
+	"sent_to_downloader": "다운로더로 보내기",
+
+	"locating": "찾는중..",
+	"decompressing": "압축해제 {progress}",
+	"reading_metadata": "메타데이터 읽는중..",
+
+	"publish_icon": "새로운 아이콘을 업로드 (애드온은 업데이트 되지않습니다)",
+
+	"copy_path": "경로 복사"
+}
