@@ -1,7 +1,7 @@
 [package]
 name = "gmpublisher"
 version = "2.10.0"
-description = "Garrys Mod Workshop Publishing Utility"
+description = "gmpublisher"
 authors = [ "William Venner <william@venner.io>" ]
 license = "GPL-3.0"
 repository = "https://github.com/WilliamVenner/gmpublisher"
