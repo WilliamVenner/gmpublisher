@@ -1,6 +1,6 @@
 [package]
 name = "gmpublisher"
-version = "2.10.0"
+version = "2.10.1"
 description = "gmpublisher"
 authors = [ "William Venner <william@venner.io>" ]
 license = "GPL-3.0"
@@ -24,7 +24,7 @@ tauri-utils = "1.0.0-beta-rc.1"
 turbonone = "0.2.1"
 rayon = "1.5.0"
 parking_lot = { version = "0.11.1", features = [ "serde", "deadlock_detection" ] }
-xz2 = "0.1.6"
+xz2 = "0.1.7"
 indexmap = "1.6.2"
 dunce = "1.0.1"
 lazy_static = "1.4.0"

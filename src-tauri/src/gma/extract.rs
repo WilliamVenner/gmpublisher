@@ -1,4 +1,4 @@
-use std::{fs::{self, File}, io::{BufWriter, Cursor, Read, SeekFrom}, path::{Path, PathBuf}, sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering}}};
+use std::{fs::{self, File}, io::{BufWriter, Cursor, Read, SeekFrom}, path::{Path, PathBuf}, sync::{atomic::{AtomicBool, AtomicUsize, Ordering}, Arc}};
 
 use crate::{app_data, transactions::Transaction};
 
@@ -105,9 +105,14 @@ impl GMAFile {
 		main_thread_forbidden!();
 
 		let input = File::open(path.as_ref())?;
-		let mut bytes_total = input.metadata().map(|metadata| metadata.len()).ok();
 
-		let lzma_decoder = xz2::stream::Stream::new_lzma_decoder(u64::MAX).map_err(|_| GMAError::LZMA)?;
+		let bytes_total = input.metadata().map(|metadata| metadata.len()).ok();
+
+		let lzma_decoder = xz2::stream::Stream::new_lzma_decoder(u64::MAX).map_err(|err| {
+			eprintln!("LZMA error: {err:?}");
+			GMAError::LZMA
+		})?;
+
 		let mut xz_decoder = xz2::read::XzDecoder::new_stream(input, lzma_decoder);
 
 		let mut output = if let Some(ref bytes_total) = bytes_total {
@@ -116,7 +121,7 @@ impl GMAFile {
 			Vec::new()
 		};
 
-		let result = if let Some(bytes_total) = bytes_total.take() {
+		let result = if let Some(bytes_total) = bytes_total {
 			transaction.data((turbonone!(), bytes_total));
 
 			let bytes_total_f = bytes_total as f64;
@@ -124,16 +129,16 @@ impl GMAFile {
 			let complete = Arc::new(AtomicBool::new(false));
 			let complete_ref = complete.clone();
 
-			struct StupidlyUnsafeProgressMonitorPtr(*const xz2::read::XzDecoder<File>);
-			unsafe impl Sync for StupidlyUnsafeProgressMonitorPtr {}
-			unsafe impl Send for StupidlyUnsafeProgressMonitorPtr {}
+			struct StupidlyUnsafeProgressMonitorPtr<T: Read>(*mut xz2::read::XzDecoder<T>);
+			unsafe impl<T: Read> Sync for StupidlyUnsafeProgressMonitorPtr<T> {}
+			unsafe impl<T: Read> Send for StupidlyUnsafeProgressMonitorPtr<T> {}
 
-			let xz_decoder_ptr = StupidlyUnsafeProgressMonitorPtr(&xz_decoder as *const _);
+			let xz_decoder_ptr = StupidlyUnsafeProgressMonitorPtr(&mut xz_decoder as *mut _);
 			rayon::spawn(move || {
 				#[allow(clippy::redundant_locals)]
 				let xz_decoder_ptr = xz_decoder_ptr;
 				while !complete_ref.load(Ordering::Acquire) {
-					let xz_decoder = unsafe { &*xz_decoder_ptr.0 };
+					let xz_decoder = unsafe { &mut *xz_decoder_ptr.0 };
 
 					let bytes_read = xz_decoder.total_in() as f64;
 					transaction.progress(bytes_read / bytes_total_f);
@@ -154,13 +159,18 @@ impl GMAFile {
 			xz_decoder.read_to_end(&mut output)
 		};
 
-		output.shrink_to_fit();
-
 		if let Err(err) = result {
-			if !matches!(err.kind(), std::io::ErrorKind::Other) {
+			// No idea why, but XZ always errors with "corrupt xz stream" even when the decompression succeeds.
+			// Maybe a difference in the way Gmod encoded the XZ stream?
+			// Let's just check if the file has been fully read, then naively continue.
+			let mut input = xz_decoder.into_inner();
+			if input.read(&mut [0u8]).ok() != Some(0) {
+				eprintln!("LZMA error: {err:#?}");
 				return Err(GMAError::LZMA);
 			}
 		}
+
+		output.shrink_to_fit();
 
 		let decompressed_size = output.len() as u64;
 
