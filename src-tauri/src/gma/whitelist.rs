@@ -290,11 +290,11 @@ pub fn test_whitelist() {
 		assert!(check(&*good), "{}", good);
 	}
 
-	for good in ADDON_WHITELIST {
+	for good in ADDON_WHITELIST.iter() {
 		assert!(check(&good.replace('*', "test").strip_suffix('\0').unwrap()));
 	}
 
-	for good in ADDON_WHITELIST {
+	for good in ADDON_WHITELIST.iter() {
 		assert!(check(&good.replace('*', "a").strip_suffix('\0').unwrap()));
 	}
 
