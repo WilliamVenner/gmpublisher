@@ -73,6 +73,11 @@ fn deadlock_watchdog() {
 }
 
 fn main() {
+	// https://github.com/WilliamVenner/gmpublisher/issues/210
+	if cfg!(target_os = "linux") {
+		std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+	}
+
 	std::panic::set_hook(Box::new(|panic| logging::panic(panic)));
 
 	rayon::ThreadPoolBuilder::new().num_threads(*crate::NUM_THREADS).build_global().unwrap();
