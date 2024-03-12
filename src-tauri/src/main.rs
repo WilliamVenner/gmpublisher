@@ -2,8 +2,6 @@
 
 use tauri::Manager;
 
-mod build;
-
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
@@ -75,11 +73,6 @@ fn deadlock_watchdog() {
 }
 
 fn main() {
-	#[cfg(debug_assertions)]
-	if build::bundler() {
-		return;
-	}
-
 	std::panic::set_hook(Box::new(|panic| logging::panic(panic)));
 
 	rayon::ThreadPoolBuilder::new().num_threads(*crate::NUM_THREADS).build_global().unwrap();
