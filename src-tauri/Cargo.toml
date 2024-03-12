@@ -58,6 +58,9 @@ ureq = { version = "2.9.4", features = ["native-tls"] }
 regex = "1"
 steamworks = { version = "0.10", features = ["serde"] }
 
+[target.'cfg(target_os = "linux")'.dependencies]
+fork = "0.1"
+
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!

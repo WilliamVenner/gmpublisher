@@ -154,8 +154,34 @@ pub fn open_file_location<P: AsRef<Path>>(path: P) {
 		#[cfg(target_os = "macos")]
 		return std::process::Command::new("open").arg("-R").arg(path.to_string()).spawn();
 
-		#[cfg(target_os = "linux")]
-		return std::process::Command::new("xdg-open").arg("--select").arg(path.to_string()).spawn();
+		#[cfg(target_os = "linux")] {
+			return if path.contains(",") {
+				// see https://gitlab.freedesktop.org/dbus/dbus/-/issues/76
+				let new_path = match std::fs::metadata(&path).unwrap().is_dir() {
+					true => path,
+					false => {
+						let mut path2 = PathBuf::from(path);
+						path2.pop();
+						path2.into_os_string().into_string().unwrap()
+					}
+				};
+				return std::process::Command::new("xdg-open").arg(&new_path).spawn();
+			} else {
+				if let Ok(fork::Fork::Child) = fork::daemon(false, false) {
+					return std::process::Command::new("dbus-send")
+						.args([
+							"--session",
+							"--dest=org.freedesktop.FileManager1",
+							"--type=method_call",
+							"/org/freedesktop/FileManager1",
+							"org.freedesktop.FileManager1.ShowItems",
+							format!("array:string:\"file://{path}\"").as_str(),
+							"string:\"\"",
+						])
+						.spawn();
+				}
+			};
+		}
 
 		#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 		Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported OS"))
