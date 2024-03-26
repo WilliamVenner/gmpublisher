@@ -1,4 +1,4 @@
-<p align="center"><!--<img src="https://user-images.githubusercontent.com/14863743/115953578-41e5a580-a4e4-11eb-84d9-45b296f9e18d.png" alt="Logo"/><br/><br/>--><img src="https://media.discordapp.net/attachments/565108080300261398/860963580714287114/makesweet-x2v9k5.gif"/></p>
+<p align="center"><!--<img src="https://user-images.githubusercontent.com/14863743/115953578-41e5a580-a4e4-11eb-84d9-45b296f9e18d.png" alt="Logo"/><br/><br/>--><img src="https://github.com/WilliamVenner/gmpublisher/assets/14863743/8c514124-7f63-4d20-b6c6-25989c9bf528"/></p>
 
 # ⚙️ gmpublisher
 
