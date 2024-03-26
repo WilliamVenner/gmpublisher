@@ -9,11 +9,11 @@
 <?endif?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="B3C3515F-0A45-4E13-9129-D7D6C333383A" Name="{{{product_name}}}" UpgradeCode="{{{upgrade_code}}}" Language="1033" Codepage="1252" Manufacturer="William Venner" Version="{{{version}}}">
+	<Product Id="*" Name="{{{product_name}}}" UpgradeCode="9C296848-ABD3-4538-92D0-3BC4E408F34C" Language="1033" Codepage="1252" Manufacturer="William Venner" Version="{{{version}}}">
 
 		<Package Id="*" Keywords="Installer" InstallerVersion="450" Languages="1033" Compressed="yes" InstallScope="perMachine" SummaryCodepage="1252"/>
 
-		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." AllowSameVersionUpgrades="yes" MigrateFeatures="yes" />
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." AllowSameVersionUpgrades="yes" Schedule="afterInstallInitialize" />
 
 		<Media Id="1" Cabinet="app.cab" EmbedCab="yes" />
 
