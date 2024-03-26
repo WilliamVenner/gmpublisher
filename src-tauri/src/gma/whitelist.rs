@@ -37,7 +37,9 @@ pub const DEFAULT_IGNORE: &'static [&'static str] = globbers!(
 	"readme.*",
 	"addon.json",
 	"addon.txt",
-	"addon.jpg"
+	"addon.jpg",
+	"thumbs.db",
+	"desktop.ini"
 );
 
 const ADDON_WHITELIST_OFFLINE: &'static [&'static str] = globbers!(
