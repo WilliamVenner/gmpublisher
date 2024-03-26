@@ -151,7 +151,7 @@ pub fn open_file_location<P: AsRef<Path>>(path: P) {
 		return std::process::Command::new("explorer").arg(format!("/select,{}", path.display())).spawn();
 
 		#[cfg(target_os = "macos")]
-		return std::process::Command::new("open").arg("-R").arg(path).spawn();
+		return std::process::Command::new("open").arg("-R").arg(&path).spawn();
 
 		#[cfg(target_os = "linux")] {
 			let path = path.to_string_lossy().into_owned();
