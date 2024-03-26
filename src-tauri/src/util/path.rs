@@ -144,18 +144,18 @@ pub fn open<P: AsRef<Path>>(path: P) {
 }
 
 pub fn open_file_location<P: AsRef<Path>>(path: P) {
-	let canonicalized = dunce::canonicalize(path.as_ref()).unwrap_or_else(|_| path.as_ref().to_path_buf());
-	let path = canonicalized.display();
+	let path = dunce::canonicalize(path.as_ref()).unwrap_or_else(|_| path.as_ref().to_path_buf());
 
 	if let Err(_) = (|| {
 		#[cfg(target_os = "windows")]
-		return std::process::Command::new("explorer").arg(format!("/select,{}", path)).spawn();
+		return std::process::Command::new("explorer").arg(format!("/select,{}", path.display())).spawn();
 
 		#[cfg(target_os = "macos")]
-		return std::process::Command::new("open").arg("-R").arg(path.to_string()).spawn();
+		return std::process::Command::new("open").arg("-R").arg(path).spawn();
 
 		#[cfg(target_os = "linux")] {
-			return if path.contains(",") {
+			let path = path.to_string_lossy().into_owned();
+			if path.contains(",") {
 				// see https://gitlab.freedesktop.org/dbus/dbus/-/issues/76
 				let new_path = match std::fs::metadata(&path).unwrap().is_dir() {
 					true => path,
@@ -183,9 +183,9 @@ pub fn open_file_location<P: AsRef<Path>>(path: P) {
 			};
 		}
 
-		#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+		#[allow(unreachable_code)]
 		Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported OS"))
 	})() {
-		tauri::api::dialog::message(None::<&tauri::Window<tauri::Wry>>, "File Location", path.to_string());
+		tauri::api::dialog::message(None::<&tauri::Window<tauri::Wry>>, "File Location", path.display().to_string());
 	}
 }
