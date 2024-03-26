@@ -50,7 +50,7 @@ pub fn invoke_handler() -> impl Fn(tauri::Invoke<tauri::Wry>) + Send + Sync + 's
 	// and there are many main-thread-not-allowed debug assertions littered
 	// all over the codebase, so we just set up a channel and invoke the commands
 	// from another thread to work around this.
-	let (tx, rx) = std::sync::mpsc::sync_channel(0);
+	let (tx, rx) = std::sync::mpsc::channel();
 
 	std::thread::spawn(move || {
 		while let Ok(invoke) = rx.recv() {
