@@ -10,7 +10,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.5.2"
+    "@tauri-apps/api": "^1.5.3"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "^5.0.5",
