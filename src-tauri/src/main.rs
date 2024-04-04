@@ -78,7 +78,7 @@ fn main() {
 		std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
 	}
 
-	std::panic::set_hook(Box::new(|panic| logging::panic(panic)));
+	std::panic::set_hook(Box::new(logging::panic));
 
 	rayon::ThreadPoolBuilder::new().num_threads(*crate::NUM_THREADS).build_global().unwrap();
 
@@ -105,10 +105,12 @@ fn main() {
 
 			window.set_title(&format!("gmpublisher v{}", env!("CARGO_PKG_VERSION"))).ok();
 
-			window.set_size(tauri::Size::Logical(tauri::LogicalSize {
-				width: settings.window_size.0.max(800.),
-				height: settings.window_size.1.max(600.)
-			})).ok();
+			window
+				.set_size(tauri::Size::Logical(tauri::LogicalSize {
+					width: settings.window_size.0.max(800.),
+					height: settings.window_size.1.max(600.),
+				}))
+				.ok();
 
 			if !cfg!(debug_assertions) && settings.window_maximized {
 				window.maximize().ok();

@@ -35,7 +35,7 @@ impl fmt::Debug for Base64Image {
 			.field("bytes", &self.img.len())
 			.field("width", &self.width)
 			.field("height", &self.height)
-			.field("resolution", &format!("{}px", &self.width * &self.height))
+			.field("resolution", &format!("{}px", self.width * self.height))
 			.finish()
 	}
 }

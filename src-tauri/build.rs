@@ -3,5 +3,5 @@ fn main() {
 		println!("cargo:rustc-link-arg=-Wl,-rpath,.");
 	}
 
-    tauri_build::build()
+	tauri_build::build()
 }

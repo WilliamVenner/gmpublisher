@@ -33,10 +33,10 @@ impl From<u8> for Discovered {
 		unsafe { std::mem::transmute(n) }
 	}
 }
-impl Into<u8> for Discovered {
+impl From<Discovered> for u8 {
 	#[inline(always)]
-	fn into(self) -> u8 {
-		unsafe { std::mem::transmute(self) }
+	fn from(val: Discovered) -> Self {
+		unsafe { std::mem::transmute(val) }
 	}
 }
 
@@ -71,12 +71,12 @@ impl GameAddons {
 
 		let file_name = path.file_name()?.to_string_lossy().to_string();
 
-		Some((path, (&file_name[..(file_name.len() - 4)]).to_owned()))
+		Some((path, file_name[..(file_name.len() - 4)].to_owned()))
 	}
 
 	pub fn get_ws_id<S: AsRef<str>>(_file_name: S) -> Option<PublishedFileId> {
 		let _file_name = _file_name.as_ref();
-		let file_name = _file_name.strip_prefix("ds_").unwrap_or(&_file_name);
+		let file_name = _file_name.strip_prefix("ds_").unwrap_or(_file_name);
 
 		if let Ok(id) = str::parse::<u64>(file_name) {
 			return Some(PublishedFileId(id));
@@ -95,7 +95,7 @@ impl GameAddons {
 		for char in file_name.as_ref()
 			.chars()
 			.rev() // Reverse iterator so we're looking at the suffix (the PublishedFileId)
-			.take_while(|c| c.is_digit(10))
+			.take_while(|c| c.is_ascii_digit())
 			.collect::<Vec<char>>()
 			.into_iter()
 			.rev()
@@ -147,12 +147,14 @@ impl GameAddons {
 				};
 
 				for (id, mut read_dir) in addons.filter_map(|entry| {
-					entry.ok().and_then(|entry| if entry.file_type().ok()?.is_dir() {
-						let read_dir = entry.path().read_dir().ok()?;
-						let id = entry.file_name().to_string_lossy().parse::<u64>().ok()?;
-						Some((id, read_dir))
-					} else {
-						None
+					entry.ok().and_then(|entry| {
+						if entry.file_type().ok()?.is_dir() {
+							let read_dir = entry.path().read_dir().ok()?;
+							let id = entry.file_name().to_string_lossy().parse::<u64>().ok()?;
+							Some((id, read_dir))
+						} else {
+							None
+						}
 					})
 				}) {
 					if let Some(gma_path) = {
@@ -166,7 +168,9 @@ impl GameAddons {
 							})
 						})
 					} {
-						tx_workshop_content_metadata.send((gma_path, if id == 0 { None } else { Some(PublishedFileId(id)) })).unwrap();
+						tx_workshop_content_metadata
+							.send((gma_path, if id == 0 { None } else { Some(PublishedFileId(id)) }))
+							.unwrap();
 					}
 				}
 			});

@@ -86,12 +86,10 @@ impl PartialEq for WorkshopItem {
 			} else {
 				self.time_updated.eq(&other.time_updated)
 			}
+		} else if other.time_created == 0 {
+			self.id.eq(&other.id)
 		} else {
-			if other.time_created == 0 {
-				self.id.eq(&other.id)
-			} else {
-				self.time_created.eq(&other.time_created)
-			}
+			self.time_created.eq(&other.time_created)
 		}
 	}
 }
@@ -104,15 +102,14 @@ impl PartialOrd for WorkshopItem {
 			} else {
 				self.time_updated.partial_cmp(&other.time_updated)
 			}
+		} else if other.time_created == 0 {
+			self.id.partial_cmp(&other.id)
 		} else {
-			if other.time_created == 0 {
-				self.id.partial_cmp(&other.id)
-			} else {
-				self.time_created.partial_cmp(&other.time_created)
-			}
+			self.time_created.partial_cmp(&other.time_created)
 		}
 	}
 }
+
 impl Ord for WorkshopItem {
 	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
 		if self.time_created == 0 {
@@ -121,12 +118,10 @@ impl Ord for WorkshopItem {
 			} else {
 				self.time_updated.cmp(&other.time_updated)
 			}
+		} else if other.time_created == 0 {
+			self.id.cmp(&other.id)
 		} else {
-			if other.time_created == 0 {
-				self.id.cmp(&other.id)
-			} else {
-				self.time_created.cmp(&other.time_created)
-			}
+			self.time_created.cmp(&other.time_created)
 		}
 	}
 }
@@ -177,14 +172,13 @@ impl Steam {
 						.fetch(move |results: Result<QueryResults<'_>, SteamError>| {
 							if let Ok(results) = results {
 								search!().dirty();
-								let mut search_installed_addons = search!().installed_addons.write();
+								let search_installed_addons = search!().installed_addons.write();
 
-								let mut i = 0;
-								for item in results.iter() {
+								for (i, item) in results.iter().enumerate() {
 									let item = Addon::from(if let Some(item) = item {
 										let mut item: WorkshopItem = item.into();
-										item.preview_url = results.preview_url(i);
-										item.subscriptions = results.statistic(i, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
+										item.preview_url = results.preview_url(i as u32);
+										item.subscriptions = results.statistic(i as u32, steamworks::UGCStatisticType::Subscriptions).unwrap_or(0);
 
 										if let Ok(pos) = search_installed_addons.binary_search_by(|x| match &x.source {
 											crate::search::SearchItemSource::InstalledAddons(_, id) => id.as_ref().unwrap().cmp(&item.id),
@@ -201,12 +195,10 @@ impl Steam {
 
 										item
 									} else {
-										WorkshopItem::from(queue[i as usize])
+										WorkshopItem::from(queue[i])
 									});
 
 									steam!().workshop_channel.data(item);
-
-									i += 1;
 								}
 							} else {
 								steam!().workshop.write(move |workshop| {

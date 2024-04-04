@@ -22,9 +22,9 @@ use crate::webview_emit;
 
 pub mod downloads;
 pub mod publishing;
+pub mod subscriptions;
 pub mod users;
 pub mod workshop;
-pub mod subscriptions;
 
 pub use downloads::DOWNLOADS;
 
@@ -181,7 +181,7 @@ impl Steam {
 	}
 
 	// Callbacks //
-	pub fn callback_once_with_data<'a, C: 'static, EqF>(&'static self, eq_f: EqF, timeout: u8) -> Option<C>
+	pub fn callback_once_with_data<C: 'static, EqF>(&'static self, eq_f: EqF, timeout: u8) -> Option<C>
 	where
 		C: Callback,
 		EqF: Fn(&C) -> bool + 'static + Send,

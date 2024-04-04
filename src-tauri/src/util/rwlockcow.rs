@@ -22,7 +22,7 @@ impl<B: ?Sized + ToOwned> std::ops::Deref for RwLockCow<'_, B> {
 		match *self {
 			Borrowed(borrowed) => borrowed,
 			Owned(ref owned) => owned.borrow(),
-			Locked(ref locked) => &*locked,
+			Locked(ref locked) => locked,
 		}
 	}
 }

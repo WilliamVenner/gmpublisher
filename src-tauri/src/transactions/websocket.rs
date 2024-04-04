@@ -17,9 +17,9 @@ enum WebSocketMessage {
 	OwnedMessage(OwnedMessage),
 	TransactionMessage(TransactionMessage),
 }
-impl Into<OwnedMessage> for WebSocketMessage {
-	fn into(self) -> OwnedMessage {
-		match self {
+impl From<WebSocketMessage> for OwnedMessage {
+	fn from(val: WebSocketMessage) -> Self {
+		match val {
 			WebSocketMessage::OwnedMessage(message) => message,
 			WebSocketMessage::TransactionMessage(message) => OwnedMessage::Binary(message.as_bytes()),
 		}
@@ -89,9 +89,9 @@ impl TransactionMessage {
 		bytes
 	}
 }
-impl Into<OwnedMessage> for TransactionMessage {
-	fn into(self) -> OwnedMessage {
-		OwnedMessage::Binary(self.as_bytes())
+impl From<TransactionMessage> for OwnedMessage {
+	fn from(val: TransactionMessage) -> Self {
+		OwnedMessage::Binary(val.as_bytes())
 	}
 }
 
@@ -137,10 +137,11 @@ impl TransactionServer {
 				Err(err) => {
 					match &err {
 						websocket::WebSocketError::NoDataAvailable => continue,
-						websocket::WebSocketError::IoError(error) => match error.kind() {
-							std::io::ErrorKind::ConnectionReset => break,
-							_ => {}
-						},
+						websocket::WebSocketError::IoError(error) => {
+							if error.kind() == std::io::ErrorKind::ConnectionReset {
+								break;
+							}
+						}
 						_ => {}
 					};
 
@@ -197,7 +198,7 @@ impl TransactionServer {
 				},
 
 				WebSocketMessage::TransactionMessage(message) => {
-					if let Err(_) = sender.send_message::<OwnedMessage>(&OwnedMessage::Binary(message.as_bytes())) {
+					if sender.send_message::<OwnedMessage>(&OwnedMessage::Binary(message.as_bytes())).is_err() {
 						TransactionServer::send_tauri_event(message);
 					}
 				}
