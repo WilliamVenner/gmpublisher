@@ -10,7 +10,7 @@ lazy_static! {
 }
 
 pub(super) fn stdin() -> bool {
-	use clap::{App, Arg};
+	use clap::{Arg, Command};
 
 	if !*CLI_MODE {
 		return false;
@@ -19,26 +19,24 @@ pub(super) fn stdin() -> bool {
 	// Remove the logging::panic() hook
 	let _ = std::panic::take_hook();
 
-	let app = App::new("gmpublisher");
+	let command = Command::new("gmpublisher");
 
-	let matches = app
+	let matches = command
 	.version(env!("CARGO_PKG_VERSION"))
 	.author("William Venner <william@venner.io>")
 	.about("Publish, extract and work with GMA files")
 	.args(&[
-		Arg::with_name("extract")
-		.short("e")
+		Arg::new("extract")
+		.short('e')
 		.long("extract")
 		.value_name("FILE")
-		.takes_value(true)
 		.help("Extracts a .GMA file"),
 		//.conflicts_with_all(&["update", "in", "changes", "icon"]),
 
-		Arg::with_name("out")
-		.short("o")
+		Arg::new("out")
+		.short('o')
 		.long("out")
 		.value_name("PATH")
-		.takes_value(true)
 		.help("Sets the output path for extracting GMAs. Defaults to the temp directory.")
 		.requires("extract")
 		//.conflicts_with_all(&["update", "in", "changes", "icon"])
@@ -81,7 +79,7 @@ pub(super) fn stdin() -> bool {
 
 	dprintln!("{:#?}", matches);
 
-	if let Some(extract_path) = matches.value_of("extract") {
+	if let Some(extract_path) = matches.get_one::<String>("extract") {
 		let extract_path = PathBuf::from(extract_path);
 
 		if !extract_path.is_file() {
@@ -90,7 +88,7 @@ pub(super) fn stdin() -> bool {
 		}
 
 		if let Ok(mut gma) = GMAFile::open(extract_path) {
-			let dest = match matches.value_of("out") {
+			let dest = match matches.get_one::<String>("out") {
 				Some(out) => ExtractDestination::Directory(PathBuf::from(out)),
 				None => ExtractDestination::Temp,
 			};
