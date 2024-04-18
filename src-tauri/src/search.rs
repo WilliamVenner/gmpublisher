@@ -235,19 +235,17 @@ impl Search {
 
 				self.items.write().push(search_item);
 			} else {
-				if let SearchItemSource::InstalledAddons(_, id) = &search_item.source {
-					if let Some(id) = id {
-						let mut installed_addons = self.installed_addons.write();
-						match installed_addons.binary_search_by(|cmp| match &cmp.source {
-							SearchItemSource::InstalledAddons(_, cmp_id) => cmp_id.as_ref().unwrap().cmp(id),
-							_ => unreachable!(),
-						}) {
-							Ok(pos) => {
-								installed_addons[pos] = search_item.clone();
-							}
-							Err(pos) => {
-								installed_addons.insert(pos, search_item.clone());
-							}
+				if let SearchItemSource::InstalledAddons(_, Some(id)) = &search_item.source {
+					let mut installed_addons = self.installed_addons.write();
+					match installed_addons.binary_search_by(|cmp| match &cmp.source {
+						SearchItemSource::InstalledAddons(_, cmp_id) => cmp_id.as_ref().unwrap().cmp(id),
+						_ => unreachable!(),
+					}) {
+						Ok(pos) => {
+							installed_addons[pos] = search_item.clone();
+						}
+						Err(pos) => {
+							installed_addons.insert(pos, search_item.clone());
 						}
 					}
 				}

@@ -46,7 +46,7 @@ impl OpenCount {
 
 				count_file.push(".open_count");
 
-				let mut f = OpenOptions::new().read(true).write(true).create(true).open(count_file)?;
+				let mut f = OpenOptions::new().read(true).write(true).create(true).truncate(false).open(count_file)?;
 
 				let count = f.read_u32::<LittleEndian>().unwrap_or(0) + 1;
 
