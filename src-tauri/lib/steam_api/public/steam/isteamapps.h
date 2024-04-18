@@ -108,6 +108,9 @@ public:
 
 	// check if game is a timed trial with limited playtime
 	virtual bool BIsTimedTrial( uint32* punSecondsAllowed, uint32* punSecondsPlayed ) = 0; 
+
+	// set current DLC AppID being played (or 0 if none). Allows Steam to track usage of major DLC extensions
+	virtual bool SetDlcContext( AppId_t nAppID ) = 0; 
 };
 
 #define STEAMAPPS_INTERFACE_VERSION "STEAMAPPS_INTERFACE_VERSION008"
@@ -131,30 +134,6 @@ struct DlcInstalled_t
 {
 	enum { k_iCallback = k_iSteamAppsCallbacks + 5 };
 	AppId_t m_nAppID;		// AppID of the DLC
-};
-
-
-//-----------------------------------------------------------------------------
-// Purpose: possible results when registering an activation code
-//-----------------------------------------------------------------------------
-enum ERegisterActivationCodeResult
-{
-	k_ERegisterActivationCodeResultOK = 0,
-	k_ERegisterActivationCodeResultFail = 1,
-	k_ERegisterActivationCodeResultAlreadyRegistered = 2,
-	k_ERegisterActivationCodeResultTimeout = 3,
-	k_ERegisterActivationCodeAlreadyOwned = 4,
-};
-
-
-//-----------------------------------------------------------------------------
-// Purpose: response to RegisterActivationCode()
-//-----------------------------------------------------------------------------
-struct RegisterActivationCodeResponse_t
-{
-	enum { k_iCallback = k_iSteamAppsCallbacks + 8 };
-	ERegisterActivationCodeResult m_eResult;
-	uint32 m_unPackageRegistered;						// package that was registered. Only set on success
 };
 
 

@@ -43,7 +43,7 @@ erased-serde = "0.3.13"
 derive_more = "0.99.13"
 crossbeam = "0.8.0"
 backtrace = "0.3.56"
-steamlocate = "0.1.4"
+steamlocate = "1.2.1"
 chrono = { version = "0.4.19", features = ["serde"] }
 bincode = "1.3.3"
 dirs-next = "2.0.0"
@@ -56,7 +56,7 @@ clap = "4.5.4"
 trash = "2.0.1"
 ureq = { version = "2.9.4", features = ["native-tls"] }
 regex = "1"
-steamworks = { version = "0.10", features = ["serde"] }
+steamworks = { version = "0.11.0", features = ["serde"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 fork = "0.1"

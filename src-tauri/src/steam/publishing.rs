@@ -253,7 +253,7 @@ impl Steam {
 					.content_path(&path)
 					.title(&title)
 					.preview_path(&Into::<PathBuf>::into(preview))
-					.tags(tags)
+					.tags(tags, false)
 					.description("Uploaded with [url=https://github.com/WilliamVenner/gmpublisher]gmpublisher[/url]")
 					.submit(None, move |result| {
 						*result_ref.lock() = Some(result);
@@ -281,7 +281,7 @@ impl Steam {
 					None => update,
 				}
 				.content_path(&path)
-				.tags(tags)
+				.tags(tags, false)
 				.title(&title)
 				.submit(changes.as_deref(), move |result| {
 					*result_ref.lock() = Some(result);

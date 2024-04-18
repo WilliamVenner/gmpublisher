@@ -121,6 +121,7 @@ enum EItemState
 	k_EItemStateNeedsUpdate		= 8,	// items needs an update. Either because it's not installed yet or creator updated content
 	k_EItemStateDownloading		= 16,	// item update is currently downloading
 	k_EItemStateDownloadPending	= 32,	// DownloadItem() was called for this item, content isn't available until DownloadItemResult_t is fired
+	k_EItemStateDisabledLocally = 64,	// Item is disabled locally, so it shouldn't be considered subscribed
 };
 
 enum EItemStatistic
@@ -154,7 +155,17 @@ enum EItemPreviewType
 																// |   |Dn |       |
 																// +---+---+---+---+
 	k_EItemPreviewType_EnvironmentMap_LatLong			= 4,	// standard image file expected
+	k_EItemPreviewType_Clip								= 5,	// clip id is stored
 	k_EItemPreviewType_ReservedMax						= 255,	// you can specify your own types above this value
+};
+
+enum EUGCContentDescriptorID
+{
+	k_EUGCContentDescriptor_NudityOrSexualContent	= 1,
+	k_EUGCContentDescriptor_FrequentViolenceOrGore	= 2,
+	k_EUGCContentDescriptor_AdultOnlySexualContent	= 3,
+	k_EUGCContentDescriptor_GratuitousSexualContent = 4,
+	k_EUGCContentDescriptor_AnyMatureContent		= 5,
 };
 
 const uint32 kNumUGCResultsPerPage = 50;
@@ -237,6 +248,8 @@ public:
 	STEAM_FLAT_NAME( GetQueryFirstUGCKeyValueTag )
 	virtual bool GetQueryUGCKeyValueTag( UGCQueryHandle_t handle, uint32 index, const char *pchKey, STEAM_OUT_STRING_COUNT(cchValueSize) char *pchValue, uint32 cchValueSize ) = 0;
 
+	virtual uint32 GetQueryUGCContentDescriptors( UGCQueryHandle_t handle, uint32 index, EUGCContentDescriptorID *pvecDescriptors, uint32 cMaxEntries ) = 0;
+	
 	// Release the request to free up memory, after retrieving results
 	virtual bool ReleaseQueryUGCRequest( UGCQueryHandle_t handle ) = 0;
 
@@ -281,7 +294,7 @@ public:
 	virtual bool SetItemUpdateLanguage( UGCUpdateHandle_t handle, const char *pchLanguage ) = 0; // specify the language of the title or description that will be set
 	virtual bool SetItemMetadata( UGCUpdateHandle_t handle, const char *pchMetaData ) = 0; // change the metadata of an UGC item (max = k_cchDeveloperMetadataMax)
 	virtual bool SetItemVisibility( UGCUpdateHandle_t handle, ERemoteStoragePublishedFileVisibility eVisibility ) = 0; // change the visibility of an UGC item
-	virtual bool SetItemTags( UGCUpdateHandle_t updateHandle, const SteamParamStringArray_t *pTags ) = 0; // change the tags of an UGC item
+	virtual bool SetItemTags( UGCUpdateHandle_t updateHandle, const SteamParamStringArray_t *pTags, bool bAllowAdminTags = false ) = 0; // change the tags of an UGC item
 	virtual bool SetItemContent( UGCUpdateHandle_t handle, const char *pszContentFolder ) = 0; // update item content from this local folder
 	virtual bool SetItemPreview( UGCUpdateHandle_t handle, const char *pszPreviewFile ) = 0; //  change preview image file for this item. pszPreviewFile points to local image file, which must be under 1MB in size
 	virtual bool SetAllowLegacyUpload( UGCUpdateHandle_t handle, bool bAllowLegacyUpload ) = 0; //  use legacy upload for a single small file. The parameter to SetItemContent() should either be a directory with one file or the full path to the file.  The file must also be less than 10MB in size.
@@ -293,6 +306,8 @@ public:
 	virtual bool UpdateItemPreviewFile( UGCUpdateHandle_t handle, uint32 index, const char *pszPreviewFile ) = 0; //  updates an existing preview file for this item. pszPreviewFile points to local file, which must be under 1MB in size
 	virtual bool UpdateItemPreviewVideo( UGCUpdateHandle_t handle, uint32 index, const char *pszVideoID ) = 0; //  updates an existing preview video for this item
 	virtual bool RemoveItemPreview( UGCUpdateHandle_t handle, uint32 index ) = 0; // remove a preview by index starting at 0 (previews are sorted)
+	virtual bool AddContentDescriptor( UGCUpdateHandle_t handle, EUGCContentDescriptorID descid ) = 0;
+	virtual bool RemoveContentDescriptor( UGCUpdateHandle_t handle, EUGCContentDescriptorID descid ) = 0;
 
 	STEAM_CALL_RESULT( SubmitItemUpdateResult_t )
 	virtual SteamAPICall_t SubmitItemUpdate( UGCUpdateHandle_t handle, const char *pchChangeNote ) = 0; // commit update process started with StartItemUpdate()
@@ -369,9 +384,12 @@ public:
 	// Retrieve information related to the user's acceptance or not of the app's specific Workshop EULA
 	STEAM_CALL_RESULT( WorkshopEULAStatus_t )
 	virtual SteamAPICall_t GetWorkshopEULAStatus() = 0;
+
+	// Return the user's community content descriptor preferences
+	virtual uint32 GetUserContentDescriptorPreferences( EUGCContentDescriptorID *pvecDescriptors, uint32 cMaxEntries ) = 0;
 };
 
-#define STEAMUGC_INTERFACE_VERSION "STEAMUGC_INTERFACE_VERSION016"
+#define STEAMUGC_INTERFACE_VERSION "STEAMUGC_INTERFACE_VERSION018"
 
 // Global interface accessor
 inline ISteamUGC *SteamUGC();
