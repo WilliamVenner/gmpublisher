@@ -50,9 +50,6 @@ export default defineConfig(async () => ({
 			input: {
 				app: './app/index.html',
 			},
-			output: {
-				intro: `window.APP_LANGUAGES = ${JSON.stringify(appLanguages)};`
-			},
 			plugins: [
 				replace({
 					'process.env.NODE_ENV': JSON.stringify(
@@ -63,4 +60,7 @@ export default defineConfig(async () => ({
 			]
 		},
 	},
+	define: {
+		'__GMPUBLISHER_APP_LANGUAGES__': JSON.stringify(JSON.stringify(appLanguages))
+	}
 }));

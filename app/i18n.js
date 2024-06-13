@@ -2,6 +2,8 @@ import { _, addMessages, init, getLocaleFromNavigator, locale } from 'svelte-i18
 import { get } from 'svelte/store';
 import en from '../i18n/en.json';
 
+window.APP_LANGUAGES = JSON.parse(__GMPUBLISHER_APP_LANGUAGES__);
+
 {
 	for (let file in window.APP_LANGUAGES) {
 		if (file === 'en') continue;
