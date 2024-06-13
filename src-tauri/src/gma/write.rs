@@ -37,11 +37,15 @@ impl GMAFile {
 
 		let metadata = self.metadata.as_ref().expect("Expected metadata to be set");
 		let ignore = metadata.ignore().map(|ignore| {
-			ignore.into_iter().map(|ignore| {
-				let mut ignore = ignore.to_owned();
-				ignore.push('\0');
-				ignore
-			}).collect::<Vec<_>>().into_boxed_slice()
+			ignore
+				.iter()
+				.map(|ignore| {
+					let mut ignore = ignore.to_owned();
+					ignore.push('\0');
+					ignore
+				})
+				.collect::<Vec<_>>()
+				.into_boxed_slice()
 		});
 
 		let (title, addon_json) = match metadata {

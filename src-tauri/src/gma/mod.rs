@@ -13,9 +13,9 @@ use serde::{Deserialize, Serialize};
 use steamworks::PublishedFileId;
 use thiserror::Error;
 
-use crate::{ArcBytes, game_addons::GameAddons, main_thread_forbidden};
+use crate::{game_addons::GameAddons, main_thread_forbidden, ArcBytes};
 
-const GMA_HEADER: &'static [u8; 4] = b"GMAD";
+const GMA_HEADER: &[u8; 4] = b"GMAD";
 
 #[derive(Debug, Clone, Serialize, Error)]
 pub enum GMAError {
@@ -296,7 +296,7 @@ fn serde_canonicalize<S>(path: &PathBuf, serializer: S) -> Result<S::Ok, S::Erro
 where
 	S: serde::Serializer,
 {
-	match dunce::canonicalize(&path) {
+	match dunce::canonicalize(path) {
 		Ok(path) => path.serialize(serializer),
 		Err(_) => path.serialize(serializer),
 	}

@@ -39,7 +39,7 @@ impl WrappedWebview {
 	}
 
 	pub fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, payload: Option<D>) {
-		ignore! { self.window().emit(&event.to_string(), &payload) };
+		ignore! { self.window().emit(event, &payload) };
 	}
 
 	pub fn window(&self) -> &Window<Wry> {
@@ -72,17 +72,17 @@ impl Addon {
 		}
 	}
 }
-impl Into<GMAFile> for Addon {
-	fn into(self) -> GMAFile {
-		match self {
+impl From<Addon> for GMAFile {
+	fn from(val: Addon) -> Self {
+		match val {
 			Addon::Installed(addon) => addon,
 			Addon::Workshop(_) => unreachable!(),
 		}
 	}
 }
-impl Into<WorkshopItem> for Addon {
-	fn into(self) -> WorkshopItem {
-		match self {
+impl From<Addon> for WorkshopItem {
+	fn from(val: Addon) -> Self {
+		match val {
 			Addon::Installed(_) => unreachable!(),
 			Addon::Workshop(addon) => addon,
 		}

@@ -9,6 +9,61 @@ Welcome to the Steamworks SDK.  For documentation please see our partner
 website at: http://partner.steamgames.com
 
 ----------------------------------------------------------------
+v1.59 9th February 2024
+----------------------------------------------------------------
+General
+* Added new initialization method, SteamAPI_InitFlat
+
+ISteamUtils
+* Added DismissGamepadTextInput
+
+ISteamAppList
+* This interface has been removed from the SDK
+
+----------------------------------------------------------------
+v1.58a 26th October 2023
+----------------------------------------------------------------
+Fixes to steam_api_flat.h
+
+----------------------------------------------------------------
+v1.58 15th September 2023
+----------------------------------------------------------------
+ISteamRemotePlay
+* Added BStartRemotePlayTogether to start Remote Play Together and optionally show the UI in the overlay
+
+ISteamUGC
+* The function SetItemTags now takes in a parameter to allow the modification of admin tags through the SDK if the logged-in user has the appropriate permissions
+* Added GetUserContentDescriptorPreferences, which can be used to show the user their current set of preferences and then direct them to Steam to modify them at https://store.steampowered.com/account/preferences/
+
+Misc.
+* Added SteamAPI_InitEx and SteamGameServer_InitEx, which will return k_ESteamAPIInitResult_OK upon success or an error code specified in in ESteamAPIInitResult. An optional, non-localized error message can also be returned.
+* SteamAPI_Init() will now return false if the installed Steam client needs to be updated to support the game’s version of the SDK
+* Improved handling of corrupted tickets via updated sdkencryptedappticket.lib
+
+----------------------------------------------------------------
+v1.57 28th April 2022
+----------------------------------------------------------------
+User
+* Updated ISteamUser::GetAuthTicketForWebApi(), To create a ticket for use by the AuthenticateUserTicket Web API
+* Updated ISteamUser::GetAuthSessionTicket(), No longer to be used to create a ticket for use by the AuthenticateUserTicket Web API
+
+----------------------------------------------------------------
+v1.56 30th March 2023
+----------------------------------------------------------------
+User
+* Updated ISteamUser::GetAuthSessionTicket(), Add parameter SteamNetworkingIdentity 
+
+----------------------------------------------------------------
+v1.55 29th July 2022
+----------------------------------------------------------------
+
+ISteamInput
+* Added SetDualSenseTriggerEffect and corresponding header isteamdualsense.h for setting the adaptive trigger effect on DualSense controllers
+
+Spacewar example:
+* Added an example of using SetDualSenseTriggerEffect
+
+----------------------------------------------------------------
 v1.54 16th June 2022
 ----------------------------------------------------------------
 

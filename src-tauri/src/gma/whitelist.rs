@@ -11,7 +11,7 @@ macro_rules! globbers {
 	};
 }
 
-pub const DEFAULT_IGNORE: &'static [&'static str] = globbers!(
+pub const DEFAULT_IGNORE: &[&str] = globbers!(
 	".git/*",
 	"*.psd",
 	"*.pdn",
@@ -42,7 +42,7 @@ pub const DEFAULT_IGNORE: &'static [&'static str] = globbers!(
 	"desktop.ini"
 );
 
-const ADDON_WHITELIST_OFFLINE: &'static [&'static str] = globbers!(
+const ADDON_WHITELIST_OFFLINE: &[&str] = globbers!(
 	"lua/*.lua",
 	"scenes/*.vcd",
 	"particles/*.pcf",
@@ -159,7 +159,10 @@ fn download_addon_whitelist() -> &'static [&'static str] {
 
 			if !wildcard.contains(&"lua/*.lua\0") {
 				// This should definitely be in there, so if it isn't, something has gone wrong. Probably.
-				return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse addon whitelist (missing lua/*.lua)"));
+				return Err(std::io::Error::new(
+					std::io::ErrorKind::Other,
+					"Failed to parse addon whitelist (missing lua/*.lua)",
+				));
 			}
 
 			println!("Downloaded up to date addon whitelist: {wildcard:#?}");
@@ -173,8 +176,8 @@ fn download_addon_whitelist() -> &'static [&'static str] {
 		.unwrap_or(ADDON_WHITELIST_OFFLINE)
 }
 
-const WILD_BYTE: u8 = '*' as u8;
-const QUESTION_BYTE: u8 = '?' as u8;
+const WILD_BYTE: u8 = b'*';
+const QUESTION_BYTE: u8 = b'?';
 
 pub fn globber(_wild: &str, _str: &str) -> bool {
 	debug_assert!(_wild.ends_with('\0'), "wild must be null terminated");
@@ -182,8 +185,8 @@ pub fn globber(_wild: &str, _str: &str) -> bool {
 	debug_assert!(_str.ends_with('\0'), "str must be null terminated");
 	debug_assert!(!_str.ends_with("\0\0"), "str is double null terminated");
 	unsafe {
-		let mut cp: *const u8 = 0 as u8 as *const u8;
-		let mut mp: *const u8 = 0 as u8 as *const u8;
+		let mut cp: *const u8 = std::ptr::null::<u8>();
+		let mut mp: *const u8 = std::ptr::null::<u8>();
 
 		let mut wild = _wild.as_ptr();
 		let mut str = _str.as_ptr();
@@ -289,19 +292,19 @@ pub fn test_whitelist() {
 	];
 
 	for good in good {
-		assert!(check(&*good), "{}", good);
+		assert!(check(good), "{}", good);
 	}
 
 	for good in ADDON_WHITELIST.iter() {
-		assert!(check(&good.replace('*', "test").strip_suffix('\0').unwrap()));
+		assert!(check(good.replace('*', "test").strip_suffix('\0').unwrap()));
 	}
 
 	for good in ADDON_WHITELIST.iter() {
-		assert!(check(&good.replace('*', "a").strip_suffix('\0').unwrap()));
+		assert!(check(good.replace('*', "a").strip_suffix('\0').unwrap()));
 	}
 
 	for bad in bad {
-		assert!(!check(&*bad));
+		assert!(!check(bad));
 	}
 }
 
@@ -327,16 +330,16 @@ pub fn test_ignore() {
 	];
 
 	for ignored in ignored {
-		assert!(!filter_default_ignored(&*ignored));
+		assert!(!filter_default_ignored(ignored));
 	}
 
 	let default_ignore: Vec<String> = DEFAULT_IGNORE.iter().cloned().map(|x| x.to_string()).collect();
 	for ignored in ignored {
-		assert!(is_ignored(&*ignored, &default_ignore));
+		assert!(is_ignored(ignored, &default_ignore));
 	}
 
-	assert!(is_ignored(&"lol.txt".to_string(), &["lol.txt\0".to_string()]));
-	assert!(is_ignored(&"lua/hello.lua".to_string(), &["lua/*.lua\0".to_string()]));
-	assert!(is_ignored(&"lua/hello.lua".to_string(), &["lua/*\0".to_string()]));
-	assert!(!is_ignored(&"lol.txt".to_string(), &[]));
+	assert!(is_ignored("lol.txt", &["lol.txt\0".to_string()]));
+	assert!(is_ignored("lua/hello.lua", &["lua/*.lua\0".to_string()]));
+	assert!(is_ignored("lua/hello.lua", &["lua/*\0".to_string()]));
+	assert!(!is_ignored("lol.txt", &[]));
 }

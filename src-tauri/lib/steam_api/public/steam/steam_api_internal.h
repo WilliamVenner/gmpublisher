@@ -54,12 +54,7 @@ S_API void S_CALLTYPE SteamAPI_UnregisterCallback( class CCallbackBase *pCallbac
 S_API void S_CALLTYPE SteamAPI_RegisterCallResult( class CCallbackBase *pCallback, SteamAPICall_t hAPICall );
 S_API void S_CALLTYPE SteamAPI_UnregisterCallResult( class CCallbackBase *pCallback, SteamAPICall_t hAPICall );
 
-// disable this warning; this pattern need for steam callback registration
-#ifdef _MSVC_VER
-#pragma warning( push )
-#pragma warning( disable: 4355 )	// 'this' : used in base member initializer list
-#endif
-
+#define _STEAM_CALLBACK_OFFSETOF( type, member ) ( (size_t)( (char *)&( (type *)0 )->member ) )
 #define _STEAM_CALLBACK_AUTO_HOOK( thisclass, func, param )
 #define _STEAM_CALLBACK_HELPER( _1, _2, SELECTED, ... )		_STEAM_CALLBACK_##SELECTED
 #define _STEAM_CALLBACK_SELECT( X, Y )						_STEAM_CALLBACK_HELPER X Y
@@ -68,8 +63,8 @@ S_API void S_CALLTYPE SteamAPI_UnregisterCallResult( class CCallbackBase *pCallb
 		CCallbackInternal_ ## func () { extra_code SteamAPI_RegisterCallback( this, param::k_iCallback ); } \
 		CCallbackInternal_ ## func ( const CCallbackInternal_ ## func & ) { extra_code SteamAPI_RegisterCallback( this, param::k_iCallback ); } \
 		CCallbackInternal_ ## func & operator=( const CCallbackInternal_ ## func & ) { return *this; } \
-		private: virtual void Run( void *pvParam ) { _STEAM_CALLBACK_AUTO_HOOK( thisclass, func, param ) \
-			thisclass *pOuter = reinterpret_cast<thisclass*>( reinterpret_cast<char*>(this) - offsetof( thisclass, m_steamcallback_ ## func ) ); \
+		private: virtual void Run( void *pvParam ) S_OVERRIDE { _STEAM_CALLBACK_AUTO_HOOK( thisclass, func, param ) \
+			thisclass *pOuter = reinterpret_cast<thisclass*>( reinterpret_cast<char*>(this) - _STEAM_CALLBACK_OFFSETOF( thisclass, m_steamcallback_ ## func ) ); \
 			pOuter->func( reinterpret_cast<param*>( pvParam ) ); \
 		} \
 	} m_steamcallback_ ## func ; void func( param *pParam )
@@ -234,7 +229,6 @@ class ISteamPS3OverlayRender;
 class ISteamHTTP;
 class ISteamController;
 class ISteamUGC;
-class ISteamAppList;
 class ISteamHTMLSurface;
 class ISteamInventory;
 class ISteamVideo;
@@ -243,6 +237,9 @@ class ISteamGameSearch;
 class ISteamInput;
 class ISteamParties;
 class ISteamRemotePlay;
+
+// Forward declare types
+struct SteamNetworkingIdentity;
 
 //-----------------------------------------------------------------------------
 // Purpose: Base values for callback identifiers, each callback must
@@ -274,7 +271,6 @@ enum { k_iSteamStreamLauncherCallbacks = 2600 };
 enum { k_iSteamControllerCallbacks = 2800 };
 enum { k_iSteamUGCCallbacks = 3400 };
 enum { k_iSteamStreamClientCallbacks = 3500 };
-enum { k_iSteamAppListCallbacks = 3900 };
 enum { k_iSteamMusicCallbacks = 4000 };
 enum { k_iSteamMusicRemoteCallbacks = 4100 };
 enum { k_iSteamGameNotificationCallbacks = 4400 }; 
@@ -288,10 +284,6 @@ enum { k_iSteamSTARCallbacks = 5500 };
 enum { k_iSteamRemotePlayCallbacks = 5700 };
 enum { k_iSteamChatCallbacks = 5900 };
 // NOTE: Internal "IClientXxx" callback IDs go in clientenums.h
-
-#ifdef _MSVC_VER
-#pragma warning( pop )
-#endif
 
 // Macros used to annotate various Steamworks interfaces to generate the
 // flat API
@@ -342,7 +334,6 @@ public:
 	ISteamHTTP*			SteamHTTP() const					{ return m_pSteamHTTP; }
 	ISteamController*	SteamController() const				{ return m_pController; }
 	ISteamUGC*			SteamUGC() const					{ return m_pSteamUGC; }
-	ISteamAppList*		SteamAppList() const				{ return m_pSteamAppList; }
 	ISteamMusic*		SteamMusic() const					{ return m_pSteamMusic; }
 	ISteamMusicRemote*	SteamMusicRemote() const			{ return m_pSteamMusicRemote; }
 	ISteamHTMLSurface*	SteamHTMLSurface() const			{ return m_pSteamHTMLSurface; }
@@ -366,7 +357,6 @@ private:
 	ISteamHTTP			*m_pSteamHTTP;
 	ISteamController	*m_pController;
 	ISteamUGC			*m_pSteamUGC;
-	ISteamAppList		*m_pSteamAppList;
 	ISteamMusic			*m_pSteamMusic;
 	ISteamMusicRemote	*m_pSteamMusicRemote;
 	ISteamHTMLSurface	*m_pSteamHTMLSurface;

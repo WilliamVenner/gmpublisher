@@ -49,9 +49,9 @@ pub type Download = Arc<DownloadInner>;
 pub struct IDList {
 	inner: Vec<PublishedFileId>,
 }
-impl Into<Vec<PublishedFileId>> for IDList {
-	fn into(self) -> Vec<PublishedFileId> {
-		self.inner
+impl From<IDList> for Vec<PublishedFileId> {
+	fn from(val: IDList) -> Self {
+		val.inner
 	}
 }
 impl From<PublishedFileId> for IDList {
@@ -90,18 +90,16 @@ impl Downloads {
 				let mut gma_path = None;
 
 				if let Ok(read_dir) = folder.read_dir() {
-					for entry in read_dir {
-						if let Ok(entry) = entry {
-							if !crate::path::has_extension(entry.path(), "gma") {
-								continue;
-							}
-							if gma_path.is_some() {
-								// TODO better handling here - just include the extra files in the addon
-								gma_path = None;
-								break;
-							} else {
-								gma_path = Some(entry.path());
-							}
+					for entry in read_dir.flatten() {
+						if !crate::path::has_extension(entry.path(), "gma") {
+							continue;
+						}
+						if gma_path.is_some() {
+							// TODO better handling here - just include the extra files in the addon
+							gma_path = None;
+							break;
+						} else {
+							gma_path = Some(entry.path());
 						}
 					}
 				}
@@ -123,10 +121,10 @@ impl Downloads {
 							Ok(gma) => {
 								transaction.progress_reset();
 								gma
-							},
+							}
 							Err(err) => return transaction.error(err.to_string(), turbonone!()),
 						}
-					},
+					}
 				}
 			} else {
 				return transaction.error("ERR_DOWNLOAD_MISSING", turbonone!());
@@ -152,7 +150,7 @@ impl Downloads {
 		let state = ugc.item_state(item);
 		if state.intersects(ItemState::INSTALLED) && !state.intersects(ItemState::NEEDS_UPDATE) {
 			if let Some(info) = ugc.item_install_info(item) {
-				Downloads::extract(PathBuf::from(info.folder), item, (&**extract_destination).clone());
+				Downloads::extract(PathBuf::from(info.folder), item, (**extract_destination).clone());
 			} else {
 				let transaction = transaction!();
 				webview_emit!("DownloadStarted", transaction.id);
@@ -164,7 +162,7 @@ impl Downloads {
 				item,
 				sent_total: AtomicBool::new(false),
 				transaction: transaction!(),
-				extract_destination: (&**extract_destination).clone(),
+				extract_destination: (**extract_destination).clone(),
 			});
 
 			webview_emit!("DownloadStarted", download.transaction.id);
@@ -181,17 +179,14 @@ impl Downloads {
 			if let Some(workshop) = steam!().workshop.try_read_for(std::time::Duration::from_millis(51)) {
 				let workshop_cache = &workshop.0;
 				let mut possible_collections = Vec::with_capacity(ids.len());
-				ids = ids
-					.into_iter()
-					.filter(|id| {
-						if workshop_cache.contains(id) {
-							true
-						} else {
-							possible_collections.push(*id);
-							false
-						}
-					})
-					.collect();
+				ids.retain(|id| {
+					if workshop_cache.contains(id) {
+						true
+					} else {
+						possible_collections.push(*id);
+						false
+					}
+				});
 				possible_collections
 			} else {
 				std::mem::take(&mut ids)

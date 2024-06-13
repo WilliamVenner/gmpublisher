@@ -124,16 +124,18 @@ impl GMAFile {
 				{
 					let mut dots = 0;
 					for byte in path.as_bytes() {
-						const DOT: u8 = '.' as u8;
-						const FORWARDS_SLASH: u8 = '/' as u8;
-						const BACKWARDS_SLASH: u8 = '\\' as u8;
+						const DOT: u8 = b'.';
+						const FORWARDS_SLASH: u8 = b'/';
+						const BACKWARDS_SLASH: u8 = b'\\';
 
 						match *byte {
-							DOT => if dots == 2 {
-								dots = 0;
-							} else {
-								dots += 1;
-							},
+							DOT => {
+								if dots == 2 {
+									dots = 0;
+								} else {
+									dots += 1;
+								}
+							}
 							FORWARDS_SLASH | BACKWARDS_SLASH => {
 								if dots == 2 {
 									eprintln!("Illegal GMA entry: {}", path);

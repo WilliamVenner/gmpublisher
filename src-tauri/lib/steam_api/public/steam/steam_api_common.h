@@ -9,9 +9,6 @@
 
 #ifndef STEAM_API_COMMON_H
 #define STEAM_API_COMMON_H
-#ifdef _WIN32
-#pragma once
-#endif
 
 #include "steamtypes.h"
 #include "steamclientpublic.h"
@@ -25,7 +22,7 @@
 	#else
 	#define S_API extern "C" __declspec( dllimport ) 
 	#endif // STEAM_API_EXPORTS
-#elif defined( GNUC )
+#elif defined( __GNUC__ )
 	#if defined( STEAM_API_EXPORTS )
 	#define S_API extern "C" __attribute__ ((visibility("default"))) 
 	#else
@@ -37,6 +34,12 @@
 	#else
 	#define S_API extern "C" 
 	#endif // STEAM_API_EXPORTS
+#endif
+
+#if defined( __cplusplus ) && ( __cplusplus >= 201103L )
+	#define S_OVERRIDE override
+#else
+	#define S_OVERRIDE
 #endif
 
 #if ( defined(STEAM_API_EXPORTS) || defined(STEAM_API_NODLL) ) && !defined(API_GEN)
@@ -51,12 +54,23 @@
 typedef int32 HSteamPipe;
 // handle to single instance of a steam user
 typedef int32 HSteamUser;
-// function prototype
-#if defined( POSIX )
-#define __cdecl
+
+// A fixed size buffer to receive an error message that is returned by some API
+// calls.
+const int k_cchMaxSteamErrMsg = 1024;
+typedef char SteamErrMsg[ k_cchMaxSteamErrMsg ];
+
+// #define away __cdecl on posix.
+// This is really, really bad.  We're sorry.  But it's been this way for
+// a long time now and it's scary to change it, as there may be others that
+// depend on it.
+#ifndef _WIN32
+	#define __cdecl
 #endif
-extern "C" typedef void (__cdecl *SteamAPIWarningMessageHook_t)(int, const char *);
-extern "C" typedef uint32 ( *SteamAPI_CheckCallbackRegistered_t )( int iCallbackNum );
+
+// function prototype
+extern "C" typedef void ( S_CALLTYPE *SteamAPIWarningMessageHook_t )( int, const char * );
+extern "C" typedef uint32 ( S_CALLTYPE *SteamAPI_CheckCallbackRegistered_t )( int iCallbackNum );
 #if defined( __SNC__ )
 	#pragma diag_suppress=1700	   // warning 1700: class "%s" has virtual functions but non-virtual destructor
 #endif
@@ -154,9 +168,9 @@ public:
 
 protected:
 	friend class CCallbackMgr;
-	virtual void Run( void *pvParam ) = 0;
-	virtual void Run( void *pvParam, bool /*bIOFailure*/, SteamAPICall_t /*hSteamAPICall*/ ) { Run( pvParam ); }
-	virtual int GetCallbackSizeBytes() { return sizeof_P; }
+	virtual void Run( void *pvParam ) S_OVERRIDE = 0;
+	virtual void Run( void *pvParam, bool /*bIOFailure*/, SteamAPICall_t /*hSteamAPICall*/ ) S_OVERRIDE { Run( pvParam ); }
+	virtual int GetCallbackSizeBytes() S_OVERRIDE { return sizeof_P; }
 };
 
 
@@ -179,9 +193,9 @@ public:
 
 	void SetGameserverFlag() { m_nCallbackFlags |= k_ECallbackFlagsGameServer; }
 private:
-	virtual void Run( void *pvParam );
-	virtual void Run( void *pvParam, bool bIOFailure, SteamAPICall_t hSteamAPICall );
-	virtual int GetCallbackSizeBytes() { return sizeof( P ); }
+	virtual void Run( void *pvParam ) S_OVERRIDE;
+	virtual void Run( void *pvParam, bool bIOFailure, SteamAPICall_t hSteamAPICall ) S_OVERRIDE;
+	virtual int GetCallbackSizeBytes() S_OVERRIDE { return sizeof( P ); }
 
 	SteamAPICall_t m_hAPICall;
 	T *m_pObj;
@@ -209,7 +223,7 @@ public:
 	void Unregister();
 
 protected:
-	virtual void Run( void *pvParam );
+	virtual void Run( void *pvParam ) S_OVERRIDE;
 	
 	T *m_pObj;
 	func_t m_Func;

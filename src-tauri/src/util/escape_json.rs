@@ -1,5 +1,5 @@
-const BACKSLASH_BYTE: u8 = '\\' as u8;
-const SINGLE_QUOTE_BYTE: u8 = '\'' as u8;
+const BACKSLASH_BYTE: u8 = b'\\';
+const SINGLE_QUOTE_BYTE: u8 = b'\'';
 pub fn escape_single_quoted_json<S: Into<String>>(str: S) -> String {
 	let mut str = str.into();
 	let bytes: &mut Vec<u8> = unsafe { str.as_mut_vec() };

@@ -132,13 +132,13 @@ impl<'de> Deserialize<'de> for NormalizedPathBuf {
 pub fn has_extension<P: AsRef<Path>, S: AsRef<str>>(path: P, extension: S) -> bool {
 	path.as_ref()
 		.extension()
-		.and_then(|x| Some(x.to_str().and_then(|x| Some(x.eq_ignore_ascii_case(extension.as_ref()))).unwrap_or(false)))
+		.map(|x| x.to_str().map(|x| x.eq_ignore_ascii_case(extension.as_ref())).unwrap_or(false))
 		.unwrap_or(false)
 }
 
 pub fn open<P: AsRef<Path>>(path: P) {
 	let path = path.as_ref();
-	if let Err(_) = opener::open(path) {
+	if opener::open(path).is_err() {
 		tauri::api::dialog::message(None::<&tauri::Window<tauri::Wry>>, "File", path.to_string_lossy());
 	}
 }
@@ -153,7 +153,8 @@ pub fn open_file_location<P: AsRef<Path>>(path: P) {
 		#[cfg(target_os = "macos")]
 		return std::process::Command::new("open").arg("-R").arg(&path).spawn();
 
-		#[cfg(target_os = "linux")] {
+		#[cfg(target_os = "linux")]
+		{
 			let path = path.to_string_lossy().into_owned();
 			if path.contains(",") {
 				// see https://gitlab.freedesktop.org/dbus/dbus/-/issues/76

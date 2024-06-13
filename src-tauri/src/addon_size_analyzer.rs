@@ -85,7 +85,7 @@ mod treemap {
 			}
 
 			self.layout_row(row, w, self.min_width().1);
-			return self.squarify(squares, &mut Vec::new(), self.min_width().0);
+			self.squarify(squares, &mut Vec::new(), self.min_width().0)
 		}
 
 		fn worst_ratio(&self, row: &Vec<f64>, w: f64) -> f64 {
@@ -93,7 +93,7 @@ mod treemap {
 			let mut max: f64 = 0.;
 			let mut min: f64 = f64::MAX;
 			for row in row {
-				sum = sum + *row;
+				sum += *row;
 				max = max.max(*row);
 				min = min.min(*row);
 			}
@@ -125,7 +125,7 @@ mod treemap {
 						h: row_width,
 						data: self.data[self.squares.len()].take(),
 					};
-					self.y = self.y + row_width;
+					self.y += row_width;
 					data
 				} else {
 					let data = Square {
@@ -135,19 +135,19 @@ mod treemap {
 						h: row_height,
 						data: self.data[self.squares.len()].take(),
 					};
-					self.x = self.x + row_width;
+					self.x += row_width;
 					data
 				});
 			}
 
 			if vertical {
-				self.x = self.x + row_height;
-				self.y = self.y - w;
-				self.w = self.w - row_height;
+				self.x += row_height;
+				self.y -= w;
+				self.w -= row_height;
 			} else {
-				self.x = self.x - w;
-				self.y = self.y + row_height;
-				self.h = self.h - row_height;
+				self.x -= w;
+				self.y += row_height;
+				self.h -= row_height;
 			}
 		}
 
@@ -253,7 +253,7 @@ impl AddonSizeAnalyzer {
 			match tag_data.entry(tag.clone()) {
 				Occupied(mut o) => {
 					let total_tag_sizes = tag_total_sizes.get_mut(&tag).unwrap();
-					*total_tag_sizes = *total_tag_sizes + (gma.installed().size as f64);
+					*total_tag_sizes += gma.installed().size as f64;
 
 					tag_sizes.get_mut(&tag).unwrap().push(gma.installed().size as f64);
 

@@ -1,8 +1,10 @@
 use std::{
-	cell::UnsafeCell, path::PathBuf, sync::{
+	cell::UnsafeCell,
+	path::PathBuf,
+	sync::{
 		atomic::{AtomicBool, AtomicU32, AtomicU8},
 		Arc,
-	}
+	},
 };
 
 use parking_lot::RwLock;
@@ -77,7 +79,7 @@ impl Eq for SearchItem {}
 impl SearchItem {
 	pub fn new<D: Into<u64>>(source: SearchItemSource, label: String, mut terms: Vec<String>, timestamp: D) -> SearchItem {
 		terms.shrink_to_fit();
-		terms.sort_by(|a, b| a.len().cmp(&b.len()));
+		terms.sort_by_key(|a| a.len());
 
 		SearchItem {
 			len: terms.iter().map(|x| x.len()).reduce(|a, b| a.max(b)).unwrap_or(0).max(label.len()),
@@ -233,19 +235,17 @@ impl Search {
 
 				self.items.write().push(search_item);
 			} else {
-				if let SearchItemSource::InstalledAddons(_, id) = &search_item.source {
-					if let Some(id) = id {
-						let mut installed_addons = self.installed_addons.write();
-						match installed_addons.binary_search_by(|cmp| match &cmp.source {
-							SearchItemSource::InstalledAddons(_, cmp_id) => cmp_id.as_ref().unwrap().cmp(id),
-							_ => unreachable!(),
-						}) {
-							Ok(pos) => {
-								installed_addons[pos] = search_item.clone();
-							}
-							Err(pos) => {
-								installed_addons.insert(pos, search_item.clone());
-							}
+				if let SearchItemSource::InstalledAddons(_, Some(id)) = &search_item.source {
+					let mut installed_addons = self.installed_addons.write();
+					match installed_addons.binary_search_by(|cmp| match &cmp.source {
+						SearchItemSource::InstalledAddons(_, cmp_id) => cmp_id.as_ref().unwrap().cmp(id),
+						_ => unreachable!(),
+					}) {
+						Ok(pos) => {
+							installed_addons[pos] = search_item.clone();
+						}
+						Err(pos) => {
+							installed_addons.insert(pos, search_item.clone());
 						}
 					}
 				}
@@ -267,14 +267,14 @@ impl Search {
 		self.items.write().reserve(amount);
 	}
 
-	pub fn add_bulk<V: Searchable>(&self, items: &Vec<V>) {
+	pub fn add_bulk<V: Searchable>(&self, items: &[V]) {
 		self.dirty.store(true, std::sync::atomic::Ordering::Release);
 
 		let mut installed_addons = once_cell::unsync::OnceCell::new();
 
 		let mut store = self.items.write();
 		store.reserve(items.len());
-		store.extend(items.into_iter().filter_map(|v| {
+		store.extend(items.iter().filter_map(|v| {
 			v.search_item().map(|search_item| {
 				let search_item = Arc::new(search_item);
 				if let SearchItemSource::InstalledAddons(_, id) = &search_item.source {
@@ -362,7 +362,7 @@ impl Search {
 				} else if b.is_some() {
 					return std::cmp::Ordering::Greater;
 				}
-				return std::cmp::Ordering::Equal;
+				std::cmp::Ordering::Equal
 			});
 
 			(results.into_iter().filter_map(|x| x.map(|x| x.1)).collect(), has_more)

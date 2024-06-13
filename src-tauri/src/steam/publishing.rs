@@ -43,8 +43,8 @@ impl std::fmt::Display for PublishError {
 			PublishError::IconTooSmall => write!(f, "ERR_ICON_TOO_SMALL"),
 			PublishError::IconInvalidFormat => write!(f, "ERR_ICON_INVALID_FORMAT"),
 			PublishError::IOError => write!(f, "ERR_IO_ERROR"),
-			PublishError::SteamError(error) => write!(f, "ERR_STEAM_ERROR:{}", error.to_string()),
-			PublishError::ImageError(error) => write!(f, "ERR_IMAGE_ERROR:{}", error.to_string()),
+			PublishError::SteamError(error) => write!(f, "ERR_STEAM_ERROR:{}", error),
+			PublishError::ImageError(error) => write!(f, "ERR_IMAGE_ERROR:{}", error),
 		}
 	}
 }
@@ -80,9 +80,9 @@ impl std::ops::Deref for ContentPath {
 		&self.0
 	}
 }
-impl Into<PathBuf> for ContentPath {
-	fn into(self) -> PathBuf {
-		self.0
+impl From<ContentPath> for PathBuf {
+	fn from(val: ContentPath) -> Self {
+		val.0
 	}
 }
 impl ContentPath {
@@ -121,7 +121,7 @@ impl ContentPath {
 
 const WORKSHOP_ICON_MAX_SIZE: u64 = 1048576;
 const WORKSHOP_ICON_MIN_SIZE: u64 = 16;
-const WORKSHOP_DEFAULT_ICON: &'static [u8] = include_bytes!("../../../public/img/gmpublisher_default_icon.png");
+const WORKSHOP_DEFAULT_ICON: &[u8] = include_bytes!("../../../public/img/gmpublisher_default_icon.png");
 
 pub enum WorkshopIcon {
 	Custom {
@@ -139,9 +139,9 @@ impl WorkshopIcon {
 		!matches!(format, ImageFormat::Gif) && ((width < 512 || height < 512) || (width != height))
 	}
 }
-impl Into<PathBuf> for WorkshopIcon {
-	fn into(self) -> PathBuf {
-		match self {
+impl From<WorkshopIcon> for PathBuf {
+	fn from(val: WorkshopIcon) -> Self {
+		match val {
 			WorkshopIcon::Custom {
 				path,
 				image,
@@ -253,7 +253,7 @@ impl Steam {
 					.content_path(&path)
 					.title(&title)
 					.preview_path(&Into::<PathBuf>::into(preview))
-					.tags(tags)
+					.tags(tags, false)
 					.description("Uploaded with [url=https://github.com/WilliamVenner/gmpublisher]gmpublisher[/url]")
 					.submit(None, move |result| {
 						*result_ref.lock() = Some(result);
@@ -273,10 +273,7 @@ impl Steam {
 				tags.push("Addon".to_string());
 				tags.push(addon_type);
 
-				let preview_path: Option<PathBuf> = match preview {
-					Some(preview) => Some(preview.into()),
-					None => None,
-				};
+				let preview_path: Option<PathBuf> = preview.map(|value| value.into());
 
 				let update = self.client().ugc().start_item_update(GMOD_APP_ID, id);
 				match preview_path {
@@ -284,7 +281,7 @@ impl Steam {
 					None => update,
 				}
 				.content_path(&path)
-				.tags(tags)
+				.tags(tags, false)
 				.title(&title)
 				.submit(changes.as_deref(), move |result| {
 					*result_ref.lock() = Some(result);
@@ -360,7 +357,8 @@ impl Steam {
 	pub fn update_icon(&self, addon_id: PublishedFileId, icon: WorkshopIcon, transaction: &Transaction) -> Result<bool, PublishError> {
 		let result = Arc::new(Mutex::new(None));
 		let result_ref = result.clone();
-		let update_handle = self.client()
+		let update_handle = self
+			.client()
 			.ugc()
 			.start_item_update(GMOD_APP_ID, addon_id)
 			.preview_path(&Into::<PathBuf>::into(icon))
@@ -510,11 +508,7 @@ pub fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishEr
 }
 
 #[tauri::command]
-pub fn publish_icon(
-	icon_path: PathBuf,
-	upscale: bool,
-	addon_id: PublishedFileId
-) -> u32 {
+pub fn publish_icon(icon_path: PathBuf, upscale: bool, addon_id: PublishedFileId) -> u32 {
 	let transaction = transaction!();
 	let id = transaction.id;
 
@@ -589,7 +583,7 @@ pub fn publish(
 		path.pop();
 		path.push("gmpublisher_publishing");
 
-		if let Err(_) = std::fs::create_dir_all(&path) {
+		if std::fs::create_dir_all(&path).is_err() {
 			transaction.error("ERR_IO_ERROR", turbonone!());
 			return;
 		}

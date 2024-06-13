@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{GMOD_APP_ID, WorkshopItem, webview::Addon};
+use crate::{webview::Addon, WorkshopItem, GMOD_APP_ID};
 use parking_lot::Mutex;
 use steamworks::{QueryResults, SteamError};
 

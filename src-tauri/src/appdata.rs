@@ -46,7 +46,7 @@ impl OpenCount {
 
 				count_file.push(".open_count");
 
-				let mut f = OpenOptions::new().read(true).write(true).create(true).open(count_file)?;
+				let mut f = OpenOptions::new().read(true).write(true).create(true).truncate(false).open(count_file)?;
 
 				let count = f.read_u32::<LittleEndian>().unwrap_or(0) + 1;
 
@@ -230,16 +230,14 @@ impl AppData {
 
 		if !steam!().connected() {
 			println!("Steam is not connected, parsing Steam library folders...");
-			match steamlocate::SteamDir::locate()
-				.and_then(|mut steam_dir| steam_dir.app(&GMOD_APP_ID.0).and_then(|steam_app| Some(steam_app.path.to_owned())))
-			{
+			match steamlocate::SteamDir::locate().and_then(|mut steam_dir| steam_dir.app(&GMOD_APP_ID.0).map(|steam_app| steam_app.path.to_owned())) {
 				Some(path) => {
 					println!("Located!");
 					return Some(path);
 				}
 				None => {
 					println!("Failed to parse Steam library folders. Waiting for Steam...");
-					for i in 0..3 as u8 {
+					for i in 0..3_u8 {
 						sleep!(1);
 						if steam!().connected() {
 							println!("Steam connected!");

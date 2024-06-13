@@ -2,11 +2,11 @@ use std::{fs::OpenOptions, panic::PanicInfo};
 
 use crossbeam::channel::Sender;
 
-use crate::{ignore, app_data};
+use crate::{app_data, ignore};
 
 pub enum LogMessage {
 	Stdout(String),
-	Stderr(String)
+	Stderr(String),
 }
 
 lazy_static! {
@@ -29,23 +29,23 @@ lazy_static! {
 
 			let mut stdout = match File::create(LOGS_DIR.join("stdout.log")) {
 				Ok(f) => f,
-				Err(err) => return std::eprintln!("Failed to open stdout log file: {:#?}", err)
+				Err(err) => return std::eprintln!("Failed to open stdout log file: {:#?}", err),
 			};
 			let mut stderr = match File::create(LOGS_DIR.join("stderr.log")) {
 				Ok(f) => f,
-				Err(err) => return std::eprintln!("Failed to open stderr log file: {:#?}", err)
+				Err(err) => return std::eprintln!("Failed to open stderr log file: {:#?}", err),
 			};
 
 			while let Ok(log) = rx.recv() {
 				match log {
 					LogMessage::Stdout(log) => {
 						ignore! { stdout.write_all(log.as_bytes()) };
-						ignore! { stdout.write_all(&['\n' as u8]) };
-					},
+						ignore! { stdout.write_all(&[b'\n']) };
+					}
 					LogMessage::Stderr(log) => {
 						ignore! { stderr.write_all(log.as_bytes()) };
-						ignore! { stderr.write_all(&['\n' as u8]) };
-					},
+						ignore! { stderr.write_all(&[b'\n']) };
+					}
 				}
 			}
 		});

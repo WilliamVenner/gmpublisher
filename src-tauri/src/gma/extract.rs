@@ -1,4 +1,12 @@
-use std::{fs::{self, File}, io::{BufWriter, Cursor, Read, SeekFrom}, path::{Path, PathBuf}, sync::{atomic::{AtomicBool, AtomicUsize, Ordering}, Arc}};
+use std::{
+	fs::{self, File},
+	io::{BufWriter, Cursor, Read, SeekFrom},
+	path::{Path, PathBuf},
+	sync::{
+		atomic::{AtomicBool, AtomicUsize, Ordering},
+		Arc,
+	},
+};
 
 use crate::{app_data, transactions::Transaction};
 
@@ -15,20 +23,17 @@ lazy_static! {
 	pub static ref THREAD_POOL: ThreadPool = thread_pool!();
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub enum ExtractionOverwriteMode {
 	Overwrite,
+	#[default]
 	Recycle,
-	Delete
-}
-impl Default for ExtractionOverwriteMode {
-    fn default() -> Self {
-        ExtractionOverwriteMode::Recycle
-    }
+	Delete,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub enum ExtractDestination {
+	#[default]
 	Temp,
 	Downloads,
 	Addons,
@@ -53,11 +58,11 @@ impl ExtractDestination {
 
 			Directory(path) => Some(path),
 
-			Addons => app_data!().gmod_dir().and_then(|mut path| {
+			Addons => app_data!().gmod_dir().map(|mut path| {
 				path.push("GarrysMod");
 				path.push("addons");
 				path.push(extracted_name.as_ref());
-				Some(path)
+				path
 			}),
 
 			Downloads => app_data!().downloads_dir().to_owned().and_then(push_extracted_name),
@@ -68,9 +73,9 @@ impl ExtractDestination {
 
 		if recycle_existing && path.exists() {
 			let success = match &app_data!().settings.read().extract_overwrite_mode {
-			    ExtractionOverwriteMode::Overwrite => true,
-			    ExtractionOverwriteMode::Recycle => trash::delete(&path).is_ok(),
-			    ExtractionOverwriteMode::Delete => fs::remove_dir_all(&path).is_ok(),
+				ExtractionOverwriteMode::Overwrite => true,
+				ExtractionOverwriteMode::Recycle => trash::delete(&path).is_ok(),
+				ExtractionOverwriteMode::Delete => fs::remove_dir_all(&path).is_ok(),
 			};
 			if !success {
 				let dir_name = path.file_name().unwrap().to_string_lossy().to_string();
@@ -92,11 +97,6 @@ impl ExtractDestination {
 		}
 
 		path
-	}
-}
-impl Default for ExtractDestination {
-	fn default() -> Self {
-		ExtractDestination::Temp
 	}
 }
 
@@ -189,8 +189,8 @@ impl GMAFile {
 	) -> Result<(), GMAError> {
 		use std::io::Write;
 
-		fs::create_dir_all(&entry_path.with_file_name(""))?;
-		let f = File::create(&entry_path)?;
+		fs::create_dir_all(entry_path.with_file_name(""))?;
+		let f = File::create(entry_path)?;
 
 		handle.seek(SeekFrom::Start(entries_start + entry.index))?;
 
@@ -205,8 +205,8 @@ impl GMAFile {
 	fn stream_entry_bytes(handle: &mut GMAReader, entries_start: u64, entry_path: &PathBuf, entry: &GMAEntry) -> Result<(), GMAError> {
 		use std::io::Write;
 
-		fs::create_dir_all(&entry_path.with_file_name(""))?;
-		let f = File::create(&entry_path)?;
+		fs::create_dir_all(entry_path.with_file_name(""))?;
+		let f = File::create(entry_path)?;
 
 		handle.seek(SeekFrom::Start(entries_start + entry.index))?;
 
@@ -220,7 +220,13 @@ impl GMAFile {
 }
 
 pub trait ExtractGMAImmut {
-	fn extract(&self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool, ignore_whitelist: bool) -> Result<PathBuf, GMAError>;
+	fn extract(
+		&self,
+		dest: ExtractDestination,
+		transaction: &Transaction,
+		open_after_extract: bool,
+		ignore_whitelist: bool,
+	) -> Result<PathBuf, GMAError>;
 	fn extract_entry(&self, entry_path: String, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError>;
 	fn extract_entry_with_handle(
 		&self,
@@ -231,11 +237,23 @@ pub trait ExtractGMAImmut {
 	) -> Result<PathBuf, GMAError>;
 }
 pub trait ExtractGMAMut {
-	fn extract(&mut self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool, ignore_whitelist: bool) -> Result<PathBuf, GMAError>;
+	fn extract(
+		&mut self,
+		dest: ExtractDestination,
+		transaction: &Transaction,
+		open_after_extract: bool,
+		ignore_whitelist: bool,
+	) -> Result<PathBuf, GMAError>;
 	fn extract_entry(&mut self, entry_path: String, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError>;
 }
 impl ExtractGMAImmut for GMAFile {
-	fn extract(&self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool, ignore_whitelist: bool) -> Result<PathBuf, GMAError> {
+	fn extract(
+		&self,
+		dest: ExtractDestination,
+		transaction: &Transaction,
+		open_after_extract: bool,
+		ignore_whitelist: bool,
+	) -> Result<PathBuf, GMAError> {
 		let result = THREAD_POOL.install(move || {
 			let dest_path = dest.prepare(&self.extracted_name);
 			let entries_start = self.pointers.entries;
@@ -359,16 +377,22 @@ impl ExtractGMAImmut for GMAFile {
 	}
 }
 impl ExtractGMAMut for GMAFile {
-	fn extract(&mut self, dest: ExtractDestination, transaction: &Transaction, open_after_extract: bool, ignore_whitelist: bool) -> Result<PathBuf, GMAError> {
+	fn extract(
+		&mut self,
+		dest: ExtractDestination,
+		transaction: &Transaction,
+		open_after_extract: bool,
+		ignore_whitelist: bool,
+	) -> Result<PathBuf, GMAError> {
 		THREAD_POOL.install(move || {
 			self.entries()?;
-			(&*self).extract(dest, transaction, open_after_extract, ignore_whitelist)
+			(*self).extract(dest, transaction, open_after_extract, ignore_whitelist)
 		})
 	}
 	fn extract_entry(&mut self, entry_path: String, transaction: &Transaction, open_after_extract: bool) -> Result<PathBuf, GMAError> {
 		THREAD_POOL.install(move || {
 			let handle = self.entries()?;
-			(&*self).extract_entry_with_handle(entry_path, transaction, open_after_extract, handle)
+			(*self).extract_entry_with_handle(entry_path, transaction, open_after_extract, handle)
 		})
 	}
 }
