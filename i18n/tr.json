@@ -70,7 +70,8 @@
 	"items_num": "{n} eşyalar",
 	"items_shown": "{n} gösteriliyor",
 	"created": "Yaratıldı",
-	"updated": "Yaratıcı",
+	"updated": "Güncellendi",
+	"author": "Yaratıcı",
 	"open_addon_location": "Eklenti Lokasyonunu Aç",
 
 	"downloader": "İndirici",
