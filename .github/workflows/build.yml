@@ -74,6 +74,9 @@ jobs:
     - name: Install NPM dependencies
       run: npm install
 
+    - name: Install Rust targets
+      run: rustup target add x86_64-apple-darwin
+
     - name: Build
       run: npm run tauri build -- --target universal-apple-darwin -v
 
