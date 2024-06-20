@@ -75,18 +75,18 @@ jobs:
       run: npm install
 
     - name: Build
-      run: npm run tauri build -- -v
+      run: npm run tauri build -- --target universal-apple-darwin -v
 
     - name: Copy Steamworks SDK to bundle
-      run: cp src-tauri/lib/steam_api/redistributable_bin/osx/libsteam_api.dylib src-tauri/target/release/bundle/macos/gmpublisher.app/Contents/MacOS/libsteam_api.dylib
+      run: cp src-tauri/lib/steam_api/redistributable_bin/osx/libsteam_api.dylib src-tauri/target/universal-apple-darwin/release/bundle/macos/gmpublisher.app/Contents/MacOS/libsteam_api.dylib
 
     - name: Prepare ZIP
       run: |
-        cd src-tauri/target/release/bundle/macos
+        cd src-tauri/target/universal-apple-darwin/release/bundle/macos
         zip -r gmpublisher_macOS.app.zip gmpublisher.app
 
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
-        files: src-tauri/target/release/bundle/macos/gmpublisher_macOS.app.zip
+        files: src-tauri/target/universal-apple-darwin/release/bundle/macos/gmpublisher_macOS.app.zip
         fail_on_unmatched_files: true
