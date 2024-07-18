@@ -1,11 +1,11 @@
 {
 	"LANGUAGE_NAME": "Español",
 
-	"my_workshop": "Mí Workshop",
+	"my_workshop": "Mi Workshop",
 	"loading": "Cargando...",
 	"gmod_dir": {
 		"name": "Directorio de Garry's Mod",
-		"fail": "No sé pudo encontrar un directorio de Garry's Mod valido dónde especificaste.\nRevisa que el directorio contenga una carpeta bin/ que contenga gmad y gmpublish."
+		"fail": "No se pudo encontrar un directorio de Garry's Mod valido donde especificaste.\nRevisa que el directorio contenga una carpeta bin/ que contenga gmad y gmpublish."
 	},
 	"greetings": {
 		"morning": "¡Buenos días, {name}!",
@@ -74,7 +74,7 @@
 	"author": "Autor",
 	"open_addon_location": "Abrir Ubicación de Addon",
 
-	"downloader": "Descargardor",
+	"downloader": "Descargador",
 	"download-input": "Inserte Workshop IDs, enlaces, colecciones aquí...",
 	"download-input-tip": "CONSEJO: ¡Puedes pegar cosas seperadas por comas o nuevas líneas!",
 	"downloading": "Descargando",
@@ -103,7 +103,7 @@
 	"FS_ANALYZER_TAGGIFYING": "Etiquetando...",
 	"FS_ANALYZER_DISCOVERING": "Descubriendo...",
 
-	"time_just_now": "Recién",
+	"time_just_now": "En este momento",
 	"click_to_open": "¡Clic para abrir!",
 	"content_generator": "Generador de Contenido",
 	"installed_addons": "Addons Instalados",
@@ -142,7 +142,7 @@
 			"recycle": "Reciclar",
 			"delete": "Eliminar",
 			"overwrite": "Sobrescribir",
-			"tooltip": "¿Al extraer GMAs, qué debe de hacer gmpublisher si el directorio de extracción de GMAs ya existe (el GMA ya ha sido extraido anteriormente)?"
+			"tooltip": "Al extraer GMAs, ¿Qué debe de hacer gmpublisher si el directorio de extracción de GMAs ya existe (el GMA ya ha sido extraido anteriormente)?"
 		},
 
 		"accessibility": {
@@ -163,13 +163,13 @@
 	"open_all": "Abrir Todos",
 
 	"ERR_UNKNOWN": "Error Desconocido",
-	"ERR_NO_ADDONS_FOUND": "No Addons Encontrados",
+	"ERR_NO_ADDONS_FOUND": "No se han encontrado Addons",
 	"ERR_STEAM_ERROR": "Error de Steam: {data}",
 	"ERR_WHITELIST": "Estas entradas no pasan el whitelist de tipos/locaciones. Si esto fue inseperado, tu addon probablemente tiene una estructura de archivos incorrecta.\n\nSi quieres filtrar estos tipos de archivos de tus GMAs, agregarlos al Patron de Archivos Ignorados.\n\n{data}",
 	"ERR_IO_ERROR": "Error de I/O",
 	"ERR_PATH_IO_ERROR": "Error de I/O ({data})",
 	"ERR_GMA_FORMAT_ERROR": "Archivo GMA corrupto",
-	"ERR_GMA_INVALID_HEADER": "Archivo GMA invalido",
+	"ERR_GMA_INVALID_HEADER": "Archivo GMA inválido",
 	"ERR_GMA_ENTRY_NOT_FOUND": "Entrada no encontrada",
 	"ERR_DOWNLOAD_MISSING": "Descargado, pero faltan archivos",
 	"ERR_ICON_TOO_LARGE": "Icono muy grande (> 1 MB)",
@@ -187,7 +187,7 @@
 	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Acuerdo legal de Workshop no aceptado",
 
 	"icon_instructions": "Formatos Aceptados: JPG, PNG, GIF\nTamaño Máximo: 1 MB\nRecomendado: 512x512",
-	"addon_title": "Titulo...",
+	"addon_title": "Título...",
 	"addon_path": "Ruta de Addon...",
 	"icon_file_pick": "Icono de Workshop",
 	"remove_icon": "Quitar Icono",
@@ -217,14 +217,14 @@
 		"realism": "Realista",
 		"cartoon": "Dibujo animado",
 		"water": "Agua",
-		"comic": "Comico",
+		"comic": "Cómico",
 		"build": "Construcción"
 	},
 
 	"publish_exclamation": "¡Publicar!",
 	"update_exclamation": "¡Actualizar!",
 	"add_ellipsis": "Agregar...",
-	"ignored_file_patterns": "Patron de Archivos Ignorados",
+	"ignored_file_patterns": "Patrón de Archivos Ignorados",
 	"show_more": "MOSTRAR MÁS",
 	"ignored_for_convenience": "Este patrón de archivos está ignorado por defecto para tu conveniencia.",
 	"file_browser": "Navegar Archivos",
@@ -252,8 +252,8 @@
 	"steam_workshop": "Steam Workshop",
 	"open_count": "¡Has abierto gmpublisher {count} veces! ¡Felicidades!",
 	"enjoying_gmpublisher": "¿Estás disfrutando gmpublisher?",
-	"github_star_plz_i_need_a_job_maybe": "Sí tu tienes un cuenta de GitHub, considera poniendo un estrella en el %Repositorio de GitHub% sí mí trabajo te ayudo :D",
-	"vscode_glua_enhanced": "Sí eres un desarrollador, a lo mejor estarás interesado en mí %VSCode GLua Enhanced% extensión.",
+	"github_star_plz_i_need_a_job_maybe": "Si tú tienes un cuenta de GitHub, considera poner un estrella en el %Repositorio de GitHub% si mi trabajo te ayudo :D",
+	"vscode_glua_enhanced": "Si eres un desarrollador, quizá estés interesado en mi %VSCode GLua Enhanced% extensión.",
 
 	"copy_link": "Copiar Link",
 	"open_image": "Abrir Imagen",
