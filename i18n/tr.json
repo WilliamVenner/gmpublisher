@@ -55,9 +55,9 @@
 		"pcf": "Particles File",
 		"lua": "Lua Kodu",
 		"mdl": "Model",
-		"vtx": "Model LOD Data",
+		"vtx": "Model LOD Verisi",
 		"phy": "Model Physics Mesh",
-		"ani": "Model Animation Data",
+		"ani": "Model Animasyon Verisi",
 		"vvd": "Model Vertex Data",
 		"txt": "Metin",
 		"properties": "Properties",
@@ -262,7 +262,7 @@
 	"sent_to_downloader": "İndiriciye Gönderildi",
 
 	"locating": "Bulunuyor",
-	"decompressing": "Decompressing {progress}",
+	"decompressing": "Ayıklanıyor {progress}",
 	"reading_metadata": "Metadata Okunuyor",
 
 	"publish_icon": "Yeni Simge Yayınla (Eklentiyi Güncellemeyecek)",
