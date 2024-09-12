@@ -63,15 +63,15 @@
 		"properties": "Properties",
 
 		"audio": "Ses",
-		"image": "İmaj",
+		"image": "Görsel",
 		"unknown": "Bilinmeyen ({extension})"
 	},
 	"items_one": "1 öğe",
 	"items_num": "{n} öğe",
 	"items_shown": "{n} gösteriliyor",
-	"created": "Yaratıldı",
+	"created": "Oluşturuldu",
 	"updated": "Güncellendi",
-	"author": "Yaratıcı",
+	"author": "Oluşturan",
 	"open_addon_location": "Eklenti Lokasyonunu Aç",
 
 	"downloader": "İndirici",
