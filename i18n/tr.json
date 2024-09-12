@@ -47,8 +47,8 @@
 		"vtf": "Valve Texture Format",
 		"vmt": "Valve Material Format",
 		"map": "Harita",
-		"ain": "Map AI Nodegraph",
-		"nav": "Map AI Navigation Mesh",
+		"ain": "Harita AI Nodegraph",
+		"nav": "Harita AI Navigation Mesh",
 		"ttf": "TrueType Font",
 		"vcd": "Valve Choreography Data",
 		"fgd": "Forge Game Data",
@@ -211,7 +211,7 @@
 
 	"addon_tags": {
 		"fun": "Eğlence",
-		"roleplay": "Rol yapma",
+		"roleplay": "Rol Yapma",
 		"scenic": "Sahne",
 		"movie": "Film",
 		"realism": "Gerçekçilik",
