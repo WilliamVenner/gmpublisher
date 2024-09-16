@@ -2,7 +2,7 @@ window.__GMPUBLISHER__ = appDataCallback => {
 	__TAURI__.tauri.invoke('reloaded');
 
 	// TODO
-	{
+	/*{
 		__TAURI__.event.listen('tauri://file-drop', ({ payload: path }) => {
 			document.body.classList.remove('file-drop');
 			console.log('File Drop', path);
@@ -29,7 +29,7 @@ window.__GMPUBLISHER__ = appDataCallback => {
 		window.addEventListener('dragend', e => {
 			console.log('JS File Drop Cancelled (dragend)', e);
 		});
-	}
+	}*/
 
 	{
 		const AppDataPtr = {};
