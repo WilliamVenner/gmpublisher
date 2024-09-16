@@ -36,6 +36,7 @@
 <style>
 	modal {
 		pointer-events: none;
+		-webkit-pointer-events: none;
 
 		transition: backdrop-filter .25s, background-color .25s;
 		background-color: rgba(0,0,0,0);
@@ -50,6 +51,7 @@
 	}
 	modal.active {
 		pointer-events: all;
+		-webkit-pointer-events: all;
 
 		backdrop-filter: grayscale(.5) blur(1px);
 		background-color: rgba(0,0,0,.4);

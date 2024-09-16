@@ -781,6 +781,7 @@
 		text-shadow: 0px 1px 0px rgb(0 0 0 / 60%);
 		opacity: .5;
 		pointer-events: none;
+		-webkit-pointer-events: none;
 		width: min-content;
 		height: min-content;
 		z-index: 2;

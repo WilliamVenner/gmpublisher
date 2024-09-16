@@ -49,6 +49,7 @@
 		background-color: rgba(0,0,0,.4);
 		backdrop-filter: grayscale(0) blur(0px);
 		pointer-events: none;
+		-webkit-pointer-events: none;
 		transition: opacity .25s;
 		z-index: 9999;
 	}
