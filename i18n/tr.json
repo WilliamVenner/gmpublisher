@@ -199,7 +199,7 @@
 		"weapon": "Silah",
 		"vehicle": "Araç",
 		"npc": "NPC",
-		"tool": "Araç",
+		"tool": "Alet",
 		"effects": "Efektler",
 		"model": "Model",
 		"entity": "Varlık"
@@ -217,7 +217,7 @@
 		"realism": "Gerçekçilik",
 		"cartoon": "Çizgi Film",
 		"water": "Su",
-		"comic": "Komik",
+		"comic": "Çizgi Roman",
 		"build": "Yapı"
 	},
 
