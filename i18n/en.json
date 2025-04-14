@@ -191,6 +191,7 @@
 	"addon_path": "Addon Path...",
 	"icon_file_pick": "Workshop Icon",
 	"remove_icon": "Remove Icon",
+	"update_addon_title_via_steam": "Once published, you can update your addon's title on its Workshop page.",
 
 	"addon_types": {
 		"ServerContent": "Server Content",

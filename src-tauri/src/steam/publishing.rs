@@ -220,7 +220,6 @@ pub enum WorkshopUpdateType {
 		preview: WorkshopIcon,
 	},
 	Update {
-		title: String,
 		path: ContentPath,
 		tags: Vec<String>,
 		addon_type: String,
@@ -261,7 +260,6 @@ impl Steam {
 			}
 
 			Update {
-				title,
 				path,
 				tags,
 				addon_type,
@@ -282,7 +280,6 @@ impl Steam {
 				}
 				.content_path(&path)
 				.tags(tags, false)
-				.title(&title)
 				.submit(changes.as_deref(), move |result| {
 					*result_ref.lock() = Some(result);
 				})
@@ -637,7 +634,6 @@ pub fn publish(
 				steam!().update(
 					id,
 					WorkshopUpdateType::Update {
-						title,
 						path: content_path,
 						tags,
 						addon_type,

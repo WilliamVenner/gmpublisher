@@ -394,7 +394,9 @@
 			<div class="browse icon-button" on:click={browseAddon}><Folder size="1rem"/></div>
 		</div>
 
-		<input type="text" id="title" placeholder={$_('addon_title')} bind:this={titleInput} on:input={checkForm} on:change={checkForm}/>
+		<span use:tippy={$updatingAddon ? $_('update_addon_title_via_steam') : null}>
+			<input type="text" id="title" placeholder={$_('addon_title')} disabled={$updatingAddon} bind:this={titleInput} on:input={checkForm} on:change={checkForm}/>
+		</span>
 
 		<select id="addon-type" bind:this={addonTypeInput} on:blur={checkForm} on:change={checkForm}>
 			<option value="default" selected hidden disabled>{$_('addon_type')}</option>
@@ -529,6 +531,9 @@
 		color: #fff;
 		font-size: .85em;
 		width: 100%;
+	}
+	input[type='text'][disabled] {
+		opacity: 0.5;
 	}
 	input[type='text']:focus {
 		box-shadow: inset 0 0 0px 1.5px #127cff;
