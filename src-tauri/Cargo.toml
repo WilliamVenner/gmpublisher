@@ -1,6 +1,6 @@
 [package]
 name = "gmpublisher"
-version = "2.10.4"
+version = "2.11.0"
 description = "gmpublisher"
 authors = ["William Venner <william@venner.io>"]
 license = "GPL-3.0"
