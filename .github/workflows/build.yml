@@ -17,6 +17,7 @@ jobs:
 
     - name: Install system dependencies
       run: |
+        echo "deb http://archive.ubuntu.com/ubuntu jammy main universe" >> /etc/apt/sources.list
         sudo apt update
         sudo apt install -y libwebkit2gtk-4.0-dev \
             build-essential \
