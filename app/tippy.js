@@ -5,7 +5,7 @@ function updateTippy(node, content, follow) {
 	if (node._tippy) node._tippy.destroy();
 	if (content) {
 		tippyJS(node,
-			followCursor ? {
+			follow ? {
 				content,
 				followCursor: true,
 				plugins: [followCursor],
