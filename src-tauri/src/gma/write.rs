@@ -2,9 +2,9 @@ use byteorder::{LittleEndian, WriteBytesExt};
 use lazy_static::lazy_static;
 use rayon::ThreadPool;
 use std::{
-	collections::LinkedList,
+	collections::{BTreeMap, BTreeSet, HashMap, LinkedList},
 	fs::{self, File},
-	io::{BufWriter, Write},
+	io::{BufWriter, Seek, Write},
 	path::Path,
 	sync::{atomic::AtomicBool, Arc},
 	time::SystemTime,
@@ -85,6 +85,7 @@ impl GMAFile {
 		f.write_i32::<LittleEndian>(1)?;
 
 		// file list
+		let mut file_list: BTreeMap<String, (usize, u64, Box<[u8]>)> = BTreeMap::new();
 		let (error, rx, total) = {
 			let error = Arc::new(AtomicBool::new(false));
 
@@ -118,6 +119,8 @@ impl GMAFile {
 					break;
 				}
 
+				file_list.insert(relative_path.clone(), (0, 0, Vec::new().into_boxed_slice()));
+
 				let tx = tx.clone();
 				let transaction = transaction.clone();
 				let error = error.clone();
@@ -137,7 +140,7 @@ impl GMAFile {
 					crc32.update(&contents);
 					let crc32 = crc32.finalize();
 
-					tx.send((relative_path.into_bytes().into_boxed_slice(), contents.into_boxed_slice(), crc32))
+					tx.send((relative_path.into_boxed_str(), contents.into_boxed_slice(), crc32))
 						.unwrap();
 				});
 
@@ -147,28 +150,36 @@ impl GMAFile {
 			(error, rx, total)
 		};
 
-		let mut entries_buf = LinkedList::new();
+		let mut cursor = f.stream_position()?;
+		file_list.iter_mut().enumerate().for_each(|(i, (path, (idx, pos, _)))| {
+			*pos = cursor;
+			*idx = i + 1;
+			cursor += 4 + path.len() as u64 + 1 + 8 + 4; // index + path + null + size + crc32
+		});
 
-		let mut i = 0;
 		let mut i_f: f64 = 0.;
 		while let Ok((path, contents, crc32)) = rx.recv() {
-			i += 1;
+			let (i, cursor, read_contents) = file_list.get_mut(&*path).unwrap();
 
-			f.write_u32::<LittleEndian>(i as u32)?;
-			f.write_all(&path)?;
+			*read_contents = contents;
+
+			let contents = &**read_contents;
+
+			f.seek(std::io::SeekFrom::Start(*cursor))?;
+			f.write_u32::<LittleEndian>(*i as u32)?;
+			f.write_all(path.as_bytes())?;
 			f.write_u8(0)?;
 			f.write_i64::<LittleEndian>(contents.len() as i64)?;
 			f.write_u32::<LittleEndian>(crc32)?;
-
-			entries_buf.push_back(contents);
 
 			i_f += 1.;
 			transaction.progress(i_f / total);
 		}
 
+		f.seek(std::io::SeekFrom::Start(cursor))?;
 		f.write_u32::<LittleEndian>(0)?;
 
-		for contents in entries_buf.into_iter() {
+		for (_, (_, _, contents)) in file_list {
 			f.write_all(&contents)?;
 		}
 
