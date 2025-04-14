@@ -2,8 +2,7 @@ use parking_lot::{Condvar, Mutex, MutexGuard};
 use rayon::ThreadPool;
 
 use std::{
-	path::PathBuf,
-	sync::{atomic::AtomicBool, Arc},
+	collections::HashSet, path::PathBuf, sync::{atomic::AtomicBool, Arc}
 };
 
 use steamworks::{ClientManager, ItemState, PublishedFileId, QueryResults, UGC};
@@ -175,7 +174,21 @@ impl Downloads {
 	pub fn download<IDs: Into<IDList>>(&self, ids: IDs) {
 		let mut ids: Vec<PublishedFileId> = ids.into().into();
 		let extract_destination = Arc::new(app_data!().settings.read().extract_destination.to_owned());
-		let possible_collections: Vec<PublishedFileId> = {
+
+		struct PossibleCollectionsState {
+			queue: Vec<PublishedFileId>,
+			downloaded: HashSet<PublishedFileId>,
+		}
+		impl PossibleCollectionsState {
+			fn new(queue: Vec<PublishedFileId>) -> Self {
+				Self {
+					downloaded: HashSet::from_iter(queue.iter().copied()),
+					queue,
+				}
+			}
+		}
+
+		let possible_collections: Arc<Mutex<PossibleCollectionsState>> = Arc::new(Mutex::new(PossibleCollectionsState::new({
 			if let Some(workshop) = steam!().workshop.try_read_for(std::time::Duration::from_millis(51)) {
 				let workshop_cache = &workshop.0;
 				let mut possible_collections = Vec::with_capacity(ids.len());
@@ -191,60 +204,75 @@ impl Downloads {
 			} else {
 				std::mem::take(&mut ids)
 			}
-		};
+		})));
 
-		if !possible_collections.is_empty() {
-			let possible_collections_len = possible_collections.len();
+		loop {
+			let possible_collections_len;
+			let possible_collections_query;
+			{
+				let mut possible_collections = possible_collections.lock();
+				if possible_collections.queue.is_empty() || !steam!().connected() {
+					break;
+				}
+
+				possible_collections_len = possible_collections.queue.len();
+				possible_collections_query = core::mem::take(&mut possible_collections.queue);
+			}
+
 			let extract_destination = extract_destination.clone();
-			if steam!().connected() {
-				let done = Arc::new(());
+			let possible_collections = possible_collections.clone();
 
-				let done_ref = done.clone();
-				steam!()
-					.client()
-					.ugc()
-					.query_items(possible_collections.clone())
-					.unwrap()
-					.include_children(true)
-					.fetch(move |results: Result<QueryResults<'_>, steamworks::SteamError>| {
-						if let Ok(results) = results {
-							let mut pending = downloads!().pending.lock();
-							pending.reserve(results.returned_results() as usize);
+			let done = Arc::new(());
 
-							let mut not_collections = Vec::with_capacity(possible_collections_len);
+			let done_ref = done.clone();
+			steam!()
+				.client()
+				.ugc()
+				.query_items(possible_collections_query.clone())
+				.unwrap()
+				.include_children(true)
+				.fetch(move |results: Result<QueryResults<'_>, steamworks::SteamError>| {
+					if let Ok(results) = results {
+						let mut possible_collections = possible_collections.lock();
 
-							let ugc = steam!().client().ugc();
-							for (i, item) in results.iter().enumerate() {
-								if let Some(item) = item {
-									if item.file_type == steamworks::FileType::Collection {
-										let children = results.get_children(i as u32).unwrap();
-										steam!().fetch_workshop_items(children.clone());
-										for item in children {
-											Downloads::push_download(&ugc, &mut pending, &extract_destination, item);
+						let mut pending = downloads!().pending.lock();
+						pending.reserve(results.returned_results() as usize);
+
+						let mut not_collections = Vec::with_capacity(possible_collections_len);
+
+						let ugc = steam!().client().ugc();
+						for (i, item) in results.iter().enumerate() {
+							if let Some(item) = item {
+								if item.file_type == steamworks::FileType::Collection {
+									let children = results.get_children(i as u32).unwrap();
+									steam!().fetch_workshop_items(children.clone());
+									for item in children {
+										if possible_collections.downloaded.insert(item) {
+											possible_collections.queue.push(item);
 										}
-									} else {
-										not_collections.push(item.published_file_id);
-										Downloads::push_download(&ugc, &mut pending, &extract_destination, item.published_file_id);
 									}
 								} else {
-									let transaction = transaction!();
-									webview_emit!("DownloadStarted", transaction.id);
-									transaction.data((0, possible_collections[i]));
-									transaction.error("ERR_ITEM_NOT_FOUND", turbonone!());
+									not_collections.push(item.published_file_id);
+									Downloads::push_download(&ugc, &mut pending, &extract_destination, item.published_file_id);
 								}
-							}
-
-							if !not_collections.is_empty() {
-								steam!().fetch_workshop_items(not_collections);
+							} else {
+								let transaction = transaction!();
+								webview_emit!("DownloadStarted", transaction.id);
+								transaction.data((0, possible_collections_query[i]));
+								transaction.error("ERR_ITEM_NOT_FOUND", turbonone!());
 							}
 						}
 
-						drop(done_ref);
-					});
+						if !not_collections.is_empty() {
+							steam!().fetch_workshop_items(not_collections);
+						}
+					}
 
-				while Arc::strong_count(&done) > 1 {
-					sleep_ms!(25);
-				}
+					drop(done_ref);
+				});
+
+			while Arc::strong_count(&done) > 1 {
+				sleep_ms!(25);
 			}
 		}
 
