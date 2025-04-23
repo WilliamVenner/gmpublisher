@@ -191,6 +191,7 @@
 	"addon_path": "模组路径...",
 	"icon_file_pick": "创意工坊图标",
 	"remove_icon": "移除图标",
+	"update_addon_title_via_steam": "上传成功后，您可在其创意工坊页面更改插件标题。",
 
 	"addon_types": {
 		"ServerContent": "服务器内容",
