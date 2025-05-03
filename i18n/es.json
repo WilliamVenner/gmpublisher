@@ -1,11 +1,11 @@
 {
 	"LANGUAGE_NAME": "Español",
 
-	"my_workshop": "Mí Workshop",
+	"my_workshop": "Mi Workshop",
 	"loading": "Cargando...",
 	"gmod_dir": {
 		"name": "Directorio de Garry's Mod",
-		"fail": "No sé pudo encontrar un directorio de Garry's Mod valido dónde especificaste.\nRevisa que el directorio contenga una carpeta bin/ que contenga gmad y gmpublish."
+		"fail": "No se pudo encontrar un directorio de Garry's Mod válido dónde especificaste.\nRevisa que el directorio contenga una carpeta bin/ que contenga gmad y gmpublish."
 	},
 	"greetings": {
 		"morning": "¡Buenos días, {name}!",
@@ -55,10 +55,10 @@
 		"pcf": "Archivo de Partículas",
 		"lua": "Código Lua",
 		"mdl": "Modelo",
-		"vtx": "Model LOD Data",
-		"phy": "Model Physics Mesh",
-		"ani": "Model Animation Data",
-		"vvd": "Model Vertex Data",
+		"vtx": "Datos LOD de Modelo",
+		"phy": "Malla de Físicas de Modelo",
+		"ani": "Datos de Animación de Modelo",
+		"vvd": "Datos de Vértices de Modelo",
 		"txt": "Texto",
 		"properties": "Propiedades",
 
@@ -166,10 +166,10 @@
 	"ERR_NO_ADDONS_FOUND": "No Addons Encontrados",
 	"ERR_STEAM_ERROR": "Error de Steam: {data}",
 	"ERR_WHITELIST": "Estas entradas no pasan el whitelist de tipos/locaciones. Si esto fue inseperado, tu addon probablemente tiene una estructura de archivos incorrecta.\n\nSi quieres filtrar estos tipos de archivos de tus GMAs, agregarlos al Patron de Archivos Ignorados.\n\n{data}",
-	"ERR_IO_ERROR": "Error de I/O",
-	"ERR_PATH_IO_ERROR": "Error de I/O ({data})",
+	"ERR_IO_ERROR": "Error de E/S",
+	"ERR_PATH_IO_ERROR": "Error de E/S ({data})",
 	"ERR_GMA_FORMAT_ERROR": "Archivo GMA corrupto",
-	"ERR_GMA_INVALID_HEADER": "Archivo GMA invalido",
+	"ERR_GMA_INVALID_HEADER": "Archivo GMA inválido",
 	"ERR_GMA_ENTRY_NOT_FOUND": "Entrada no encontrada",
 	"ERR_DOWNLOAD_MISSING": "Descargado, pero faltan archivos",
 	"ERR_ICON_TOO_LARGE": "Icono muy grande (> 1 MB)",
@@ -181,7 +181,7 @@
 	"ERR_ITEM_INACCESSIBLE": "Elemento inaccesible",
 	"ERR_INVALID_CONTENT_PATH": "Esta ruta de contenido no existe, no es un directorio o gmpublisher no tiene permisos suficientes para accesarlo",
 	"ERR_MULTIPLE_GMAS": "Multiples archivos GMA encontrados en esta ruta de contenido",
-	"ERR_IMAGE_ERROR": "Error de Imagen: {data}",
+	"ERR_IMAGE_ERROR": "Error de Imágen: {data}",
 	"ERR_DUPLICATE_ENTRIES": "Hay una entrada duplicada ({data}) en esta ruta de contenido. Todas las rutas deben ser únicas y con letras minúsculas.",
 	"ERR_NO_ENTRIES": "No hay entradas en esta ruta de contenido.",
 	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Acuerdo legal de Workshop no aceptado",
