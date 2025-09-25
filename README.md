@@ -14,6 +14,8 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 [DanFMN - Fastest Way to Upload a Garry's Mod Addon To Workshop](https://youtu.be/_syLXTFXmgM)
 
+[DarkFated - GMPublisher Guide in Russian](https://youtu.be/ldjHm85AnYk)
+
 ## Features
 
 * Doesn't depend on gmad.exe or gmpublish.exe
