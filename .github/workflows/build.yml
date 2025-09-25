@@ -80,13 +80,20 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install Rust targets
+      run: |
+        mkdir -p /tmp/rust-toolchain-plz
+        cp src-tauri/rust-toolchain.toml /tmp/rust-toolchain-plz/
+        cd /tmp/rust-toolchain-plz
+        cargo init --lib
+        cargo check
+        rustup target add x86_64-apple-darwin
+
     - uses: actions/setup-node@v2
 
     - name: Install NPM dependencies
       run: npm install
-
-    - name: Install Rust targets
-      run: rustup target add x86_64-apple-darwin
 
     - name: Build
       run: npm run tauri build -- --target universal-apple-darwin -v
