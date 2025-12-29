@@ -115,6 +115,7 @@ jobs:
   aur_publish:
     runs-on: ubuntu-latest
     needs: build_linux
+    container: archlinux:base-devel
     steps:
       - uses: actions/checkout@v4
       - name: Update PKGBUILD Version and Checksums
