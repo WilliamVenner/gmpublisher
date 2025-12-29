@@ -14,15 +14,14 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 ### Windows and macOS
 
-The easiest way to install is by downloading the provided ZIP file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
+The easiest way to install is by downloading gmpublisher from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
 
 ### Linux
 
 You can usually use the provided ZIP file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
 
-* **Arch Linux** users can install the application from the AUR via the package `gmpublisher-bin`.
+* **Arch Linux** users can install the application from the AUR via the package [`gmpublisher-bin`](https://aur.archlinux.org/packages/gmpublisher-bin).
 * *Note: Other Linux users may need to install additional dependencies.*
-
 
 ## Tutorials
 
