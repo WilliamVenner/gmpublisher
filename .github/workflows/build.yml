@@ -126,8 +126,11 @@ jobs:
 
           sed -i "s/^pkgver=.*/pkgver=$VERSION/" PKGBUILD
 
-          makepkg --printsrcinfo > .SRCINFO
-          makepkg -g >> PKGBUILD
+          useradd -m builder
+          chown -R builder:builder .
+
+          su builder -c "makepkg --printsrcinfo > .SRCINFO"
+          su builder -c "makepkg -g >> PKGBUILD"
 
       - name: Publish AUR Package
         uses: KSXGitHub/github-actions-deploy-aur@v4.1.1
