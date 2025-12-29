@@ -2,7 +2,7 @@
 
 pkgname=gmpublisher-bin
 _realname=gmpublisher
-pkgver=2.11.1
+pkgver=2.11.2
 pkgrel=1
 pkgdesc="Workshop Publishing Utility for Garry's Mod, written in Rust & Svelte and powered by Tauri"
 arch=('x86_64')
