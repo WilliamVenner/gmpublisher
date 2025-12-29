@@ -10,6 +10,19 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 ###### Are you a developer? You may also like my [VSCode GLua Enhanced](https://github.com/WilliamVenner/vscode-glua-enhanced) extension!
 
+## 📦 Installation
+
+### Windows and macOS
+
+The easiest way to install is by downloading gmpublisher from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
+
+### Linux
+
+You can usually use the provided ZIP file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
+
+* **Arch Linux** users can install the application from the AUR via the package [`gmpublisher-bin`](https://aur.archlinux.org/packages/gmpublisher-bin).
+* *Note: Other Linux users may need to install additional dependencies.*
+
 ## Tutorials
 
 [DanFMN - Fastest Way to Upload a Garry's Mod Addon To Workshop](https://youtu.be/_syLXTFXmgM)
