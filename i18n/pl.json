@@ -2,20 +2,20 @@
 	"LANGUAGE_NAME": "Polski",
 
 	"settings": "Ustawienia",
-	"reset_settings": "Zresetuj Ustawienia",
+	"reset_settings": "Zresetuj ustawienia",
 	"my_workshop": "Mój Warsztat",
 	"loading": "Ładowanie...",
 	"gmod_dir": {
-		"name": "Folder installacji Garry's Moda",
-		"fail": "Nie udało się znaleźć poprawnej instalacji Garry's Moda w folderze który wybrałeś\nUpewnij się, że ten folder posiada folder /bin z gmad i gmpublish."
+		"name": "Folder instalacji Garry's Moda",
+		"fail": "Nie udało się znaleźć poprawnej instalacji Garry's Moda w folderze który wybrałeś.\nUpewnij się, czy wybrany katalog posiada folder /bin z gmad i gmpublish."
 	},
 	"greetings": {
-		"morning": "Miłego Ranka, {name}!",
-		"morning.anon": "Miłego Ranka!",
-		"afternoon": "Dzień Dobry, {name}!",
-		"afternoon.anon": "Dzień Dobry!",
-		"evening": "Dobry Wieczór, {name}!",
-		"evening.anon": "Dobry Wieczór!"
+		"morning": "Dobrego ranka, {name}!",
+		"morning.anon": "Dobrego ranka!",
+		"afternoon": "Dzień dobry, {name}!",
+		"afternoon.anon": "Dzień dobry!",
+		"evening": "Dobry wieczór, {name}!",
+		"evening.anon": "Dobry wieczór!"
 	},
 	"game": "Gra",
 	"filesystem": "System Plików",
@@ -24,9 +24,9 @@
 	"showing_num_addons": "Pokazywanie {num} z {total} addonów",
 	"extract_where_to": "Gdzie?",
 	"extract_overwrite_warning": "Istniejące pliki zostaną nadpisane.",
-	"extract_open_tip": "Plik GMA zostanie wypakowany do TYMCZASOWEGO folderu i otworzony.",
+	"extract_open_tip": "Plik GMA zostanie wypakowany do TYMCZASOWEGO katalogu, oraz zostanie otworzony.",
 	"browse": "Przeglądaj...",
-	"addons_folder": "Addony",
+	"addons_folder": "Dodatki",
 	"downloads_folder": "Pobrane",
 	"open": "Otwórz",
 	"create_folder": "Stwórz folder",
@@ -35,8 +35,8 @@
 	"extracting_progress": "Rozpakowywanie {pct}% ({data} / {dataTotal})",
 	"pack": "Zapakuj",
 	"publish": "Opublikuj",
-	"update": "Zaktualizuj",
-	"size_analyzer": "Analizuj Wielkość Addonów",
+	"update": "Zaaktualizuj",
+	"size_analyzer": "Analiza Wielkości Dodatku",
 	"name": "Nazwa",
 	"cancel": "Anuluj",
 	"done": "Gotowe",
@@ -48,14 +48,14 @@
 
 		"vtf": "Valve Texture Format",
 		"vmt": "Valve Material Format",
-		"map": "Map",
+		"map": "Mapa",
 		"ain": "Map AI Nodegraph",
 		"nav": "Map AI Navigation Mesh",
-		"ttf": "TrueType Font",
+		"ttf": "Czcionka TrueType",
 		"vcd": "Valve Choreography Data",
 		"fgd": "Forge Game Data",
-		"pcf": "Particles File",
-		"lua": "Lua Code",
+		"pcf": "Plik Cząsteczek",
+		"lua": "Kod Lua",
 		"mdl": "Model",
 		"vtx": "Model LOD Data",
 		"phy": "Model Physics Mesh",
@@ -64,20 +64,20 @@
 		"txt": "Tekst",
 		"properties": "Właściwości",
 
-		"audio": "Audio",
-		"image": "Image",
-		"unknown": "Nieznane Rozszerzenie ({extension})"
+		"audio": "Dźwięk",
+		"image": "Zdjęcie",
+		"unknown": "Nieznane rozszerzenie ({extension})"
 	},
 	"items_one": "jedna rzecz",
 	"items_num": "{n} rzeczy",
 	"items_shown": "{n} pokazane",
-	"created": "Stworzone",
-	"updated": "Zauktalizowane",
+	"created": "Stworzono",
+	"updated": "Zauktalizowano",
 	"author": "Autor",
-	"open_addon_location": "Otwórz Lokację Addona",
+	"open_addon_location": "Otwórz Lokalizację Dodatku",
 
-	"downloader": "Pobieracz",
-	"download-input": "Tu wklej Warsztatowe ID, linki, kolekcje...",
+	"downloader": "Kolejka",
+	"download-input": "Wklej ID Warsztatu, linki, kolekcje w tym miejscu...",
 	"download-input-tip": "WSKAZÓWKA: Możesz tu wkleić listę rzeczy rozdzielonymi przecinkami albo nowymi liniami!",
 	"downloading": "Pobieranie",
 	"log": "Historia",
@@ -103,4 +103,162 @@
 	"FS_ANALYZER_STEAM": "Pobieranie Danych ze Steama...",
 	"FS_ANALYZER_COMPUTING": "Obliczanie...",
 	"FS_ANALYZER_TAGGIFYING": "Tagowanie..."
+
+	
+	"time_just_now": "Przed chwilą",
+	"click_to_open": "Kliknij aby otworzyć!",
+	"content_generator": "Generator Treści",
+	"installed_addons": "Zainstalowane Dodatki",
+
+	"steam_disconnected": "Odłączono z serwerami Steam",
+	"steam_connected": "Połączono z serwerami Steam",
+
+	"publish_new": "Opublikuj nowe...",
+
+	"settings": {
+		"saved": "Zapisano!",
+		"settings": "Ustawienia",
+
+		"paths": {
+			"paths": "Ścieżki",
+			"user_data": "Ścieżka User Data",
+			"gmod": "Ścieżka instalacji Garry's Mod",
+			"temp": "Ścieżka Temp",
+			"downloads": "Ścieżka Pobrane"
+		},
+
+		"general": {
+			"general": "Ogólne",
+			"sounds": "Dźwięki"
+		},
+
+		"resets": {
+			"resets": "Resetuje",
+			"settings": "Resetuj Ustawienia",
+			"clear_temp": "Wyczyść pliki Temp",
+			"clear_user_data": "Wyczyść User Data"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "Zachowanie nadpisu plików",
+			"recycle": "Recykling",
+			"delete": "Usuń",
+			"overwrite": "Overwrite",
+			"tooltip": "Podczas ekstraktowania GMAs, co ma zrobić gmpublisher jeżeli ścieżka ekstraktowania GMA's już istnieje (GMA został ekstraktowany wcześniej)?"
+		},
+
+		"accessibility": {
+			"accessibility": "Dostępność",
+			"color_error": "Kolor błędu",
+			"color_success": "Kolor sukcesu",
+			"color_neutral": "Neutralny kolor"
+		}
+		
+	},
+
+	"gma_type_name": "Zapakowany dodatek do Garry's Mod",
+	"downloading_tip": "Możesz przeciągnąć linki z Warsztatu Steam na ten ekran w celu ich zainstalowania + ekstraktowania",
+	"open_workshop": "Otwórz Warsztat",
+	"error": "Błąd",
+	"remove_all": "Usuń wszystko",
+	"open_all": "Otwórz wszystko",
+
+	"ERR_UNKNOWN": "Nieznany błąd",
+	"ERR_NO_ADDONS_FOUND": "Nie znaleziono dodatków",
+	"ERR_STEAM_ERROR": "Błąd Steam: {data}",
+	"ERR_IO_ERROR": "Błąd I/O",
+	"ERR_PATH_IO_ERROR": "Błąd I/O ({data})",
+	"ERR_GMA_FORMAT_ERROR": "Plik GMA uległ korupcji",
+	"ERR_GMA_INVALID_HEADER": "Plik GMA jest nieprawidłowy",
+	"ERR_GMA_ENTRY_NOT_FOUND": "Nie znaleziono zapisu",
+	"ERR_DOWNLOAD_MISSING": "Zainstalowano, ale pliki nie istnieją",
+	"ERR_ICON_TOO_LARGE": "Ikona jest za duża (> 1 MB)",
+	"ERR_ICON_TOO_SMALL": "Ikona jest za mała (< 16 B)",
+	"ERR_ICON_INVALID_FORMAT": "Ikona musi być w formacie JPG, PNG, albo GIF",
+	"ERR_DOWNLOAD_FAILED": "Błąd pobierania",
+	"ERR_ITEM_NOT_FOUND": "Przedmiot nie znaleziony",
+	"ERR_ITEM_INACCESSIBLE": "Przedmiot niedostępny",
+	"ERR_INVALID_CONTENT_PATH": "Ścieżka nie istnieje, nie jest prawidłowa, albo po prostu gmpublisher nie ma do niej dostępu",
+	"ERR_MULTIPLE_GMAS": "Znaleziono kilka plików GMA w tej ścieżce",
+	"ERR_DUPLICATE_ENTRIES": "W tej scieżce znajduje się duplikat zapisu ({data}). Wszystkie ścieżki muszą być unikatowe, oraz napisane małymi literami. i use arch btw",
+	"ERR_NO_ENTRIES": "W tej ścieżce nie znaleziono żadnych zapisów.",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "Nie zaakceptowano umowy Warsztatu Steam.",
+
+	"icon_instructions": "Akceptowalne formaty: JPG, PNG, GIF\nMaksymalna wielkość pliku: 1 MB\nRekomendowane: 512x512",
+	"addon_title": "Tytuł...",
+	"addon_path": "Ścieżka dodatku...",
+	"icon_file_pick": "Ikona Warsztatu",
+	"remove_icon": "Usuń ikonę",
+	"update_addon_title_via_steam": "Po opublikowaniu dodatku, możesz zaaktualizować jego tytuł na stronie Warsztatu Steam.",
+
+	"addon_types": {
+		"ServerContent": "Treść serwera",
+		"gamemode": "Tryb gry",
+		"map": "Mapa",
+		"weapon": "Broń",
+		"vehicle": "Pojazd",
+		"npc": "NPC",
+		"tool": "Narzędzie",
+		"effects": "Effekty",
+		"model": "Model",
+		"entity": "Byt"
+	},
+
+	"tag_1": "Tag 1",
+	"tag_2": "Tag 2",
+	"tag_3": "Tag 3",
+
+	"addon_tags": {
+		"fun": "Zabawne",
+		"roleplay": "Roleplay",
+		"scenic": "Sceniczne",
+		"movie": "Film",
+		"realism": "Realizm",
+		"cartoon": "Kreskówkowe",
+		"water": "Woda",
+		"comic": "Komiks",
+		"build": "Konstrukcja"
+	},
+
+	"publish_exclamation": "Opublikuj!",
+	"update_exclamation": "Zaaktualizuj!",
+	"add_ellipsis": "Dodaj...",
+	"show_more": "POKAŻ WIĘCEJ",
+	"file_browser": "Eksplorator plików",
+	"file_browser_select": "Upuść plik tutaj lub kliknij aby wybrać plik",
+	"no_files_found": "Nie znaleziono plików",
+	"upscale_addon_icon": "Skaluj do 512x512",
+	"update_warning": "Wypuszczasz AKTUALIZACJĘ dla {title} ({id})",
+
+	"PUBLISH_PACKING": "Pakowanie {pct}% ({data} / {dataTotal})",
+	"PUBLISH_STARTING": "Startowanie publikacji",
+	"PUBLISH_PREPARING_CONFIG": "Przygotowywanie konfiguracji",
+	"PUBLISH_PREPARING_CONTENT": "Przygotowywanie zawartości",
+	"PUBLISH_UPLOADING_CONTENT": "Publikowanie zawartości",
+	"PUBLISH_COMMITTING_CHANGES": "Robienie zmian",
+
+	"subscriptions": "Obserwacje",
+	"unsubscribe": "Przestań obserwować",
+	"unsubscribe_all": "Przestań obserwować wszystko",
+	"update_available": "Dostępna jest nowa aktualizacja!\n{version}",
+	"workshop_page": "Strona Warsztatu Steam",
+	"steam_workshop": "Warsztat Steam",
+	"open_count": "Otworzyłeś gmpublisher po raz {count}! Gratulację!",
+	"enjoying_gmpublisher": "Podoba się tobie gmpublisher?",
+	"github_star_plz_i_need_a_job_maybe": "Jeżeli posiadasz konto GitHub, może walniesz w gwiazdeczkę %GitHub repository%, jeżeli moja praca tobie pomogła :D",
+	"vscode_glua_enhanced": "Jeśli jesteś deweloperem, możliwe jest to że jesteś zainteresowany w %VSCode GLua Enhanced%.",
+
+	"copy_link": "Kopiuj Link",
+	"open_image": "Otwórz Zdjęcie",
+	"copy_image_link": "Kopiuj Link do Zdjęcia",
+	"download": "Pobierz",
+	"sent_to_downloader": "Dodano do kolejki",
+
+	"locating": "Lokalizowanie",
+	"decompressing": "Dekompresowanie {progress}",
+	"reading_metadata": "Czytanie Metadaty",
+
+	"publish_icon": "Opublikuj nową ikonę (Ta czynność NIE aktualizuje dodatku)",
+
+	"copy_path": "Kopiuj ścieżkę"
 }
