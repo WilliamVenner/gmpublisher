@@ -409,17 +409,7 @@ pub fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishEr
 
 	let content_root = path.clone();
 
-	let ignore: Vec<String> = app_data!()
-		.settings
-		.read()
-		.ignore_globs
-		.iter()
-		.map(|x| {
-			let mut x = x.to_string();
-			x.push('\0');
-			x
-		})
-		.collect();
+	let ignore = app_data!().settings.read().ignore_globs.clone();
 
 	let mut size = 0;
 	let mut failed_extra = false;

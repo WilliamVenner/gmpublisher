@@ -36,17 +36,7 @@ impl GMAFile {
 		let src_path = src_path.as_ref();
 
 		let metadata = self.metadata.as_ref().expect("Expected metadata to be set");
-		let ignore = metadata.ignore().map(|ignore| {
-			ignore
-				.iter()
-				.map(|ignore| {
-					let mut ignore = ignore.to_owned();
-					ignore.push('\0');
-					ignore
-				})
-				.collect::<Vec<_>>()
-				.into_boxed_slice()
-		});
+		let ignore = metadata.ignore().map(|ignore| ignore.to_vec().into_boxed_slice());
 
 		let (title, addon_json) = match metadata {
 			GMAMetadata::Legacy { title, .. } => (title.as_str(), None),
@@ -140,8 +130,7 @@ impl GMAFile {
 					crc32.update(&contents);
 					let crc32 = crc32.finalize();
 
-					tx.send((relative_path.into_boxed_str(), contents.into_boxed_slice(), crc32))
-						.unwrap();
+					tx.send((relative_path.into_boxed_str(), contents.into_boxed_slice(), crc32)).unwrap();
 				});
 
 				total += 1.;

@@ -8,15 +8,12 @@
 	},
 	"package": {
 		"productName": "gmpublisher",
-		"version": "2.11.2"
+		"version": "2.11.3"
 	},
 	"tauri": {
 		"bundle": {
 			"active": true,
-			"targets": [
-				"msi",
-				"app"
-			],
+			"targets": ["msi", "app"],
 			"identifier": "venner.gmpublisher",
 			"icon": [
 				"icons/32x32.png",

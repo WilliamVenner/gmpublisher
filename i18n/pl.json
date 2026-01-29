@@ -1,7 +1,6 @@
 {
 	"LANGUAGE_NAME": "Polski",
 
-	"settings": "Ustawienia",
 	"reset_settings": "Zresetuj ustawienia",
 	"my_workshop": "Mój Warsztat",
 	"loading": "Ładowanie...",
@@ -102,9 +101,8 @@
 	"FS_ANALYZER_SERIALIZING": "Serializacja...",
 	"FS_ANALYZER_STEAM": "Pobieranie Danych ze Steama...",
 	"FS_ANALYZER_COMPUTING": "Obliczanie...",
-	"FS_ANALYZER_TAGGIFYING": "Tagowanie..."
+	"FS_ANALYZER_TAGGIFYING": "Tagowanie...",
 
-	
 	"time_just_now": "Przed chwilą",
 	"click_to_open": "Kliknij aby otworzyć!",
 	"content_generator": "Generator Treści",
@@ -153,7 +151,6 @@
 			"color_success": "Kolor sukcesu",
 			"color_neutral": "Neutralny kolor"
 		}
-		
 	},
 
 	"gma_type_name": "Zapakowany dodatek do Garry's Mod",

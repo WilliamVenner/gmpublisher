@@ -1,17 +1,85 @@
 // https://github.com/garrynewman/bootil/blob/beb4cec8ad29533965491b767b177dc549e62d23/src/3rdParty/globber.cpp
 // https://github.com/Facepunch/gmad/blob/master/include/AddonWhiteList.h
 
-use std::time::Duration;
+use std::{sync::LazyLock, time::Duration};
 
-macro_rules! globbers {
-	($($glob:literal),*) => {
-		&[
-			$(concat!($glob, '\0')),*
-		]
-	};
-}
+const ADDON_WHITELIST_OFFLINE: &[&str] = &[
+	"lua/*.lua",
+	"scenes/*.vcd",
+	"particles/*.pcf",
+	"resource/fonts/*.ttf",
+	"scripts/vehicles/*.txt",
+	"resource/localization/*/*.properties",
+	"maps/*.bsp",
+	"maps/*.lmp",
+	"maps/*.nav",
+	"maps/*.ain",
+	"maps/thumb/*.png",
+	"sound/*.wav",
+	"sound/*.mp3",
+	"sound/*.ogg",
+	"materials/*.vmt",
+	"materials/*.vtf",
+	"materials/*.png",
+	"materials/*.jpg",
+	"materials/*.jpeg",
+	"materials/colorcorrection/*.raw",
+	"models/*.mdl",
+	"models/*.phy",
+	"models/*.ani",
+	"models/*.vvd",
+	"models/*.vtx",
+	"!models/*.sw.vtx",
+	"!models/*.360.vtx",
+	"!models/*.xbox.vtx",
+	"gamemodes/*/*.txt",
+	"!gamemodes/*/*/*.txt",
+	"gamemodes/*/*.fgd",
+	"!gamemodes/*/*/*.fgd",
+	"gamemodes/*/logo.png",
+	"gamemodes/*/icon24.png",
+	"gamemodes/*/gamemode/*.lua",
+	"gamemodes/*/entities/effects/*.lua",
+	"gamemodes/*/entities/weapons/*.lua",
+	"gamemodes/*/entities/entities/*.lua",
+	"gamemodes/*/backgrounds/*.png",
+	"gamemodes/*/backgrounds/*.jpg",
+	"gamemodes/*/backgrounds/*.jpeg",
+	"gamemodes/*/content/models/*.mdl",
+	"gamemodes/*/content/models/*.phy",
+	"gamemodes/*/content/models/*.ani",
+	"gamemodes/*/content/models/*.vvd",
+	"gamemodes/*/content/models/*.vtx",
+	"!gamemodes/*/content/models/*.sw.vtx",
+	"!gamemodes/*/content/models/*.360.vtx",
+	"!gamemodes/*/content/models/*.xbox.vtx",
+	"gamemodes/*/content/materials/*.vmt",
+	"gamemodes/*/content/materials/*.vtf",
+	"gamemodes/*/content/materials/*.png",
+	"gamemodes/*/content/materials/*.jpg",
+	"gamemodes/*/content/materials/*.jpeg",
+	"gamemodes/*/content/materials/colorcorrection/*.raw",
+	"gamemodes/*/content/scenes/*.vcd",
+	"gamemodes/*/content/particles/*.pcf",
+	"gamemodes/*/content/resource/fonts/*.ttf",
+	"gamemodes/*/content/scripts/vehicles/*.txt",
+	"gamemodes/*/content/resource/localization/*/*.properties",
+	"gamemodes/*/content/maps/*.bsp",
+	"gamemodes/*/content/maps/*.nav",
+	"gamemodes/*/content/maps/*.ain",
+	"gamemodes/*/content/maps/thumb/*.png",
+	"gamemodes/*/content/sound/*.wav",
+	"gamemodes/*/content/sound/*.mp3",
+	"gamemodes/*/content/sound/*.ogg",
+	"data_static/*.txt",
+	"data_static/*.dat",
+	"data_static/*.json",
+	"data_static/*.xml",
+	"data_static/*.csv",
+	"shaders/*.vcs",
+];
 
-pub const DEFAULT_IGNORE: &[&str] = globbers!(
+pub const DEFAULT_IGNORE: &[&str] = &[
 	".git/*",
 	"*.psd",
 	"*.pdn",
@@ -45,89 +113,16 @@ pub const DEFAULT_IGNORE: &[&str] = globbers!(
 	"addon.txt",
 	"addon.jpg",
 	"thumbs.db",
-	"desktop.ini"
-);
+	"desktop.ini",
+	"models/*.sw.vtx",
+	"models/*.360.vtx",
+	"models/*.xbox.vtx",
+	"gamemodes/*/content/models/*.sw.vtx",
+	"gamemodes/*/content/models/*.360.vtx",
+	"gamemodes/*/content/models/*.xbox.vtx",
+];
 
-const ADDON_WHITELIST_OFFLINE: &[&str] = globbers!(
-	"lua/*.lua",
-	"scenes/*.vcd",
-	"particles/*.pcf",
-	"resource/fonts/*.ttf",
-	"scripts/vehicles/*.txt",
-	"resource/localization/*/*.properties",
-	"maps/*.bsp",
-	"maps/*.lmp",
-	"maps/*.nav",
-	"maps/*.ain",
-	"maps/thumb/*.png",
-	"sound/*.wav",
-	"sound/*.mp3",
-	"sound/*.ogg",
-	"materials/*.vmt",
-	"materials/*.vtf",
-	"materials/*.png",
-	"materials/*.jpg",
-	"materials/*.jpeg",
-	"materials/colorcorrection/*.raw",
-	"models/*.mdl",
-	"models/*.vtx",
-	"models/*.phy",
-	"models/*.ani",
-	"models/*.vvd",
-	"gamemodes/*/*.txt",
-	"gamemodes/*/*.fgd",
-	"gamemodes/*/logo.png",
-	"gamemodes/*/icon24.png",
-	"gamemodes/*/gamemode/*.lua",
-	"gamemodes/*/entities/effects/*.lua",
-	"gamemodes/*/entities/weapons/*.lua",
-	"gamemodes/*/entities/entities/*.lua",
-	"gamemodes/*/backgrounds/*.png",
-	"gamemodes/*/backgrounds/*.jpg",
-	"gamemodes/*/backgrounds/*.jpeg",
-	"gamemodes/*/content/models/*.mdl",
-	"gamemodes/*/content/models/*.vtx",
-	"gamemodes/*/content/models/*.phy",
-	"gamemodes/*/content/models/*.ani",
-	"gamemodes/*/content/models/*.vvd",
-	"gamemodes/*/content/materials/*.vmt",
-	"gamemodes/*/content/materials/*.vtf",
-	"gamemodes/*/content/materials/*.png",
-	"gamemodes/*/content/materials/*.jpg",
-	"gamemodes/*/content/materials/*.jpeg",
-	"gamemodes/*/content/materials/colorcorrection/*.raw",
-	"gamemodes/*/content/scenes/*.vcd",
-	"gamemodes/*/content/particles/*.pcf",
-	"gamemodes/*/content/resource/fonts/*.ttf",
-	"gamemodes/*/content/scripts/vehicles/*.txt",
-	"gamemodes/*/content/resource/localization/*/*.properties",
-	"gamemodes/*/content/maps/*.bsp",
-	"gamemodes/*/content/maps/*.nav",
-	"gamemodes/*/content/maps/*.ain",
-	"gamemodes/*/content/maps/thumb/*.png",
-	"gamemodes/*/content/sound/*.wav",
-	"gamemodes/*/content/sound/*.mp3",
-	"gamemodes/*/content/sound/*.ogg",
-	"data_static/*.txt",
-	"data_static/*.dat",
-	"data_static/*.json",
-	"data_static/*.xml",
-	"data_static/*.csv",
-	"data_static/*.dem",
-	"data_static/*.vcd",
-	"data_static/*.vtf",
-	"data_static/*.vmt",
-	"data_static/*.png",
-	"data_static/*.jpg",
-	"data_static/*.jpeg",
-	"data_static/*.mp3",
-	"data_static/*.wav",
-	"data_static/*.ogg"
-);
-
-lazy_static! {
-	pub static ref ADDON_WHITELIST: &'static [&'static str] = download_addon_whitelist();
-}
+pub static ADDON_WHITELIST: LazyLock<&'static [&'static str]> = LazyLock::new(download_addon_whitelist);
 
 fn download_addon_whitelist() -> &'static [&'static str] {
 	if std::env::var_os("ADDON_WHITELIST_OFFLINE").is_some() {
@@ -146,7 +141,9 @@ fn download_addon_whitelist() -> &'static [&'static str] {
 				.unwrap()
 				.captures(response.leak())
 				.and_then(|captures| captures.get(1))
-				.ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse addon whitelist"))?;
+				.ok_or_else(|| std::io::Error::other("Failed to parse addon whitelist"))?;
+
+			let line_regex = regex::Regex::new(r#""(.+?)","#).unwrap();
 
 			for line in captures.as_str().lines() {
 				let line = line.trim();
@@ -154,21 +151,19 @@ fn download_addon_whitelist() -> &'static [&'static str] {
 					continue;
 				} else if line == "NULL" {
 					break;
-				} else if line.get(0..1) == Some("\"") && line.get(line.len() - 2..line.len()) == Some("\",") {
-					wildcard.push(&*format!("{}\0", &line[1..line.len() - 2]).leak());
+				} else if let Some(capture) = line_regex.captures(line) {
+					let glob = capture.get(1).unwrap().as_str();
+					wildcard.push(&*glob.to_string().leak());
 				}
 			}
 
 			if wildcard.is_empty() {
-				return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse addon whitelist (empty)"));
+				return Err(std::io::Error::other("Failed to parse addon whitelist (empty)"));
 			}
 
-			if !wildcard.contains(&"lua/*.lua\0") {
+			if !wildcard.contains(&"lua/*.lua") {
 				// This should definitely be in there, so if it isn't, something has gone wrong. Probably.
-				return Err(std::io::Error::new(
-					std::io::ErrorKind::Other,
-					"Failed to parse addon whitelist (missing lua/*.lua)",
-				));
+				return Err(std::io::Error::other("Failed to parse addon whitelist (missing lua/*.lua)"));
 			}
 
 			println!("Downloaded up to date addon whitelist: {wildcard:#?}");
@@ -184,20 +179,17 @@ fn download_addon_whitelist() -> &'static [&'static str] {
 
 const WILD_BYTE: u8 = b'*';
 const QUESTION_BYTE: u8 = b'?';
+const EXCLAMATION_BYTE: u8 = b'!';
 
-pub fn globber(_wild: &str, _str: &str) -> bool {
-	debug_assert!(_wild.ends_with('\0'), "wild must be null terminated");
-	debug_assert!(!_wild.ends_with("\0\0"), "wild is double null terminated");
-	debug_assert!(_str.ends_with('\0'), "str must be null terminated");
-	debug_assert!(!_str.ends_with("\0\0"), "str is double null terminated");
+fn globber(wild: &str, str: &str) -> bool {
 	unsafe {
-		let mut cp: *const u8 = std::ptr::null::<u8>();
-		let mut mp: *const u8 = std::ptr::null::<u8>();
+		let mut cp: *const u8 = core::ptr::null();
+		let mut mp: *const u8 = core::ptr::null();
 
-		let mut wild = _wild.as_ptr();
-		let mut str = _str.as_ptr();
+		let (mut wild, wild_max) = (wild.as_ptr(), wild.as_ptr().add(wild.len()));
+		let (mut str, str_max) = (str.as_ptr(), str.as_ptr().add(str.len()));
 
-		while *str != 0 && *wild != WILD_BYTE {
+		while wild < wild_max && str < str_max && *wild != WILD_BYTE {
 			if *wild != *str && *wild != QUESTION_BYTE {
 				return false;
 			}
@@ -205,10 +197,10 @@ pub fn globber(_wild: &str, _str: &str) -> bool {
 			str = str.add(1);
 		}
 
-		while *str != 0 {
+		while str < str_max {
 			if *wild == WILD_BYTE {
 				wild = wild.add(1);
-				if *wild == 0 {
+				if wild >= wild_max {
 					return true;
 				}
 				mp = wild;
@@ -223,32 +215,34 @@ pub fn globber(_wild: &str, _str: &str) -> bool {
 			}
 		}
 
-		while *wild == WILD_BYTE {
+		while wild < wild_max && *wild == WILD_BYTE {
 			wild = wild.add(1);
 		}
-		*wild == 0
+
+		wild >= wild_max
 	}
 }
 
+/// Check if a path is allowed in a GMA file
 pub fn check(str: &str) -> bool {
-	let mut str = str.to_string();
-	str.push('\0');
+	let mut valid = false;
 
 	for glob in ADDON_WHITELIST.iter() {
-		if globber(glob, &str) {
-			return true;
+		if glob.as_bytes().first() == Some(&EXCLAMATION_BYTE) {
+			if globber(&glob[1..], str) {
+				valid = false;
+			}
+		} else if !valid && globber(glob, str) {
+			valid = true;
 		}
 	}
 
-	false
+	valid
 }
 
 pub fn filter_default_ignored(str: &str) -> bool {
-	let mut str = str.to_string();
-	str.push('\0');
-
 	for glob in DEFAULT_IGNORE {
-		if globber(glob, &str) {
+		if globber(glob, str) {
 			return false;
 		}
 	}
@@ -256,16 +250,14 @@ pub fn filter_default_ignored(str: &str) -> bool {
 	true
 }
 
+/// Check if a path is ignored by a list of custom globs
 pub fn is_ignored(str: &str, ignore: &[String]) -> bool {
 	if ignore.is_empty() {
 		return false;
 	}
 
-	let mut str = str.to_string();
-	str.push('\0');
-
 	for glob in ignore {
-		if globber(glob, &str) {
+		if globber(glob, str) {
 			return true;
 		}
 	}
@@ -274,7 +266,7 @@ pub fn is_ignored(str: &str, ignore: &[String]) -> bool {
 }
 
 #[test]
-pub fn test_whitelist() {
+fn test_whitelist() {
 	let good: &'static [&'static str] = &[
 		"lua/test.lua",
 		"lua/lol/test.lua",
@@ -315,7 +307,7 @@ pub fn test_whitelist() {
 }
 
 #[test]
-pub fn test_ignore() {
+fn test_ignore() {
 	let ignored: &'static [&'static str] = &[
 		".git/index",
 		".git/info/exclude",
@@ -348,4 +340,25 @@ pub fn test_ignore() {
 	assert!(is_ignored("lua/hello.lua", &["lua/*.lua\0".to_string()]));
 	assert!(is_ignored("lua/hello.lua", &["lua/*\0".to_string()]));
 	assert!(!is_ignored("lol.txt", &[]));
+}
+
+#[test]
+fn test_exclusions() {
+	assert!(check("models/player.vtx"));
+	assert!(check("models/weapons/gun.vtx"));
+
+	assert!(!check("models/player.sw.vtx"));
+	assert!(!check("models/player.360.vtx"));
+	assert!(!check("models/player.xbox.vtx"));
+	assert!(!check("models/weapons/gun.sw.vtx"));
+
+	assert!(check("gamemodes/test/content/models/player.vtx"));
+	assert!(!check("gamemodes/test/content/models/player.sw.vtx"));
+	assert!(!check("gamemodes/test/content/models/player.360.vtx"));
+	assert!(!check("gamemodes/test/content/models/player.xbox.vtx"));
+
+	assert!(check("gamemodes/sandbox/info.txt"));
+	assert!(check("gamemodes/sandbox/sandbox.fgd"));
+	assert!(!check("gamemodes/sandbox/nested/info.txt"));
+	assert!(!check("gamemodes/sandbox/entities/weapons/info.txt"));
 }
