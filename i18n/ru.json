@@ -260,7 +260,7 @@
 	"open_image": "Открыть изображение",
 	"copy_image_link": "Скопировать ссылку изображения",
 	"download": "Скачать",
-	"sent_to_downloader": "Отправить в загрузчик",
+	"sent_to_downloader": "Отправлено в загрузчик",
 
 	"locating": "Нахождение",
 	"decompressing": "Распаковка {progress}",
