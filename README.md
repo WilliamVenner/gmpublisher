@@ -86,8 +86,8 @@ Click on the .zip file and find the "gmpublisher" file, run it.
 
 This program is written for Windows, macOS and Linux. 
 
-**CPU:** Any 2 Core, multi-threaded (or greater) processor;
-**RAM:** > 1 GB, gmpublisher uses just a tiny bit of your RAM while being idle;
+* **CPU:** Any 2 Core, multi-threaded (or greater) processor;
+* **RAM:** > 1 GB, gmpublisher uses just a tiny bit of your RAM while being idle;
 
 * *Note: Linux users may need to install additional dependencies for gmpublisher to work properly.*
 
