@@ -14,22 +14,22 @@ A small, powerful and feature-packed Workshop publisher for [Garry's Mod](https:
 
 ### Windows
 
-The easiest way to install this program on Windows is by downloading gmpublisher's "gmpublisher_(version)_x64_en-US.msi" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
-* After the file downloads, you can find it inside your "Downloads" folder.
-* Click on the .msi file, and refer to the instructions given inside the installer.
-* Post-install, a "gmpublisher" shortcut will appear on your desktop.
+The easiest way to install this program on Windows is by downloading gmpublisher's "gmpublisher_(version)_x64_en-US.msi" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).<br>
+After the file downloads, you can find it inside your "Downloads" folder.<br>
+Click on the .msi file, and refer to the instructions given inside the installer.<br>
+Post-install, a "gmpublisher" shortcut will appear on your desktop.<br>
 
 ### MacOS
 
-The easiest way to install this program on MacOS is by downloading the "gmpublisher_MacOS.app.zip" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
-After the file downloads, you can find it inside your "Downloads" folder.
-Click on the .zip file and find the "gmpublisher" file, run it.
+The easiest way to install this program on MacOS is by downloading the "gmpublisher_MacOS.app.zip" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).<br>
+After the file downloads, you can find it inside your "Downloads" folder.<br>
+Click on the .zip file and find the "gmpublisher" file, run it.<br>
 
 ### Linux
 
-The easiest way to install this program on a Linux distribution is by downloading the "gmpublisher_linux64.zip" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
-After the file downloads, you can find it inside your "Downloads" folder.
-Click on the .zip file and find the "gmpublisher" file, run it.
+The easiest way to install this program on a Linux distribution is by downloading the "gmpublisher_linux64.zip" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).<br>
+After the file downloads, you can find it inside your "Downloads" folder.<br>
+Click on the .zip file and find the "gmpublisher" file, run it.<br>
 
 * **Arch Linux** users can install the application from the AUR via the package [`gmpublisher-bin`](https://aur.archlinux.org/packages/gmpublisher-bin).
 * *Note: Linux users may need to install additional dependencies for gmpublisher to work properly.*
@@ -86,8 +86,8 @@ Click on the .zip file and find the "gmpublisher" file, run it.
 
 This program is written for Windows, macOS and Linux. 
 
-* **CPU:** Any 2 Core, multi-threaded (or greater) processor;
-* **RAM:** > 1 GB, gmpublisher uses just a tiny bit of your RAM while being idle;
+**CPU:** Any 2 Core, multi-threaded (or greater) processor;<br>
+**RAM:** > 1 GB, gmpublisher uses just a tiny bit of your RAM while being idle;<br>
 
 * *Note: Linux users may need to install additional dependencies for gmpublisher to work properly.*
 
