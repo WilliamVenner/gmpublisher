@@ -22,14 +22,14 @@ The easiest way to install this program on Windows is by downloading gmpublisher
 ### MacOS
 
 The easiest way to install this program on MacOS is by downloading the "gmpublisher_MacOS.app.zip" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
-* After the file downloads, you can find it inside your "Downloads" folder.
-* Click on the .zip file and find the "gmpublisher" file, run it.
+After the file downloads, you can find it inside your "Downloads" folder.
+Click on the .zip file and find the "gmpublisher" file, run it.
 
 ### Linux
 
 The easiest way to install this program on a Linux distribution is by downloading the "gmpublisher_linux64.zip" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
-* After the file downloads, you can find it inside your "Downloads" folder.
-* Click on the .zip file and find the "gmpublisher" file, run it.
+After the file downloads, you can find it inside your "Downloads" folder.
+Click on the .zip file and find the "gmpublisher" file, run it.
 
 * **Arch Linux** users can install the application from the AUR via the package [`gmpublisher-bin`](https://aur.archlinux.org/packages/gmpublisher-bin).
 * *Note: Linux users may need to install additional dependencies for gmpublisher to work properly.*
@@ -86,8 +86,8 @@ The easiest way to install this program on a Linux distribution is by downloadin
 
 This program is written for Windows, macOS and Linux. 
 
-* **CPU:** Any 2 Core, multi-threaded (or greater) processor;
-* **RAM:** > 1 GB, gmpublisher uses just a tiny bit of your RAM while being idle;
+**CPU:** Any 2 Core, multi-threaded (or greater) processor;
+**RAM:** > 1 GB, gmpublisher uses just a tiny bit of your RAM while being idle;
 
 * *Note: Linux users may need to install additional dependencies for gmpublisher to work properly.*
 
