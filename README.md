@@ -4,7 +4,7 @@
 
 # ⚙️ gmpublisher
 
-A powerful and feature-packed Workshop publisher for Garry's Mod is finally here!
+A small, powerful and feature-packed Workshop publisher for [Garry's Mod](https://store.steampowered.com/app/4000/Garrys_Mod/) is finally here!
 
 [Click for downloads](https://github.com/WilliamVenner/gmpublisher/releases)
 
@@ -12,34 +12,45 @@ A powerful and feature-packed Workshop publisher for Garry's Mod is finally here
 
 ## 📦 Installation
 
-### Windows and macOS
+### Windows
 
-The easiest way to install is by downloading gmpublisher from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
+The easiest way to install this program on Windows is by downloading gmpublisher's "gmpublisher_(version)_x64_en-US.msi" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
+* After the file downloads, you can find it inside your "Downloads" folder.
+* Click on the .msi file, and refer to the instructions given inside the installer.
+* Post-install, a "gmpublisher" shortcut will appear on your desktop.
+
+### MacOS
+
+The easiest way to install this program on MacOS is by downloading the "gmpublisher_MacOS.app.zip" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
+* After the file downloads, you can find it inside your "Downloads" folder.
+* Click on the .zip file and find the "gmpublisher" file, run it.
 
 ### Linux
 
-You can usually use the provided ZIP file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
+The easiest way to install this program on a Linux distribution is by downloading the "gmpublisher_linux64.zip" file from the [releases page](https://github.com/WilliamVenner/gmpublisher/releases).
+* After the file downloads, you can find it inside your "Downloads" folder.
+* Click on the .zip file and find the "gmpublisher" file, run it.
 
 * **Arch Linux** users can install the application from the AUR via the package [`gmpublisher-bin`](https://aur.archlinux.org/packages/gmpublisher-bin).
-* *Note: Other Linux users may need to install additional dependencies.*
+* *Note: Linux users may need to install additional dependencies for gmpublisher to work properly.*
 
-## Tutorials
+## Community-made Tutorials
 
-[DanFMN - Fastest Way to Upload a Garry's Mod Addon To Workshop](https://youtu.be/_syLXTFXmgM)
+[DanFMN - Fastest Way to Upload a Garry's Mod Addon To Workshop](https://youtu.be/syLXTFXmgM)
 
 [DarkFated - GMPublisher Guide in Russian](https://youtu.be/ldjHm85AnYk)
 
 ## Features
 
-* Doesn't depend on gmad.exe or gmpublish.exe
-* Publish & update your Workshop items
-* Extract, search and browse GMA files and installed addons
+* Doesn't depend on "gmad.exe" or "gmpublish.exe" bin files
+* Publish & update your Workshop items with an ease
+* Extract, search and browse GMA files and installed Workshop addons
 * Bulk download & extract Workshop items and collections
 * Upload animated GIFs as your Workshop item's icon
-* Analyze which addons are taking up the most disk space using the addon size analyzer treemap
-* Supports legacy SteamPipe addons and old GMA versions
-* Works without an Internet connection
-* CLI interface
+* Analyze which addons are taking up the most disk space using the Addon Size Analyzer treemap
+* Compatible with legacy SteamPipe addons and old GMA versions
+* Works without an Internet connection (Uploading to Workshop doesn't work without it)
+* Smooth and well-performing CLI interface
 * (Windows) .GMA file type association for quick extraction
 
 ## Languages
@@ -73,17 +84,20 @@ You can usually use the provided ZIP file from the [releases page](https://githu
 
 ## Requirements
 
-Windows, macOS or Linux
+This program is written for Windows, macOS and Linux. 
 
-Linux users may need to install additional dependencies.
+* **CPU:** Any 2 Core, multi-threaded (or greater) processor;
+* **RAM:** > 1 GB, gmpublisher uses just a tiny bit of your RAM while being idle;
+
+* *Note: Linux users may need to install additional dependencies for gmpublisher to work properly.*
 
 ## Technical Stuff
 
-* The program makes heavy use of multithreading, and will work best on processors with a decent amount of cores.
-* Made using [Rust](https://www.rust-lang.org/) (backend) and [Svelte](https://svelte.dev/) (frontend)
+* The program makes heavy use of multithreading, and will work best on processors with a decent amount of cores inside them.
+* Made using [Rust](https://www.rust-lang.org/) (backend) and [Svelte](https://svelte.dev/) (frontend) languages.
 * This is not an Electron app; this is a [Tauri](https://github.com/tauri-apps/tauri) app. Big thanks to all the contributors to Tauri for their amazing work on finally killing Electron for good.
 * gmpublisher uses the fantastic [steamworks-rs](https://crates.io/crates/steamworks) library for interfacing with the [Steamworks SDK](https://partner.steamgames.com/doc/api)
-* The program is only about ~10 MB
+* The program is only about ~15 MB, it means that it can open instantly and can work smoothly on your screen or in background. Even on HDD's!
 
 ## Media
 
