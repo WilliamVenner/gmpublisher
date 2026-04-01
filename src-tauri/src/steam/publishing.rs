@@ -4,7 +4,7 @@ use crate::{
 };
 use image::{DynamicImage, GenericImageView, ImageError, ImageFormat};
 use parking_lot::Mutex;
-use path_slash::PathBufExt;
+use path_slash::{PathBufExt, PathExt};
 use std::{
 	fs::File,
 	io::BufReader,
@@ -220,7 +220,6 @@ pub enum WorkshopUpdateType {
 		preview: WorkshopIcon,
 	},
 	Update {
-		title: String,
 		path: ContentPath,
 		tags: Vec<String>,
 		addon_type: String,
@@ -261,7 +260,6 @@ impl Steam {
 			}
 
 			Update {
-				title,
 				path,
 				tags,
 				addon_type,
@@ -282,7 +280,6 @@ impl Steam {
 				}
 				.content_path(&path)
 				.tags(tags, false)
-				.title(&title)
 				.submit(changes.as_deref(), move |result| {
 					*result_ref.lock() = Some(result);
 				})
@@ -410,19 +407,9 @@ pub fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishEr
 		return Err(PublishError::InvalidContentPath);
 	}
 
-	let root_path_strip_len = path.to_slash_lossy().len() + 1;
+	let content_root = path.clone();
 
-	let ignore: Vec<String> = app_data!()
-		.settings
-		.read()
-		.ignore_globs
-		.iter()
-		.map(|x| {
-			let mut x = x.to_string();
-			x.push('\0');
-			x
-		})
-		.collect();
+	let ignore = app_data!().settings.read().ignore_globs.clone();
 
 	let mut size = 0;
 	let mut failed_extra = false;
@@ -449,12 +436,9 @@ pub fn verify_whitelist(path: PathBuf) -> Result<(Vec<GMAEntry>, u64), PublishEr
 				return None;
 			}
 
-			let relative_path = {
-				let mut relative_path = path.to_slash_lossy();
-				if relative_path.len() < root_path_strip_len {
-					return None;
-				}
-				relative_path.split_off(root_path_strip_len).to_lowercase()
+			let relative_path = match path.strip_prefix(&content_root) {
+				Ok(rel_path) => rel_path.to_slash_lossy().to_string(),
+				Err(_) => return None,
 			};
 
 			Some((path, relative_path))
@@ -637,7 +621,6 @@ pub fn publish(
 				steam!().update(
 					id,
 					WorkshopUpdateType::Update {
-						title,
 						path: content_path,
 						tags,
 						addon_type,

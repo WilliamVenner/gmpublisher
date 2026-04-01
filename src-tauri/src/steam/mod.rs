@@ -128,6 +128,9 @@ impl Steam {
 		lazy_static::initialize(&DOWNLOADS);
 		std::thread::spawn(Downloads::watchdog);
 
+		steam!().client().friends().set_rich_presence("steam_display", Some("#Status_Generic"));
+		steam!().client().friends().set_rich_presence("generic", Some("In gmpublisher"));
+
 		if app_data!().settings.read().gmod.is_none() {
 			app_data!().send();
 		}

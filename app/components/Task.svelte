@@ -202,6 +202,7 @@
 	}
 	.task.pending #cancel {
 		pointer-events: all;
+		-webkit-pointer-events: all;
 	}
 	.task #cancel :global(.icon) {
 		width: 1rem;

@@ -2,10 +2,11 @@ import { default as tippyJS, followCursor } from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 
 function updateTippy(node, content, follow) {
+	if (!node) return;
 	if (node._tippy) node._tippy.destroy();
 	if (content) {
 		tippyJS(node,
-			followCursor ? {
+			follow ? {
 				content,
 				followCursor: true,
 				plugins: [followCursor],

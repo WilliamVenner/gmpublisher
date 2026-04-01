@@ -241,6 +241,7 @@
 	}
 	#search + :global(#search-icon) {
 		pointer-events: none;
+		-webkit-pointer-events: none;
 	}
 	#cancel-search > :global(.icon) {
 		cursor: pointer;
@@ -256,6 +257,7 @@
 	main:focus-within > #search-results, #search-results:active {
 		opacity: 1;
 		pointer-events: all;
+		-webkit-pointer-events: all;
 	}
 	main > #search-results {
 		position: absolute;
@@ -268,6 +270,7 @@
 		border-bottom-right-radius: .4rem;
 		opacity: 0;
 		pointer-events: none;
+		-webkit-pointer-events: none;
 	}
 	main > #search-results .result {
 		display: flex;

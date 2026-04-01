@@ -55,6 +55,7 @@
 		bottom: 0;
 		left: 0;
 		pointer-events: none;
+		-webkit-pointer-events: none;
 		z-index: 9999;
 		text-align: center;
 		display: inline-grid;

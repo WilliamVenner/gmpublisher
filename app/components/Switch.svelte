@@ -55,6 +55,7 @@
 		width: 0;
 		height: 0;
 		pointer-events: none;
+		-webkit-pointer-events: none;
 	}
 	.switch {
 		position: relative;

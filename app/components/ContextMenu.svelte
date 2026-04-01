@@ -292,6 +292,7 @@ import { playSound } from '../sounds';
 	.context-menu.destroyed {
 		animation: context-menu-reverse .25s forwards;
 		pointer-events: none;
+		-webkit-pointer-events: none;
 	}
 
 	.divider {

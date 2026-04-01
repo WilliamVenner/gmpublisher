@@ -77,6 +77,6 @@ pub(super) fn init_globals() {
 	});
 
 	rayon::spawn(|| {
-		lazy_static::initialize(&crate::gma::whitelist::ADDON_WHITELIST);
+		&*crate::gma::whitelist::ADDON_WHITELIST;
 	});
 }

@@ -208,6 +208,7 @@
 	#destinations .destination.disabled {
 		cursor: default !important;
 		pointer-events: none !important;
+		-webkit-pointer-events: none !important;
 		filter: brightness(0.5) grayscale(1);
 	}
 	#destinations .destination:active,

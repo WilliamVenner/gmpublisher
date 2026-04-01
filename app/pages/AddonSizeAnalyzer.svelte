@@ -564,6 +564,7 @@
 		width: calc(100% - 1.5rem);
 		height: calc(100% - 1.5rem);
 		pointer-events: none;
+		-webkit-pointer-events: none;
 		opacity: 0;
 	}
 
@@ -599,6 +600,7 @@
 		left: 0;
 		top: 0;
 		pointer-events: none;
+		-webkit-pointer-events: none;
 
 		margin-left: 1.5rem;
 		margin-top: 1.5rem;

@@ -148,6 +148,10 @@ impl Settings {
 	}
 
 	pub fn save(&self) -> Result<(), anyhow::Error> {
+		if let Some(parent) = (&*APP_SETTINGS_PATH).parent() {
+			std::fs::create_dir_all(parent)?;
+		}
+
 		Ok(serde_json::ser::to_writer(File::create(&*APP_SETTINGS_PATH)?, self)?)
 	}
 

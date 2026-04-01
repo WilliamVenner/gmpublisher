@@ -275,7 +275,7 @@
 									<div>
 										<div><img src="/img/dog_sleep.gif"/></div>
 										<div>{$_('waiting')}</div>
-										<div class="tip">{$_('downloading_tip')}</div>
+										<!--<div class="tip">{$_('downloading_tip')}</div>-->
 										<a href="https://steamcommunity.com/app/4000/workshop/" target="_blank"><div class="btn">{$_('open_workshop')}</div></a>
 									</div>
 								</td>
