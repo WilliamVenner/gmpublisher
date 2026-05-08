@@ -76,7 +76,7 @@ const ADDON_WHITELIST_OFFLINE: &[&str] = &[
 	"data_static/*.json",
 	"data_static/*.xml",
 	"data_static/*.csv",
-	"shaders/*.vcs",
+	"shaders/fxc/*.vcs",
 ];
 
 pub const DEFAULT_IGNORE: &[&str] = &[
