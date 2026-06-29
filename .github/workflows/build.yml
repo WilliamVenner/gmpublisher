@@ -124,13 +124,16 @@ jobs:
 
           echo "Updating PKGBUILD to version $VERSION"
 
+          pacman -Sy --noconfirm pacman-contrib
+
           sed -i "s/^pkgver=.*/pkgver=$VERSION/" PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
 
           useradd -m builder
           chown -R builder:builder .
 
+          su builder -c "updpkgsums"
           su builder -c "makepkg --printsrcinfo > .SRCINFO"
-          su builder -c "makepkg -g >> PKGBUILD"
 
       - name: Publish AUR Package
         uses: KSXGitHub/github-actions-deploy-aur@v4.1.1
