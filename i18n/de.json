@@ -4,7 +4,7 @@
 	"settings": "Einstellungen",
 	"reset_settings": "Einstellungen zurücksetzen",
 	"my_workshop": "Mein Workshop",
-	"loading": "Laden...",
+	"loading": "Lädt...",
 	"gmod_dir": {
 		"name": "Garry's Mod Ordner",
 		"fail": "Der angegebene Ordner konnte nicht gefunden werden.\nStelle sicher, dass der von dir angegebene Ordner einen bin/ Ordner enthält."
@@ -19,9 +19,9 @@
 	},
 	"game": "Spiel",
 	"filesystem": "Dateisystem",
-	"github_star": "Auf GitHub einen Stern geben",
+	"github_star": "Einen Stern auf GitHub geben",
 	"search": "Suchen...",
-	"showing_num_addons": "Zeige {num} von {total} Addons",
+	"showing_num_addons": "{total} Addons von {num} angezeigt",
 	"extract_where_to": "Wohin?",
 	"extract_overwrite_warning": "Existierende Dateien werden überschrieben.",
 	"extract_open_tip": "Das GMA wird in ein TEMPORÄRES Verzeichnis extrahiert und geöffnet.",
@@ -102,5 +102,5 @@
 	"FS_ANALYZER_SERIALIZING": "Serialisieren...",
 	"FS_ANALYZER_STEAM": "Steam Daten herunterladen...",
 	"FS_ANALYZER_COMPUTING": "Verarbeiten...",
-	"FS_ANALYZER_TAGGIFYING": "Taggifying..."
+	"FS_ANALYZER_TAGGIFYING": "Verschlagworte..."
 }
