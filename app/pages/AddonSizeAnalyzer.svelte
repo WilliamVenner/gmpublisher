@@ -308,6 +308,7 @@
 		}
 
 		if (verticalText) {
+			tagsCtx.save();
 			tagsCtx.translate(x, y);
 				tagsCtx.rotate(canvasRotation);
 			tagsCtx.translate(-x, -y);
@@ -321,7 +322,7 @@
 		tagsCtx.fillText(tag, x, y);
 
 		if (verticalText) {
-			tagsCtx.setTransform(1, 0, 0, 1, 0, 0);
+			tagsCtx.restore();
 		}
 	}
 
