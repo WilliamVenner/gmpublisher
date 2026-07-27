@@ -317,7 +317,7 @@
 		tagsCtx.font = textSize + 'px sans-serif';
 		tagsCtx.fillStyle = '#fff';
 		tagsCtx.strokeStyle = '#000';
-		tagsCtx.lineWidth = Math.min(Math.max(Math.ceil(textSize * 0.2), 4), (14 / 1920) * window.outerWidth);
+		tagsCtx.lineWidth = Math.min(Math.max(Math.ceil(textSize * 0.2), 4), (14 / 1920) * window.innerWidth);
 		tagsCtx.strokeText(tag, x, y);
 		tagsCtx.fillText(tag, x, y);
 
