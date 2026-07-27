@@ -85,7 +85,7 @@
 			elem.classList.add('tag', tag);
 			document.body.appendChild(elem);
 
-			const color = window.getComputedStyle(elem, 'before')?.getPropertyValue('background-color');
+			const color = window.getComputedStyle(elem, '::before')?.getPropertyValue('background-color');
 			tagColors[tag] = !!color ? color : null;
 
 			elem.remove();
