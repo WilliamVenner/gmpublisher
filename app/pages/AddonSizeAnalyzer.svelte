@@ -85,7 +85,7 @@
 			elem.classList.add('tag', tag);
 			document.body.appendChild(elem);
 
-			const color = window.getComputedStyle(elem, 'before')?.getPropertyValue('background-color');
+			const color = window.getComputedStyle(elem, '::before')?.getPropertyValue('background-color');
 			tagColors[tag] = !!color ? color : null;
 
 			elem.remove();
@@ -308,6 +308,7 @@
 		}
 
 		if (verticalText) {
+			tagsCtx.save();
 			tagsCtx.translate(x, y);
 				tagsCtx.rotate(canvasRotation);
 			tagsCtx.translate(-x, -y);
@@ -316,12 +317,12 @@
 		tagsCtx.font = textSize + 'px sans-serif';
 		tagsCtx.fillStyle = '#fff';
 		tagsCtx.strokeStyle = '#000';
-		tagsCtx.lineWidth = Math.min(Math.max(Math.ceil(textSize * 0.2), 4), (14 / 1920) * window.outerWidth);
+		tagsCtx.lineWidth = Math.min(Math.max(Math.ceil(textSize * 0.2), 4), (14 / 1920) * window.innerWidth);
 		tagsCtx.strokeText(tag, x, y);
 		tagsCtx.fillText(tag, x, y);
 
 		if (verticalText) {
-			tagsCtx.setTransform(1, 0, 0, 1, 0, 0);
+			tagsCtx.restore();
 		}
 	}
 
