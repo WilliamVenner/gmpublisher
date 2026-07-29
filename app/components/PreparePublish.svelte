@@ -128,7 +128,7 @@
 		const chosen = [];
 		tagChoiceContainer.querySelectorAll(':scope > .tag-choice').forEach((choice, i) => {
 			if (choice.value !== 'default') {
-				if (chosen.findIndex(choice => choice === choice.value) !== -1) {
+				if (chosen.findIndex(chosenChoice => chosenChoice === choice.value) !== -1) {
 					choice.value = 'default';
 					chosen[i] = null;
 				} else {

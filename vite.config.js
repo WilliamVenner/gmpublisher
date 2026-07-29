@@ -22,7 +22,12 @@ console.log('production', production);
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-	plugins: [svelte()],
+	plugins: [svelte({
+		compilerOptions: {
+			// enable run-time checks when not in production
+			dev: !production
+		}
+	})],
 
 	// Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
 	//
@@ -43,10 +48,6 @@ export default defineConfig(async () => ({
 		inlineDynamicImports: true,
 		outDir: "../dist",
 		rollupOptions: {
-			compilerOptions: {
-				// enable run-time checks when not in production
-				dev: !production
-			},
 			input: {
 				app: './app/index.html',
 			},

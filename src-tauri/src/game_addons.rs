@@ -100,12 +100,10 @@ impl GameAddons {
 			.into_iter()
 			.rev()
 		{
-			match id.checked_add(char::to_digit(char, 10).unwrap() as u64) {
+			let digit = char::to_digit(char, 10).unwrap() as u64;
+			match id.checked_mul(10).and_then(|id| id.checked_add(digit)) {
 				None => return 0,
-				Some(id_op) => match 10_u64.checked_mul(id_op) {
-					None => return 0,
-					Some(id_op) => id = id_op,
-				},
+				Some(id_op) => id = id_op,
 			}
 		}
 		id
@@ -188,7 +186,7 @@ impl GameAddons {
 				let id = GameAddons::extract_suffix_ws_id(file_name);
 
 				tx_addons_metadata
-					.send((path, if id == 0 { None } else { Some(PublishedFileId(id / 10)) }))
+					.send((path, if id == 0 { None } else { Some(PublishedFileId(id)) }))
 					.unwrap();
 			}
 		});

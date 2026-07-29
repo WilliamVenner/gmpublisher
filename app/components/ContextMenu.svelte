@@ -9,8 +9,8 @@
 		for (let x = 0; x < mutations.length; x++) {
 			const mutation = mutations[x];
 			if (mutation.removedNodes) {
-				for (let i = 0; i < mutation.removedNodes; i++) {
-					const node = mutation[i];
+				for (let i = 0; i < mutation.removedNodes.length; i++) {
+					const node = mutation.removedNodes[i];
 					if (contextRegistry.has(node)) {
 						contextRegistry.delete(node);
 					}

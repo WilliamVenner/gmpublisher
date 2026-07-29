@@ -165,7 +165,7 @@ impl From<WorkshopIcon> for PathBuf {
 			WorkshopIcon::Default => {
 				let mut path = app_data!().temp_dir().to_owned();
 				path.push("gmpublisher_default_icon.png");
-				if !path.is_file() && path.metadata().map(|metadata| metadata.len()).unwrap_or(0) != WORKSHOP_DEFAULT_ICON.len() as u64 {
+				if !path.is_file() || path.metadata().map(|metadata| metadata.len()).unwrap_or(0) != WORKSHOP_DEFAULT_ICON.len() as u64 {
 					std::fs::write(&path, WORKSHOP_DEFAULT_ICON).expect("Failed to write default icon to temp directory!");
 				}
 				path

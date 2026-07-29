@@ -80,7 +80,7 @@
 				<RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\gmpublisher\SupportedTypes" Name=".gma" Value="" Type="string" />
 				<RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\gmpublisher\shell\open" Name="FriendlyAppName" Value="gmpublisher" Type="string" />
 
-				<RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\gmpublisher" Value="[!gmpublisher]" Type="string" />
+				<RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\gmpublisher" Value="[!EXE]" Type="string" />
 				<RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\gmpublisher" Name="Path" Value="[INSTALLDIR]" Type="string" />
 			</Component>
 		</DirectoryRef>
