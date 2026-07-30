@@ -26,6 +26,7 @@ dist-ssr
 /public/build/
 /public/dist/
 /src-tauri/target/
+/src-tauri/gen/schemas/
 WixTools/
 
 vite.config.js.*

@@ -101,7 +101,7 @@ fn main() {
 		.setup(|app| {
 			let settings = APP_DATA.settings.read();
 
-			let window = app.get_window("gmpublisher").unwrap();
+			let window = app.get_webview_window("gmpublisher").unwrap();
 
 			window.set_title(&format!("gmpublisher v{}", env!("CARGO_PKG_VERSION"))).ok();
 
@@ -120,6 +120,7 @@ fn main() {
 
 			Ok(())
 		})
+		.plugin(tauri_plugin_dialog::init())
 		.plugin(webview::ErrorReporter)
 		.plugin(appdata::Plugin)
 		.invoke_handler(commands::invoke_handler())

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-pub fn invoke_handler() -> impl Fn(tauri::Invoke<tauri::Wry>) + Send + Sync + 'static {
-	let handler: fn(tauri::Invoke<tauri::Wry>) = tauri::generate_handler![
+pub fn invoke_handler() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static {
+	let handler: fn(tauri::ipc::Invoke<tauri::Wry>) -> bool = tauri::generate_handler![
 		check_dir,
 		check_file,
 		open,
@@ -50,16 +50,21 @@ pub fn invoke_handler() -> impl Fn(tauri::Invoke<tauri::Wry>) + Send + Sync + 's
 	// and there are many main-thread-not-allowed debug assertions littered
 	// all over the codebase, so we just set up a channel and invoke the commands
 	// from another thread to work around this.
-	let (tx, rx) = std::sync::mpsc::channel();
+	let (tx, rx) = std::sync::mpsc::channel::<tauri::ipc::Invoke<tauri::Wry>>();
 
 	std::thread::spawn(move || {
 		while let Ok(invoke) = rx.recv() {
-			handler(invoke);
+			let resolver = invoke.resolver.clone();
+			let command = invoke.message.command().to_string();
+			if !handler(invoke) {
+				resolver.reject(format!("command {command} not found"));
+			}
 		}
 	});
 
 	move |invoke| {
 		tx.send(invoke).unwrap();
+		true
 	}
 }
 
