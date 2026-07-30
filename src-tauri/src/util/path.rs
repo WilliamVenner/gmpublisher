@@ -155,46 +155,7 @@ fn message_dialog(title: &str, message: String) {
 pub fn open_file_location<P: AsRef<Path>>(path: P) {
 	let path = dunce::canonicalize(path.as_ref()).unwrap_or_else(|_| path.as_ref().to_path_buf());
 
-	if let Err(_) = (|| {
-		#[cfg(target_os = "windows")]
-		return std::process::Command::new("explorer").arg(format!("/select,{}", path.display())).spawn();
-
-		#[cfg(target_os = "macos")]
-		return std::process::Command::new("open").arg("-R").arg(&path).spawn();
-
-		#[cfg(target_os = "linux")]
-		{
-			let path = path.to_string_lossy().into_owned();
-			if path.contains(',') || path.contains('"') || path.contains('\\') {
-				let new_path = match std::fs::metadata(&path).unwrap().is_dir() {
-					true => path,
-					false => {
-						let mut path2 = PathBuf::from(path);
-						path2.pop();
-						path2.into_os_string().into_string().unwrap()
-					}
-				};
-				return std::process::Command::new("xdg-open").arg(&new_path).spawn();
-			} else {
-				if let Ok(fork::Fork::Child) = fork::daemon(false, false) {
-					return std::process::Command::new("dbus-send")
-						.args([
-							"--session",
-							"--dest=org.freedesktop.FileManager1",
-							"--type=method_call",
-							"/org/freedesktop/FileManager1",
-							"org.freedesktop.FileManager1.ShowItems",
-							format!("array:string:\"file://{path}\"").as_str(),
-							"string:\"\"",
-						])
-						.spawn();
-				}
-			};
-		}
-
-		#[allow(unreachable_code)]
-		Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported OS"))
-	})() {
+	if opener::reveal(&path).is_err() {
 		message_dialog("File Location", path.display().to_string());
 	}
 }
