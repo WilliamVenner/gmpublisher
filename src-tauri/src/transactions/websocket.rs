@@ -2,29 +2,16 @@ use crate::NTStringWriter;
 use byteorder::{BigEndian, WriteBytesExt};
 use crossbeam::channel::{Receiver, Sender};
 use std::{
-	convert::TryInto,
 	net::{TcpListener, TcpStream},
+	time::Duration,
 };
-use websocket::{
-	server::{NoTlsAcceptor, WsServer},
-	sync::{Client, Server},
-	OwnedMessage,
+use tungstenite::{
+	handshake::server::{ErrorResponse, Request, Response},
+	http::{HeaderValue, StatusCode},
+	Message, WebSocket,
 };
 
 const CANCEL_TRANSACTION: &[u8] = &[123];
-
-enum WebSocketMessage {
-	OwnedMessage(OwnedMessage),
-	TransactionMessage(TransactionMessage),
-}
-impl From<WebSocketMessage> for OwnedMessage {
-	fn from(val: WebSocketMessage) -> Self {
-		match val {
-			WebSocketMessage::OwnedMessage(message) => message,
-			WebSocketMessage::TransactionMessage(message) => OwnedMessage::Binary(message.as_bytes()),
-		}
-	}
-}
 
 pub enum TransactionMessage {
 	Finished(u32, serde_json::Value),
@@ -89,116 +76,103 @@ impl TransactionMessage {
 		bytes
 	}
 }
-impl From<TransactionMessage> for OwnedMessage {
-	fn from(val: TransactionMessage) -> Self {
-		OwnedMessage::Binary(val.as_bytes())
-	}
-}
 
 pub struct TransactionServer {
 	pub port: u16,
-	tx: Sender<WebSocketMessage>,
+	tx: Sender<TransactionMessage>,
 }
 impl TransactionServer {
 	pub fn init() -> Result<TransactionServer, anyhow::Error> {
-		let socket = Server::bind("127.0.0.1:0")?;
-		let addr = socket.local_addr()?;
+		let listener = TcpListener::bind("127.0.0.1:0")?;
+		let addr = listener.local_addr()?;
 
-		let (tx, rx) = crossbeam::channel::unbounded::<WebSocketMessage>();
+		let (tx, rx) = crossbeam::channel::unbounded::<TransactionMessage>();
 
-		let tx_clone = tx.clone();
-		std::thread::spawn(move || TransactionServer::accept(socket, tx_clone, rx));
+		std::thread::spawn(move || TransactionServer::accept(listener, rx));
 
 		Ok(TransactionServer { port: addr.port(), tx })
 	}
 
-	fn accept(mut socket: WsServer<NoTlsAcceptor, TcpListener>, tx: Sender<WebSocketMessage>, rx: Receiver<WebSocketMessage>) {
+	fn accept(listener: TcpListener, rx: Receiver<TransactionMessage>) {
+		let negotiate = |req: &Request, mut resp: Response| -> Result<Response, ErrorResponse> {
+			let supported = req
+				.headers()
+				.get_all("Sec-WebSocket-Protocol")
+				.iter()
+				.filter_map(|protocols| protocols.to_str().ok())
+				.flat_map(|protocols| protocols.split(','))
+				.any(|protocol| protocol.trim() == "gmpublisher");
+			if supported {
+				resp.headers_mut().insert("Sec-WebSocket-Protocol", HeaderValue::from_static("gmpublisher"));
+				Ok(resp)
+			} else {
+				let mut err = ErrorResponse::new(None);
+				*err.status_mut() = StatusCode::BAD_REQUEST;
+				Err(err)
+			}
+		};
+
 		loop {
-			dprintln!("WebSocket: Waiting for client on {:?}", socket.local_addr().unwrap());
-			if let Ok(connection) = socket.accept() {
-				if connection.protocols().contains(&"gmpublisher".to_string()) {
-					if let Ok(client) = connection.use_protocol("gmpublisher").accept() {
-						dprintln!("WebSocket: Connection Established with {:#?}", client.peer_addr().unwrap());
-						TransactionServer::listen(tx.clone(), &rx, client);
-					}
-				} else {
-					dprintln!("WebSocket Error: Invalid Protocol");
+			dprintln!("WebSocket: Waiting for client on {:?}", listener.local_addr().unwrap());
+			let stream = match listener.accept() {
+				Ok((stream, _)) => stream,
+				Err(_) => continue,
+			};
+
+			match tungstenite::accept_hdr(stream, negotiate) {
+				Ok(client) => {
+					dprintln!("WebSocket: Connection Established with {:#?}", client.get_ref().peer_addr().unwrap());
+					TransactionServer::listen(&rx, client);
+				}
+				Err(err) => {
+					dprintln!("WebSocket Error: {:#?}", err);
 				}
 			}
 		}
 	}
 
-	fn listen(tx: Sender<WebSocketMessage>, rx: &Receiver<WebSocketMessage>, client: Client<TcpStream>) {
-		let (mut receiver, mut sender) = client.split().unwrap();
+	fn listen(rx: &Receiver<TransactionMessage>, mut client: WebSocket<TcpStream>) {
+		client.get_ref().set_read_timeout(Some(Duration::from_millis(1))).unwrap();
 
-		std::thread::spawn(move || loop {
-			let message = match receiver.recv_message() {
-				Ok(message) => message,
-				Err(err) => {
-					match &err {
-						websocket::WebSocketError::NoDataAvailable => continue,
-						websocket::WebSocketError::IoError(error) => {
-							if error.kind() == std::io::ErrorKind::ConnectionReset {
-								break;
-							}
-						}
-						_ => {}
-					};
-
-					dprintln!("WebSocketError: {:#?}", err);
-					continue;
-				}
-			};
-
-			match message {
-				OwnedMessage::Close(_) => {
-					dprintln!("WebSocket Closed");
-					tx.send(WebSocketMessage::OwnedMessage(OwnedMessage::Close(None))).unwrap();
-					return;
-				}
-
-				OwnedMessage::Ping(ping) => {
-					tx.send(WebSocketMessage::OwnedMessage(OwnedMessage::Pong(ping))).unwrap();
-				}
-
-				OwnedMessage::Binary(bytes) => {
-					if bytes.len() >= 5 && bytes.first() == CANCEL_TRANSACTION.first() {
-						match <[u8; 4]>::try_from(&bytes[1..5]) {
-							Ok(id_bytes) => {
-								super::cancel_transaction(u32::from_be_bytes(id_bytes));
-							}
-							Err(_) => {
-								dprintln!("WebSocket Invalid Cancel Message: {:?}", bytes);
-								continue;
-							}
-						}
-					}
-				}
-
-				OwnedMessage::Text(text) => {
-					#[cfg(debug_assertions)]
-					println!("WebSocket Message: {}", text);
-					#[cfg(not(debug_assertions))]
-					unreachable!();
-				}
-
-				_ => {}
-			}
-		});
-
-		while let Ok(message) = rx.recv() {
-			match message {
-				WebSocketMessage::OwnedMessage(message) => match message {
-					OwnedMessage::Binary(_) => {
-						ignore! { sender.send_message(&message) };
-					}
-					OwnedMessage::Close(_) => break,
-					_ => unreachable!(),
-				},
-
-				WebSocketMessage::TransactionMessage(message) => {
-					if sender.send_message::<OwnedMessage>(&OwnedMessage::Binary(message.as_bytes())).is_err() {
+		loop {
+			if let Ok(message) = rx.recv_timeout(Duration::from_millis(50)) {
+				for message in std::iter::once(message).chain(rx.try_iter()) {
+					if client.send(Message::Binary(message.as_bytes().into())).is_err() {
 						TransactionServer::send_tauri_event(message);
+						return;
+					}
+				}
+			}
+
+			loop {
+				match client.read() {
+					Ok(message) => match message {
+						Message::Close(_) => {
+							dprintln!("WebSocket Closed");
+							return;
+						}
+
+						Message::Binary(bytes) => {
+							if bytes.len() >= 5 && bytes.starts_with(CANCEL_TRANSACTION) {
+								super::cancel_transaction(u32::from_be_bytes(bytes[1..5].try_into().unwrap()));
+							}
+						}
+
+						Message::Text(text) => {
+							#[cfg(debug_assertions)]
+							println!("WebSocket Message: {}", text);
+							#[cfg(not(debug_assertions))]
+							unreachable!();
+						}
+
+						_ => {}
+					},
+
+					Err(tungstenite::Error::Io(error)) if matches!(error.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut | std::io::ErrorKind::Interrupted) => break,
+
+					Err(err) => {
+						dprintln!("WebSocketError: {:#?}", err);
+						return;
 					}
 				}
 			}
@@ -206,11 +180,8 @@ impl TransactionServer {
 	}
 
 	pub fn send(&'static self, message: TransactionMessage) {
-		if let Err(err) = self.tx.send(WebSocketMessage::TransactionMessage(message)) {
-			TransactionServer::send_tauri_event(match err.into_inner() {
-				WebSocketMessage::TransactionMessage(message) => message,
-				_ => unreachable!(),
-			});
+		if let Err(err) = self.tx.send(message) {
+			TransactionServer::send_tauri_event(err.into_inner());
 		}
 	}
 

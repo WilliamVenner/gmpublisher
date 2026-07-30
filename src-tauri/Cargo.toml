@@ -50,7 +50,6 @@ chrono = { version = "0.4.19", features = ["serde"] }
 bincode = "1.3.3"
 dirs-next = "2.0.0"
 opener = "0.4.1"
-websocket = "0.26.2"
 fuzzy-matcher = "0.3.7"
 num_cpus = "1"
 once_cell = "1.7.2"
@@ -59,6 +58,7 @@ trash = "2.0.1"
 ureq = { version = "2.9.4", features = ["native-tls"] }
 regex = "1"
 steamworks = { version = "0.11.0", features = ["serde"] }
+tungstenite = "0.30.0"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 fork = "0.1"
