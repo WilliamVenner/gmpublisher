@@ -1,8 +1,8 @@
 <script>
 	import { Folder } from "akar-icons-svelte";
 	import Switch from "./Switch.svelte";
-	import * as dialog from '@tauri-apps/api/dialog';
-	import { invoke } from '@tauri-apps/api/tauri';
+	import * as dialog from '@tauri-apps/plugin-dialog';
+	import { invoke } from '@tauri-apps/api/core';
 	import { playSound } from "../sounds";
 	import { _ } from "svelte-i18n";
 	import { tippy } from '../tippy';

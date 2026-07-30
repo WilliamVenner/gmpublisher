@@ -8,8 +8,8 @@
 	import Modal from '../components/Modal.svelte';
 	import { CloudUpload, Cross, Folder, LinkOut } from 'akar-icons-svelte';
 	import { tippyFollow, tippy } from '../tippy';
-	import * as dialog from '@tauri-apps/api/dialog';
-	import { invoke } from '@tauri-apps/api/tauri';
+	import * as dialog from '@tauri-apps/plugin-dialog';
+	import { invoke } from '@tauri-apps/api/core';
 	import { playSound } from '../sounds';
 	import FileBrowser from './FileBrowser.svelte';
 	import { writable } from 'svelte/store';

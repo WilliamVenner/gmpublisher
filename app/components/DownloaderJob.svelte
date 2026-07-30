@@ -6,7 +6,7 @@
 	import filesize from 'filesize';
 	import { tippyFollow } from '../tippy';
 	import { JOB_TYPE_EXTRACT } from '../pages/Downloader.svelte';
-	import { invoke } from '@tauri-apps/api/tauri';
+	import { invoke } from '@tauri-apps/api/core';
 
 	function calculateSpeed(timestamp, progress, total) {
 		if (total > 0 && progress > 0) {

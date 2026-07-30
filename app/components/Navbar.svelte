@@ -2,7 +2,7 @@
 	import { tippy } from '../tippy';
 	import { _ } from 'svelte-i18n';
 	import { Rss, TriangleAlert } from 'akar-icons-svelte';
-	import { invoke } from '@tauri-apps/api/tauri';
+	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import Search from './Search.svelte';
 	import Settings from './Settings.svelte';

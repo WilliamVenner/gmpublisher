@@ -1,7 +1,7 @@
 <script>
 	import { _ } from 'svelte-i18n';
 	import { Search, Cross } from 'akar-icons-svelte';
-	import { invoke } from '@tauri-apps/api/tauri';
+	import { invoke } from '@tauri-apps/api/core';
 	import { Transaction } from '../transactions';
 	import Loading from './Loading.svelte';
 	import { Steam } from '../steam';
