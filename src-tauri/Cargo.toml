@@ -19,6 +19,7 @@ tauri-build = { version = "2", features = ["codegen"] }
 [dependencies]
 tauri = { version = "2", features = ["devtools"] }
 tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 turbonone = "0.2.1"

@@ -121,6 +121,7 @@ fn main() {
 			Ok(())
 		})
 		.plugin(tauri_plugin_dialog::init())
+		.plugin(tauri_plugin_opener::init())
 		.plugin(webview::ErrorReporter)
 		.plugin(appdata::Plugin)
 		.invoke_handler(commands::invoke_handler())
