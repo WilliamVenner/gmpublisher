@@ -74,8 +74,9 @@ fn deadlock_watchdog() {
 
 fn main() {
 	// https://github.com/WilliamVenner/gmpublisher/issues/210
+	// https://v2.tauri.app/develop/debug/linux-graphics/
 	if cfg!(target_os = "linux") {
-		std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+		std::env::set_var("__NV_DISABLE_EXPLICIT_SYNC", "1");
 	}
 
 	std::panic::set_hook(Box::new(logging::panic));
