@@ -39,6 +39,8 @@
 		],
 		"resources": [],
 		"externalBin": [],
+		"publisher": "William Venner",
+		"licenseFile": "msi/License.rtf",
 		"copyright": "2021 William Venner",
 		"category": "DeveloperTool",
 		"shortDescription": "Garrys Mod Workshop Publishing Utility",
@@ -49,8 +51,12 @@
 			}
 		},
 		"windows": {
+			"allowDowngrades": false,
 			"wix": {
-				"template": "msi/msi.wxs"
+				"template": "msi/msi.wxs",
+				"upgradeCode": "9C296848-ABD3-4538-92D0-3BC4E408F34C",
+				"bannerPath": "msi/msi-banner.bmp",
+				"dialogImagePath": "msi/msi.bmp"
 			}
 		}
 	}
