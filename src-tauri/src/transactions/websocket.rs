@@ -103,7 +103,8 @@ impl TransactionServer {
 				.flat_map(|protocols| protocols.split(','))
 				.any(|protocol| protocol.trim() == "gmpublisher");
 			if supported {
-				resp.headers_mut().insert("Sec-WebSocket-Protocol", HeaderValue::from_static("gmpublisher"));
+				resp.headers_mut()
+					.insert("Sec-WebSocket-Protocol", HeaderValue::from_static("gmpublisher"));
 				Ok(resp)
 			} else {
 				let mut err = ErrorResponse::new(None);
@@ -168,7 +169,14 @@ impl TransactionServer {
 						_ => {}
 					},
 
-					Err(tungstenite::Error::Io(error)) if matches!(error.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut | std::io::ErrorKind::Interrupted) => break,
+					Err(tungstenite::Error::Io(error))
+						if matches!(
+							error.kind(),
+							std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut | std::io::ErrorKind::Interrupted
+						) =>
+					{
+						break
+					}
 
 					Err(err) => {
 						dprintln!("WebSocketError: {:#?}", err);
