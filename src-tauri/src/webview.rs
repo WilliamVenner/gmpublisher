@@ -2,14 +2,14 @@ use std::{cell::RefCell, mem::MaybeUninit, sync::atomic::AtomicBool};
 
 use crossbeam::channel::Sender;
 use serde::Serialize;
-use tauri::{Window, Wry};
+use tauri::{Emitter, WebviewWindow, Wry};
 
 use crate::{GMAFile, WorkshopItem};
 
 pub struct WrappedWebview {
-	pub window: RefCell<MaybeUninit<Window<Wry>>>,
+	pub window: RefCell<MaybeUninit<WebviewWindow<Wry>>>,
 	pending: AtomicBool,
-	tx: Sender<Window<Wry>>,
+	tx: Sender<WebviewWindow<Wry>>,
 }
 unsafe impl Send for WrappedWebview {}
 unsafe impl Sync for WrappedWebview {}
@@ -22,7 +22,7 @@ impl WrappedWebview {
 		}
 	}
 
-	fn channel() -> Sender<Window<Wry>> {
+	fn channel() -> Sender<WebviewWindow<Wry>> {
 		let (tx, rx) = crossbeam::channel::bounded(1);
 
 		std::thread::spawn(move || {
@@ -34,15 +34,15 @@ impl WrappedWebview {
 		tx
 	}
 
-	pub fn init(&self, window: Window<Wry>) {
+	pub fn init(&self, window: WebviewWindow<Wry>) {
 		self.tx.send(window).unwrap();
 	}
 
-	pub fn emit<D: Serialize + Send + 'static>(&self, event: &'static str, payload: Option<D>) {
+	pub fn emit<D: Serialize + Clone + Send + 'static>(&self, event: &'static str, payload: Option<D>) {
 		ignore! { self.window().emit(event, &payload) };
 	}
 
-	pub fn window(&self) -> &Window<Wry> {
+	pub fn window(&self) -> &WebviewWindow<Wry> {
 		while self.pending.load(std::sync::atomic::Ordering::Relaxed) {
 			sleep_ms!(50);
 		}

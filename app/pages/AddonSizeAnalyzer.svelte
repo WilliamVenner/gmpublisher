@@ -2,7 +2,7 @@
 	import { afterUpdate, onDestroy, onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { _ } from 'svelte-i18n';
-	import { invoke } from '@tauri-apps/api/tauri';
+	import { invoke } from '@tauri-apps/api/core';
 	import { Transaction } from '../transactions.js';
 	import tippy from 'tippy.js';
 	import filesize from 'filesize';
