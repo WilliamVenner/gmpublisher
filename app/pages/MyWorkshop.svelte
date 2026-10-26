@@ -6,9 +6,8 @@
 	import PreparePublish, { remountAddonScroller } from '../components/PreparePublish.svelte';
 	import { afterUpdate } from 'svelte';
 
-	let page = 0;
-	function next() {
-		return Steam.getMyWorkshop(++page);
+	function getPage(page) {
+		return Steam.getMyWorkshop(page);
 	}
 
 	let updatingAddon = writable(null);
@@ -30,13 +29,12 @@
 	afterUpdate(() => {
 		if ($remountAddonScroller) {
 			$remountAddonScroller = false;
-			page = 0;
 		}
 	});
 </script>
 
 {#if !$remountAddonScroller}
-	<AddonScroller {next} onClick={editPublishedAddon} onNewAddonClick={togglePreparePublish}/>
+	<AddonScroller {getPage}onClick={editPublishedAddon} onNewAddonClick={togglePreparePublish}/>
 {/if}
 
 <PreparePublish {preparePublish} {updatingAddon}/>
