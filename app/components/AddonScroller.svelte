@@ -4,9 +4,15 @@
 	import Dead from "./Dead.svelte";
 	import Loading from "./Loading.svelte";
 
-	export let next;
+	export let next = null;
 	export let onClick = null;
 	export let onNewAddonClick = null;
+
+	// If provided, addons are shown one page at a time with page buttons instead of infinite scrolling
+	export let getPage = null;
+	let currentPage = 1;
+	let pageSize = 0;
+	$: pageCount = pageSize ? Math.ceil(total / pageSize) : 1;
 
 	let loading = true;
 	let total = 0;
@@ -15,22 +21,34 @@
 	function fetchNext() {
 		loading = true;
 
-		let promise = next().then(([fetchedTotal, fetchedAddons]) => {
+		let promise = (getPage ? getPage(currentPage) : next()).then(([fetchedTotal, fetchedAddons]) => {
 
 			loading = false;
 
-			addons = addons.concat(fetchedAddons);
+			if (getPage) {
+				addons = fetchedAddons;
+				if (!pageSize) pageSize = fetchedAddons.length;
+			} else {
+				addons = addons.concat(fetchedAddons);
+			}
 			total = fetchedTotal;
 
 		}, () => loading = false);
 
-		if (!firstPage) firstPage = promise;
+		if (!firstPage || getPage) firstPage = promise;
 	}
 	fetchNext();
 
+	function goToPage(page) {
+		if (loading || page === currentPage) return;
+		currentPage = page;
+		scroller.scrollTop = 0;
+		fetchNext();
+	}
+
 	let scroller;
 	function infiniScroll() {
-		if (!scroller || loading) return;
+		if (!scroller || loading || getPage) return;
 		if (scroller.offsetHeight + scroller.scrollTop >= scroller.scrollHeight * .9 && addons.length < total) {
 			fetchNext();
 		}
@@ -47,7 +65,7 @@
 	{#if onNewAddonClick}
 		<div id="grid">
 			<Addon newAddon={true} onClick={onNewAddonClick}/>
-			{#each addons as addon}
+			{#each addons as addon (addon)}
 				<Addon {onClick} workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
 			{/each}
 			{#await firstPage}
@@ -66,7 +84,7 @@
 				<div id="error">{$_('ERR_NO_ADDONS_FOUND')}</div>
 			{:else}
 				<div id="grid">
-					{#each addons as addon}
+					{#each addons as addon (addon)}
 						<Addon {onClick} workshopData={addon.workshop ? Promise.resolve(addon.workshop) : null} installedData={addon.installed ? Promise.resolve(addon.installed) : null}/>
 					{/each}
 				</div>
@@ -75,6 +93,14 @@
 			<Dead size="2rem"/>
 			<div id="error">{JSON.stringify(reason)}</div>
 		{/await}
+	{/if}
+
+	{#if getPage && pageCount > 1}
+		<div id="pages">
+			{#each { length: pageCount } as _page, i}
+				<button class:active={i + 1 === currentPage} disabled={loading} on:click={() => goToPage(i + 1)}>{i + 1}</button>
+			{/each}
+		</div>
 	{/if}
 </main>
 
@@ -104,6 +130,30 @@
 	}
 	main > :global(.loading) {
 		opacity: .2;
+	}
+	#pages {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: .5rem;
+		margin-top: 1.5rem;
+	}
+	#pages button {
+		cursor: pointer;
+		min-width: 2.5rem;
+		padding: .5rem;
+		border: none;
+		border-radius: 4px;
+		color: inherit;
+		background: #313131;
+		box-shadow: 0px 0px 2px 0px rgb(0 0 0 / 40%);
+	}
+	#pages button.active {
+		background: #006cc7;
+	}
+	#pages button:disabled {
+		cursor: default;
+		opacity: .5;
 	}
 	#error {
 		position: absolute;
