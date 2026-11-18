@@ -138,7 +138,17 @@ impl Steam {
 
 	pub fn connect() {
 		loop {
-			if let Ok(connection) = Client::init_app(4000) {
+			let connection = Client::init_app(4000);
+
+			#[cfg(target_os = "windows")]
+			{
+				// init_app sets these for the whole process, so Steam counts anything we launch as Garry's Mod.
+				// Windows only: changing the environment is not thread-safe elsewhere.
+				std::env::remove_var("SteamAppId");
+				std::env::remove_var("SteamGameId");
+			}
+
+			if let Ok(connection) = connection {
 				println!("[Steam] Client initialized");
 
 				loop {
