@@ -373,7 +373,7 @@ pub fn validate_gmod(mut path: PathBuf) -> bool {
 }
 
 #[tauri::command]
-pub fn window_resized(window: tauri::Window, width: f64, height: f64) {
+pub fn window_resized(window: tauri::WebviewWindow, width: f64, height: f64) {
 	{
 		let mut settings = app_data!().settings.write();
 

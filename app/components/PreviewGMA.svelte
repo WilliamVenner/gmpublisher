@@ -5,7 +5,7 @@
 	import Dead from './Dead.svelte';
 	import SteamID from 'steamid';
 	import { LinkOut } from 'akar-icons-svelte';
-	import { invoke } from '@tauri-apps/api/tauri';
+	import { invoke } from '@tauri-apps/api/core';
 	import Timestamp from './Timestamp.svelte';
 	import { onDestroy } from 'svelte';
 	import { Transaction } from '../transactions.js';

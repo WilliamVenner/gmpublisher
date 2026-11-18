@@ -75,7 +75,7 @@
 	import { get, writable } from 'svelte/store';
 	import Loading from './Loading.svelte';
 	import { onDestroy, onMount } from 'svelte';
-	import { invoke } from '@tauri-apps/api/tauri';
+	import { invoke } from '@tauri-apps/api/core';
 	import DestinationSelect from './DestinationSelect.svelte';
 	import fileSize from 'filesize';
 	import { taskMessage, Transaction } from '../transactions';

@@ -8,10 +8,11 @@ pkgdesc="Workshop Publishing Utility for Garry's Mod, written in Rust & Svelte a
 arch=('x86_64')
 url="https://github.com/WilliamVenner/gmpublisher"
 license=('GPL-3.0')
-depends=('webkit2gtk-4.1' 'libsoup' 'hicolor-icon-theme' 'libappindicator-gtk3' 'gst-plugins-good' 'gst-plugins-bad' 'gst-libav')
+depends=('webkit2gtk-4.1' 'libsoup3' 'hicolor-icon-theme' 'libappindicator-gtk3' 'gst-plugins-good' 'gst-plugins-bad' 'gst-libav')
 makedepends=('unzip')
 provides=("${_realname}")
 conflicts=("${_realname}")
+options=('!debug' '!strip')
 source=("${_realname}_linux64.zip::https://github.com/WilliamVenner/${_realname}/releases/download/${pkgver}/${_realname}_linux64.zip"
         "LICENSE::https://raw.githubusercontent.com/WilliamVenner/${_realname}/${pkgver}/LICENSE"
         "${_realname}.png::https://raw.githubusercontent.com/WilliamVenner/${_realname}/${pkgver}/src-tauri/icons/128x128.png")
@@ -22,8 +23,6 @@ sha256sums=('SKIP'
 package() {
   install -Dm755 "${srcdir}/${_realname}" "$pkgdir/usr/lib/${_realname}/${_realname}"
   install -Dm644 "${srcdir}/libsteam_api.so" "$pkgdir/usr/lib/${_realname}/libsteam_api.so"
-  install -Dm644 "${srcdir}/libwebkit2gtk-4.0.so.37" "$pkgdir/usr/lib/${_realname}/libwebkit2gtk-4.0.so.37"
-  install -Dm644 "${srcdir}/libjavascriptcoregtk-4.0.so.18" "$pkgdir/usr/lib/${_realname}/libjavascriptcoregtk-4.0.so.18"
 
   install -d "$pkgdir/usr/bin"
   cat << EOF > "$pkgdir/usr/bin/${_realname}"

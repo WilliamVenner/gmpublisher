@@ -8,7 +8,7 @@
 	import SidebarItem from './SidebarItem.svelte';
 	import Setting from './Setting.svelte';
 	import { playSound } from '../sounds';
-	import { invoke } from '@tauri-apps/api/tauri';
+	import { invoke } from '@tauri-apps/api/core';
 	import { switchLanguage } from '../i18n';
 
 	let active = false;

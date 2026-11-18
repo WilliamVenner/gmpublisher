@@ -7,7 +7,7 @@ console.log('Listening for errors');
 	const eprintln = window.console.error;
 
 	function report(message, data) {
-		const invoke = __TAURI__?.tauri?.invoke;
+		const invoke = window.__TAURI__?.core?.invoke;
 
 		if (invoke) invoke(message, data);
 		else eprintln('Failed to report log to Tauri backend!');

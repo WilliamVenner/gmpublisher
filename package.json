@@ -10,12 +10,13 @@
 		"tauri": "tauri"
 	},
 	"dependencies": {
-		"@tauri-apps/api": "^1.5.3"
+		"@tauri-apps/api": "^2.11.1",
+		"@tauri-apps/plugin-dialog": "^2.7.2"
 	},
 	"devDependencies": {
 		"@rollup/plugin-replace": "^5.0.5",
 		"@sveltejs/vite-plugin-svelte": "^3.0.1",
-		"@tauri-apps/cli": "^1.5.8",
+		"@tauri-apps/cli": "^2.11.4",
 		"akar-icons-svelte": "^1.1.1",
 		"filesize": "^6.1.0",
 		"luxon": "^1.26.0",

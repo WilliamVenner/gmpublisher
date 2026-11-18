@@ -6,7 +6,7 @@
 	import { ChevronUp, Copy, Folder, FolderAdd } from 'akar-icons-svelte';
 	import { afterUpdate, onDestroy } from 'svelte';
 	import Dead from './Dead.svelte';
-	import * as dialog from '@tauri-apps/api/dialog';
+	import * as dialog from '@tauri-apps/plugin-dialog';
 
 	export let browsePath;
 	export let entriesList = null;
