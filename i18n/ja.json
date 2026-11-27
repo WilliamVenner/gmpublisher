@@ -1,0 +1,272 @@
+{
+	"LANGUAGE_NAME": "日本語",
+
+	"my_workshop": "マイワークショップ",
+	"loading": "読み込み中...",
+	"gmod_dir": {
+		"name": "Garry's Modのディレクトリ",
+		"fail": "指定された場所で有効なGarry's Modのディレクトリが見つかりませんでした。\nディレクトリに、gmadとgmpublishが入ったbin/フォルダーがあることを確認してください。"
+	},
+	"greetings": {
+		"morning": "おはようございます、{name}さん！",
+		"morning.anon": "おはようございます！",
+		"afternoon": "こんにちは、{name}さん！",
+		"afternoon.anon": "こんにちは！",
+		"evening": "こんばんは、{name}さん！",
+		"evening.anon": "こんばんは！"
+	},
+	"game": "ゲーム",
+	"filesystem": "ファイルシステム",
+	"github_star": "GitHubでスターを付ける",
+	"search": "検索...",
+	"showing_num_addons": "{total}件中{num}件のアドオンを表示中",
+	"extract_where_to": "展開先",
+	"extract_overwrite_warning": "既存のファイルは上書きされます。",
+	"extract_open_tip": "GMAを一時ディレクトリに展開して開きます。",
+	"browse": "参照...",
+	"addons_folder": "アドオン",
+	"downloads_folder": "ダウンロード",
+	"open": "開く",
+	"create_folder": "フォルダーを作成",
+	"extract": "展開",
+	"extracting": "展開中",
+	"extracting_progress": "展開中 {pct}% ({data} / {dataTotal})",
+	"pack": "パック",
+	"publish": "公開",
+	"update": "更新",
+	"size_analyzer": "アドオンサイズ分析",
+	"name": "名前",
+	"cancel": "キャンセル",
+	"done": "完了",
+	"cancelled": "キャンセルしました",
+	"size": "サイズ",
+	"addon_type": "種類",
+	"file_types": {
+		"folder": "フォルダー",
+
+		"vtf": "Valveテクスチャ形式",
+		"vmt": "Valveマテリアル形式",
+		"map": "マップ",
+		"ain": "マップAIノードグラフ",
+		"nav": "マップAIナビゲーションメッシュ",
+		"ttf": "TrueTypeフォント",
+		"vcd": "Valveコレオグラフィデータ",
+		"fgd": "Forgeゲームデータ",
+		"pcf": "パーティクルファイル",
+		"lua": "Luaコード",
+		"mdl": "モデル",
+		"vtx": "モデルLODデータ",
+		"phy": "モデル物理メッシュ",
+		"ani": "モデルアニメーションデータ",
+		"vvd": "モデル頂点データ",
+		"txt": "テキスト",
+		"properties": "プロパティ",
+
+		"audio": "オーディオ",
+		"image": "画像",
+		"unknown": "不明 ({extension})"
+	},
+	"items_one": "1件",
+	"items_num": "{n}件",
+	"items_shown": "{n}件を表示中",
+	"created": "作成日",
+	"updated": "更新日",
+	"author": "作者",
+	"open_addon_location": "アドオンの場所を開く",
+
+	"downloader": "ダウンローダー",
+	"download-input": "ワークショップのID、リンク、コレクションをここに貼り付けてください...",
+	"download-input-tip": "ヒント：カンマ区切りや改行区切りでまとめて貼り付けることもできます。",
+	"downloading": "ダウンロード中",
+	"log": "ログ",
+	"waiting": "待機中",
+	"extraction_tip": "GMAファイルをこの画面にドラッグ＆ドロップすると、そのまま展開できます。",
+	"set_destination": "保存先を設定",
+
+	"addon": "アドオン",
+	"speed": "速度",
+	"total_filesize": "合計",
+	"progress": "進行状況",
+
+	"LOG_DOWNLOAD_STARTED": "{addon}のダウンロードを開始しました",
+	"LOG_DOWNLOAD_FINISHED": "{addon}のダウンロードが完了しました ({time})",
+	"LOG_DOWNLOAD_FAILED": "{addon}のダウンロードに失敗しました (\"{reason}\")",
+
+	"LOG_EXTRACT_STARTED": "{addon}の展開を開始しました",
+	"LOG_EXTRACT_FAILED": "{addon}の展開に失敗しました (\"{reason}\")",
+	"LOG_EXTRACT_FINISHED": "{addon}の展開が完了しました ({time})",
+
+	"FS_ANALYZER_RENDERING": "描画中...",
+	"FS_ANALYZER_SERIALIZING": "シリアライズ中...",
+	"FS_ANALYZER_STEAM": "Steamのデータをダウンロード中...",
+	"FS_ANALYZER_COMPUTING": "計算中...",
+	"FS_ANALYZER_TAGGIFYING": "タグ付け中...",
+	"FS_ANALYZER_DISCOVERING": "検出中...",
+
+	"time_just_now": "たった今",
+	"click_to_open": "クリックして開く",
+	"content_generator": "コンテンツジェネレーター",
+	"installed_addons": "インストール済みのアドオン",
+
+	"steam_disconnected": "Steamサーバーから切断されました",
+	"steam_connected": "Steamサーバーに接続しました",
+
+	"publish_new": "新規公開...",
+
+	"settings": {
+		"saved": "保存しました",
+		"settings": "設定",
+
+		"paths": {
+			"paths": "パス",
+			"user_data": "ユーザーデータのパス",
+			"gmod": "Garry's Modのインストール先パス",
+			"temp": "一時ファイルのパス",
+			"downloads": "ダウンロードのパス"
+		},
+
+		"general": {
+			"general": "一般",
+			"sounds": "サウンド"
+		},
+
+		"resets": {
+			"resets": "リセット",
+			"settings": "設定をリセット",
+			"clear_temp": "一時ファイルを削除",
+			"clear_user_data": "ユーザーデータを削除"
+		},
+
+		"extract_overwrite_mode": {
+			"extract_overwrite_mode": "上書き時の動作",
+			"recycle": "ごみ箱に移動",
+			"delete": "削除",
+			"overwrite": "上書き",
+			"tooltip": "GMAを展開するとき、展開先のディレクトリがすでに存在する場合 (そのGMAを以前に展開したことがある場合) に、gmpublisherがどう処理するかを選びます。"
+		},
+
+		"accessibility": {
+			"accessibility": "アクセシビリティ",
+			"color_error": "エラーの色",
+			"color_success": "成功の色",
+			"color_neutral": "通常の色"
+		}
+	},
+
+	"gma_type_name": "パック済みGarry's Modアドオン",
+	"downloading_tip": "Steamワークショップのリンクをこの画面にドラッグすると、ダウンロードして展開できます。",
+	"open_workshop": "ワークショップを開く",
+	"bulk_extract_gmas": "GMAを一括展開",
+	"error": "エラー",
+	"queued": "キューに追加済み",
+	"remove_all": "すべて削除",
+	"open_all": "すべて開く",
+
+	"ERR_UNKNOWN": "不明なエラー",
+	"ERR_NO_ADDONS_FOUND": "アドオンが見つかりません",
+	"ERR_STEAM_ERROR": "Steamエラー: {data}",
+	"ERR_WHITELIST": "これらのエントリはファイルの種類と場所のホワイトリストを通過しませんでした。意図しない結果である場合は、アドオンのファイル構造が正しくない可能性があります。\n\nこれらのファイルの種類をGMAから除外したい場合は、無視するファイルパターンに追加してください。\n\n{data}",
+	"ERR_IO_ERROR": "I/Oエラー",
+	"ERR_PATH_IO_ERROR": "I/Oエラー ({data})",
+	"ERR_GMA_FORMAT_ERROR": "GMAファイルが破損しています",
+	"ERR_GMA_INVALID_HEADER": "無効なGMAファイルです",
+	"ERR_GMA_ENTRY_NOT_FOUND": "エントリが見つかりません",
+	"ERR_DOWNLOAD_MISSING": "ダウンロードしましたが、ファイルが見つかりません",
+	"ERR_ICON_TOO_LARGE": "アイコンが大きすぎます (1 MB超)",
+	"ERR_ICON_TOO_SMALL": "アイコンが小さすぎます (16 B未満)",
+	"ERR_ICON_INVALID_FORMAT": "アイコンはJPG、PNG、GIFのいずれかにしてください",
+	"ERR_LZMA": "LZMA圧縮エラー",
+	"ERR_DOWNLOAD_FAILED": "ダウンロードに失敗しました",
+	"ERR_ITEM_NOT_FOUND": "アイテムが見つかりません",
+	"ERR_ITEM_INACCESSIBLE": "アイテムにアクセスできません",
+	"ERR_INVALID_CONTENT_PATH": "このコンテンツパスは存在しないか、ディレクトリではないか、gmpublisherにアクセス権限がありません",
+	"ERR_MULTIPLE_GMAS": "このコンテンツパスに複数のGMAファイルが見つかりました",
+	"ERR_IMAGE_ERROR": "画像エラー: {data}",
+	"ERR_DUPLICATE_ENTRIES": "このコンテンツパスに重複したエントリ ({data}) があります。すべてのパスは一意で、小文字にする必要があります。ちなみに私はArchを使っています。",
+	"ERR_NO_ENTRIES": "このコンテンツパスにエントリがありません。",
+	"ERR_WORKSHOP_LEGAL_AGREEMENT": "ワークショップの法的同意書に同意していません",
+
+	"icon_instructions": "対応形式: JPG、PNG、GIF\n最大サイズ: 1 MB\n推奨: 512x512",
+	"addon_title": "タイトル...",
+	"addon_path": "アドオンのパス...",
+	"icon_file_pick": "ワークショップのアイコン",
+	"remove_icon": "アイコンを削除",
+	"update_addon_title_via_steam": "公開後は、ワークショップのページでアドオンのタイトルを変更できます。",
+
+	"addon_types": {
+		"ServerContent": "サーバーコンテンツ",
+		"gamemode": "ゲームモード",
+		"map": "マップ",
+		"weapon": "武器",
+		"vehicle": "乗り物",
+		"npc": "NPC",
+		"tool": "ツール",
+		"effects": "エフェクト",
+		"model": "モデル",
+		"entity": "エンティティ"
+	},
+
+	"tag_1": "タグ1",
+	"tag_2": "タグ2",
+	"tag_3": "タグ3",
+
+	"addon_tags": {
+		"fun": "お楽しみ",
+		"roleplay": "ロールプレイ",
+		"scenic": "景観",
+		"movie": "ムービー",
+		"realism": "リアル",
+		"cartoon": "カートゥーン",
+		"water": "水",
+		"comic": "コミック",
+		"build": "ビルド"
+	},
+
+	"publish_exclamation": "公開！",
+	"update_exclamation": "更新！",
+	"add_ellipsis": "追加...",
+	"ignored_file_patterns": "無視するファイルパターン",
+	"show_more": "もっと見る",
+	"ignored_for_convenience": "このファイルパターンは、利便性のためにデフォルトで無視されます。",
+	"file_browser": "ファイルブラウザー",
+	"file_browser_select": "ここにファイルをドロップするか、クリックして選択",
+	"no_files_found": "ファイルが見つかりません",
+	"upscale_addon_icon": "512x512に拡大",
+	"changelog": "変更履歴",
+	"update_warning": "{title} ({id}) を更新しようとしています",
+
+	"PUBLISH_PACKING": "パック中 {pct}% ({data} / {dataTotal})",
+	"PUBLISH_STARTING": "公開を開始しています",
+	"PUBLISH_PREPARING_CONFIG": "設定を準備しています",
+	"PUBLISH_PREPARING_CONTENT": "コンテンツを準備しています",
+	"PUBLISH_UPLOADING_CONTENT": "コンテンツをアップロードしています",
+	"PUBLISH_UPLOADING_PREVIEW_FILE": "プレビューファイルをアップロードしています",
+	"PUBLISH_COMMITTING_CHANGES": "変更を反映しています",
+	"PUBLISH_PROCESSING_ICON": "アイコンを処理しています",
+
+	"subscriptions": "購読",
+	"unsubscribe": "購読を解除",
+	"unsubscribe_all": "すべての購読を解除",
+	"unsubscribe_all_warning": "警告: 購読しているすべてのワークショップアドオンの購読が解除されます。",
+	"update_available": "新しいアップデートがあります！\n{version}",
+	"workshop_page": "ワークショップのページ",
+	"steam_workshop": "Steamワークショップ",
+	"open_count": "gmpublisherを{count}回開きました！おめでとうございます！",
+	"enjoying_gmpublisher": "gmpublisherを楽しんでいますか？",
+	"github_star_plz_i_need_a_job_maybe": "GitHubアカウントをお持ちで、このツールがお役に立ったなら、%GitHubリポジトリ%にスターを付けていただけるとうれしいです :D",
+	"vscode_glua_enhanced": "開発者の方は、私の拡張機能 %VSCode GLua Enhanced% もぜひご覧ください。",
+
+	"copy_link": "リンクをコピー",
+	"open_image": "画像を開く",
+	"copy_image_link": "画像のリンクをコピー",
+	"download": "ダウンロード",
+	"sent_to_downloader": "ダウンローダーに送信しました",
+
+	"locating": "場所を特定中",
+	"decompressing": "展開中 {progress}",
+	"reading_metadata": "メタデータを読み込み中",
+
+	"publish_icon": "新しいアイコンを公開 (アドオンは更新されません)",
+
+	"copy_path": "パスをコピー"
+}
